@@ -25,4 +25,56 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-// TODO: Add your tables here
+export const quizzes = mysqlTable("quizzes", {
+  id: int("id").autoincrement().primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  totalQuestions: int("totalQuestions").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Quiz = typeof quizzes.$inferSelect;
+export type InsertQuiz = typeof quizzes.$inferInsert;
+
+export const questions = mysqlTable("questions", {
+  id: int("id").autoincrement().primaryKey(),
+  quizId: int("quizId").notNull(),
+  questionNumber: int("questionNumber").notNull(),
+  questionText: text("questionText").notNull(),
+  optionA: text("optionA").notNull(),
+  optionB: text("optionB").notNull(),
+  optionC: text("optionC").notNull(),
+  optionD: text("optionD").notNull(),
+  correctAnswer: varchar("correctAnswer", { length: 1 }).notNull(), // A, B, C, or D
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Question = typeof questions.$inferSelect;
+export type InsertQuestion = typeof questions.$inferInsert;
+
+export const quizAttempts = mysqlTable("quizAttempts", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  quizId: int("quizId").notNull(),
+  score: int("score").notNull(),
+  totalQuestions: int("totalQuestions").notNull(),
+  percentage: int("percentage").notNull(),
+  startedAt: timestamp("startedAt").defaultNow().notNull(),
+  completedAt: timestamp("completedAt").defaultNow().notNull(),
+});
+
+export type QuizAttempt = typeof quizAttempts.$inferSelect;
+export type InsertQuizAttempt = typeof quizAttempts.$inferInsert;
+
+export const userAnswers = mysqlTable("userAnswers", {
+  id: int("id").autoincrement().primaryKey(),
+  attemptId: int("attemptId").notNull(),
+  questionId: int("questionId").notNull(),
+  selectedAnswer: varchar("selectedAnswer", { length: 1 }).notNull(), // A, B, C, or D
+  isCorrect: int("isCorrect").notNull(), // 0 or 1
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type UserAnswer = typeof userAnswers.$inferSelect;
+export type InsertUserAnswer = typeof userAnswers.$inferInsert;

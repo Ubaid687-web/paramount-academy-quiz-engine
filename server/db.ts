@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { InsertUser, users, InsertQuiz, InsertQuizAttempt, InsertUserAnswer, quizzes, questions, quizAttempts, userAnswers } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -89,4 +89,83 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+export async function createQuiz(quiz: InsertQuiz): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(quizzes).values(quiz);
+  return result[0].insertId;
+}
+
+export async function getQuizzes() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return db.select().from(quizzes);
+}
+
+export async function getQuizById(quizId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.select().from(quizzes).where(eq(quizzes.id, quizId)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getQuestionsByQuizId(quizId: number, shuffle: boolean = false) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const results = await db.select().from(questions).where(eq(questions.quizId, quizId));
+  
+  if (shuffle) {
+    return results.sort(() => Math.random() - 0.5);
+  }
+  
+  return results;
+}
+
+export async function createQuizAttempt(attempt: InsertQuizAttempt): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(quizAttempts).values(attempt);
+  return result[0].insertId;
+}
+
+export async function saveUserAnswers(answers: InsertUserAnswer[]) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return db.insert(userAnswers).values(answers);
+}
+
+export async function getAttemptWithAnswers(attemptId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const attempt = await db.select().from(quizAttempts).where(eq(quizAttempts.id, attemptId)).limit(1);
+  if (attempt.length === 0) return undefined;
+  
+  const userAnswersList = await db.select().from(userAnswers).where(eq(userAnswers.attemptId, attemptId));
+  
+  // Fetch questions for each answer to include full question details
+  const answersWithQuestions = await Promise.all(
+    userAnswersList.map(async (answer) => {
+      const q = await db.select().from(questions).where(eq(questions.id, answer.questionId)).limit(1);
+      return {
+        ...answer,
+        question: q.length > 0 ? q[0] : null,
+      };
+    })
+  );
+  
+  return { attempt: attempt[0], answers: answersWithQuestions };
+}
+
+export async function getUserAttemptHistory(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return db.select().from(quizAttempts).where(eq(quizAttempts.userId, userId));
+}

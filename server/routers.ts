@@ -1,10 +1,10 @@
+import { z } from "zod";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, router } from "./_core/trpc";
+import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 
 export const appRouter = router({
-    // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
   system: systemRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
@@ -17,12 +17,79 @@ export const appRouter = router({
     }),
   }),
 
-  // TODO: add feature routers here, e.g.
-  // todo: router({
-  //   list: protectedProcedure.query(({ ctx }) =>
-  //     db.getUserTodos(ctx.user.id)
-  //   ),
-  // }),
+  quiz: router({
+    getAll: publicProcedure.query(async () => {
+      const { getQuizzes } = await import("./db");
+      return getQuizzes();
+    }),
+
+    getById: publicProcedure
+      .input(z.object({ quizId: z.number() }))
+      .query(async ({ input }) => {
+        const { getQuizById } = await import("./db");
+        return getQuizById(input.quizId);
+      }),
+
+    getQuestions: publicProcedure
+      .input(z.object({ quizId: z.number(), shuffle: z.boolean().default(false) }))
+      .query(async ({ input }) => {
+        const { getQuestionsByQuizId } = await import("./db");
+        return getQuestionsByQuizId(input.quizId, input.shuffle);
+      }),
+
+    submitAttempt: protectedProcedure
+      .input(
+        z.object({
+          quizId: z.number(),
+          answers: z.array(
+            z.object({
+              questionId: z.number(),
+              selectedAnswer: z.string(),
+              isCorrect: z.number(),
+            })
+          ),
+          score: z.number(),
+          totalQuestions: z.number(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const { createQuizAttempt, saveUserAnswers } = await import("./db");
+        const percentage = Math.round((input.score / input.totalQuestions) * 100);
+
+        const attemptId = await createQuizAttempt({
+          userId: ctx.user.id,
+          quizId: input.quizId,
+          score: input.score,
+          totalQuestions: input.totalQuestions,
+          percentage,
+          startedAt: new Date(),
+          completedAt: new Date(),
+        });
+
+        const userAnswersData = input.answers.map((answer) => ({
+          attemptId,
+          questionId: answer.questionId,
+          selectedAnswer: answer.selectedAnswer,
+          isCorrect: answer.isCorrect,
+        }));
+
+        await saveUserAnswers(userAnswersData);
+
+        return { attemptId, score: input.score, percentage };
+      }),
+
+    getAttemptResults: publicProcedure
+      .input(z.object({ attemptId: z.number() }))
+      .query(async ({ input }) => {
+        const { getAttemptWithAnswers } = await import("./db");
+        return getAttemptWithAnswers(input.attemptId);
+      }),
+
+    getAttemptHistory: protectedProcedure.query(async ({ ctx }) => {
+      const { getUserAttemptHistory } = await import("./db");
+      return getUserAttemptHistory(ctx.user.id);
+    }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;
