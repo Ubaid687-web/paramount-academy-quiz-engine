@@ -30,6 +30,10 @@ export const quizzes = mysqlTable("quizzes", {
   title: varchar("title", { length: 255 }).notNull(),
   description: text("description"),
   totalQuestions: int("totalQuestions").notNull(),
+  isAiGenerated: int("isAiGenerated").default(0).notNull(), // 0 or 1
+  createdBy: int("createdBy"), // userId for AI-generated quizzes
+  sourceContent: text("sourceContent"), // Original content used for generation
+  generationMetadata: text("generationMetadata"), // JSON: {difficulty, numQuestions, model, etc.}
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -78,3 +82,20 @@ export const userAnswers = mysqlTable("userAnswers", {
 
 export type UserAnswer = typeof userAnswers.$inferSelect;
 export type InsertUserAnswer = typeof userAnswers.$inferInsert;
+
+export const generationJobs = mysqlTable("generationJobs", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  status: mysqlEnum("status", ["pending", "processing", "completed", "failed"]).default("pending").notNull(),
+  contentText: text("contentText").notNull(),
+  numQuestions: int("numQuestions").notNull(),
+  difficulty: varchar("difficulty", { length: 50 }).default("balanced").notNull(), // balanced, easy, medium, hard
+  generatedQuizId: int("generatedQuizId"), // Reference to created quiz
+  errorMessage: text("errorMessage"),
+  progress: int("progress").default(0).notNull(), // 0-100
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  completedAt: timestamp("completedAt"),
+});
+
+export type GenerationJob = typeof generationJobs.$inferSelect;
+export type InsertGenerationJob = typeof generationJobs.$inferInsert;

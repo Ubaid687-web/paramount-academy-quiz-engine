@@ -90,6 +90,81 @@ export const appRouter = router({
       return getUserAttemptHistory(ctx.user.id);
     }),
   }),
+
+  aiAgent: router({
+    generateMCQs: protectedProcedure
+      .input(
+        z.object({
+          contentText: z.string().min(100, "Content must be at least 100 characters"),
+          numQuestions: z.number().min(5).max(50),
+          difficulty: z.enum(["balanced", "easy", "medium", "hard"]).default("balanced"),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const { generateMCQsFromContent } = await import("./aiAgent");
+        return generateMCQsFromContent(
+          ctx.user.id,
+          input.contentText,
+          input.numQuestions,
+          input.difficulty
+        );
+      }),
+
+    saveGeneratedQuiz: protectedProcedure
+      .input(
+        z.object({
+          jobId: z.number(),
+          quizTitle: z.string().min(1),
+          mcqs: z.array(z.object({
+            question: z.string(),
+            options: z.object({
+              A: z.string(),
+              B: z.string(),
+              C: z.string(),
+              D: z.string(),
+            }),
+            answer: z.string(),
+            explanation: z.string(),
+            difficulty: z.string(),
+          })),
+          sourceContent: z.string(),
+          difficulty: z.string(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const { getGenerationJob } = await import("./db");
+        const { saveGeneratedQuizToDatabase } = await import("./aiAgent");
+
+        const job = await getGenerationJob(input.jobId);
+        if (!job || job.userId !== ctx.user.id) {
+          throw new Error("Job not found or unauthorized");
+        }
+
+        const quiz = await saveGeneratedQuizToDatabase(
+          ctx.user.id,
+          input.jobId,
+          input.quizTitle,
+          input.mcqs,
+          input.sourceContent,
+          input.difficulty
+        );
+
+        return { success: true, quizId: quiz.id };
+      }),
+
+    getGenerationStatus: protectedProcedure
+      .input(z.object({ jobId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const { getGenerationJob } = await import("./db");
+        const job = await getGenerationJob(input.jobId);
+
+        if (!job || job.userId !== ctx.user.id) {
+          throw new Error("Job not found or unauthorized");
+        }
+
+        return job;
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

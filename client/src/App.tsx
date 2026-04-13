@@ -7,6 +7,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import QuizList from "./pages/QuizList";
 import QuizPractice from "./pages/QuizPractice";
 import QuizResults from "./pages/QuizResults";
+import AIAgent from "./pages/AIAgent";
 
 function Router() {
   return (
@@ -14,6 +15,7 @@ function Router() {
       <Route path={"/"} component={QuizList} />
       <Route path={"/quiz/:quizId"} component={QuizPractice} />
       <Route path={"/results/:attemptId"} component={QuizResults} />
+      <Route path={"/generate"} component={AIAgent} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

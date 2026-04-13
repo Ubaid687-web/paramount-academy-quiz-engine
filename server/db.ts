@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, InsertQuiz, InsertQuizAttempt, InsertUserAnswer, quizzes, questions, quizAttempts, userAnswers } from "../drizzle/schema";
+import { InsertUser, users, InsertQuiz, InsertQuizAttempt, InsertUserAnswer, quizzes, questions, quizAttempts, userAnswers, generationJobs, InsertGenerationJob, GenerationJob } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -168,4 +168,64 @@ export async function getUserAttemptHistory(userId: number) {
   if (!db) throw new Error("Database not available");
   
   return db.select().from(quizAttempts).where(eq(quizAttempts.userId, userId));
+}
+
+// AI Agent Functions
+
+export async function createGenerationJob(job: InsertGenerationJob): Promise<GenerationJob> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(generationJobs).values(job);
+  const inserted = await db.select().from(generationJobs).where(eq(generationJobs.id, result[0].insertId as number)).limit(1);
+  return inserted[0];
+}
+
+export async function getGenerationJob(jobId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.select().from(generationJobs).where(eq(generationJobs.id, jobId)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function updateGenerationJob(jobId: number, updates: Partial<GenerationJob>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(generationJobs).set(updates).where(eq(generationJobs.id, jobId));
+}
+
+export async function getUserGenerationJobs(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return db.select().from(generationJobs).where(eq(generationJobs.userId, userId));
+}
+
+export async function createAiGeneratedQuiz(quiz: InsertQuiz) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(quizzes).values(quiz);
+  const inserted = await db.select().from(quizzes).where(eq(quizzes.id, result[0].insertId as number)).limit(1);
+  return inserted[0];
+}
+
+export async function addQuestionsToQuiz(quizId: number, questionsList: any[]) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const questionsToInsert = questionsList.map((q, idx) => ({
+    quizId,
+    questionNumber: idx + 1,
+    questionText: q.question,
+    optionA: q.options.A,
+    optionB: q.options.B,
+    optionC: q.options.C,
+    optionD: q.options.D,
+    correctAnswer: q.answer,
+  }));
+  
+  return db.insert(questions).values(questionsToInsert);
 }

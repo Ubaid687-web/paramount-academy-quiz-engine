@@ -1,8 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { useLocation } from "wouter";
-import { BookOpen, Loader2, AlertCircle } from "lucide-react";
+import { useLocation, Link } from "wouter";
+import { BookOpen, Loader2, AlertCircle, Sparkles } from "lucide-react";
 
 export default function QuizList() {
   const [, navigate] = useLocation();
@@ -41,12 +41,20 @@ export default function QuizList() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="container py-6">
-          <div className="flex items-center gap-3 mb-2">
-            <BookOpen className="h-8 w-8 text-accent" />
-            <h1 className="text-3xl font-bold text-foreground">AI Quiz Master</h1>
+        <div className="container py-6 flex items-center justify-between">
+          <div className="flex-1">
+            <div className="flex items-center gap-3 mb-2">
+              <BookOpen className="h-8 w-8 text-accent" />
+              <h1 className="text-3xl font-bold text-foreground">AI Quiz Master</h1>
+            </div>
+            <p className="text-muted-foreground">Master AI fundamentals with comprehensive MCQ practice</p>
           </div>
-          <p className="text-muted-foreground">Master AI fundamentals with comprehensive MCQ practice</p>
+          <Link href="/generate" className="no-underline">
+            <Button className="bg-accent hover:bg-accent/90 text-accent-foreground whitespace-nowrap">
+              <Sparkles className="mr-2 h-4 w-4" />
+              Generate Quiz
+            </Button>
+          </Link>
         </div>
       </div>
 
