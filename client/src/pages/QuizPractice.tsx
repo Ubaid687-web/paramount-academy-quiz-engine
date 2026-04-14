@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
-import { Loader2, AlertCircle, CheckCircle2, XCircle } from "lucide-react";
+import { Loader2, AlertCircle, CheckCircle2, XCircle, ArrowLeft, ArrowRight, Shuffle } from "lucide-react";
+import { toast } from "sonner";
 
 interface Question {
   id: number;
@@ -44,14 +45,17 @@ export default function QuizPractice({ params }: { params: { quizId: string } })
   if (quizLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-accent" />
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-accent" />
+          <p className="text-muted-foreground">Loading quiz...</p>
+        </div>
       </div>
     );
   }
 
   if (!quiz) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="w-full max-w-md border-destructive/50">
           <CardHeader>
             <div className="flex items-center gap-2">
@@ -67,44 +71,58 @@ export default function QuizPractice({ params }: { params: { quizId: string } })
   if (!quizStarted) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="w-full max-w-2xl">
-          <CardHeader className="text-center">
-            <CardTitle className="text-3xl mb-2">{quiz.title}</CardTitle>
-            <p className="text-muted-foreground">{quiz.description}</p>
+        <Card className="w-full max-w-2xl card-premium">
+          <CardHeader className="text-center pb-8">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-accent/10 mx-auto mb-4">
+              <CheckCircle2 className="h-6 w-6 text-accent" />
+            </div>
+            <CardTitle className="text-4xl mb-3">{quiz.title}</CardTitle>
+            <p className="text-lg text-muted-foreground">{quiz.description}</p>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="bg-card/50 rounded-lg p-4 space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Total Questions</span>
-                <span className="font-semibold text-lg">{quiz.totalQuestions}</span>
+            <div className="grid grid-cols-2 gap-4 p-6 rounded-lg bg-card/50 border border-border/50">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Total Questions</p>
+                <p className="text-3xl font-bold text-accent">{quiz.totalQuestions}</p>
               </div>
-              <div className="flex items-center gap-3 p-3 bg-accent/10 rounded-md">
-                <input
-                  type="checkbox"
-                  id="shuffle"
-                  checked={shuffle}
-                  onChange={(e) => setShuffle(e.target.checked)}
-                  className="w-4 h-4 rounded border-border cursor-pointer"
-                />
-                <label htmlFor="shuffle" className="cursor-pointer flex-1">
-                  <span className="font-medium">Shuffle Questions</span>
-                  <p className="text-sm text-muted-foreground">Randomize question order for varied practice</p>
-                </label>
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Difficulty</p>
+                <p className="text-3xl font-bold text-secondary capitalize">Mixed</p>
               </div>
             </div>
-            <div className="flex gap-3">
+
+            <div className="flex items-center gap-4 p-4 rounded-lg bg-accent/10 border border-accent/20 hover:border-accent/40 transition-colors cursor-pointer group">
+              <input
+                type="checkbox"
+                id="shuffle"
+                checked={shuffle}
+                onChange={(e) => setShuffle(e.target.checked)}
+                className="w-5 h-5 rounded border-border cursor-pointer accent-accent"
+              />
+              <label htmlFor="shuffle" className="cursor-pointer flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <Shuffle className="h-4 w-4 text-accent" />
+                  <span className="font-semibold text-foreground">Shuffle Questions</span>
+                </div>
+                <p className="text-sm text-muted-foreground">Randomize question order for varied practice</p>
+              </label>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3">
               <Button
                 variant="outline"
                 onClick={() => navigate("/")}
-                className="flex-1"
+                className="flex-1 border-border/50 hover:bg-card hover:border-accent/30"
               >
-                Back
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Home
               </Button>
               <Button
                 onClick={() => setQuizStarted(true)}
-                className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground"
+                className="flex-1 bg-gradient-to-r from-accent to-secondary hover:shadow-lg hover:shadow-accent/20 text-accent-foreground font-semibold"
               >
                 Start Quiz
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
           </CardContent>
@@ -113,54 +131,64 @@ export default function QuizPractice({ params }: { params: { quizId: string } })
     );
   }
 
-  if (questionsLoading || !questions) {
+  if (questionsLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-accent" />
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-accent" />
+          <p className="text-muted-foreground">Loading questions...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!questions || questions.length === 0) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="w-full max-w-md border-destructive/50">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-destructive" />
+              <CardTitle>No Questions Found</CardTitle>
+            </div>
+          </CardHeader>
+        </Card>
       </div>
     );
   }
 
   const currentQuestion = questions[currentQuestionIndex];
   const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
-  const isLastQuestion = currentQuestionIndex === questions.length - 1;
+  const options = [
+    { key: "A", value: currentQuestion.optionA },
+    { key: "B", value: currentQuestion.optionB },
+    { key: "C", value: currentQuestion.optionC },
+    { key: "D", value: currentQuestion.optionD },
+  ];
 
-  const handleSelectAnswer = (option: string) => {
+  const handleSelectAnswer = (optionKey: string) => {
     if (answered) return;
-    setSelectedAnswer(option);
+    setSelectedAnswer(optionKey);
     setAnswered(true);
 
-    const isCorrect = option === currentQuestion.correctAnswer ? 1 : 0;
+    const isCorrect = optionKey === currentQuestion.correctAnswer ? 1 : 0;
     setUserAnswers([
       ...userAnswers,
       {
         questionId: currentQuestion.id,
-        selectedAnswer: option,
+        selectedAnswer: optionKey,
         isCorrect,
       },
     ]);
   };
 
   const handleNext = () => {
-    if (isLastQuestion) {
-      const score = userAnswers.filter((a) => a.isCorrect === 1).length;
-      submitAttempt.mutate(
-        {
-          quizId,
-          answers: userAnswers,
-          score,
-          totalQuestions: questions.length,
-        },
-        {
-          onSuccess: (result) => {
-            navigate(`/results/${result.attemptId}`);
-          },
-        }
-      );
-    } else {
+    if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
       setSelectedAnswer(null);
       setAnswered(false);
+    } else {
+      handleSubmitQuiz();
     }
   };
 
@@ -173,137 +201,171 @@ export default function QuizPractice({ params }: { params: { quizId: string } })
     }
   };
 
-  const optionLetters = ["A", "B", "C", "D"] as const;
-  const optionKeys = ["optionA", "optionB", "optionC", "optionD"] as const;
+  const handleSubmitQuiz = async () => {
+    try {
+      await submitAttempt.mutateAsync({
+        quizId,
+        answers: userAnswers,
+        score: userAnswers.filter((a) => a.isCorrect === 1).length,
+        totalQuestions: questions.length,
+      });
+      navigate(`/results/${quizId}`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to submit quiz");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
+      {/* Premium Header */}
+      <div className="border-b border-border/50 bg-gradient-to-b from-card/50 to-background backdrop-blur-sm sticky top-0 z-10">
         <div className="container py-4">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <h2 className="text-lg font-semibold text-foreground">{quiz.title}</h2>
-              <p className="text-sm text-muted-foreground">
-                Question {currentQuestionIndex + 1} of {questions.length}
-              </p>
+          <div className="flex items-center justify-between gap-4 mb-4">
+            <div className="flex items-center gap-3 flex-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate("/")}
+                className="hover:bg-accent/10"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <div>
+                <h1 className="font-bold text-foreground">{quiz.title}</h1>
+                <p className="text-sm text-muted-foreground">
+                  Question {currentQuestionIndex + 1} of {questions.length}
+                </p>
+              </div>
             </div>
             <div className="text-right">
               <p className="text-sm text-muted-foreground">Progress</p>
-              <p className="text-lg font-semibold text-accent">{Math.round(progress)}%</p>
+              <p className="text-lg font-bold text-accent">{Math.round(progress)}%</p>
             </div>
           </div>
           <Progress value={progress} className="h-2" />
         </div>
       </div>
 
-      <div className="container py-8">
-        <Card className="max-w-3xl mx-auto">
-          <CardHeader>
-            <CardTitle className="text-2xl">{currentQuestion.questionText}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-3">
-              {optionLetters.map((letter, index) => {
-                const optionKey = optionKeys[index];
-                const optionText = currentQuestion[optionKey];
-                const isSelected = selectedAnswer === letter;
-                const isCorrect = letter === currentQuestion.correctAnswer;
-                const showFeedback = answered && isSelected;
-                const showCorrectAnswer = answered && isCorrect && !isSelected;
+      {/* Main Content */}
+      <div className="container py-8 sm:py-12">
+        <div className="max-w-3xl mx-auto">
+          {/* Question Card */}
+          <Card className="card-premium mb-8 animate-in fade-in duration-300">
+            <CardHeader>
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-accent mb-2">Question {currentQuestionIndex + 1}</p>
+                  <CardTitle className="text-2xl leading-relaxed">{currentQuestion.questionText}</CardTitle>
+                </div>
+              </div>
+            </CardHeader>
+          </Card>
 
-                let bgColor = "bg-card hover:bg-card/80 border-border hover:border-accent/50";
-                let textColor = "text-foreground";
+          {/* Options */}
+          <div className="space-y-3 mb-8">
+            {options.map((option) => {
+              const isSelected = selectedAnswer === option.key;
+              const isCorrect = option.key === currentQuestion.correctAnswer;
+              const showCorrect = answered && isCorrect;
+              const showWrong = answered && isSelected && !isCorrect;
 
-                if (showFeedback) {
-                  if (isCorrect) {
-                    bgColor = "bg-green-500/10 border-green-500/50 hover:bg-green-500/10";
-                    textColor = "text-green-400";
-                  } else {
-                    bgColor = "bg-red-500/10 border-red-500/50 hover:bg-red-500/10";
-                    textColor = "text-red-400";
-                  }
-                } else if (showCorrectAnswer) {
-                  bgColor = "bg-green-500/10 border-green-500/50 hover:bg-green-500/10";
-                  textColor = "text-green-400";
-                }
-
-                return (
-                  <button
-                    key={letter}
-                    onClick={() => handleSelectAnswer(letter)}
-                    disabled={answered}
-                    className={`w-full p-4 rounded-lg border-2 transition-all duration-200 text-left flex items-start gap-4 ${bgColor} ${
-                      answered ? "cursor-default" : "cursor-pointer"
-                    }`}
-                  >
+              return (
+                <button
+                  key={option.key}
+                  onClick={() => handleSelectAnswer(option.key)}
+                  disabled={answered}
+                  className={`w-full p-4 rounded-lg border-2 transition-all duration-300 text-left font-medium group ${
+                    showCorrect
+                      ? "bg-green-500/20 border-green-500/50 text-green-400"
+                      : showWrong
+                      ? "bg-red-500/20 border-red-500/50 text-red-400"
+                      : isSelected && !answered
+                      ? "bg-accent/20 border-accent/50 text-accent"
+                      : "bg-card/50 border-border/50 text-foreground hover:border-accent/30 hover:bg-card/70"
+                  } ${answered ? "cursor-not-allowed" : "cursor-pointer"}`}
+                >
+                  <div className="flex items-center gap-3">
                     <div
-                      className={`flex-shrink-0 w-8 h-8 rounded-full border-2 flex items-center justify-center font-semibold ${
-                        showFeedback || showCorrectAnswer
-                          ? isCorrect
-                            ? "border-green-500/50 bg-green-500/20 text-green-400"
-                            : "border-red-500/50 bg-red-500/20 text-red-400"
-                          : "border-border"
+                      className={`flex items-center justify-center w-8 h-8 rounded-full font-bold flex-shrink-0 ${
+                        showCorrect
+                          ? "bg-green-500/30 text-green-400"
+                          : showWrong
+                          ? "bg-red-500/30 text-red-400"
+                          : isSelected && !answered
+                          ? "bg-accent/30 text-accent"
+                          : "bg-muted/50 text-muted-foreground group-hover:bg-accent/20 group-hover:text-accent"
                       }`}
                     >
-                      {letter}
+                      {option.key}
                     </div>
-                    <div className="flex-1">
-                      <p className={`font-medium ${textColor}`}>{optionText}</p>
-                    </div>
-                    {showFeedback && isCorrect && <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />}
-                    {showFeedback && !isCorrect && <XCircle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />}
-                    {showCorrectAnswer && <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />}
-                  </button>
-                );
-              })}
-            </div>
+                    <span className="flex-1">{option.value}</span>
+                    {showCorrect && <CheckCircle2 className="h-5 w-5 text-green-400 flex-shrink-0" />}
+                    {showWrong && <XCircle className="h-5 w-5 text-red-400 flex-shrink-0" />}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
 
-            {answered && (
-              <div
-                className={`p-4 rounded-lg ${
-                  selectedAnswer === currentQuestion.correctAnswer
-                    ? "bg-green-500/10 border border-green-500/50 text-green-400"
-                    : "bg-red-500/10 border border-red-500/50 text-red-400"
-                }`}
-              >
-                {selectedAnswer === currentQuestion.correctAnswer ? (
-                  <p className="font-medium">✓ Correct! Well done.</p>
-                ) : (
-                  <p className="font-medium">
-                    ✗ Incorrect. The correct answer is <strong>{currentQuestion.correctAnswer}</strong>.
-                  </p>
-                )}
-              </div>
-            )}
+          {/* Feedback */}
+          {answered && (
+            <Card className={`mb-8 ${selectedAnswer === currentQuestion.correctAnswer ? "bg-green-500/10 border-green-500/30" : "bg-red-500/10 border-red-500/30"}`}>
+              <CardContent className="pt-6">
+                <div className="flex items-start gap-3">
+                  {selectedAnswer === currentQuestion.correctAnswer ? (
+                    <>
+                      <CheckCircle2 className="h-6 w-6 text-green-400 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-semibold text-green-400">Correct!</p>
+                        <p className="text-sm text-muted-foreground mt-1">Well done! You selected the right answer.</p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <XCircle className="h-6 w-6 text-red-400 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-semibold text-red-400">Incorrect</p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          The correct answer is <span className="font-semibold text-foreground">{currentQuestion.correctAnswer}</span>
+                        </p>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-            <div className="flex gap-3 pt-4">
-              <Button
-                variant="outline"
-                onClick={handlePrevious}
-                disabled={currentQuestionIndex === 0}
-                className="flex-1"
-              >
-                Previous
-              </Button>
-              <Button
-                onClick={handleNext}
-                disabled={!answered || submitAttempt.isPending}
-                className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground"
-              >
-                {submitAttempt.isPending ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Submitting...
-                  </>
-                ) : isLastQuestion ? (
-                  "Finish Quiz"
-                ) : (
-                  "Next"
-                )}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+          {/* Navigation Buttons */}
+          <div className="flex gap-3">
+            <Button
+              onClick={handlePrevious}
+              disabled={currentQuestionIndex === 0 || !answered}
+              variant="outline"
+              className="flex-1 border-border/50 hover:bg-card hover:border-accent/30"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Previous
+            </Button>
+            <Button
+              onClick={handleNext}
+              disabled={!answered}
+              className="flex-1 bg-gradient-to-r from-accent to-secondary hover:shadow-lg hover:shadow-accent/20 text-accent-foreground font-semibold"
+            >
+              {currentQuestionIndex === questions.length - 1 ? (
+                <>
+                  Submit Quiz
+                  <CheckCircle2 className="ml-2 h-4 w-4" />
+                </>
+              ) : (
+                <>
+                  Next Question
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );

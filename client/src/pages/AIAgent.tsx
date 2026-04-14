@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
-import { Loader2, Sparkles, CheckCircle2, AlertCircle } from "lucide-react";
+import { Loader2, Sparkles, CheckCircle2, AlertCircle, ArrowLeft, Zap } from "lucide-react";
 import { toast } from "sonner";
 
 export default function AIAgent() {
@@ -27,6 +27,15 @@ export default function AIAgent() {
     { jobId: jobId || 0 },
     { enabled: !!jobId && isGenerating, refetchInterval: 1000 }
   );
+
+  // Fix React #301: Move state updates to useEffect
+  useEffect(() => {
+    if (!statusQuery.data) return;
+    setGenerationProgress(statusQuery.data.progress);
+    if (statusQuery.data.status === "completed" || statusQuery.data.status === "failed") {
+      setIsGenerating(false);
+    }
+  }, [statusQuery.data?.progress, statusQuery.data?.status]);
 
   const handleGenerate = async () => {
     if (!contentText.trim()) {
@@ -89,38 +98,46 @@ export default function AIAgent() {
     }
   };
 
-  // Update progress from status query
-  if (statusQuery.data) {
-    setGenerationProgress(statusQuery.data.progress);
-    if (statusQuery.data.status === "completed") {
-      setIsGenerating(false);
-    }
-  }
-
   return (
     <div className="min-h-screen bg-background">
-      <div className="border-b border-border bg-card/50 backdrop-blur-sm">
-        <div className="container py-6">
-          <div className="flex items-center gap-2 mb-2">
-            <Sparkles className="h-6 w-6 text-accent" />
-            <h1 className="text-3xl font-bold text-foreground">AI Question Generator</h1>
+      {/* Premium Header */}
+      <div className="border-b border-border/50 bg-gradient-to-b from-card/50 to-background backdrop-blur-sm sticky top-0 z-10">
+        <div className="container py-6 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/")}
+              className="hover:bg-accent/10"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div>
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-6 w-6 text-accent" />
+                <h1 className="text-2xl sm:text-3xl font-bold">AI Question Generator</h1>
+              </div>
+              <p className="text-sm text-muted-foreground">Transform content into high-quality MCQs</p>
+            </div>
           </div>
-          <p className="text-muted-foreground">Transform your content into high-quality MCQs</p>
         </div>
       </div>
 
-      <div className="container py-8">
-        <div className="max-w-4xl mx-auto space-y-6">
+      <div className="container py-8 sm:py-12">
+        <div className="max-w-4xl mx-auto">
           {/* Input Section */}
           {generatedMcqs.length === 0 ? (
-            <Card>
+            <Card className="card-premium">
               <CardHeader>
-                <CardTitle>Generate Questions from Content</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Zap className="h-5 w-5 text-accent" />
+                  Generate Questions from Content
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Quiz Title */}
                 <div>
-                  <Label htmlFor="quiz-title" className="text-foreground font-medium">
+                  <Label htmlFor="quiz-title" className="text-foreground font-semibold mb-2 block">
                     Quiz Title
                   </Label>
                   <Input
@@ -128,17 +145,17 @@ export default function AIAgent() {
                     placeholder="e.g., Advanced Biology Chapter 5"
                     value={quizTitle}
                     onChange={(e) => setQuizTitle(e.target.value)}
-                    className="mt-2"
                     disabled={isGenerating}
+                    className="input-premium"
                   />
                 </div>
 
                 {/* Content Input */}
                 <div>
-                  <Label htmlFor="content" className="text-foreground font-medium">
+                  <Label htmlFor="content" className="text-foreground font-semibold mb-2 block">
                     Content
                   </Label>
-                  <p className="text-sm text-muted-foreground mt-1 mb-2">
+                  <p className="text-sm text-muted-foreground mb-3">
                     Paste lecture notes, textbook excerpts, or any academic content (minimum 100 characters)
                   </p>
                   <Textarea
@@ -146,18 +163,18 @@ export default function AIAgent() {
                     placeholder="Paste your content here..."
                     value={contentText}
                     onChange={(e) => setContentText(e.target.value)}
-                    className="min-h-40 font-mono text-sm"
+                    className="input-premium font-mono text-sm min-h-40"
                     disabled={isGenerating}
                   />
                   <p className="text-xs text-muted-foreground mt-2">
-                    {contentText.length} characters
+                    {contentText.length} / 100+ characters
                   </p>
                 </div>
 
                 {/* Settings */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="num-questions" className="text-foreground font-medium">
+                    <Label htmlFor="num-questions" className="text-foreground font-semibold mb-2 block">
                       Number of Questions
                     </Label>
                     <Input
@@ -167,24 +184,24 @@ export default function AIAgent() {
                       max={50}
                       value={numQuestions}
                       onChange={(e) => setNumQuestions(parseInt(e.target.value))}
-                      className="mt-2"
                       disabled={isGenerating}
+                      className="input-premium"
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="difficulty" className="text-foreground font-medium">
+                    <Label htmlFor="difficulty" className="text-foreground font-semibold mb-2 block">
                       Difficulty Level
                     </Label>
                     <Select value={difficulty} onValueChange={(v: any) => setDifficulty(v)} disabled={isGenerating}>
-                      <SelectTrigger id="difficulty" className="mt-2">
+                      <SelectTrigger id="difficulty" className="input-premium">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="balanced">Balanced (30% Easy, 40% Medium, 30% Hard)</SelectItem>
-                        <SelectItem value="easy">Easy (70% Easy, 20% Medium, 10% Hard)</SelectItem>
-                        <SelectItem value="medium">Medium (20% Easy, 60% Medium, 20% Hard)</SelectItem>
-                        <SelectItem value="hard">Hard (10% Easy, 20% Medium, 70% Hard)</SelectItem>
+                        <SelectItem value="balanced">Balanced (30/40/30)</SelectItem>
+                        <SelectItem value="easy">Easy (70/20/10)</SelectItem>
+                        <SelectItem value="medium">Medium (20/60/20)</SelectItem>
+                        <SelectItem value="hard">Hard (10/20/70)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -194,13 +211,13 @@ export default function AIAgent() {
                 <Button
                   onClick={handleGenerate}
                   disabled={isGenerating || !contentText.trim() || !quizTitle.trim()}
-                  className="w-full bg-accent hover:bg-accent/90 text-accent-foreground"
+                  className="w-full bg-gradient-to-r from-accent to-secondary hover:shadow-lg hover:shadow-accent/20 text-accent-foreground font-semibold py-3 rounded-lg"
                   size="lg"
                 >
                   {isGenerating ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Generating Questions... ({generationProgress}%)
+                      Generating... {generationProgress}%
                     </>
                   ) : (
                     <>
@@ -215,11 +232,11 @@ export default function AIAgent() {
 
           {/* Results Section */}
           {generatedMcqs.length > 0 && (
-            <div className="space-y-4">
-              <Card className="bg-green-500/10 border-green-500/30">
+            <div className="space-y-6 animate-in fade-in duration-500">
+              <Card className="bg-green-500/10 border-green-500/30 card-premium">
                 <CardContent className="pt-6">
                   <div className="flex items-center gap-3">
-                    <CheckCircle2 className="h-6 w-6 text-green-400" />
+                    <CheckCircle2 className="h-6 w-6 text-green-400 flex-shrink-0" />
                     <div>
                       <p className="font-semibold text-foreground">Generation Complete!</p>
                       <p className="text-sm text-muted-foreground">
@@ -231,35 +248,38 @@ export default function AIAgent() {
               </Card>
 
               {/* Preview Questions */}
-              <Card>
+              <Card className="card-premium">
                 <CardHeader>
                   <CardTitle>Question Preview</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {generatedMcqs.slice(0, 3).map((mcq, idx) => (
-                    <div key={idx} className="p-4 rounded-lg bg-card border border-border">
-                      <p className="font-medium text-foreground mb-3">{idx + 1}. {mcq.question}</p>
+                    <div key={idx} className="p-4 rounded-lg bg-card/50 border border-border/50 hover:border-accent/30 transition-colors">
+                      <p className="font-semibold text-foreground mb-3">{idx + 1}. {mcq.question}</p>
                       <div className="space-y-2 text-sm">
                         {Object.entries(mcq.options).map(([key, value]) => (
                           <div
                             key={key}
-                            className={`p-2 rounded ${
+                            className={`p-3 rounded transition-colors ${
                               key === mcq.answer
                                 ? "bg-green-500/20 border border-green-500/50 text-green-400"
-                                : "bg-muted text-muted-foreground"
+                                : "bg-muted/50 text-muted-foreground hover:bg-muted"
                             }`}
                           >
                             <span className="font-semibold">{key}.</span> {String(value)}
                           </div>
                         ))}
                       </div>
-                      <p className="text-xs text-muted-foreground mt-3 italic">
-                        Difficulty: <span className="capitalize font-semibold">{mcq.difficulty}</span>
-                      </p>
+                      <div className="mt-3 flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">Difficulty:</span>
+                        <span className="px-2 py-1 bg-accent/10 text-accent rounded font-semibold capitalize">
+                          {mcq.difficulty}
+                        </span>
+                      </div>
                     </div>
                   ))}
                   {generatedMcqs.length > 3 && (
-                    <p className="text-sm text-muted-foreground text-center py-2">
+                    <p className="text-sm text-muted-foreground text-center py-3 border-t border-border/50">
                       ... and {generatedMcqs.length - 3} more questions
                     </p>
                   )}
@@ -267,7 +287,7 @@ export default function AIAgent() {
               </Card>
 
               {/* Action Buttons */}
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <Button
                   variant="outline"
                   onClick={() => {
@@ -276,14 +296,14 @@ export default function AIAgent() {
                     setContentText("");
                     setQuizTitle("");
                   }}
-                  className="flex-1"
+                  className="flex-1 border-border/50 hover:bg-card"
                 >
                   Generate New Quiz
                 </Button>
                 <Button
                   onClick={handleSaveQuiz}
                   disabled={saveMutation.isPending}
-                  className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground"
+                  className="flex-1 bg-gradient-to-r from-accent to-secondary hover:shadow-lg hover:shadow-accent/20 text-accent-foreground font-semibold"
                 >
                   {saveMutation.isPending ? (
                     <>
@@ -291,7 +311,10 @@ export default function AIAgent() {
                       Saving...
                     </>
                   ) : (
-                    "Save Quiz & Practice"
+                    <>
+                      <CheckCircle2 className="mr-2 h-4 w-4" />
+                      Save Quiz & Practice
+                    </>
                   )}
                 </Button>
               </div>
