@@ -4,11 +4,11 @@ import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
 import { Loader2, AlertCircle, CheckCircle2, XCircle, Home, RotateCcw, Award, TrendingUp } from "lucide-react";
 
-export default function QuizResults({ params }: { params: { quizId: string } }) {
+export default function QuizResults({ params }: { params: { attemptId: string } }) {
   const [, navigate] = useLocation();
-  const quizId = parseInt(params.quizId);
+  const attemptId = parseInt(params.attemptId);
 
-  const { data: results, isLoading } = trpc.quiz.getAttemptResults.useQuery({ attemptId: quizId });
+  const { data: results, isLoading } = trpc.quiz.getAttemptResults.useQuery({ attemptId });
 
   if (isLoading) {
     return (
@@ -198,7 +198,7 @@ export default function QuizResults({ params }: { params: { quizId: string } }) 
               Back to Home
             </Button>
             <Button
-              onClick={() => navigate(`/quiz/${quizId}`)}
+              onClick={() => navigate(`/quiz/${results.attempt.quizId}`)}
               className="flex-1 bg-gradient-to-r from-accent to-secondary hover:shadow-lg hover:shadow-accent/20 text-accent-foreground font-semibold"
             >
               <RotateCcw className="mr-2 h-4 w-4" />

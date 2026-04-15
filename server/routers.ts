@@ -89,6 +89,13 @@ export const appRouter = router({
       const { getUserAttemptHistory } = await import("./db");
       return getUserAttemptHistory(ctx.user.id);
     }),
+
+    deleteQuiz: protectedProcedure
+      .input(z.object({ quizId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const { deleteQuizAndRelated } = await import("./db");
+        return deleteQuizAndRelated(input.quizId, ctx.user.id);
+      }),
   }),
 
   aiAgent: router({

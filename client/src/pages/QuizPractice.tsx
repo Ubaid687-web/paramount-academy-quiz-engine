@@ -203,13 +203,13 @@ export default function QuizPractice({ params }: { params: { quizId: string } })
 
   const handleSubmitQuiz = async () => {
     try {
-      await submitAttempt.mutateAsync({
+      const result = await submitAttempt.mutateAsync({
         quizId,
         answers: userAnswers,
         score: userAnswers.filter((a) => a.isCorrect === 1).length,
         totalQuestions: questions.length,
       });
-      navigate(`/results/${quizId}`);
+      navigate(`/results/${result.attemptId}`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to submit quiz");
     }

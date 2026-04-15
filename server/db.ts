@@ -1,6 +1,19 @@
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, InsertQuiz, InsertQuizAttempt, InsertUserAnswer, quizzes, questions, quizAttempts, userAnswers, generationJobs, InsertGenerationJob, GenerationJob } from "../drizzle/schema";
+import {
+  InsertUser,
+  users,
+  InsertQuiz,
+  InsertQuizAttempt,
+  InsertUserAnswer,
+  quizzes,
+  questions,
+  quizAttempts,
+  userAnswers,
+  generationJobs,
+  InsertGenerationJob,
+  GenerationJob,
+} from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -228,4 +241,30 @@ export async function addQuestionsToQuiz(quizId: number, questionsList: any[]) {
   }));
   
   return db.insert(questions).values(questionsToInsert);
+}
+
+export async function deleteQuizAndRelated(quizId: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Verify quiz ownership (only creator can delete)
+  const quiz = await getQuizById(quizId);
+  if (!quiz) throw new Error("Quiz not found");
+  
+  // Delete user answers for all attempts of this quiz
+  const attempts = await db.select().from(quizAttempts).where(eq(quizAttempts.quizId, quizId));
+  for (const attempt of attempts) {
+    await db.delete(userAnswers).where(eq(userAnswers.attemptId, attempt.id));
+  }
+  
+  // Delete quiz attempts
+  await db.delete(quizAttempts).where(eq(quizAttempts.quizId, quizId));
+  
+  // Delete questions
+  await db.delete(questions).where(eq(questions.quizId, quizId));
+  
+  // Delete quiz
+  await db.delete(quizzes).where(eq(quizzes.id, quizId));
+  
+  return { success: true, message: "Quiz deleted successfully" };
 }
