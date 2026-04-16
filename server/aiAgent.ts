@@ -3,27 +3,52 @@ import { invokeLLM } from "./_core/llm";
 import { createGenerationJob, updateGenerationJob, createAiGeneratedQuiz, addQuestionsToQuiz } from "./db";
 import type { InsertGenerationJob } from "../drizzle/schema";
 
-const MCQ_GENERATION_PROMPT = `You are an advanced academic assessment designer. Generate high-quality multiple-choice questions based on the provided content.
+const MCQ_GENERATION_PROMPT = `You are an advanced academic assessment designer and subject-matter expert. Your task is to generate high-quality multiple-choice questions that test deep understanding and conceptual mastery, NOT surface-level recall.
 
-CRITICAL GUIDELINES:
-1. Create CONCEPTUAL questions that test understanding, not memory
-2. Avoid "According to the passage..." style questions
-3. Make questions analytical, application-based, and scenario-based where possible
-4. Use realistic distractors based on common misconceptions
-5. Ensure each question requires genuine thinking to answer
+=== CRITICAL PRINCIPLES ===
 
-DIFFICULTY DISTRIBUTION:
-- 30% Easy (basic understanding)
-- 40% Medium (conceptual + application)
-- 30% Hard (analytical, tricky, multi-step reasoning)
+1. AVOID REFERENCE-BASED QUESTIONS:
+   - Do NOT ask: "According to the passage...", "The text states...", "Which of the following is mentioned..."
+   - Instead: Test understanding of concepts, principles, and applications
+   - Use content as context for understanding, not as direct answer source
 
-For each question, provide:
-- Clear, professional wording
-- 4 plausible options (A, B, C, D)
-- Correct answer
-- Brief explanation of why it's correct
+2. FOCUS ON CONCEPTUAL UNDERSTANDING:
+   - Ask WHY things work, not WHAT they are
+   - Test application of concepts to new situations
+   - Require synthesis and analysis, not recall
+   - Create questions that reveal true understanding
 
-Return ONLY valid JSON in this exact format:
+3. CREATE SCENARIO-BASED QUESTIONS:
+   - Present realistic situations where concepts apply
+   - Ask students to identify correct application or prediction
+   - Include multi-step reasoning where appropriate
+   - Make distractors represent common misconceptions
+
+4. REALISTIC DISTRACTORS:
+   - Each wrong option must be plausible to someone with partial understanding
+   - Represent common mistakes or misconceptions
+   - Avoid obviously wrong answers
+   - Use similar terminology to create confusion only for those who lack understanding
+
+5. ENSURE GENUINE THINKING:
+   - Every question must require understanding to answer correctly
+   - Cannot be answered by guessing or pattern matching
+   - Requires application of knowledge, not memorization
+
+=== DIFFICULTY DISTRIBUTION ===
+- 30% Easy: Basic understanding, straightforward application
+- 40% Medium: Conceptual understanding, application to similar contexts
+- 30% Hard: Analytical thinking, application to novel situations, multi-step reasoning
+
+=== QUESTION TYPES TO INCLUDE ===
+1. Concept application: "If X happens, what would be the result?"
+2. Scenario-based: "In this situation, which principle applies?"
+3. Comparative: "How do X and Y differ in their effects?"
+4. Problem-solving: "To achieve Y, which approach would be best?"
+5. Analysis: "What is the underlying reason for X?"
+
+=== OUTPUT FORMAT ===
+Return ONLY valid JSON:
 {
   "mcqs": [
     {
@@ -86,16 +111,19 @@ export async function generateMCQsFromContent(
 
     const systemPrompt = MCQ_GENERATION_PROMPT + difficultyInstruction;
 
-    const userPrompt = `Generate exactly ${numQuestions} high-quality MCQs based on this content:
+    const userPrompt = `Generate exactly ${numQuestions} high-quality MCQs based on this content. Analyze the ENTIRE content thoroughly to extract key concepts and principles.
 
+CONTENT:
 ${contentText}
 
-Remember:
-- Each question must require thinking and understanding
-- Use realistic, plausible distractors
-- Cover different parts of the content
-- No repeated concepts
-- Professional, exam-ready language`;
+REQUIREMENTS:
+- Each question must require genuine understanding and thinking
+- Use realistic, plausible distractors based on common misconceptions
+- Cover different parts and aspects of the content
+- No repeated concepts or similar questions
+- Professional, exam-ready language
+- Focus on conceptual understanding, NOT direct recall
+- Include scenario-based and application questions where appropriate`;
 
     // Call LLM to generate MCQs
     await updateGenerationJob(job.id, { progress: 40 });
