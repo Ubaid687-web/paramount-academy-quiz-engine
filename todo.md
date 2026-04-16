@@ -48,8 +48,8 @@
 
 ## Phase 6: Deployment & Delivery
 - [x] Final review
-- [ ] Create checkpoint
-- [ ] Prepare for delivery
+- [x] Create checkpoint
+- [x] Prepare for delivery
 
 ## Summary of Enhancements
 - Document upload with drag-and-drop support (PDF, DOCX, TXT)

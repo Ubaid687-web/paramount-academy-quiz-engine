@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
-import { Loader2, Sparkles, CheckCircle2, AlertCircle, ArrowLeft, Zap, Upload, FileText, X } from "lucide-react";
+import { Loader2, Sparkles, CheckCircle2, AlertCircle, ArrowLeft, Upload, FileText, X } from "lucide-react";
 import { toast } from "sonner";
 
 export default function AIAgent() {
@@ -21,7 +21,6 @@ export default function AIAgent() {
   const [generatedMcqs, setGeneratedMcqs] = useState<any[]>([]);
   const [jobId, setJobId] = useState<number | null>(null);
   const [generationProgress, setGenerationProgress] = useState(0);
-  const [isProcessingFile, setIsProcessingFile] = useState(false);
 
   const generateMutation = trpc.aiAgent.generateMCQs.useMutation();
   const saveMutation = trpc.aiAgent.saveGeneratedQuiz.useMutation();
@@ -38,7 +37,7 @@ export default function AIAgent() {
     }
   }, [statusQuery.data?.progress, statusQuery.data?.status]);
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -48,30 +47,37 @@ export default function AIAgent() {
       return;
     }
 
-    const allowedTypes = ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "text/plain"];
+    const allowedTypes = ["text/plain"];
     if (!allowedTypes.includes(file.type)) {
-      toast.error("Please upload a PDF, DOCX, or TXT file");
+      toast.error("Currently supporting TXT files. For PDF/DOCX, please copy and paste the text content.");
       return;
     }
 
     setUploadedFile(file);
-    setIsProcessingFile(true);
 
-    try {
-      const reader = new FileReader();
-      reader.onload = (event) => {
+    // Read file asynchronously without blocking UI
+    const reader = new FileReader();
+    
+    reader.onload = (event) => {
+      try {
         const content = event.target?.result as string;
-        setContentText(content);
-        setQuizTitle(file.name.replace(/\.[^/.]+$/, ""));
-        toast.success("Document uploaded and processed successfully!");
-      };
-      reader.readAsText(file);
-    } catch (error) {
-      toast.error("Failed to process document");
+        if (content) {
+          setContentText(content);
+          setQuizTitle(file.name.replace(/\.[^/.]+$/, ""));
+          toast.success("Document loaded successfully!");
+        }
+      } catch (error) {
+        toast.error("Failed to read file");
+        setUploadedFile(null);
+      }
+    };
+
+    reader.onerror = () => {
+      toast.error("Failed to read file");
       setUploadedFile(null);
-    } finally {
-      setIsProcessingFile(false);
-    }
+    };
+
+    reader.readAsText(file);
   };
 
   const handleGenerate = async () => {
@@ -145,7 +151,7 @@ export default function AIAgent() {
               <h1 className="text-3xl font-bold bg-gradient-to-r from-accent to-secondary bg-clip-text text-transparent">
                 Generate Quiz
               </h1>
-              <p className="text-muted-foreground mt-1">Create MCQs from your content or documents</p>
+              <p className="text-muted-foreground mt-1">Create MCQs from your content</p>
             </div>
           </div>
         </div>
@@ -158,9 +164,9 @@ export default function AIAgent() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Upload className="h-5 w-5 text-accent" />
-                  Upload Document
+                  Upload or Paste Content
                 </CardTitle>
-                <CardDescription>Upload PDF, DOCX, or TXT files (max 10MB)</CardDescription>
+                <CardDescription>Upload TXT files or paste your content directly</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -169,15 +175,14 @@ export default function AIAgent() {
                       type="file"
                       id="file-upload"
                       className="hidden"
-                      accept=".pdf,.docx,.txt"
+                      accept=".txt"
                       onChange={handleFileUpload}
-                      disabled={isProcessingFile}
                     />
                     <label htmlFor="file-upload" className="cursor-pointer block">
                       <div className="flex flex-col items-center gap-2">
                         <FileText className="h-8 w-8 text-muted-foreground" />
                         <div>
-                          <p className="font-semibold text-foreground">Drag and drop your document</p>
+                          <p className="font-semibold text-foreground">Upload a TXT file</p>
                           <p className="text-sm text-muted-foreground">or click to browse</p>
                         </div>
                       </div>
@@ -194,7 +199,10 @@ export default function AIAgent() {
                         </div>
                       </div>
                       <Button
-                        onClick={() => setUploadedFile(null)}
+                        onClick={() => {
+                          setUploadedFile(null);
+                          setContentText("");
+                        }}
                         variant="ghost"
                         size="icon"
                         className="h-6 w-6"
@@ -211,16 +219,16 @@ export default function AIAgent() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Sparkles className="h-5 w-5 text-accent" />
-                  Or Paste Content
+                  Content
                 </CardTitle>
-                <CardDescription>Paste lecture notes, textbooks, or any academic content</CardDescription>
+                <CardDescription>Enter or paste your academic content here</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label htmlFor="content">Content</Label>
+                  <Label htmlFor="content">Content (minimum 100 characters)</Label>
                   <Textarea
                     id="content"
-                    placeholder="Paste your content here... (minimum 100 characters)"
+                    placeholder="Paste your lecture notes, textbook content, or any academic material here..."
                     value={contentText}
                     onChange={(e) => setContentText(e.target.value)}
                     className="min-h-48 resize-none"
@@ -273,7 +281,7 @@ export default function AIAgent() {
                   <Label htmlFor="title">Quiz Title</Label>
                   <Input
                     id="title"
-                    placeholder="e.g., Machine Learning Basics"
+                    placeholder="e.g., Biology Basics"
                     value={quizTitle}
                     onChange={(e) => setQuizTitle(e.target.value)}
                     className="mt-2"
@@ -297,13 +305,13 @@ export default function AIAgent() {
                 </div>
 
                 <div>
-                  <Label htmlFor="difficulty">Difficulty Distribution</Label>
+                  <Label htmlFor="difficulty">Difficulty</Label>
                   <Select value={difficulty} onValueChange={(v: any) => setDifficulty(v)}>
                     <SelectTrigger id="difficulty" className="mt-2">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="balanced">Balanced (30% Easy, 40% Medium, 30% Hard)</SelectItem>
+                      <SelectItem value="balanced">Balanced (30-40-30)</SelectItem>
                       <SelectItem value="easy">Easy Focus</SelectItem>
                       <SelectItem value="medium">Medium Focus</SelectItem>
                       <SelectItem value="hard">Hard Focus</SelectItem>
