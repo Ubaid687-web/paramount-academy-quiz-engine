@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { invokeLLM } from "./_core/llm";
 import { createGenerationJob, updateGenerationJob, createAiGeneratedQuiz, addQuestionsToQuiz } from "./db";
+import { analyzeContent, chunkContent } from "./contentAnalyzer";
 import type { InsertGenerationJob } from "../drizzle/schema";
 
 const MCQ_GENERATION_PROMPT = `You are an advanced academic assessment designer and subject-matter expert. Your task is to generate high-quality multiple-choice questions that test deep understanding and conceptual mastery, NOT surface-level recall.
@@ -82,14 +83,18 @@ interface GeneratedMCQ {
 export async function generateMCQsFromContent(
   userId: number,
   contentText: string,
-  numQuestions: number = 10,
+  numQuestions?: number,
   difficulty: "balanced" | "easy" | "medium" | "hard" = "balanced"
-): Promise<{ jobId: number; mcqs: GeneratedMCQ[] }> {
+): Promise<{ jobId: number; mcqs: GeneratedMCQ[]; analysis: any }> {
+  // Analyze content to determine optimal MCQ count
+  const analysis = analyzeContent(contentText);
+  const finalNumQuestions = numQuestions || analysis.recommendedQuestions.optimal;
+
   // Create a generation job record
   const job = await createGenerationJob({
     userId,
     contentText,
-    numQuestions,
+    numQuestions: finalNumQuestions,
     difficulty,
     status: "processing",
     progress: 10,
@@ -111,7 +116,13 @@ export async function generateMCQsFromContent(
 
     const systemPrompt = MCQ_GENERATION_PROMPT + difficultyInstruction;
 
-    const userPrompt = `Generate exactly ${numQuestions} high-quality MCQs based on this content. Analyze the ENTIRE content thoroughly to extract key concepts and principles.
+    const userPrompt = `Generate exactly ${finalNumQuestions} high-quality MCQs based on this content. Analyze the ENTIRE content thoroughly to extract key concepts and principles.
+
+CONTENT ANALYSIS:
+- Total Words: ${analysis.totalWords}
+- Complexity: ${analysis.complexity}
+- Key Topics: ${analysis.keyTopics.join(", ")}
+- Estimated Reading Time: ${analysis.estimatedReadingTime} minutes
 
 CONTENT:
 ${contentText}
@@ -120,18 +131,27 @@ REQUIREMENTS:
 - Each question must require genuine understanding and thinking
 - Use realistic, plausible distractors based on common misconceptions
 - Cover different parts and aspects of the content
+- Ensure comprehensive coverage of all key topics and sections
 - No repeated concepts or similar questions
 - Professional, exam-ready language
 - Focus on conceptual understanding, NOT direct recall
-- Include scenario-based and application questions where appropriate`;
+- Include scenario-based and application questions where appropriate
+- Generate questions that span the entire content, not just the beginning`;
 
     // Call LLM to generate MCQs
+    // Chunk content for better analysis
+    const chunks = chunkContent(contentText, Math.min(5, Math.ceil(finalNumQuestions / 10)));
+    
     await updateGenerationJob(job.id, { progress: 40 });
+
+    // Add chunk information to prompt for better coverage
+    const chunkInfo = chunks.map((chunk, i) => `[Section ${i + 1}]: ${chunk.substring(0, 500)}...`).join("\n\n");
+    const enhancedPrompt = userPrompt + `\n\nCONTENT SECTIONS FOR COVERAGE:\n${chunkInfo}`;
 
     const response = await invokeLLM({
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
+        { role: "user", content: enhancedPrompt },
       ],
       response_format: {
         type: "json_schema",
@@ -188,13 +208,20 @@ REQUIREMENTS:
     }
 
     // Ensure we have the right number of questions
-    const finalMcqs = mcqs.slice(0, numQuestions);
+    const finalMcqs = mcqs.slice(0, finalNumQuestions);
 
     await updateGenerationJob(job.id, { progress: 100, status: "completed" });
 
     return {
       jobId: job.id,
       mcqs: finalMcqs,
+      analysis: {
+        totalWords: analysis.totalWords,
+        complexity: analysis.complexity,
+        recommendedQuestions: analysis.recommendedQuestions,
+        generatedQuestions: finalNumQuestions,
+        keyTopics: analysis.keyTopics,
+      },
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
