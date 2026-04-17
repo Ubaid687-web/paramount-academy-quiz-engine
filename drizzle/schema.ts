@@ -99,3 +99,86 @@ export const generationJobs = mysqlTable("generationJobs", {
 
 export type GenerationJob = typeof generationJobs.$inferSelect;
 export type InsertGenerationJob = typeof generationJobs.$inferInsert;
+
+// Quiz Sharing & Collaboration Tables
+export const quizShares = mysqlTable("quizShares", {
+  id: int("id").autoincrement().primaryKey(),
+  quizId: int("quizId").notNull(),
+  shareToken: varchar("shareToken", { length: 64 }).notNull().unique(), // Unique token for sharing
+  createdBy: int("createdBy").notNull(), // User who created the share
+  expiresAt: timestamp("expiresAt"), // Optional expiration
+  maxUses: int("maxUses"), // Optional usage limit
+  currentUses: int("currentUses").default(0).notNull(), // Track current uses
+  isActive: int("isActive").default(1).notNull(), // 0 or 1
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type QuizShare = typeof quizShares.$inferSelect;
+export type InsertQuizShare = typeof quizShares.$inferInsert;
+
+export const quizCollaborators = mysqlTable("quizCollaborators", {
+  id: int("id").autoincrement().primaryKey(),
+  quizId: int("quizId").notNull(),
+  userId: int("userId").notNull(),
+  role: mysqlEnum("role", ["viewer", "editor", "admin"]).default("viewer").notNull(),
+  addedBy: int("addedBy").notNull(), // User who added collaborator
+  addedAt: timestamp("addedAt").defaultNow().notNull(),
+});
+
+export type QuizCollaborator = typeof quizCollaborators.$inferSelect;
+export type InsertQuizCollaborator = typeof quizCollaborators.$inferInsert;
+
+export const sharedQuizAttempts = mysqlTable("sharedQuizAttempts", {
+  id: int("id").autoincrement().primaryKey(),
+  shareTokenId: int("shareTokenId").notNull(),
+  userId: int("userId"), // Null if anonymous
+  attemptId: int("attemptId").notNull(),
+  accessedAt: timestamp("accessedAt").defaultNow().notNull(),
+});
+
+export type SharedQuizAttempt = typeof sharedQuizAttempts.$inferSelect;
+export type InsertSharedQuizAttempt = typeof sharedQuizAttempts.$inferInsert;
+
+// Spaced Repetition Tables
+export const reviewSchedules = mysqlTable("reviewSchedules", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  quizId: int("quizId").notNull(),
+  nextReviewDate: timestamp("nextReviewDate").notNull(),
+  interval: int("interval").default(1).notNull(), // Days until next review
+  easeFactor: int("easeFactor").default(2500).notNull(), // SM-2 ease factor (stored as int * 1000)
+  repetitions: int("repetitions").default(0).notNull(), // Number of successful reviews
+  lastReviewDate: timestamp("lastReviewDate"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ReviewSchedule = typeof reviewSchedules.$inferSelect;
+export type InsertReviewSchedule = typeof reviewSchedules.$inferInsert;
+
+export const reviewHistory = mysqlTable("reviewHistory", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  questionId: int("questionId").notNull(),
+  reviewDate: timestamp("reviewDate").defaultNow().notNull(),
+  result: mysqlEnum("result", ["again", "hard", "good", "easy"]).notNull(), // SM-2 ratings
+  difficulty: int("difficulty").notNull(), // 1-5 user rating
+  timeSpent: int("timeSpent"), // Milliseconds spent on question
+});
+
+export type ReviewHistory = typeof reviewHistory.$inferSelect;
+export type InsertReviewHistory = typeof reviewHistory.$inferInsert;
+
+export const userQuestionStats = mysqlTable("userQuestionStats", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  questionId: int("questionId").notNull(),
+  correctCount: int("correctCount").default(0).notNull(),
+  incorrectCount: int("incorrectCount").default(0).notNull(),
+  lastReviewDate: timestamp("lastReviewDate"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type UserQuestionStats = typeof userQuestionStats.$inferSelect;
+export type InsertUserQuestionStats = typeof userQuestionStats.$inferInsert;

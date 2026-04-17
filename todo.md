@@ -59,3 +59,69 @@
 - Realistic distractors based on common misconceptions
 - Professional UI with real-time progress tracking
 - Error handling and validation throughout
+
+
+---
+
+# Phase 7: Quiz Sharing & Collaboration System
+
+## Database Schema
+- [ ] Add `quizShares` table for shareable links
+- [ ] Add `quizCollaborators` table for collaboration
+- [ ] Add `sharedQuizAttempts` table for tracking
+- [ ] Create migrations
+
+## Backend API
+- [ ] `quiz.createShareLink` - Generate unique shareable link
+- [ ] `quiz.getSharedQuiz` - Retrieve by share token
+- [ ] `quiz.listSharedWithMe` - Get shared quizzes
+- [ ] `quiz.addCollaborator` - Add collaborator
+- [ ] `quiz.trackSharedAttempt` - Log attempts
+
+## Frontend
+- [ ] ShareModal component
+- [ ] SharedQuizView page
+- [ ] CollaborationPanel
+- [ ] Share buttons on quiz cards
+
+## Features
+- [ ] Unique shareable links with QR codes
+- [ ] Expiration dates and usage limits
+- [ ] Collaborative editing with permissions
+- [ ] Attempt tracking and analytics
+
+---
+
+# Phase 8: Spaced Repetition System
+
+## Database Schema
+- [ ] Add `reviewSchedules` table
+- [ ] Add `reviewHistory` table
+- [ ] Add `userQuestionStats` table
+- [ ] Create migrations
+
+## Backend API
+- [ ] `spaced.getNextReview` - Get due questions
+- [ ] `spaced.recordReview` - Log review attempt
+- [ ] `spaced.calculateInterval` - SM-2 algorithm
+- [ ] `spaced.getReviewStats` - User statistics
+- [ ] `spaced.suggestReview` - Recommendations
+
+## Algorithm
+- [ ] Implement SM-2 (Supermemo-2)
+- [ ] Initial interval: 1 day
+- [ ] Ease factor: 1.3 - 2.5
+- [ ] Difficulty-based adjustment
+
+## Frontend
+- [ ] ReviewQueue component
+- [ ] ReviewCard with difficulty rating
+- [ ] ReviewStats dashboard
+- [ ] Review history timeline
+- [ ] "Review Now" buttons
+
+## Features
+- [ ] Daily review suggestions
+- [ ] Adaptive difficulty
+- [ ] Performance tracking
+- [ ] Visual progress indicators

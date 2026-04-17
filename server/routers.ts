@@ -175,3 +175,4 @@ export const appRouter = router({
 });
 
 export type AppRouter = typeof appRouter;
+// Routers are added at the end
