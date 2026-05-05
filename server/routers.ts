@@ -3,6 +3,8 @@ import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
+import { sharingRouter } from "./sharingRouter";
+import { spacedRepetitionRouter } from "./spacedRepetitionRouter";
 
 export const appRouter = router({
   system: systemRouter,
@@ -97,6 +99,9 @@ export const appRouter = router({
         return deleteQuizAndRelated(input.quizId, ctx.user.id);
       }),
   }),
+
+  sharing: sharingRouter,
+  spaced: spacedRepetitionRouter,
 
   aiAgent: router({
     generateMCQs: protectedProcedure

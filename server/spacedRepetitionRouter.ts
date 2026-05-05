@@ -24,12 +24,12 @@ class SM2Algorithm {
    * @param repetitions Number of successful repetitions
    * @param quality User rating (0-4: again, hard, good, easy)
    */
-  static calculateNextInterval(easeFactor: number, repetitions: number, quality: number) {
+  static calculateNextInterval(easeFactor: number, repetitions: number, quality: number, prevInterval: number = 1) {
     // Quality: 0=again, 1=hard, 2=good, 3=easy
     const qualityMap = { again: 0, hard: 1, good: 2, easy: 3 };
     const q = typeof quality === "string" ? qualityMap[quality as keyof typeof qualityMap] : quality;
 
-    // If quality < 3, reset repetitions
+    // If quality < 2, reset repetitions
     if (q < 2) {
       return {
         interval: 1,
@@ -42,14 +42,14 @@ class SM2Algorithm {
     let newEaseFactor = easeFactor + (50 * q - 200);
     newEaseFactor = Math.max(1300, Math.min(2500, newEaseFactor)); // Clamp between 1.3 and 2.5
 
-    // Calculate interval
+    // Calculate interval based on SM-2 algorithm
     let interval: number;
     if (repetitions === 0) {
-      interval = 1;
+      interval = 1; // First review: 1 day
     } else if (repetitions === 1) {
-      interval = 3;
+      interval = 3; // Second review: 3 days
     } else {
-      const prevInterval = 3; // Default previous interval
+      // Subsequent reviews: previous interval * ease factor
       interval = Math.round(prevInterval * (newEaseFactor / 1000));
     }
 
@@ -147,7 +147,8 @@ export const spacedRepetitionRouter = router({
         const { interval, easeFactor, repetitions } = SM2Algorithm.calculateNextInterval(
           schedule.easeFactor,
           schedule.repetitions,
-          resultMap[input.result]
+          resultMap[input.result],
+          schedule.interval
         );
 
         // Calculate next review date
