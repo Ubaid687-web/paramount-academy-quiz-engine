@@ -11,23 +11,28 @@
 - [x] Analyze 10th grade Chemistry 2024 past paper exam format
 - [x] Analyze 10th grade Computer Science textbook structure, units, and chapter boundaries
 - [x] Collect and analyze 10th grade Computer Science materials (textbook, past papers, exam patterns)
-- [ ] Document quiz structure specifications for all 10th grade subjects (Physics, Chemistry, Computer Science)
+- [x] Document quiz structure specifications for all 10th grade subjects (Physics, Chemistry, Computer Science)
 
 ## Phase 2: Platform Audit & Bug Fixing
 - [x] Fix broken document upload flow for PDF-based study material ingestion
 - [x] Remove duplicate quiz-generation actions from the AI Agent interface
 - [x] Improve MCQ count recommendation logic so large content can yield appropriate question volume
-- [ ] Add admin controls for selecting scope and difficulty in FBISE-style practice generation
-- [ ] Remove misaligned or unnecessary product elements that do not fit the academy portal direction
+- [x] Add admin controls for selecting scope and difficulty in FBISE-style practice generation
+- [x] Remove misaligned or unnecessary product elements that do not fit the academy portal direction
 
 ## Phase 3: Product Architecture & Implementation
-- [ ] Define the product architecture for chapter-based, half-chapter, and block-based quiz generation
-- [ ] Implement bug fixes and remove unnecessary or misaligned product elements
-- [ ] Refine quiz-generation controls to support FBISE-style difficulty and scope selection
-- [ ] Write and run tests for the repaired and refined quiz platform
+- [x] Define the product architecture for chapter-based, half-chapter, and block-based quiz generation
+- [x] Implement bug fixes and remove unnecessary or misaligned product elements
+- [x] Refine quiz-generation controls to support FBISE-style difficulty and scope selection
+- [x] Write and run tests for the repaired and refined quiz platform
+
+- [x] Implement admin curriculum management for source upload, chapter review, half-chapter segments, reusable templates, and curriculum activation.
+- [x] Add an integration test that resolves an active stored curriculum scope through draft generation and draft saving.
+- [x] Add explicit admin and catalog-loading error states for scoped generation controls.
+- [x] Verify scoped draft saving preserves the curriculum set, source snapshot, and difficulty profile on the quiz record.
 
 ## Phase 4: Reporting & Delivery
-- [ ] Report the updated system status, uploaded-material coverage, and next required inputs
+- [x] Report the updated system status, uploaded-material coverage, and next required inputs
 
 - [x] Keep `isProcessingFile` true until PDF extraction actually finishes, and show the processing state in the upload UI.
 - [x] Add/restore a test covering successful PDF upload/extraction behavior for the AIAgent flow or backend extraction path.

@@ -1,10 +1,9 @@
 import { z } from "zod";
+import { createHash, randomUUID } from "node:crypto";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
-import { sharingRouter } from "./sharingRouter";
-import { spacedRepetitionRouter } from "./spacedRepetitionRouter";
+import { adminProcedure, publicProcedure, protectedProcedure, router } from "./_core/trpc";
 
 export const appRouter = router({
   system: systemRouter,
@@ -100,12 +99,6 @@ export const appRouter = router({
       }),
   }),
 
-  sharing: sharingRouter,
-  spaced: spacedRepetitionRouter,
-
-
-
-
   pdfUpload: router({
     extractPdfText: publicProcedure
       .input(z.object({
@@ -119,26 +112,270 @@ export const appRouter = router({
       }),
   }),
 
+  curriculum: router({
+    listSets: adminProcedure.query(async () => {
+      const { listCurriculumSets } = await import("./db");
+      return listCurriculumSets();
+    }),
+
+    getManagementDetails: adminProcedure
+      .input(z.object({ curriculumSetId: z.number().int().positive() }))
+      .query(async ({ input }) => {
+        const { getCurriculumSet, listCurriculumSources, listCurriculumChapters, listChapterSegments, listScopeTemplates } = await import("./db");
+        const curriculumSet = await getCurriculumSet(input.curriculumSetId);
+        if (!curriculumSet) throw new Error("Curriculum set not found");
+        const chapters = await listCurriculumChapters(input.curriculumSetId);
+        const chapterSegments = await Promise.all(chapters.map(async (chapter) => ({
+          chapterId: chapter.id,
+          segments: await listChapterSegments(chapter.id),
+        })));
+        return {
+          curriculumSet,
+          sources: await listCurriculumSources(input.curriculumSetId),
+          chapters,
+          chapterSegments,
+          scopeTemplates: await listScopeTemplates(input.curriculumSetId),
+        };
+      }),
+
+    createSet: adminProcedure
+      .input(z.object({
+        subject: z.enum(["physics", "chemistry", "computer_science"]),
+        label: z.string().min(3).max(255),
+        editionLabel: z.string().max(255).optional(),
+        replacesSetId: z.number().int().positive().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { createCurriculumSet } = await import("./db");
+        return createCurriculumSet({
+          grade: "10",
+          subject: input.subject,
+          label: input.label,
+          editionLabel: input.editionLabel || null,
+          replacesSetId: input.replacesSetId,
+          createdBy: ctx.user.id,
+          status: "draft",
+        });
+      }),
+
+    ingestSource: adminProcedure
+      .input(z.object({
+        curriculumSetId: z.number().int().positive(),
+        fileName: z.string().min(1).max(255),
+        mimeType: z.enum(["application/pdf", "text/plain"]),
+        fileBuffer: z.string().min(1),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { getCurriculumSet, createCurriculumSource } = await import("./db");
+        const { extractCurriculumSourceText } = await import("./curriculumIngestion");
+        const { storagePut } = await import("./storage");
+        const curriculumSet = await getCurriculumSet(input.curriculumSetId);
+        if (!curriculumSet) throw new Error("Curriculum set not found");
+
+        const fileBuffer = Buffer.from(input.fileBuffer, "base64");
+        if (!fileBuffer.length || fileBuffer.length > 30 * 1024 * 1024) {
+          throw new Error("Curriculum source must be between 1 byte and 30MB.");
+        }
+        const extracted = await extractCurriculumSourceText({ fileBuffer, fileName: input.fileName, mimeType: input.mimeType });
+        const extension = input.mimeType === "application/pdf" ? "pdf" : "txt";
+        const stored = await storagePut(
+          `curricula/${input.curriculumSetId}/${randomUUID()}.${extension}`,
+          fileBuffer,
+          input.mimeType,
+        );
+        return createCurriculumSource({
+          curriculumSetId: input.curriculumSetId,
+          storageKey: stored.key,
+          storageUrl: stored.url,
+          originalFileName: input.fileName,
+          mimeType: input.mimeType,
+          contentHash: createHash("sha256").update(fileBuffer).digest("hex"),
+          extractionStatus: "extracted",
+          pageCount: extracted.pageCount,
+          extractedText: extracted.text,
+          uploadedBy: ctx.user.id,
+          extractedAt: new Date(),
+        });
+      }),
+
+    createChapter: adminProcedure
+      .input(z.object({
+        curriculumSetId: z.number().int().positive(),
+        sourceId: z.number().int().positive(),
+        sequence: z.number().int().positive(),
+        code: z.string().max(50).optional(),
+        title: z.string().min(2).max(255),
+        blockKey: z.string().max(100).optional(),
+        partKey: z.string().max(100).optional(),
+        startPage: z.number().int().positive().optional(),
+        endPage: z.number().int().positive().optional(),
+        contentText: z.string().min(100),
+      }))
+      .mutation(async ({ input }) => {
+        const { getCurriculumSet, getCurriculumSource, createCurriculumChapter } = await import("./db");
+        const curriculumSet = await getCurriculumSet(input.curriculumSetId);
+        const source = await getCurriculumSource(input.sourceId);
+        if (!curriculumSet || !source || source.curriculumSetId !== input.curriculumSetId) {
+          throw new Error("The selected chapter source does not belong to this curriculum set.");
+        }
+        if (input.endPage && input.startPage && input.endPage < input.startPage) {
+          throw new Error("The chapter end page cannot be before its start page.");
+        }
+        return createCurriculumChapter({
+          curriculumSetId: input.curriculumSetId,
+          sourceId: input.sourceId,
+          sequence: input.sequence,
+          code: input.code || null,
+          title: input.title,
+          blockKey: input.blockKey || null,
+          partKey: input.partKey || null,
+          startPage: input.startPage,
+          endPage: input.endPage,
+          contentText: input.contentText,
+          isActive: 1,
+        });
+      }),
+
+    saveHalfChapterSegments: adminProcedure
+      .input(z.object({
+        chapterId: z.number().int().positive(),
+        firstHalf: z.object({ label: z.string().min(1).max(100), contentText: z.string().min(100), startPage: z.number().int().positive().optional(), endPage: z.number().int().positive().optional() }),
+        secondHalf: z.object({ label: z.string().min(1).max(100), contentText: z.string().min(100), startPage: z.number().int().positive().optional(), endPage: z.number().int().positive().optional() }),
+      }))
+      .mutation(async ({ input }) => {
+        const { replaceChapterSegments } = await import("./db");
+        return replaceChapterSegments(input.chapterId, [
+          { sequence: 1, label: input.firstHalf.label, contentText: input.firstHalf.contentText, startPage: input.firstHalf.startPage, endPage: input.firstHalf.endPage, startOffset: 0, endOffset: input.firstHalf.contentText.length },
+          { sequence: 2, label: input.secondHalf.label, contentText: input.secondHalf.contentText, startPage: input.secondHalf.startPage, endPage: input.secondHalf.endPage, startOffset: 0, endOffset: input.secondHalf.contentText.length },
+        ]);
+      }),
+
+    createScopeTemplate: adminProcedure
+      .input(z.object({
+        curriculumSetId: z.number().int().positive(),
+        scopeKind: z.enum(["half_syllabus", "block"]),
+        label: z.string().min(2).max(255),
+        description: z.string().max(1000).optional(),
+        chapterIds: z.array(z.number().int().positive()).min(1),
+      }))
+      .mutation(async ({ input }) => {
+        const { listCurriculumChapters, createScopeTemplateWithChapters } = await import("./db");
+        const chapters = await listCurriculumChapters(input.curriculumSetId);
+        const permittedIds = new Set(chapters.filter((chapter) => chapter.isActive === 1).map((chapter) => chapter.id));
+        if (input.chapterIds.some((chapterId) => !permittedIds.has(chapterId))) {
+          throw new Error("Every scope template chapter must be an active chapter in the selected curriculum set.");
+        }
+        return createScopeTemplateWithChapters({
+          curriculumSetId: input.curriculumSetId,
+          scopeKind: input.scopeKind,
+          label: input.label,
+          description: input.description || null,
+          isActive: 1,
+        }, Array.from(new Set(input.chapterIds)));
+      }),
+
+    activateSet: adminProcedure
+      .input(z.object({ curriculumSetId: z.number().int().positive() }))
+      .mutation(async ({ input }) => {
+        const { activateCurriculumSet } = await import("./db");
+        return activateCurriculumSet(input.curriculumSetId);
+      }),
+
+    getActiveScopeCatalog: adminProcedure
+      .input(z.object({ subject: z.enum(["physics", "chemistry", "computer_science"]) }))
+      .query(async ({ input }) => {
+        const { getActiveCurriculumScopeCatalog } = await import("./db");
+        const catalog = await getActiveCurriculumScopeCatalog(input.subject);
+        if (!catalog) return null;
+
+        return {
+          curriculumSet: catalog.curriculumSet,
+          chapters: catalog.chapters.map((chapter) => ({
+            id: chapter.id,
+            sequence: chapter.sequence,
+            code: chapter.code,
+            title: chapter.title,
+            blockKey: chapter.blockKey,
+            partKey: chapter.partKey,
+            startPage: chapter.startPage,
+            endPage: chapter.endPage,
+          })),
+          segments: catalog.segments.map((segment) => ({
+            id: segment.id,
+            chapterId: segment.chapterId,
+            sequence: segment.sequence,
+            label: segment.label,
+            startPage: segment.startPage,
+            endPage: segment.endPage,
+          })),
+          templates: catalog.templates.map((template) => ({
+            id: template.id,
+            scopeKind: template.scopeKind,
+            label: template.label,
+            description: template.description,
+          })),
+          templateMemberships: catalog.templateMemberships,
+        };
+      }),
+  }),
+
   aiAgent: router({
-    generateMCQs: protectedProcedure
+    generateMCQs: adminProcedure
       .input(
         z.object({
-          contentText: z.string().min(100, "Content must be at least 100 characters"),
+          contentText: z.string().min(100, "Content must be at least 100 characters").optional(),
           numQuestions: z.number().min(5).max(100),
           difficulty: z.enum(["balanced", "easy", "medium", "hard"]).default("balanced"),
+          scope: z.object({
+            subject: z.enum(["physics", "chemistry", "computer_science"]),
+            scopeType: z.enum(["single_chapter", "half_chapter", "multiple_chapters", "half_syllabus", "block"]),
+            chapterIds: z.array(z.number().int().positive()).optional(),
+            segmentIds: z.array(z.number().int().positive()).optional(),
+            scopeTemplateId: z.number().int().positive().optional(),
+          }).optional(),
         })
       )
       .mutation(async ({ ctx, input }) => {
         const { generateMCQsFromContent } = await import("./aiAgent");
+        let contentText = input.contentText;
+        let sourceContext;
+
+        if (input.scope) {
+          const { getActiveCurriculumScopeCatalog } = await import("./db");
+          const { resolveCurriculumScope } = await import("./curriculumScope");
+          const catalog = await getActiveCurriculumScopeCatalog(input.scope.subject);
+          if (!catalog) {
+            throw new Error("No active reviewed curriculum is available for the selected subject.");
+          }
+          const resolvedScope = resolveCurriculumScope(catalog, input.scope);
+          contentText = resolvedScope.sourceText;
+          sourceContext = {
+            sourceType: "curriculum_scope" as const,
+            sourceTitle: resolvedScope.displayLabel,
+            subject: catalog.curriculumSet.subject,
+            classLevel: catalog.curriculumSet.grade,
+            curriculumSetId: catalog.curriculumSet.id,
+            scopeTemplateId: resolvedScope.scopeTemplateId,
+            scopeType: resolvedScope.scopeType,
+            selectedChapterIds: resolvedScope.chapterIds,
+            selectedSegmentIds: resolvedScope.segmentIds,
+            scopeSnapshot: resolvedScope.snapshot,
+          };
+        }
+
+        if (!contentText) {
+          throw new Error("Upload or paste at least 100 characters of material, or choose a reviewed curriculum scope.");
+        }
         return generateMCQsFromContent(
           ctx.user.id,
-          input.contentText,
+          contentText,
           input.numQuestions,
-          input.difficulty
+          input.difficulty,
+          sourceContext
         );
       }),
 
-    saveGeneratedQuiz: protectedProcedure
+    saveGeneratedQuiz: adminProcedure
       .input(
         z.object({
           jobId: z.number(),
@@ -154,8 +391,9 @@ export const appRouter = router({
             answer: z.string(),
             explanation: z.string(),
             difficulty: z.string(),
+            sourceReference: z.string().min(1),
+            learningObjective: z.string().min(1),
           })),
-          sourceContent: z.string(),
           difficulty: z.string(),
         })
       )
@@ -173,7 +411,6 @@ export const appRouter = router({
           input.jobId,
           input.quizTitle,
           input.mcqs,
-          input.sourceContent,
           input.difficulty
         );
 

@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { int, longtext, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -32,8 +32,15 @@ export const quizzes = mysqlTable("quizzes", {
   totalQuestions: int("totalQuestions").notNull(),
   isAiGenerated: int("isAiGenerated").default(0).notNull(), // 0 or 1
   createdBy: int("createdBy"), // userId for AI-generated quizzes
-  sourceContent: text("sourceContent"), // Original content used for generation
+  sourceContent: longtext("sourceContent"), // Original content used for generation
   generationMetadata: text("generationMetadata"), // JSON: {difficulty, numQuestions, model, etc.}
+  curriculumSetId: int("curriculumSetId"),
+  scopeSnapshot: longtext("scopeSnapshot"), // Immutable JSON snapshot of source chapters/segments used for this quiz.
+  difficultyProfile: varchar("difficultyProfile", { length: 50 }),
+  publicationStatus: mysqlEnum("publicationStatus", ["draft", "in_review", "published", "archived"]).default("draft").notNull(),
+  reviewedBy: int("reviewedBy"),
+  reviewedAt: timestamp("reviewedAt"),
+  publishedAt: timestamp("publishedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -87,9 +94,15 @@ export const generationJobs = mysqlTable("generationJobs", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
   status: mysqlEnum("status", ["pending", "processing", "completed", "failed"]).default("pending").notNull(),
-  contentText: text("contentText").notNull(),
+  contentText: longtext("contentText").notNull(),
   numQuestions: int("numQuestions").notNull(),
   difficulty: varchar("difficulty", { length: 50 }).default("balanced").notNull(), // balanced, easy, medium, hard
+  curriculumSetId: int("curriculumSetId"),
+  scopeTemplateId: int("scopeTemplateId"),
+  scopeType: mysqlEnum("scopeType", ["ad_hoc", "single_chapter", "half_chapter", "multiple_chapters", "half_syllabus", "block"]).default("ad_hoc").notNull(),
+  selectedChapterIds: text("selectedChapterIds"), // JSON array of selected chapter IDs.
+  selectedSegmentIds: text("selectedSegmentIds"), // JSON array of selected chapter-segment IDs.
+  sourceSnapshot: longtext("sourceSnapshot"), // Immutable JSON source snapshot created server-side.
   generatedQuizId: int("generatedQuizId"), // Reference to created quiz
   errorMessage: text("errorMessage"),
   progress: int("progress").default(0).notNull(), // 0-100
@@ -99,6 +112,116 @@ export const generationJobs = mysqlTable("generationJobs", {
 
 export type GenerationJob = typeof generationJobs.$inferSelect;
 export type InsertGenerationJob = typeof generationJobs.$inferInsert;
+
+// Versioned FBISE curriculum material. A replacement textbook is represented by a new set;
+// historical quiz drafts retain their curriculum and source snapshots.
+export const curriculumSets = mysqlTable("curriculumSets", {
+  id: int("id").autoincrement().primaryKey(),
+  grade: mysqlEnum("grade", ["10"]).default("10").notNull(),
+  subject: mysqlEnum("subject", ["physics", "chemistry", "computer_science"]).notNull(),
+  board: varchar("board", { length: 50 }).default("FBISE").notNull(),
+  label: varchar("label", { length: 255 }).notNull(),
+  editionLabel: varchar("editionLabel", { length: 255 }),
+  status: mysqlEnum("status", ["draft", "active", "archived"]).default("draft").notNull(),
+  replacesSetId: int("replacesSetId"),
+  createdBy: int("createdBy").notNull(),
+  activatedAt: timestamp("activatedAt"),
+  archivedAt: timestamp("archivedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CurriculumSet = typeof curriculumSets.$inferSelect;
+export type InsertCurriculumSet = typeof curriculumSets.$inferInsert;
+
+// One uploaded source file. The binary belongs in managed object storage; extracted text is kept
+// only so admins can review/segment it and the server can ground a draft in the selected evidence.
+export const curriculumSources = mysqlTable("curriculumSources", {
+  id: int("id").autoincrement().primaryKey(),
+  curriculumSetId: int("curriculumSetId").notNull(),
+  storageKey: varchar("storageKey", { length: 512 }).notNull(),
+  storageUrl: text("storageUrl").notNull(),
+  originalFileName: varchar("originalFileName", { length: 255 }).notNull(),
+  mimeType: varchar("mimeType", { length: 100 }).notNull(),
+  contentHash: varchar("contentHash", { length: 64 }),
+  extractionStatus: mysqlEnum("extractionStatus", ["pending", "extracted", "needs_review", "failed"]).default("pending").notNull(),
+  pageCount: int("pageCount"),
+  extractedText: longtext("extractedText"),
+  extractionError: text("extractionError"),
+  uploadedBy: int("uploadedBy").notNull(),
+  extractedAt: timestamp("extractedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CurriculumSource = typeof curriculumSources.$inferSelect;
+export type InsertCurriculumSource = typeof curriculumSources.$inferInsert;
+
+// Admin-reviewed chapter evidence, ordered within a versioned curriculum set.
+export const curriculumChapters = mysqlTable("curriculumChapters", {
+  id: int("id").autoincrement().primaryKey(),
+  curriculumSetId: int("curriculumSetId").notNull(),
+  sourceId: int("sourceId").notNull(),
+  sequence: int("sequence").notNull(),
+  code: varchar("code", { length: 50 }),
+  title: varchar("title", { length: 255 }).notNull(),
+  blockKey: varchar("blockKey", { length: 100 }),
+  partKey: varchar("partKey", { length: 100 }),
+  startPage: int("startPage"),
+  endPage: int("endPage"),
+  contentText: longtext("contentText").notNull(),
+  isActive: int("isActive").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CurriculumChapter = typeof curriculumChapters.$inferSelect;
+export type InsertCurriculumChapter = typeof curriculumChapters.$inferInsert;
+
+// A chapter can be split into two administrator-confirmed segments for half-chapter drafts.
+export const curriculumChapterSegments = mysqlTable("curriculumChapterSegments", {
+  id: int("id").autoincrement().primaryKey(),
+  chapterId: int("chapterId").notNull(),
+  sequence: int("sequence").notNull(),
+  label: varchar("label", { length: 100 }).notNull(),
+  startPage: int("startPage"),
+  endPage: int("endPage"),
+  startOffset: int("startOffset"),
+  endOffset: int("endOffset"),
+  contentText: longtext("contentText").notNull(),
+  isActive: int("isActive").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CurriculumChapterSegment = typeof curriculumChapterSegments.$inferSelect;
+export type InsertCurriculumChapterSegment = typeof curriculumChapterSegments.$inferInsert;
+
+// Reusable scope definitions for half-syllabus and full-block generation.
+export const curriculumScopeTemplates = mysqlTable("curriculumScopeTemplates", {
+  id: int("id").autoincrement().primaryKey(),
+  curriculumSetId: int("curriculumSetId").notNull(),
+  scopeKind: mysqlEnum("scopeKind", ["half_syllabus", "block"]).notNull(),
+  label: varchar("label", { length: 255 }).notNull(),
+  description: text("description"),
+  isActive: int("isActive").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CurriculumScopeTemplate = typeof curriculumScopeTemplates.$inferSelect;
+export type InsertCurriculumScopeTemplate = typeof curriculumScopeTemplates.$inferInsert;
+
+export const curriculumScopeTemplateChapters = mysqlTable("curriculumScopeTemplateChapters", {
+  id: int("id").autoincrement().primaryKey(),
+  scopeTemplateId: int("scopeTemplateId").notNull(),
+  chapterId: int("chapterId").notNull(),
+  sequence: int("sequence").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type CurriculumScopeTemplateChapter = typeof curriculumScopeTemplateChapters.$inferSelect;
+export type InsertCurriculumScopeTemplateChapter = typeof curriculumScopeTemplateChapters.$inferInsert;
 
 // Quiz Sharing & Collaboration Tables
 export const quizShares = mysqlTable("quizShares", {

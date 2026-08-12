@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
+import { Checkbox } from "@/components/ui/checkbox";
 import { trpc } from "@/lib/trpc";
 import { GENERATION_STEPS, getGenerationStep, getNextSimulatedProgress } from "@/lib/generation-progress";
 import { calculateQuestionRecommendation } from "@shared/questionRecommendation";
@@ -13,6 +14,14 @@ import { useLocation } from "wouter";
 import { Loader2, Sparkles, CheckCircle2, AlertCircle, ArrowLeft, Upload, FileText, X } from "lucide-react";
 import { toast } from "sonner";
 
+type FbiseSubject = "physics" | "chemistry" | "computer_science";
+type GenerationScope = "uploaded_content" | "single_chapter" | "half_chapter" | "multiple_chapters" | "half_syllabus" | "block";
+
+const SUBJECT_LABELS: Record<FbiseSubject, string> = {
+  physics: "Physics",
+  chemistry: "Chemistry",
+  computer_science: "Computer Science",
+};
 
 
 
@@ -32,10 +41,16 @@ export default function AIAgent() {
   const [jobId, setJobId] = useState<number | null>(null);
   const [generationProgress, setGenerationProgress] = useState(0);
   const [contentAnalysis, setContentAnalysis] = useState<any>(null);
+  const [subject, setSubject] = useState<FbiseSubject>("physics");
+  const [scopeType, setScopeType] = useState<GenerationScope>("uploaded_content");
+  const [selectedChapterIds, setSelectedChapterIds] = useState<number[]>([]);
+  const [selectedSegmentId, setSelectedSegmentId] = useState<number | null>(null);
+  const [selectedScopeTemplateId, setSelectedScopeTemplateId] = useState<number | null>(null);
 
   const generateMutation = trpc.aiAgent.generateMCQs.useMutation();
   const saveMutation = trpc.aiAgent.saveGeneratedQuiz.useMutation();
   const pdfExtractMutation = trpc.pdfUpload.extractPdfText.useMutation();
+  const scopeCatalogQuery = trpc.curriculum.getActiveScopeCatalog.useQuery({ subject });
   const statusQuery = trpc.aiAgent.getGenerationStatus.useQuery(
     { jobId: jobId || 0 },
     { enabled: !!jobId && isGenerating, refetchInterval: 1000 }
@@ -93,6 +108,46 @@ export default function AIAgent() {
 
     return () => window.clearTimeout(analysisTimer);
   }, [contentText, isQuestionCountManual]);
+
+  useEffect(() => {
+    setSelectedChapterIds([]);
+    setSelectedSegmentId(null);
+    setSelectedScopeTemplateId(null);
+  }, [subject, scopeType]);
+
+  useEffect(() => {
+    if (scopeType !== "uploaded_content" && !isQuestionCountManual) {
+      setNumQuestions(subject === "computer_science" ? 13 : 12);
+    }
+  }, [subject, scopeType, isQuestionCountManual]);
+
+  const activeScopeCatalog = scopeCatalogQuery.data;
+  const chapters = activeScopeCatalog?.chapters ?? [];
+  const selectedChapter = chapters.find((chapter) => chapter.id === selectedChapterIds[0]);
+  const availableSegments = (activeScopeCatalog?.segments ?? []).filter((segment) => segment.chapterId === selectedChapterIds[0]);
+  const templateKind = scopeType === "half_syllabus" ? "half_syllabus" : "block";
+  const availableTemplates = (activeScopeCatalog?.templates ?? []).filter((template) => template.scopeKind === templateKind);
+  const hasValidStoredScope = (
+    (scopeType === "single_chapter" && selectedChapterIds.length === 1)
+    || (scopeType === "half_chapter" && selectedChapterIds.length === 1 && selectedSegmentId !== null)
+    || (scopeType === "multiple_chapters" && selectedChapterIds.length >= 2)
+    || ((scopeType === "half_syllabus" || scopeType === "block") && selectedScopeTemplateId !== null)
+  );
+  const hasGenerationSource = scopeType === "uploaded_content"
+    ? Boolean(contentText.trim())
+    : hasValidStoredScope;
+
+  const toggleChapter = (chapterId: number, checked: boolean) => {
+    setSelectedChapterIds((currentIds) => {
+      if (scopeType === "single_chapter" || scopeType === "half_chapter") {
+        return checked ? [chapterId] : [];
+      }
+      return checked
+        ? [...currentIds, chapterId]
+        : currentIds.filter((id) => id !== chapterId);
+    });
+    if (!checked || selectedChapterIds[0] !== chapterId) setSelectedSegmentId(null);
+  };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -203,8 +258,15 @@ export default function AIAgent() {
   };
 
   const handleGenerate = async () => {
-    if (!contentText.trim()) {
-      toast.error("Please add content first");
+    const usesStoredScope = scopeType !== "uploaded_content";
+
+    if (!hasGenerationSource && !usesStoredScope) {
+      toast.error("Please upload, paste, or select reviewed curriculum content first");
+      return;
+    }
+
+    if (usesStoredScope && !hasValidStoredScope) {
+      toast.error("Complete the selected curriculum scope before generating a draft");
       return;
     }
 
@@ -225,9 +287,19 @@ export default function AIAgent() {
 
     try {
       const result = await generateMutation.mutateAsync({
-        contentText,
         numQuestions: numQuestions || 10,
         difficulty,
+        ...(usesStoredScope
+          ? {
+              scope: {
+                subject,
+                scopeType,
+                chapterIds: selectedChapterIds,
+                segmentIds: selectedSegmentId ? [selectedSegmentId] : [],
+                scopeTemplateId: selectedScopeTemplateId ?? undefined,
+              },
+            }
+          : { contentText }),
       });
 
       if (result.draft?.status === "error") {
@@ -265,7 +337,6 @@ export default function AIAgent() {
       await saveMutation.mutateAsync({
         quizTitle,
         mcqs: generatedMcqs,
-        sourceContent: contentText,
         difficulty,
         jobId: jobId || 0,
       });
@@ -291,10 +362,10 @@ export default function AIAgent() {
             Back to Quizzes
           </Button>
           <h1 className="text-4xl font-bold bg-gradient-to-r from-accent via-secondary to-accent bg-clip-text text-transparent">
-            AI Quiz Generator
+            Paramount Academy Quiz Builder
           </h1>
           <p className="text-muted-foreground mt-2">
-            Upload content or paste text to generate intelligent, conceptual MCQs
+            Create source-grounded FBISE MCQ drafts for admin review before assignment or publication.
           </p>
         </div>
 
@@ -583,6 +654,107 @@ export default function AIAgent() {
                   )}
                 </div>
 
+                {/* FBISE curriculum scope */}
+                <div className="space-y-3 rounded-xl border border-secondary/20 bg-secondary/5 p-3">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">FBISE Curriculum Scope</p>
+                    <p className="mt-1 text-xs text-muted-foreground">Choose the approved 10th-grade source range before creating an admin draft.</p>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="class-level" className="mb-2 block text-xs font-medium">Class level</Label>
+                    <Input id="class-level" value="10th Grade • FBISE" readOnly aria-readonly="true" className="h-9 bg-muted/50 text-sm" />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="subject" className="mb-2 block text-xs font-medium">Subject</Label>
+                    <Select value={subject} onValueChange={(value) => setSubject(value as FbiseSubject)}>
+                      <SelectTrigger id="subject" aria-label="Subject"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(SUBJECT_LABELS).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="generation-scope" className="mb-2 block text-xs font-medium">Generation scope</Label>
+                    <Select value={scopeType} onValueChange={(value) => setScopeType(value as GenerationScope)}>
+                      <SelectTrigger id="generation-scope" aria-label="Generation scope"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="uploaded_content">Uploaded or pasted material</SelectItem>
+                        <SelectItem value="single_chapter">Single chapter</SelectItem>
+                        <SelectItem value="half_chapter">Half chapter</SelectItem>
+                        <SelectItem value="multiple_chapters">Selected chapters</SelectItem>
+                        <SelectItem value="half_syllabus">Half syllabus</SelectItem>
+                        <SelectItem value="block">Full block</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {scopeType !== "uploaded_content" && !activeScopeCatalog && !scopeCatalogQuery.isLoading && (
+                    <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-2.5 text-xs text-muted-foreground">
+                      {scopeCatalogQuery.error
+                        ? "This account cannot load reviewed curriculum scopes. Sign in with an administrator account to use stored sources."
+                        : `No active ${SUBJECT_LABELS[subject]} curriculum is available yet. Upload, review, and activate its chapters in Curriculum Management before using a stored scope.`}
+                      <Button type="button" variant="link" className="mt-1 h-auto p-0 text-xs" onClick={() => navigate("/curriculum")}>{scopeCatalogQuery.error ? "Open administrator workspace" : "Open Curriculum Management"}</Button>
+                    </div>
+                  )}
+
+                  {(scopeType === "single_chapter" || scopeType === "half_chapter" || scopeType === "multiple_chapters") && activeScopeCatalog && (
+                    <fieldset className="space-y-2" aria-label="Select chapters">
+                      <legend className="mb-2 text-xs font-medium text-foreground">{scopeType === "multiple_chapters" ? "Select chapters" : "Select a chapter"}</legend>
+                      <div className="max-h-36 space-y-2 overflow-y-auto pr-1">
+                        {chapters.map((chapter) => {
+                          const selected = selectedChapterIds.includes(chapter.id);
+                          return (
+                            <label key={chapter.id} className="flex cursor-pointer items-start gap-2 rounded-md p-1.5 hover:bg-muted/70">
+                              <Checkbox
+                                checked={selected}
+                                onCheckedChange={(checked) => toggleChapter(chapter.id, checked === true)}
+                                aria-label={`${chapter.code ? `${chapter.code}: ` : ""}${chapter.title}`}
+                              />
+                              <span className="min-w-0 text-xs leading-4 text-foreground">
+                                <span className="font-medium">{chapter.code ? `${chapter.code}: ` : ""}{chapter.title}</span>
+                                {chapter.startPage && chapter.endPage && <span className="block text-muted-foreground">Pages {chapter.startPage}–{chapter.endPage}</span>}
+                              </span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </fieldset>
+                  )}
+
+                  {scopeType === "half_chapter" && selectedChapter && (
+                    <div>
+                      <Label htmlFor="chapter-segment" className="mb-2 block text-xs font-medium">Chapter segment</Label>
+                      <Select value={selectedSegmentId?.toString() ?? undefined} onValueChange={(value) => setSelectedSegmentId(Number(value))}>
+                        <SelectTrigger id="chapter-segment"><SelectValue placeholder="Choose first or second half" /></SelectTrigger>
+                        <SelectContent>
+                          {availableSegments.map((segment) => <SelectItem key={segment.id} value={segment.id.toString()}>{segment.label}{segment.startPage && segment.endPage ? ` (pages ${segment.startPage}–${segment.endPage})` : ""}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                      {!availableSegments.length && <p className="mt-1 text-xs text-amber-600 dark:text-amber-300">This chapter needs its reviewed half-chapter segments before it can be selected.</p>}
+                    </div>
+                  )}
+
+                  {(scopeType === "half_syllabus" || scopeType === "block") && activeScopeCatalog && (
+                    <div>
+                      <Label htmlFor="scope-template" className="mb-2 block text-xs font-medium">{scopeType === "block" ? "Configured block" : "Configured half syllabus"}</Label>
+                      <Select value={selectedScopeTemplateId?.toString() ?? undefined} onValueChange={(value) => setSelectedScopeTemplateId(Number(value))}>
+                        <SelectTrigger id="scope-template"><SelectValue placeholder="Choose a reviewed scope" /></SelectTrigger>
+                        <SelectContent>
+                          {availableTemplates.map((template) => <SelectItem key={template.id} value={template.id.toString()}>{template.label}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                      {!availableTemplates.length && <p className="mt-1 text-xs text-amber-600 dark:text-amber-300">No active reviewed {scopeType === "block" ? "blocks" : "half-syllabus templates"} are available for this subject.</p>}
+                    </div>
+                  )}
+
+                  {scopeType !== "uploaded_content" && activeScopeCatalog && (
+                    <p className="text-xs text-muted-foreground">Active source: <span className="font-medium text-foreground">{activeScopeCatalog.curriculumSet.label}</span>{activeScopeCatalog.curriculumSet.editionLabel ? ` — ${activeScopeCatalog.curriculumSet.editionLabel}` : ""}</p>
+                  )}
+                </div>
+
                 {/* Difficulty */}
                 <div>
                   <Label htmlFor="difficulty" className="text-sm font-medium mb-2 block">
@@ -604,7 +776,7 @@ export default function AIAgent() {
                 {/* Generate Button */}
                 <Button
                   onClick={handleGenerate}
-                  disabled={isGenerating || isProcessingFile || !contentText.trim() || !quizTitle.trim()}
+                  disabled={isGenerating || isProcessingFile || !hasGenerationSource || !quizTitle.trim()}
                   className="w-full bg-gradient-to-r from-accent to-secondary hover:shadow-lg hover:shadow-accent/20 text-accent-foreground font-semibold"
                 >
                   {isGenerating ? (
@@ -649,14 +821,14 @@ export default function AIAgent() {
               <CardHeader>
                 <CardTitle className="text-sm flex items-center gap-2">
                   <AlertCircle className="h-4 w-4" />
-                  Smart Generation
+                  Draft Generation Safeguards
                 </CardTitle>
               </CardHeader>
               <CardContent className="text-xs text-muted-foreground space-y-2">
-                <p>✓ Analyzes entire document for comprehensive coverage</p>
-                <p>✓ Generates conceptual, not reference-based questions</p>
-                <p>✓ Creates realistic distractors from common misconceptions</p>
-                <p>✓ Adapts question count to content complexity</p>
+                <p>✓ Uses the selected uploaded material or reviewed curriculum scope</p>
+                <p>✓ Generates conceptual, FBISE-style MCQ drafts</p>
+                <p>✓ Preserves a source reference and learning objective for every item</p>
+                <p>✓ Requires admin review before any assignment or publication</p>
               </CardContent>
             </Card>
           </div>

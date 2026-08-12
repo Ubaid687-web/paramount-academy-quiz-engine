@@ -15,9 +15,15 @@ Object.defineProperty(globalThis, "ResizeObserver", {
   value: ResizeObserverMock,
 });
 
+Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+  writable: true,
+  value: vi.fn(),
+});
+
 const generateMutation = vi.fn();
 const saveMutation = vi.fn();
 const pdfExtractMutation = vi.fn();
+const scopeCatalogQuery = vi.fn((..._args: unknown[]) => ({ data: null as any, isLoading: false }));
 
 vi.mock("@/lib/trpc", () => ({
   trpc: {
@@ -28,6 +34,9 @@ vi.mock("@/lib/trpc", () => ({
       generateMCQs: { useMutation: () => ({ mutateAsync: generateMutation }) },
       saveGeneratedQuiz: { useMutation: () => ({ mutateAsync: saveMutation, isPending: false }) },
       getGenerationStatus: { useQuery: () => ({ data: undefined }) },
+    },
+    curriculum: {
+      getActiveScopeCatalog: { useQuery: () => scopeCatalogQuery() },
     },
   },
 }));
@@ -46,6 +55,8 @@ describe("AI quiz generation feedback", () => {
     generateMutation.mockReset();
     saveMutation.mockReset();
     pdfExtractMutation.mockReset();
+    scopeCatalogQuery.mockReset();
+    scopeCatalogQuery.mockReturnValue({ data: null, isLoading: false });
   });
 
   it("shows an accessible staged loading panel while the quiz request is in progress", async () => {
@@ -117,6 +128,72 @@ describe("AI quiz generation feedback", () => {
     expect(screen.queryByRole("button", { name: /analyze content/i })).not.toBeInTheDocument();
     expect(await screen.findByRole("slider", { name: "Number of questions" })).toBeVisible();
     expect(screen.getAllByText(/Recommended/).length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("shows Grade 10 FBISE subject and stored-scope controls for an active curriculum", () => {
+    scopeCatalogQuery.mockReturnValue({
+      isLoading: false,
+      data: {
+        curriculumSet: { id: 10, label: "FBISE Grade 10 Physics", editionLabel: "2026 edition" },
+        chapters: [{ id: 1, code: "Ch. 10", title: "Simple Harmonic Motion", startPage: 1, endPage: 20 }],
+        segments: [{ id: 101, chapterId: 1, label: "First half", startPage: 1, endPage: 10 }],
+        templates: [],
+        templateMemberships: [],
+      },
+    });
+    render(<AIAgent />);
+
+    expect(screen.getByDisplayValue("10th Grade • FBISE")).toBeVisible();
+    expect(screen.getByRole("combobox", { name: "Subject" })).toBeVisible();
+    expect(screen.getByRole("combobox", { name: "Generation scope" })).toBeVisible();
+    expect(screen.getByText("FBISE Curriculum Scope")).toBeVisible();
+  });
+
+  it("explains the administrator requirement when a stored curriculum catalog cannot be loaded", async () => {
+    scopeCatalogQuery.mockReturnValue({ data: null, isLoading: false, error: new Error("FORBIDDEN") } as any);
+    render(<AIAgent />);
+
+    fireEvent.click(screen.getByRole("combobox", { name: "Generation scope" }));
+    fireEvent.click(await screen.findByRole("option", { name: "Single chapter" }));
+
+    expect(await screen.findByText(/This account cannot load reviewed curriculum scopes/)).toBeVisible();
+  });
+
+  it("sends a reviewed single-chapter selection instead of browser text when generating a draft", async () => {
+    scopeCatalogQuery.mockReturnValue({
+      isLoading: false,
+      data: {
+        curriculumSet: { id: 10, label: "FBISE Grade 10 Physics", editionLabel: "2026 edition" },
+        chapters: [{ id: 1, code: "Ch. 10", title: "Simple Harmonic Motion", startPage: 1, endPage: 20 }],
+        segments: [],
+        templates: [],
+        templateMemberships: [],
+      },
+    });
+    generateMutation.mockResolvedValue({ jobId: 99, mcqs: [], analysis: null, draft: { status: "error", message: "No draft", safeRetryAdvice: "Retry" } });
+    render(<AIAgent />);
+
+    fireEvent.click(screen.getByRole("combobox", { name: "Generation scope" }));
+    fireEvent.click(await screen.findByRole("option", { name: "Single chapter" }));
+    fireEvent.click(await screen.findByRole("checkbox", { name: "Ch. 10: Simple Harmonic Motion" }));
+    fireEvent.change(screen.getByLabelText("Quiz Title"), { target: { value: "Physics Chapter 10 Draft" } });
+
+    await waitFor(() => expect(screen.getByRole("spinbutton")).toHaveValue(12));
+    fireEvent.click(screen.getByRole("button", { name: "Generate MCQs" }));
+
+    await waitFor(() => {
+      expect(generateMutation).toHaveBeenCalledWith({
+        numQuestions: 12,
+        difficulty: "balanced",
+        scope: {
+          subject: "physics",
+          scopeType: "single_chapter",
+          chapterIds: [1],
+          segmentIds: [],
+          scopeTemplateId: undefined,
+        },
+      });
+    });
   });
 
   it("extracts an uploaded PDF into quiz content and activates generation settings", async () => {

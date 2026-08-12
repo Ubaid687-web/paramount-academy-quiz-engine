@@ -29,6 +29,20 @@
       "when": 1776390737924,
       "tag": "0003_talented_edwin_jarvis",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1786569871000,
+      "tag": "0004_eager_champions",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1786570192536,
+      "tag": "0005_mighty_sage",
+      "breakpoints": true
     }
   ]
 }

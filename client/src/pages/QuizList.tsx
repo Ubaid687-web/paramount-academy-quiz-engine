@@ -74,17 +74,17 @@ export default function QuizList() {
                   <BookOpen className="h-7 w-7 text-accent" />
                 </div>
                 <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-accent to-secondary bg-clip-text text-transparent">
-                  Quiz Master
+                  Paramount Academy
                 </h1>
               </div>
               <p className="text-lg text-muted-foreground max-w-2xl">
-                Create custom quizzes from any content. Learn smarter, practice better.
+                FBISE 10th-grade MCQ drafts for Physics, Chemistry, and Computer Science.
               </p>
             </div>
             <Link href="/generate" className="no-underline">
               <Button className="bg-gradient-to-r from-accent to-secondary hover:shadow-lg hover:shadow-accent/20 text-accent-foreground font-semibold px-6 py-3 rounded-lg whitespace-nowrap group">
                 <Sparkles className="mr-2 h-5 w-5 group-hover:rotate-12 transition-transform" />
-                Generate Quiz
+                Create MCQ Draft
               </Button>
             </Link>
           </div>
@@ -103,14 +103,14 @@ export default function QuizList() {
                 </div>
                 <CardTitle className="text-2xl">No Quizzes Yet</CardTitle>
                 <CardDescription className="text-base mt-2">
-                  Create your first quiz by pasting content or uploading materials
+                  Start with approved study material, then review the generated MCQ draft before student use.
                 </CardDescription>
               </CardHeader>
               <CardContent className="text-center pb-8">
                 <Link href="/generate" className="no-underline">
                   <Button className="bg-accent hover:bg-accent/90 text-accent-foreground font-semibold px-8 py-3">
                     <Sparkles className="mr-2 h-4 w-4" />
-                    Create Your First Quiz
+                    Create First MCQ Draft
                   </Button>
                 </Link>
               </CardContent>
@@ -119,7 +119,7 @@ export default function QuizList() {
         ) : (
           <div>
             <div className="mb-8">
-              <h2 className="text-2xl font-bold text-foreground mb-2">Your Quizzes</h2>
+              <h2 className="text-2xl font-bold text-foreground mb-2">Quiz Drafts and Practice Sets</h2>
               <p className="text-muted-foreground">
                 {quizzes.length} quiz{quizzes.length !== 1 ? "zes" : ""} available for practice
               </p>

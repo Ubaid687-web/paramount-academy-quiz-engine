@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, asc, eq, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser,
@@ -13,7 +13,19 @@ import {
   generationJobs,
   InsertGenerationJob,
   GenerationJob,
+  curriculumChapters,
+  curriculumChapterSegments,
+  curriculumScopeTemplateChapters,
+  curriculumScopeTemplates,
+  curriculumSets,
+  curriculumSources,
+  InsertCurriculumSet,
+  InsertCurriculumSource,
+  InsertCurriculumChapter,
+  InsertCurriculumChapterSegment,
+  InsertCurriculumScopeTemplate,
 } from "../drizzle/schema";
+import type { FbiseSubject, ScopeCatalog } from "./curriculumScope";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -214,6 +226,181 @@ export async function getUserGenerationJobs(userId: number) {
   if (!db) throw new Error("Database not available");
   
   return db.select().from(generationJobs).where(eq(generationJobs.userId, userId));
+}
+
+/**
+ * Loads only the server-approved active curriculum catalog. Callers must resolve a scope through
+ * this data instead of accepting browser-supplied chapter text.
+ */
+export async function getActiveCurriculumScopeCatalog(subject: FbiseSubject): Promise<ScopeCatalog | undefined> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const sets = await db.select().from(curriculumSets).where(and(
+    eq(curriculumSets.grade, "10"),
+    eq(curriculumSets.subject, subject),
+    eq(curriculumSets.status, "active"),
+  )).orderBy(asc(curriculumSets.id)).limit(1);
+  const curriculumSet = sets[0];
+  if (!curriculumSet) return undefined;
+
+  const chapters = await db.select().from(curriculumChapters).where(and(
+    eq(curriculumChapters.curriculumSetId, curriculumSet.id),
+    eq(curriculumChapters.isActive, 1),
+  )).orderBy(asc(curriculumChapters.sequence));
+  const chapterIds = chapters.map((chapter) => chapter.id);
+  const segments = chapterIds.length
+    ? await db.select().from(curriculumChapterSegments).where(and(
+      inArray(curriculumChapterSegments.chapterId, chapterIds),
+      eq(curriculumChapterSegments.isActive, 1),
+    )).orderBy(asc(curriculumChapterSegments.sequence))
+    : [];
+  const templates = await db.select().from(curriculumScopeTemplates).where(and(
+    eq(curriculumScopeTemplates.curriculumSetId, curriculumSet.id),
+    eq(curriculumScopeTemplates.isActive, 1),
+  ));
+  const templateIds = templates.map((template) => template.id);
+  const templateMemberships = templateIds.length
+    ? await db.select().from(curriculumScopeTemplateChapters).where(
+      inArray(curriculumScopeTemplateChapters.scopeTemplateId, templateIds)
+    ).orderBy(asc(curriculumScopeTemplateChapters.sequence))
+    : [];
+
+  return {
+    curriculumSet: {
+      id: curriculumSet.id,
+      grade: curriculumSet.grade,
+      subject: curriculumSet.subject,
+      label: curriculumSet.label,
+      editionLabel: curriculumSet.editionLabel,
+    },
+    chapters,
+    segments,
+    templates,
+    templateMemberships,
+  };
+}
+
+export async function listCurriculumSets() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.select().from(curriculumSets).orderBy(asc(curriculumSets.subject), asc(curriculumSets.id));
+}
+
+export async function createCurriculumSet(values: InsertCurriculumSet) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(curriculumSets).values(values);
+  const rows = await db.select().from(curriculumSets).where(eq(curriculumSets.id, result[0].insertId as number)).limit(1);
+  return rows[0];
+}
+
+export async function getCurriculumSet(curriculumSetId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const rows = await db.select().from(curriculumSets).where(eq(curriculumSets.id, curriculumSetId)).limit(1);
+  return rows[0];
+}
+
+export async function listCurriculumSources(curriculumSetId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.select().from(curriculumSources).where(eq(curriculumSources.curriculumSetId, curriculumSetId)).orderBy(asc(curriculumSources.id));
+}
+
+export async function getCurriculumSource(sourceId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const rows = await db.select().from(curriculumSources).where(eq(curriculumSources.id, sourceId)).limit(1);
+  return rows[0];
+}
+
+export async function createCurriculumSource(values: InsertCurriculumSource) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(curriculumSources).values(values);
+  const rows = await db.select().from(curriculumSources).where(eq(curriculumSources.id, result[0].insertId as number)).limit(1);
+  return rows[0];
+}
+
+export async function listCurriculumChapters(curriculumSetId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.select().from(curriculumChapters).where(eq(curriculumChapters.curriculumSetId, curriculumSetId)).orderBy(asc(curriculumChapters.sequence));
+}
+
+export async function createCurriculumChapter(values: InsertCurriculumChapter) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(curriculumChapters).values(values);
+  const rows = await db.select().from(curriculumChapters).where(eq(curriculumChapters.id, result[0].insertId as number)).limit(1);
+  return rows[0];
+}
+
+export async function replaceChapterSegments(chapterId: number, segments: Array<Omit<InsertCurriculumChapterSegment, "chapterId">>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(curriculumChapterSegments).set({ isActive: 0 }).where(eq(curriculumChapterSegments.chapterId, chapterId));
+  if (!segments.length) return [];
+  await db.insert(curriculumChapterSegments).values(segments.map((segment) => ({ ...segment, chapterId, isActive: 1 })));
+  return db.select().from(curriculumChapterSegments).where(and(
+    eq(curriculumChapterSegments.chapterId, chapterId),
+    eq(curriculumChapterSegments.isActive, 1),
+  )).orderBy(asc(curriculumChapterSegments.sequence));
+}
+
+export async function listChapterSegments(chapterId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.select().from(curriculumChapterSegments).where(and(
+    eq(curriculumChapterSegments.chapterId, chapterId),
+    eq(curriculumChapterSegments.isActive, 1),
+  )).orderBy(asc(curriculumChapterSegments.sequence));
+}
+
+export async function listScopeTemplates(curriculumSetId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.select().from(curriculumScopeTemplates).where(eq(curriculumScopeTemplates.curriculumSetId, curriculumSetId)).orderBy(asc(curriculumScopeTemplates.id));
+}
+
+export async function createScopeTemplateWithChapters(
+  values: InsertCurriculumScopeTemplate,
+  chapterIds: number[],
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(curriculumScopeTemplates).values(values);
+  const templateId = result[0].insertId as number;
+  await db.insert(curriculumScopeTemplateChapters).values(chapterIds.map((chapterId, index) => ({
+    scopeTemplateId: templateId,
+    chapterId,
+    sequence: index + 1,
+  })));
+  const rows = await db.select().from(curriculumScopeTemplates).where(eq(curriculumScopeTemplates.id, templateId)).limit(1);
+  return rows[0];
+}
+
+export async function activateCurriculumSet(curriculumSetId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const rows = await db.select().from(curriculumSets).where(eq(curriculumSets.id, curriculumSetId)).limit(1);
+  const set = rows[0];
+  if (!set) throw new Error("Curriculum set not found");
+
+  const chapters = await listCurriculumChapters(curriculumSetId);
+  if (!chapters.some((chapter) => chapter.isActive === 1)) {
+    throw new Error("Add at least one reviewed chapter before activating a curriculum set.");
+  }
+
+  await db.update(curriculumSets).set({ status: "archived", archivedAt: new Date() }).where(and(
+    eq(curriculumSets.subject, set.subject),
+    eq(curriculumSets.grade, set.grade),
+    eq(curriculumSets.status, "active"),
+  ));
+  await db.update(curriculumSets).set({ status: "active", activatedAt: new Date(), archivedAt: null }).where(eq(curriculumSets.id, curriculumSetId));
+  const activated = await db.select().from(curriculumSets).where(eq(curriculumSets.id, curriculumSetId)).limit(1);
+  return activated[0];
 }
 
 export async function createAiGeneratedQuiz(quiz: InsertQuiz) {

@@ -1,9 +1,23 @@
 import { z } from "zod";
 import { invokeLLM } from "./_core/llm";
-import { createGenerationJob, updateGenerationJob, createAiGeneratedQuiz, addQuestionsToQuiz } from "./db";
+import { createGenerationJob, updateGenerationJob, createAiGeneratedQuiz, addQuestionsToQuiz, getGenerationJob } from "./db";
 import { analyzeContent, chunkContent } from "./contentAnalyzer";
 import { buildDraftQualityChecks, validateGeneratedMcqs, type GeneratedMcq } from "./quizDraftValidator";
 import type { InsertGenerationJob } from "../drizzle/schema";
+import type { FbiseSubject, ScopeType } from "./curriculumScope";
+
+export type GenerationSourceContext = {
+  sourceType: "raw_text" | "curriculum_scope";
+  sourceTitle: string;
+  subject?: FbiseSubject;
+  classLevel?: "10";
+  curriculumSetId?: number;
+  scopeTemplateId?: number | null;
+  scopeType?: ScopeType;
+  selectedChapterIds?: number[];
+  selectedSegmentIds?: number[];
+  scopeSnapshot?: unknown;
+};
 
 const MCQ_GENERATION_PROMPT = `You are an advanced academic assessment designer and subject-matter expert. Your task is to generate high-quality multiple-choice questions that test deep understanding and conceptual mastery, NOT surface-level recall.
 
@@ -81,7 +95,11 @@ export async function generateMCQsFromContent(
   userId: number,
   contentText: string,
   numQuestions?: number,
-  difficulty: "balanced" | "easy" | "medium" | "hard" = "balanced"
+  difficulty: "balanced" | "easy" | "medium" | "hard" = "balanced",
+  sourceContext: GenerationSourceContext = {
+    sourceType: "raw_text",
+    sourceTitle: "Uploaded study material",
+  }
 ): Promise<{ jobId: number; mcqs: GeneratedMcq[]; analysis: any; draft: any }> {
   // Analyze content to determine optimal MCQ count
   const analysis = analyzeContent(contentText);
@@ -93,6 +111,12 @@ export async function generateMCQsFromContent(
     contentText,
     numQuestions: finalNumQuestions,
     difficulty,
+    curriculumSetId: sourceContext.curriculumSetId,
+    scopeTemplateId: sourceContext.scopeTemplateId ?? undefined,
+    scopeType: sourceContext.scopeType ?? "ad_hoc",
+    selectedChapterIds: sourceContext.selectedChapterIds?.length ? JSON.stringify(sourceContext.selectedChapterIds) : undefined,
+    selectedSegmentIds: sourceContext.selectedSegmentIds?.length ? JSON.stringify(sourceContext.selectedSegmentIds) : undefined,
+    sourceSnapshot: sourceContext.scopeSnapshot ? JSON.stringify(sourceContext.scopeSnapshot) : undefined,
     status: "processing",
     progress: 10,
   });
@@ -232,10 +256,10 @@ REQUIREMENTS:
       draft: {
         status: "success",
         sourceMetadata: {
-          sourceType: "raw_text",
-          sourceTitle: "Uploaded study material",
-          subject: "",
-          classLevel: "",
+          sourceType: sourceContext.sourceType,
+          sourceTitle: sourceContext.sourceTitle,
+          subject: sourceContext.subject ?? "",
+          classLevel: sourceContext.classLevel ?? "",
           language: "",
           difficultyProfile: difficulty,
           generatedAt: new Date().toISOString(),
@@ -293,10 +317,14 @@ export async function saveGeneratedQuizToDatabase(
   jobId: number,
   quizTitle: string,
   mcqs: any[],
-  sourceContent: string,
   difficulty: string
 ) {
   try {
+    const job = await getGenerationJob(jobId);
+    if (!job || job.userId !== userId) {
+      throw new Error("Generation job not found or unauthorized");
+    }
+
     // Create the quiz
     const quiz = await createAiGeneratedQuiz({
       title: quizTitle,
@@ -304,12 +332,20 @@ export async function saveGeneratedQuizToDatabase(
       totalQuestions: mcqs.length,
       isAiGenerated: 1,
       createdBy: userId,
-      sourceContent,
+      sourceContent: job.contentText,
+      curriculumSetId: job.curriculumSetId,
+      scopeSnapshot: job.sourceSnapshot,
+      difficultyProfile: job.difficulty,
+      publicationStatus: "draft",
       generationMetadata: JSON.stringify({
         difficulty,
         numQuestions: mcqs.length,
         model: "gpt-4",
         generatedAt: new Date().toISOString(),
+        scopeType: job.scopeType,
+        curriculumSetId: job.curriculumSetId,
+        selectedChapterIds: job.selectedChapterIds,
+        selectedSegmentIds: job.selectedSegmentIds,
       }),
     });
 

@@ -8,6 +8,7 @@ import QuizList from "./pages/QuizList";
 import QuizPractice from "./pages/QuizPractice";
 import QuizResults from "./pages/QuizResults";
 import AIAgent from "./pages/AIAgent";
+import CurriculumManagement from "./pages/CurriculumManagement";
 
 function Router() {
   return (
@@ -16,6 +17,7 @@ function Router() {
       <Route path={"/quiz/:quizId"} component={QuizPractice} />
       <Route path={"/results/:attemptId"} component={QuizResults} />
       <Route path={"/generate"} component={AIAgent} />
+      <Route path={"/curriculum"} component={CurriculumManagement} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

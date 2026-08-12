@@ -1,6 +1,7 @@
-import { describe, it, expect, beforeAll } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
+import { addQuestionsToQuiz, createQuiz, deleteQuizAndRelated } from "./db";
 
 type AuthenticatedUser = NonNullable<TrpcContext["user"]>;
 
@@ -31,7 +32,28 @@ function createAuthContext(userId: number = 1): TrpcContext {
 
 describe("quiz procedures", () => {
   let quizId: number;
-  let questions: any[];
+  let questions: any[] = [];
+
+  beforeAll(async () => {
+    quizId = await createQuiz({
+      title: `Quiz procedure test ${Date.now()}`,
+      description: "Temporary deterministic fixture for quiz procedure tests.",
+      totalQuestions: 10,
+      isAiGenerated: 0,
+      createdBy: 1,
+      publicationStatus: "published",
+    });
+
+    await addQuestionsToQuiz(quizId, Array.from({ length: 10 }, (_, index) => ({
+      question: `Test question ${index + 1}: Which option is correct?`,
+      options: { A: "Correct answer", B: "Distractor one", C: "Distractor two", D: "Distractor three" },
+      answer: "A",
+    })));
+  });
+
+  afterAll(async () => {
+    if (quizId) await deleteQuizAndRelated(quizId, 1);
+  });
 
   describe("quiz.getAll", () => {
     it("should return all quizzes", async () => {
@@ -41,12 +63,11 @@ describe("quiz procedures", () => {
       const quizzes = await caller.quiz.getAll();
 
       expect(Array.isArray(quizzes)).toBe(true);
-      expect(quizzes.length).toBeGreaterThan(0);
-      expect(quizzes[0]).toHaveProperty("id");
-      expect(quizzes[0]).toHaveProperty("title");
-      expect(quizzes[0]).toHaveProperty("totalQuestions");
-
-      quizId = quizzes[0].id;
+      const testQuiz = quizzes.find((quiz) => quiz.id === quizId);
+      expect(testQuiz).toBeDefined();
+      expect(testQuiz).toHaveProperty("id");
+      expect(testQuiz).toHaveProperty("title");
+      expect(testQuiz).toHaveProperty("totalQuestions");
     });
   });
 
