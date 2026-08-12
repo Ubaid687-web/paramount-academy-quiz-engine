@@ -2,6 +2,7 @@
  * Intelligent Content Analyzer
  * Analyzes document content to determine optimal MCQ generation parameters
  */
+import { calculateQuestionRecommendation } from "../shared/questionRecommendation";
 
 export interface ContentAnalysis {
   totalCharacters: number;
@@ -169,31 +170,12 @@ function calculateRecommendedQuestions(
   sectionCount: number,
   topicCount: number
 ): { minimum: number; optimal: number; maximum: number } {
-  // Base calculation: 1 question per ~150 words
-  const baseQuestions = Math.ceil(totalWords / 150);
-
-  // Complexity multiplier
-  const complexityMultiplier: Record<string, number> = {
-    simple: 0.8,
-    moderate: 1.0,
-    complex: 1.3,
-    advanced: 1.6,
-  };
-  const multiplier = complexityMultiplier[complexity] || 1.0;
-
-  // Section and topic coverage
-  const coverageBonus = Math.ceil((sectionCount + topicCount) / 2);
-
-  // Calculate ranges
-  const optimal = Math.max(10, Math.ceil(baseQuestions * multiplier + coverageBonus));
-  const minimum = Math.max(5, Math.ceil(optimal * 0.6));
-  const maximum = Math.ceil(optimal * 1.8);
-
-  return {
-    minimum,
-    optimal,
-    maximum,
-  };
+  return calculateQuestionRecommendation({
+    totalWords,
+    complexity: complexity as "simple" | "moderate" | "complex" | "advanced",
+    sectionCount,
+    topicCount,
+  });
 }
 
 /**

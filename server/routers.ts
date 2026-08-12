@@ -124,7 +124,7 @@ export const appRouter = router({
       .input(
         z.object({
           contentText: z.string().min(100, "Content must be at least 100 characters"),
-          numQuestions: z.number().min(5).max(50),
+          numQuestions: z.number().min(5).max(100),
           difficulty: z.enum(["balanced", "easy", "medium", "hard"]).default("balanced"),
         })
       )

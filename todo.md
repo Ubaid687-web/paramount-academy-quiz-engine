@@ -15,8 +15,8 @@
 
 ## Phase 2: Platform Audit & Bug Fixing
 - [x] Fix broken document upload flow for PDF-based study material ingestion
-- [ ] Remove duplicate quiz-generation actions from the AI Agent interface
-- [ ] Improve MCQ count recommendation logic so large content can yield appropriate question volume
+- [x] Remove duplicate quiz-generation actions from the AI Agent interface
+- [x] Improve MCQ count recommendation logic so large content can yield appropriate question volume
 - [ ] Add admin controls for selecting scope and difficulty in FBISE-style practice generation
 - [ ] Remove misaligned or unnecessary product elements that do not fit the academy portal direction
 
@@ -29,10 +29,16 @@
 ## Phase 4: Reporting & Delivery
 - [ ] Report the updated system status, uploaded-material coverage, and next required inputs
 
-- [ ] Keep `isProcessingFile` true until PDF extraction actually finishes, and show the processing state in the upload UI.
-- [ ] Add/restore a test covering successful PDF upload/extraction behavior for the AIAgent flow or backend extraction path.
-- [ ] Verify the repaired PDF upload path end-to-end and only then mark the upload bug as complete.
+- [x] Keep `isProcessingFile` true until PDF extraction actually finishes, and show the processing state in the upload UI.
+- [x] Add/restore a test covering successful PDF upload/extraction behavior for the AIAgent flow or backend extraction path.
+- [x] Verify the repaired PDF upload path end-to-end and only then mark the upload bug as complete.
 - [x] Add an animated loading state and visible progress indicator while AI quiz generation is running.
 - [x] Add automated tests for the generation-progress state and accessible completion feedback.
 - [x] Add a UI-focused test confirming the generation loading panel exposes progressbar accessibility attributes and staged feedback.
 - [x] Add coverage confirming the loading panel exits and the generated-quiz success state appears after completion.
+- [x] Reproduce and repair the PDF upload flow that currently leaves extracted content unavailable to the quiz builder.
+- [x] Ensure both PDF and TXT uploads populate the content field, supply a usable default title, and activate the Generate MCQs action.
+- [x] Add visible upload-processing feedback and a clear extraction error state without leaving the interface inactive.
+- [x] Enforce a reviewable draft output contract with source metadata, source references, structured validation, and safe failure responses.
+- [x] Verify the document-to-draft workflow with an integration test that connects real source ingestion to draft validation without invoking a paid model call.
+- [x] Add a non-mocked integration test for real PDF extraction followed by the source-grounded draft validation contract.

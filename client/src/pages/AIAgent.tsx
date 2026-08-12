@@ -8,8 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { trpc } from "@/lib/trpc";
 import { GENERATION_STEPS, getGenerationStep, getNextSimulatedProgress } from "@/lib/generation-progress";
+import { calculateQuestionRecommendation } from "@shared/questionRecommendation";
 import { useLocation } from "wouter";
-import { Loader2, Sparkles, CheckCircle2, AlertCircle, ArrowLeft, Upload, FileText, X, Zap } from "lucide-react";
+import { Loader2, Sparkles, CheckCircle2, AlertCircle, ArrowLeft, Upload, FileText, X } from "lucide-react";
 import { toast } from "sonner";
 
 
@@ -22,17 +23,19 @@ export default function AIAgent() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isProcessingFile, setIsProcessingFile] = useState(false);
   const [numQuestions, setNumQuestions] = useState<number | null>(null);
+  const [isQuestionCountManual, setIsQuestionCountManual] = useState(false);
   const [difficulty, setDifficulty] = useState<"balanced" | "easy" | "medium" | "hard">("balanced");
   const [quizTitle, setQuizTitle] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedMcqs, setGeneratedMcqs] = useState<any[]>([]);
+  const [generatedDraft, setGeneratedDraft] = useState<any>(null);
   const [jobId, setJobId] = useState<number | null>(null);
   const [generationProgress, setGenerationProgress] = useState(0);
   const [contentAnalysis, setContentAnalysis] = useState<any>(null);
 
   const generateMutation = trpc.aiAgent.generateMCQs.useMutation();
   const saveMutation = trpc.aiAgent.saveGeneratedQuiz.useMutation();
-  // const pdfExtractMutation = trpc.pdfUpload.extractPdfText.useMutation();
+  const pdfExtractMutation = trpc.pdfUpload.extractPdfText.useMutation();
   const statusQuery = trpc.aiAgent.getGenerationStatus.useQuery(
     { jobId: jobId || 0 },
     { enabled: !!jobId && isGenerating, refetchInterval: 1000 }
@@ -58,13 +61,46 @@ export default function AIAgent() {
     return () => window.clearInterval(progressTimer);
   }, [isGenerating]);
 
+  useEffect(() => {
+    const trimmedContent = contentText.trim();
+    if (!trimmedContent) {
+      setContentAnalysis(null);
+      setNumQuestions(null);
+      setIsQuestionCountManual(false);
+      return;
+    }
+
+    const analysisTimer = window.setTimeout(() => {
+      const wordCount = trimmedContent.split(/\s+/).filter(Boolean).length;
+      const complexity = determineComplexity(trimmedContent);
+      const sectionCount = trimmedContent
+        .split(/\n\s*(?:chapter|unit|section|\d+[.)])/i)
+        .filter((section) => section.trim().split(/\s+/).length >= 40).length;
+      const topicCount = Math.min(10, (trimmedContent.match(/\b[A-Z][a-z]{3,}\b/g) || []).length);
+      const recommended = calculateQuestionRecommendation({
+        totalWords: wordCount,
+        complexity,
+        sectionCount,
+        topicCount,
+      });
+
+      setContentAnalysis({ wordCount, complexity, recommended });
+      setNumQuestions((currentCount) => {
+        if (!isQuestionCountManual || !currentCount) return recommended.optimal;
+        return Math.min(recommended.maximum, Math.max(recommended.minimum, currentCount));
+      });
+    }, 300);
+
+    return () => window.clearTimeout(analysisTimer);
+  }, [contentText, isQuestionCountManual]);
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const maxSize = 50 * 1024 * 1024;
+    const maxSize = 30 * 1024 * 1024;
     if (file.size > maxSize) {
-      toast.error("File size must be less than 50MB");
+      toast.error("File size must be less than 30MB");
       return;
     }
 
@@ -80,10 +116,26 @@ export default function AIAgent() {
     try {
       if (file.type === "application/pdf") {
         const reader = new FileReader();
-        
         reader.onload = async (event) => {
           try {
-            toast.info("PDF support coming soon. Please paste content manually.");
+            const dataUrl = event.target?.result;
+            const base64 = typeof dataUrl === "string" ? dataUrl.split(",")[1] : undefined;
+            if (!base64) {
+              throw new Error("The PDF could not be prepared for extraction.");
+            }
+
+            const result = await pdfExtractMutation.mutateAsync({
+              fileBuffer: base64,
+              fileName: file.name,
+            });
+            const extractedText = result.text.trim();
+            if (extractedText.length < 100) {
+              throw new Error("Very little readable text was found in this PDF. Please use a text-based PDF or paste the content.");
+            }
+
+            setContentText(extractedText);
+            setQuizTitle(file.name.replace(/\.[^/.]+$/, ""));
+            toast.success(`Extracted ${result.pageCount} page${result.pageCount === 1 ? "" : "s"}. Your quiz settings are ready.`);
           } catch (error) {
             toast.error(error instanceof Error ? error.message : "Failed to process PDF");
             setUploadedFile(null);
@@ -98,8 +150,7 @@ export default function AIAgent() {
           setIsProcessingFile(false);
         };
         
-        // reader.readAsDataURL(file);
-        setIsProcessingFile(false);
+        reader.readAsDataURL(file);
       } else {
         const reader = new FileReader();
         
@@ -134,36 +185,7 @@ export default function AIAgent() {
     }
   };
 
-  const analyzeContentForMCQs = () => {
-    if (!contentText.trim()) {
-      toast.error("Please add content first");
-      return;
-    }
-
-    // Simple content analysis
-    const wordCount = contentText.split(/\s+/).length;
-    const complexity = determineComplexity(contentText);
-    
-    // Calculate recommended questions
-    const baseQuestions = Math.ceil(wordCount / 150);
-    const complexityMultiplier = complexity === "simple" ? 0.8 : complexity === "moderate" ? 1.0 : complexity === "complex" ? 1.3 : 1.6;
-    const optimal = Math.max(10, Math.ceil(baseQuestions * complexityMultiplier));
-    
-    setContentAnalysis({
-      wordCount,
-      complexity,
-      recommended: {
-        min: Math.max(5, Math.ceil(optimal * 0.6)),
-        optimal,
-        max: Math.ceil(optimal * 1.8),
-      },
-    });
-    
-    // Set default to optimal
-    setNumQuestions(optimal);
-  };
-
-  const determineComplexity = (text: string): string => {
+  const determineComplexity = (text: string): "simple" | "moderate" | "complex" | "advanced" => {
     const words = text.split(/\s+/).length;
     const avgWordLength = text.split(/\s+/).reduce((sum, w) => sum + w.length, 0) / words;
     const technicalTerms = (text.match(/[A-Z][a-z]+|[0-9]+/g) || []).length;
@@ -198,6 +220,7 @@ export default function AIAgent() {
 
     setIsGenerating(true);
     setGeneratedMcqs([]);
+    setGeneratedDraft(null);
     setGenerationProgress(8);
 
     try {
@@ -207,8 +230,17 @@ export default function AIAgent() {
         difficulty,
       });
 
+      if (result.draft?.status === "error") {
+        setJobId(result.jobId);
+        setGenerationProgress(0);
+        setIsGenerating(false);
+        toast.error(`${result.draft.message} ${result.draft.safeRetryAdvice}`);
+        return;
+      }
+
       setJobId(result.jobId);
       setGeneratedMcqs(result.mcqs);
+      setGeneratedDraft(result.draft ?? null);
       
       if (result.analysis) {
         setContentAnalysis(result.analysis);
@@ -291,10 +323,10 @@ export default function AIAgent() {
                       onChange={handleFileUpload}
                     />
                     <div className="flex flex-col items-center gap-2">
-                      <FileText className="h-8 w-8 text-muted-foreground" />
+                      {isProcessingFile ? <Loader2 className="h-8 w-8 animate-spin text-accent" /> : <FileText className="h-8 w-8 text-muted-foreground" />}
                       <div>
-                        <p className="font-semibold text-foreground">Upload a PDF or TXT file</p>
-                        <p className="text-sm text-muted-foreground">or click to browse</p>
+                        <p className="font-semibold text-foreground">{isProcessingFile ? "Extracting document text…" : "Upload a PDF or TXT file"}</p>
+                        <p className="text-sm text-muted-foreground">{isProcessingFile ? "Please keep this page open while we prepare the quiz source." : "or click to browse"}</p>
                       </div>
                     </div>
                   </label>
@@ -312,6 +344,7 @@ export default function AIAgent() {
                         onClick={() => {
                           setUploadedFile(null);
                           setContentText("");
+                          setQuizTitle("");
                         }}
                         variant="ghost"
                         size="icon"
@@ -350,17 +383,6 @@ export default function AIAgent() {
                   />
                 </div>
 
-                {/* Analyze Button */}
-                {contentText.trim() && !contentAnalysis && (
-                  <Button
-                    onClick={analyzeContentForMCQs}
-                    variant="outline"
-                    className="w-full border-accent/30 hover:border-accent"
-                  >
-                    <Zap className="h-4 w-4 mr-2" />
-                    Analyze Content
-                  </Button>
-                )}
               </CardContent>
             </Card>
 
@@ -384,16 +406,16 @@ export default function AIAgent() {
                   <div>
                     <p className="text-sm text-muted-foreground mb-2">Recommended MCQ Range</p>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium">{contentAnalysis.recommended?.min || contentAnalysis.recommendedQuestions?.minimum}</span>
+                      <span className="text-sm font-medium">{contentAnalysis.recommended?.minimum || contentAnalysis.recommended?.min || contentAnalysis.recommendedQuestions?.minimum}</span>
                       <div className="flex-1 h-2 bg-accent/20 rounded-full overflow-hidden">
                         <div 
                           className="h-full bg-gradient-to-r from-accent to-secondary"
                           style={{
-                            width: `${((contentAnalysis.recommended?.optimal || contentAnalysis.recommendedQuestions?.optimal) / (contentAnalysis.recommended?.max || contentAnalysis.recommendedQuestions?.maximum)) * 100}%`
+                            width: `${((contentAnalysis.recommended?.optimal || contentAnalysis.recommendedQuestions?.optimal) / (contentAnalysis.recommended?.maximum || contentAnalysis.recommended?.max || contentAnalysis.recommendedQuestions?.maximum)) * 100}%`
                           }}
                         />
                       </div>
-                      <span className="text-sm font-medium">{contentAnalysis.recommended?.max || contentAnalysis.recommendedQuestions?.maximum}</span>
+                      <span className="text-sm font-medium">{contentAnalysis.recommended?.maximum || contentAnalysis.recommended?.max || contentAnalysis.recommendedQuestions?.maximum}</span>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
                       Optimal: <span className="font-semibold text-accent">{contentAnalysis.recommended?.optimal || contentAnalysis.recommendedQuestions?.optimal}</span> questions
@@ -463,10 +485,24 @@ export default function AIAgent() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <CheckCircle2 className="h-5 w-5 text-accent" />
-                    Generated MCQs ({generatedMcqs.length})
+                    Generated MCQ Draft ({generatedMcqs.length})
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
+                  {generatedDraft && (
+                    <div className="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="font-semibold text-foreground">Admin review required before assignment or publication</p>
+                        <span className="rounded-full bg-background/70 px-2.5 py-1 text-xs font-medium text-amber-600 dark:text-amber-300">Draft</span>
+                      </div>
+                      <p className="mt-1 text-muted-foreground">{generatedDraft.quiz?.instructions}</p>
+                      {generatedDraft.qualityChecks?.reviewWarnings?.length > 0 && (
+                        <ul className="mt-3 space-y-1 text-xs text-muted-foreground">
+                          {generatedDraft.qualityChecks.reviewWarnings.map((warning: string) => <li key={warning}>• {warning}</li>)}
+                        </ul>
+                      )}
+                    </div>
+                  )}
                   <div className="space-y-4 max-h-[400px] overflow-y-auto">
                     {generatedMcqs.slice(0, 3).map((mcq, idx) => (
                       <div key={idx} className="p-3 bg-muted/50 rounded-lg text-sm">
@@ -478,6 +514,12 @@ export default function AIAgent() {
                             </p>
                           ))}
                         </div>
+                        {(mcq.sourceReference || mcq.learningObjective) && (
+                          <div className="mt-3 border-t border-border/60 pt-2 text-xs text-muted-foreground">
+                            {mcq.sourceReference && <p><span className="font-medium text-foreground">Source:</span> {mcq.sourceReference}</p>}
+                            {mcq.learningObjective && <p><span className="font-medium text-foreground">Learning objective:</span> {mcq.learningObjective}</p>}
+                          </div>
+                        )}
                       </div>
                     ))}
                     {generatedMcqs.length > 3 && (
@@ -507,20 +549,37 @@ export default function AIAgent() {
                   <Label className="text-sm font-medium mb-2 block">
                     Number of Questions: <span className="text-accent font-bold">{numQuestions || "Auto"}</span>
                   </Label>
+                  <Input
+                    type="number"
+                    min={contentAnalysis?.recommended?.minimum || contentAnalysis?.recommended?.min || 5}
+                    max={contentAnalysis?.recommended?.maximum || contentAnalysis?.recommended?.max || 100}
+                    value={numQuestions || ""}
+                    onChange={(e) => {
+                      const nextValue = Number.parseInt(e.target.value, 10);
+                      setIsQuestionCountManual(Boolean(e.target.value));
+                      setNumQuestions(Number.isFinite(nextValue) ? nextValue : null);
+                    }}
+                    placeholder="10"
+                  />
                   {contentAnalysis && numQuestions && (
-                    <div className="text-xs text-muted-foreground">
-                      Range: {contentAnalysis.recommended?.min || 5} - {contentAnalysis.recommended?.max || 100}
+                    <div className="mt-3 space-y-2">
+                      <Slider
+                        value={[numQuestions]}
+                        min={contentAnalysis.recommended?.minimum || contentAnalysis.recommended?.min || 5}
+                        max={contentAnalysis.recommended?.maximum || contentAnalysis.recommended?.max || 100}
+                        step={1}
+                        onValueChange={([value]) => {
+                          setIsQuestionCountManual(true);
+                          setNumQuestions(value);
+                        }}
+                        aria-label="Number of questions"
+                      />
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>Min {contentAnalysis.recommended?.minimum || contentAnalysis.recommended?.min}</span>
+                        <span>Recommended {contentAnalysis.recommended?.optimal}</span>
+                        <span>Max {contentAnalysis.recommended?.maximum || contentAnalysis.recommended?.max}</span>
+                      </div>
                     </div>
-                  )}
-                  {!contentAnalysis && (
-                    <Input
-                      type="number"
-                      min="5"
-                      max="100"
-                      value={numQuestions || ""}
-                      onChange={(e) => setNumQuestions(e.target.value ? parseInt(e.target.value) : 10)}
-                      placeholder="10"
-                    />
                   )}
                 </div>
 
