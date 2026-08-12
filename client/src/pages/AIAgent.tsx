@@ -11,6 +11,11 @@ import { useLocation } from "wouter";
 import { Loader2, Sparkles, CheckCircle2, AlertCircle, ArrowLeft, Upload, FileText, X, Zap } from "lucide-react";
 import { toast } from "sonner";
 
+
+
+
+
+
 export default function AIAgent() {
   const [, navigate] = useLocation();
   const [contentText, setContentText] = useState("");
@@ -66,17 +71,6 @@ export default function AIAgent() {
         
         reader.onload = async (event) => {
           try {
-            const base64 = event.target?.result as string;
-            const base64Data = base64.split(",")[1] || base64;
-            
-            // PDF extraction disabled for now
-            // const result = await pdfExtractMutation.mutateAsync({
-            //   fileBuffer: base64Data,
-            //   fileName: file.name,
-            // });
-            
-            // setQuizTitle(file.name.replace(/\.[^/.]+$/, ""));
-            // toast.success(`PDF loaded! (${result.pageCount} pages)`);
             toast.info("PDF support coming soon. Please paste content manually.");
           } catch (error) {
             toast.error(error instanceof Error ? error.message : "Failed to process PDF");

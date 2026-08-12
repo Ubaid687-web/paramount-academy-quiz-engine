@@ -103,6 +103,22 @@ export const appRouter = router({
   sharing: sharingRouter,
   spaced: spacedRepetitionRouter,
 
+
+
+
+  pdfUpload: router({
+    extractPdfText: publicProcedure
+      .input(z.object({
+        fileBuffer: z.string(), // Base64 encoded PDF
+        fileName: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const { extractTextFromPdf } = await import("./pdfProcessor");
+        const buffer = Buffer.from(input.fileBuffer, 'base64');
+        return extractTextFromPdf(buffer, input.fileName);
+      }),
+  }),
+
   aiAgent: router({
     generateMCQs: protectedProcedure
       .input(
