@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,10 +7,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { trpc } from "@/lib/trpc";
+import { GENERATION_STEPS, getGenerationStep, getNextSimulatedProgress } from "@/lib/generation-progress";
 import { useLocation } from "wouter";
 import { Loader2, Sparkles, CheckCircle2, AlertCircle, ArrowLeft, Upload, FileText, X, Zap } from "lucide-react";
 import { toast } from "sonner";
-
 
 
 
@@ -45,6 +45,18 @@ export default function AIAgent() {
       setIsGenerating(false);
     }
   }, [statusQuery.data?.progress, statusQuery.data?.status]);
+
+  useEffect(() => {
+    if (!isGenerating) return;
+
+    const progressTimer = window.setInterval(() => {
+      setGenerationProgress((currentProgress) => {
+        return getNextSimulatedProgress(currentProgress);
+      });
+    }, 850);
+
+    return () => window.clearInterval(progressTimer);
+  }, [isGenerating]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -186,6 +198,7 @@ export default function AIAgent() {
 
     setIsGenerating(true);
     setGeneratedMcqs([]);
+    setGenerationProgress(8);
 
     try {
       const result = await generateMutation.mutateAsync({
@@ -201,6 +214,8 @@ export default function AIAgent() {
         setContentAnalysis(result.analysis);
       }
 
+      setGenerationProgress(100);
+      setIsGenerating(false);
       toast.success(`Generated ${result.mcqs.length} MCQs!`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to generate MCQs");
@@ -387,6 +402,60 @@ export default function AIAgent() {
                 </CardContent>
               </Card>
             )}
+
+            {isGenerating && (() => {
+              const activeStep = getGenerationStep(generationProgress);
+              return (
+                <Card className="overflow-hidden border-accent/30 bg-card shadow-lg shadow-accent/10" aria-live="polite">
+                  <div className="h-1.5 bg-gradient-to-r from-accent via-secondary to-accent animate-pulse" />
+                  <CardContent className="p-6">
+                    <div className="flex items-start gap-4">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-accent/15 text-accent">
+                        <Sparkles className="h-6 w-6 animate-pulse" aria-hidden="true" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div>
+                            <p className="text-base font-semibold text-foreground">{activeStep.label}</p>
+                            <p className="mt-1 text-sm text-muted-foreground">{activeStep.detail}</p>
+                          </div>
+                          <span className="rounded-full bg-accent/15 px-3 py-1 text-sm font-semibold text-accent tabular-nums">
+                            {generationProgress}%
+                          </span>
+                        </div>
+
+                        <div
+                          className="mt-5 h-2.5 overflow-hidden rounded-full bg-muted"
+                          role="progressbar"
+                          aria-label="Quiz generation progress"
+                          aria-valuemin={0}
+                          aria-valuemax={100}
+                          aria-valuenow={generationProgress}
+                          aria-valuetext={`${generationProgress}% complete: ${activeStep.label}`}
+                        >
+                          <div
+                            className="h-full rounded-full bg-gradient-to-r from-accent via-secondary to-accent transition-all duration-700 ease-out"
+                            style={{ width: `${generationProgress}%` }}
+                          />
+                        </div>
+
+                        <div className="mt-5 grid grid-cols-2 gap-x-3 gap-y-2 text-xs sm:grid-cols-3">
+                          {GENERATION_STEPS.slice(1).map((step) => {
+                            const isComplete = generationProgress >= step.threshold;
+                            return (
+                              <div key={step.threshold} className={isComplete ? "flex items-center gap-1.5 text-accent" : "flex items-center gap-1.5 text-muted-foreground"}>
+                                <span className={isComplete ? "h-1.5 w-1.5 rounded-full bg-accent" : "h-1.5 w-1.5 rounded-full bg-muted-foreground/40"} />
+                                <span>{step.label.replace(" your", "").replace(" study material", " material")}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })()}
 
             {/* Generated MCQs Preview */}
             {generatedMcqs.length > 0 && (

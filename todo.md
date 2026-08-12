@@ -32,3 +32,7 @@
 - [ ] Keep `isProcessingFile` true until PDF extraction actually finishes, and show the processing state in the upload UI.
 - [ ] Add/restore a test covering successful PDF upload/extraction behavior for the AIAgent flow or backend extraction path.
 - [ ] Verify the repaired PDF upload path end-to-end and only then mark the upload bug as complete.
+- [x] Add an animated loading state and visible progress indicator while AI quiz generation is running.
+- [x] Add automated tests for the generation-progress state and accessible completion feedback.
+- [x] Add a UI-focused test confirming the generation loading panel exposes progressbar accessibility attributes and staged feedback.
+- [x] Add coverage confirming the loading panel exits and the generated-quiz success state appears after completion.
