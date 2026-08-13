@@ -60,13 +60,13 @@ export const exportRouter = router({
           correctAnswer: q.correctAnswer,
           sourceReference: "FBISE Grade 10 Approved Textbook",
           learningObjective: "Conceptual understanding and board exam readiness",
-          explanation: `The correct option is (${q.correctAnswer}). This concept is derived from the reviewed FBISE Grade 10 curriculum, emphasizing easy-to-learn explanations tailored for Federal Board exam style and textbook context.`,
+          explanation: `The correct option is (${q.correctAnswer}). This concept is derived from the verified FBISE Grade 10 curriculum, emphasizing easy-to-learn explanations tailored for Federal Board exam style and textbook context.`,
           sketchDescription: "Refer to the textbook conceptual figure or comparison table for this topic.",
           comparisonTable: {
-            headers: ["Concept Property", "Standard Reference"],
+            headers: ["Concept Property", "FBISE Standard Reference"],
             rows: [
-              ["Core Principle", "FBISE Curriculum Standard"],
-              ["Exam Application", "Board Marking Rubric Alignment"],
+              ["Core Principle", "Aligned with textbook chapter derivation"],
+              ["Exam Application", "Board marking rubric structure"],
             ],
           },
         })),

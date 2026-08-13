@@ -1,5 +1,6 @@
-import React, { useState } from "react";
-import { ArrowLeft, BookOpenCheck, ChevronRight, ClipboardCheck, FileQuestion, Loader2, Sparkles, Trash2 } from "lucide-react";
+import { useState } from "react";
+import React from "react";
+import { ArrowLeft, BookOpenCheck, ChevronRight, ClipboardCheck, Download, FileQuestion, Loader2, Sparkles, Trash2 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
 import { AcademyShell } from "@/components/AcademyShell";
@@ -27,8 +28,66 @@ export default function QuizList() {
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [downloadingQuizId, setDownloadingQuizId] = useState<number | null>(null);
+  const [downloadingSolutionId, setDownloadingSolutionId] = useState<number | null>(null);
+
   const { data: quizzes, isLoading, error, refetch } = trpc.quiz.getAll.useQuery();
   const deleteQuizMutation = trpc.quiz.deleteQuiz.useMutation();
+  const utils = trpc.useUtils();
+
+  const handleDownloadQuizPdf = async (quizId: number, title: string) => {
+    setDownloadingQuizId(quizId);
+    try {
+      const res = await utils.client.quiz.downloadQuizPdf.query({ quizId });
+      const byteCharacters = atob(res.base64);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = res.filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success("Printable quiz PDF downloaded successfully.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to download quiz PDF.");
+    } finally {
+      setDownloadingQuizId(null);
+    }
+  };
+
+  const handleDownloadSolutionPdf = async (quizId: number, title: string) => {
+    setDownloadingSolutionId(quizId);
+    try {
+      const res = await utils.client.quiz.downloadSolutionPdf.query({ quizId });
+      const byteCharacters = atob(res.base64);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = res.filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success("Official solution key PDF downloaded successfully.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to download solution key PDF.");
+    } finally {
+      setDownloadingSolutionId(null);
+    }
+  };
 
   const selectGrade = (grade: Grade) => {
     setSelectedGrade(grade);
@@ -80,7 +139,56 @@ export default function QuizList() {
           {isLoading && <Card><CardContent className="flex items-center gap-3 py-10 text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin" />Loading drafts…</CardContent></Card>}
           {error && <Card className="border-destructive/40"><CardContent className="py-8 text-sm text-destructive">The assessment library could not be loaded. {error.message}</CardContent></Card>}
           {!isLoading && !error && quizzes?.length === 0 && <Card className="border-dashed border-border bg-card/70"><CardContent className="flex items-center gap-3 p-6 text-sm text-muted-foreground"><ClipboardCheck className="h-5 w-5 shrink-0 text-primary" />No MCQ draft has been saved yet. Follow the class and subject path above when you are ready.</CardContent></Card>}
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{quizzes?.map((quiz) => <Card key={quiz.id} className="group border-border/80 shadow-sm transition-shadow hover:shadow-md"><CardContent className="flex min-h-52 flex-col p-5"><div className="flex items-start justify-between gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/8 text-primary"><BookOpenCheck className="h-5 w-5" /></div><Button variant="ghost" size="icon" aria-label={`Delete ${quiz.title}`} className="text-muted-foreground hover:text-destructive" onClick={() => setConfirmDelete(quiz.id)}><Trash2 className="h-4 w-4" /></Button></div><div className="mt-5 flex-1"><p className="line-clamp-2 text-lg font-bold text-foreground">{quiz.title}</p><p className="mt-2 line-clamp-2 text-sm leading-6 text-muted-foreground">{quiz.description || "Source-grounded MCQ assessment"}</p></div><div className="mt-5 flex items-center justify-between border-t border-border pt-4"><span className="text-sm text-muted-foreground"><strong className="text-foreground">{quiz.totalQuestions}</strong> MCQs</span><Button variant="ghost" className="h-auto p-0 text-primary hover:bg-transparent hover:text-primary/75" onClick={() => navigate(`/quiz/${quiz.id}`)}>Open <ChevronRight className="ml-1 h-4 w-4" /></Button></div></CardContent></Card>)}</div>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {quizzes?.map((quiz) => (
+              <Card key={quiz.id} className="group border-border/80 shadow-sm transition-shadow hover:shadow-md">
+                <CardContent className="flex min-h-64 flex-col p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/8 text-primary">
+                      <BookOpenCheck className="h-5 w-5" />
+                    </div>
+                    <Button variant="ghost" size="icon" aria-label={`Delete ${quiz.title}`} className="text-muted-foreground hover:text-destructive" onClick={() => setConfirmDelete(quiz.id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="mt-4 flex-1">
+                    <p className="line-clamp-2 text-lg font-bold text-foreground">{quiz.title}</p>
+                    <p className="mt-1.5 line-clamp-2 text-xs leading-5 text-muted-foreground">{quiz.description || "Source-grounded MCQ assessment"}</p>
+                  </div>
+                  <div className="mt-4 space-y-2 border-t border-border pt-3">
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>{quiz.totalQuestions} MCQs</span>
+                      <Button variant="ghost" className="h-auto p-0 text-primary hover:bg-transparent hover:text-primary/75 text-xs font-semibold" onClick={() => navigate(`/quiz/${quiz.id}`)}>
+                        Practice <ChevronRight className="ml-0.5 h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 pt-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 text-xs font-semibold text-primary border-primary/30 hover:bg-primary/5"
+                        disabled={downloadingQuizId === quiz.id}
+                        onClick={() => handleDownloadQuizPdf(quiz.id, quiz.title)}
+                      >
+                        {downloadingQuizId === quiz.id ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Download className="mr-1 h-3 w-3" />}
+                        Quiz PDF
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 text-xs font-semibold text-emerald-700 border-emerald-300 hover:bg-emerald-50"
+                        disabled={downloadingSolutionId === quiz.id}
+                        onClick={() => handleDownloadSolutionPdf(quiz.id, quiz.title)}
+                      >
+                        {downloadingSolutionId === quiz.id ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Download className="mr-1 h-3 w-3" />}
+                        Solution Key
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
           {confirmDelete !== null && <Card className="fixed inset-x-4 bottom-5 z-50 mx-auto max-w-md border-destructive/30 shadow-xl"><CardContent className="p-5"><p className="font-bold text-foreground">Remove this quiz?</p><p className="mt-1 text-sm text-muted-foreground">The quiz and its associated attempts will be removed.</p><div className="mt-4 flex justify-end gap-2"><Button variant="outline" onClick={() => setConfirmDelete(null)}>Keep quiz</Button><Button variant="destructive" disabled={deletingId === confirmDelete} onClick={() => handleDelete(confirmDelete)}>{deletingId === confirmDelete ? "Removing…" : "Remove"}</Button></div></CardContent></Card>}
         </section>
       </main>
