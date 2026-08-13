@@ -175,3 +175,10 @@
 - [x] Implement and test source-safe paper-aware MCQ generation guidance using only verified model and annual paper pattern metadata.
 - [x] Save the verified Phase 19 checkpoint after the passing MCQ-only regression suite and TypeScript validation.
 - [x] Report the finalized MCQ-only scope, restored Physics chapter path, and paper-aware guidance behavior to the user.
+
+## Phase 20: Online MCQ and Printable Paper Workflow
+- [x] Extract and reconcile the user-provided FBISE quiz-generator specification with the corrected product scope.
+- [x] Restore teacher-visible short-question and long-question generation as printable paper outputs only, not online student quizzes.
+- [x] Preserve MCQ generation for both online quiz-taking and professional printable PDF download.
+- [x] Apply verified user-supplied textbook and paper-pattern evidence to each output type without inventing content or patterns.
+- [x] Add coverage for online MCQs and printable MCQ/short/long routes, validate, checkpoint, and report the restored workflow.

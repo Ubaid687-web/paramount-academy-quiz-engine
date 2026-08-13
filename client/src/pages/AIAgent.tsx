@@ -47,11 +47,15 @@ const ASSESSMENT_MODE_LABELS: Record<AssessmentMode, string> = {
   full_paper: "Full paper",
 };
 
-const ONLINE_MCQS_ONLY = true;
-
-
-
-
+function downloadPdf(data: string, fileName: string) {
+  const bytes = Uint8Array.from(window.atob(data), (character) => character.charCodeAt(0));
+  const url = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = fileName;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
 export default function AIAgent() {
   const [, navigate] = useLocation();
   const requestedGrade = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("grade") : null;
@@ -67,6 +71,8 @@ export default function AIAgent() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedMcqs, setGeneratedMcqs] = useState<any[]>([]);
   const [generatedDraft, setGeneratedDraft] = useState<any>(null);
+  const [generatedPrintablePaper, setGeneratedPrintablePaper] = useState<any>(null);
+  const [paperPairCount, setPaperPairCount] = useState(5);
   const [jobId, setJobId] = useState<number | null>(null);
   const [generationProgress, setGenerationProgress] = useState(0);
   const [contentAnalysis, setContentAnalysis] = useState<any>(null);
@@ -96,7 +102,12 @@ export default function AIAgent() {
   const [showSavedDraftLoader, setShowSavedDraftLoader] = useState(false);
 
   const generateMutation = trpc.aiAgent.generateMCQs.useMutation();
+  const generatePrintablePaperMutation = trpc.aiAgent.generatePrintablePaper.useMutation();
   const saveMutation = trpc.aiAgent.saveGeneratedQuiz.useMutation();
+  const renderPrintablePaperMutation = trpc.printablePaper.renderPaper.useMutation();
+  const renderPrintableSolutionMutation = trpc.printablePaper.renderSolutionKey.useMutation();
+  const renderMcqPaperMutation = trpc.printablePaper.renderMcqPaper.useMutation();
+  const renderMcqSolutionMutation = trpc.printablePaper.renderMcqSolutionKey.useMutation();
   const saveAssessmentDraftMutation = trpc.assessment.saveDraft.useMutation();
   const reviseAssessmentDraftMutation = trpc.assessment.reviseDraft.useMutation();
   const pdfExtractMutation = trpc.pdfUpload.extractPdfText.useMutation();
@@ -144,13 +155,6 @@ export default function AIAgent() {
     if (!draft || !requestedReviewDraftId) return;
     try {
       const payload = JSON.parse(draft.draftPayload);
-      if (ONLINE_MCQS_ONLY && payload.mode !== "mcq") {
-        setRequestedReviewDraftId(null);
-        setSavedAssessmentDraftId(null);
-        setActiveStep(1);
-        toast.error("Only MCQ quiz drafts are available in the online teacher flow.");
-        return;
-      }
       setAssessmentMode(payload.mode as AssessmentMode);
       setQuizTitle(payload.title ?? draft.title);
       setSavedAssessmentDraftId(draft.id);
@@ -251,12 +255,13 @@ export default function AIAgent() {
   const assessmentAvailability = assessmentAvailabilityQuery.data;
   const isSelectedModeAvailable = assessmentAvailability
     ? assessmentAvailability.supportedModes[assessmentMode]
-    : assessmentMode === "mcq";
+    : assessmentMode !== "full_paper";
   const isAutomaticMcqMode = assessmentMode === "mcq";
+  const isPrintablePaperMode = assessmentMode === "short" || assessmentMode === "long";
   const canAdvanceToDraft = gradeLevel === "10"
     && !isProcessingFile
     && Boolean(quizTitle.trim())
-    && (isAutomaticMcqMode ? hasGenerationSource : scopeType !== "uploaded_content" && hasValidStoredScope);
+    && ((isAutomaticMcqMode || isPrintablePaperMode) ? hasGenerationSource : scopeType !== "uploaded_content" && hasValidStoredScope);
   const activeFullPaperSection = fullPaperSections.find((section) => section.id === activeFullPaperSectionId) ?? fullPaperSections[0];
 
   const toggleChapter = (chapterId: number, checked: boolean) => {
@@ -475,6 +480,46 @@ export default function AIAgent() {
     }
   };
 
+  const handleGeneratePrintablePaper = async () => {
+    if (!isPrintablePaperMode) return;
+    if (!quizTitle.trim()) return toast.error("Please enter a paper title.");
+    if (!hasGenerationSource) return toast.error("Please upload, paste, or select reviewed curriculum content first.");
+    if (scopeType !== "uploaded_content" && !hasValidStoredScope) return toast.error("Complete the selected curriculum scope before generating a printable paper.");
+    setIsGenerating(true);
+    setGeneratedPrintablePaper(null);
+    setGenerationProgress(20);
+    try {
+      const result = await generatePrintablePaperMutation.mutateAsync({
+        paperType: assessmentMode,
+        title: quizTitle.trim(),
+        pairCount: paperPairCount,
+        difficulty,
+        patternSubject: subject,
+        ...(scopeType !== "uploaded_content" ? { scope: { subject, scopeType: generationScopeType, chapterIds: selectedChapterIds, segmentIds: selectedSegmentId ? [selectedSegmentId] : [], scopeTemplateId: selectedScopeTemplateId ?? undefined } } : { contentText }),
+      });
+      setGenerationProgress(100);
+      setGeneratedPrintablePaper(result.payload);
+      toast.success(`${assessmentMode === "short" ? "Short" : "Long"} question paper draft created for review.`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to generate the printable paper.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handlePrintableDownload = async (kind: "paper" | "solution") => {
+    if (!generatedPrintablePaper) return;
+    try {
+      const result = kind === "paper"
+        ? await renderPrintablePaperMutation.mutateAsync({ payload: generatedPrintablePaper })
+        : await renderPrintableSolutionMutation.mutateAsync({ payload: generatedPrintablePaper });
+      downloadPdf(result.data, result.fileName);
+      toast.success(kind === "paper" ? "Printable paper downloaded." : "Solution key downloaded.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "The PDF could not be created.");
+    }
+  };
+
   const handleSaveManualAssessmentDraft = async () => {
     if (assessmentMode === "mcq" || assessmentMode === "full_paper") return;
     if (!savedAssessmentDraftId && (scopeType === "uploaded_content" || !hasValidStoredScope)) {
@@ -679,9 +724,9 @@ export default function AIAgent() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-xl">
                   <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">1</span>
-                  Create an online quiz
+                  Choose assessment output
                 </CardTitle>
-                <CardDescription>Online quizzes use MCQs only.</CardDescription>
+                <CardDescription>MCQs can be taken online or printed. Short and long questions are printable papers only.</CardDescription>
               </CardHeader>
               <CardContent>
                 {isContextEditing ? <div className="mb-5 rounded-xl border border-primary/20 bg-primary/[0.035] p-4">
@@ -692,16 +737,13 @@ export default function AIAgent() {
                   </div>
                   {gradeLevel === "9" ? <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-800">Grade 9 setup is pending.</div> : <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => setIsContextEditing(false)}>Continue</Button>}
                 </div> : <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/15 bg-primary/[0.035] p-3"><div><p className="text-xs font-bold uppercase tracking-[0.12em] text-primary">Teacher context</p><p className="mt-1 text-sm font-bold text-foreground">Grade 10 · {SUBJECT_LABELS[subject]}</p></div><Button type="button" variant="outline" size="sm" onClick={() => { setIsContextEditing(true); setActiveStep(1); }}>Change</Button></div>}
-                <button
-                  type="button"
-                  aria-pressed="true"
-                  disabled={gradeLevel !== "10"}
-                  onClick={() => { setAssessmentMode("mcq"); setActiveStep(2); }}
-                  className="w-full rounded-xl border border-primary bg-primary/[0.055] p-4 text-left shadow-sm transition-[transform,background-color,border-color,box-shadow] duration-200 ease-out active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-55"
-                >
-                  <span className="block text-sm font-bold text-foreground">MCQ quiz</span>
-                  <span className="mt-1 block text-xs leading-5 text-muted-foreground">Board-style practice from your selected source.</span>
-                </button>
+                <div className="grid gap-3 sm:grid-cols-3" aria-label="Assessment output type">
+                  {[
+                    { mode: "mcq" as const, title: "MCQ quiz", detail: "Online practice and printable PDF." },
+                    { mode: "short" as const, title: "Short question paper", detail: "Printable paper and solution key only." },
+                    { mode: "long" as const, title: "Long question paper", detail: "Printable paper and solution key only." },
+                  ].map((option) => <button key={option.mode} type="button" aria-pressed={assessmentMode === option.mode} disabled={gradeLevel !== "10" || (assessmentAvailability ? !assessmentAvailability.supportedModes[option.mode] : false)} onClick={() => { setAssessmentMode(option.mode); setGeneratedPrintablePaper(null); setActiveStep(2); }} className={`rounded-xl border p-4 text-left transition-[transform,background-color,border-color,box-shadow] duration-200 ease-out active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-55 ${assessmentMode === option.mode ? "border-primary bg-primary/[0.055] shadow-sm" : "border-border bg-muted/30 hover:border-primary/40"}`}><span className="block text-sm font-bold text-foreground">{option.title}</span><span className="mt-1 block text-xs leading-5 text-muted-foreground">{option.detail}</span></button>)}
+                </div>
               </CardContent>
             </Card>}
 
@@ -838,7 +880,7 @@ export default function AIAgent() {
               </CardContent>
             </Card>}
 
-            {!ONLINE_MCQS_ONLY && activeStep === 3 && assessmentMode !== "mcq" && assessmentMode !== "full_paper" && isSelectedModeAvailable && <Card className="border-primary/20 bg-card shadow-sm motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-200">
+            {false && activeStep === 3 && assessmentMode !== "mcq" && assessmentMode !== "full_paper" && isSelectedModeAvailable && <Card className="border-primary/20 bg-card shadow-sm motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-200">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-xl">
                   <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">3</span>
@@ -886,7 +928,7 @@ export default function AIAgent() {
               </CardContent>
             </Card>}
 
-            {!ONLINE_MCQS_ONLY && activeStep === 3 && assessmentMode === "full_paper" && isSelectedModeAvailable && <Card className="border-primary/20 bg-card shadow-sm motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-200">
+            {false && activeStep === 3 && assessmentMode === "full_paper" && isSelectedModeAvailable && <Card className="border-primary/20 bg-card shadow-sm motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-200">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-xl">
                   <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">3</span>
@@ -921,6 +963,19 @@ export default function AIAgent() {
                   <Button type="button" onClick={handleSaveFullPaperDraft} disabled={saveAssessmentDraftMutation.isPending} className="w-full bg-primary text-primary-foreground font-semibold shadow-sm hover:bg-primary/90">{saveAssessmentDraftMutation.isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Saving full-paper draft…</> : "Save full-paper draft for review"}</Button>
                   {savedAssessmentDraftId && <div className="rounded-lg border border-accent/30 bg-accent/10 p-3 text-sm text-foreground"><strong>Draft saved.</strong> Assessment draft #{savedAssessmentDraftId} is awaiting Portal Admin review.</div>}
                 </>}
+              </CardContent>
+            </Card>}
+
+            {activeStep === 3 && isPrintablePaperMode && isSelectedModeAvailable && <Card className="border-primary/20 bg-card shadow-sm motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-200">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-xl"><span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">3</span>{assessmentMode === "short" ? "Short question paper" : "Long question paper"}</CardTitle>
+                <CardDescription>Creates a source-grounded draft for printing only. It does not create an online student quiz.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm leading-6 text-muted-foreground"><strong>Draft review required.</strong> Verify source references, answer wording, formulas, and diagrams before issuing this paper.</div>
+                <div><Label htmlFor="paper-pairs" className="mb-2 block text-sm font-medium">Numbered OR pairs</Label><Input id="paper-pairs" type="number" min={1} max={10} value={paperPairCount} onChange={(event) => setPaperPairCount(Math.min(10, Math.max(1, Number(event.target.value) || 1)))} /><p className="mt-1 text-xs text-muted-foreground">Each numbered question includes an alternative of equal marks.</p></div>
+                <Button type="button" onClick={handleGeneratePrintablePaper} disabled={isGenerating || generatePrintablePaperMutation.isPending || !canAdvanceToDraft} className="w-full bg-primary text-primary-foreground font-semibold shadow-sm hover:bg-primary/90">{isGenerating || generatePrintablePaperMutation.isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating paper draft…</> : "Generate printable paper draft"}</Button>
+                {generatedPrintablePaper && <div className="space-y-3 rounded-xl border border-accent/30 bg-accent/5 p-4"><div><p className="font-semibold text-foreground">Printable draft ready</p><p className="mt-1 text-sm text-muted-foreground">{generatedPrintablePaper.items?.length || 0} prompts across {paperPairCount} OR pairs. This is not an online quiz.</p></div><div className="flex flex-col gap-2 sm:flex-row"><Button type="button" variant="outline" className="flex-1" onClick={() => handlePrintableDownload("paper")} disabled={renderPrintablePaperMutation.isPending}>Download paper PDF</Button><Button type="button" variant="outline" className="flex-1" onClick={() => handlePrintableDownload("solution")} disabled={renderPrintableSolutionMutation.isPending}>Download solution key</Button></div></div>}
               </CardContent>
             </Card>}
 

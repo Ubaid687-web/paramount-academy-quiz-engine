@@ -462,6 +462,49 @@ export const appRouter = router({
       }),
   }),
 
+  printablePaper: router({
+    renderMcqPaper: adminProcedure.input(z.object({ title: z.string().min(1), mcqs: z.array(z.object({ question: z.string().min(1), options: z.object({ A: z.string().min(1), B: z.string().min(1), C: z.string().min(1), D: z.string().min(1) }), answer: z.enum(["A", "B", "C", "D"]), explanation: z.string().min(1), sourceReference: z.string().min(1), learningObjective: z.string().min(1) })).min(1) })).mutation(async ({ input }) => {
+      const { renderMcqPaperPdf } = await import("./printablePaperExport");
+      const pdf = await renderMcqPaperPdf(input.title, input.mcqs);
+      return { fileName: `${input.title.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-mcq-paper.pdf`, data: pdf.toString("base64") };
+    }),
+    renderMcqSolutionKey: adminProcedure.input(z.object({ title: z.string().min(1), mcqs: z.array(z.object({ question: z.string().min(1), options: z.object({ A: z.string().min(1), B: z.string().min(1), C: z.string().min(1), D: z.string().min(1) }), answer: z.enum(["A", "B", "C", "D"]), explanation: z.string().min(1), sourceReference: z.string().min(1), learningObjective: z.string().min(1) })).min(1) })).mutation(async ({ input }) => {
+      const { renderMcqSolutionPdf } = await import("./printablePaperExport");
+      const pdf = await renderMcqSolutionPdf(input.title, input.mcqs);
+      return { fileName: `${input.title.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-mcq-solution-key.pdf`, data: pdf.toString("base64") };
+    }),
+    renderPaper: adminProcedure
+      .input(z.object({ payload: z.unknown() }))
+      .mutation(async ({ input }) => {
+        const { validateAssessmentDraftPayload } = await import("@shared/assessmentDraftContract");
+        const { renderPrintablePaperPdf } = await import("./printablePaperExport");
+        const validation = validateAssessmentDraftPayload(input.payload);
+        if (!validation.valid || (validation.payload.mode !== "short" && validation.payload.mode !== "long")) {
+          throw new Error("Only a valid short- or long-question printable draft can be exported.");
+        }
+        const pdf = await renderPrintablePaperPdf(validation.payload);
+        return {
+          fileName: `${validation.payload.title.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase() || "assessment"}-paper.pdf`,
+          data: pdf.toString("base64"),
+        };
+      }),
+    renderSolutionKey: adminProcedure
+      .input(z.object({ payload: z.unknown() }))
+      .mutation(async ({ input }) => {
+        const { validateAssessmentDraftPayload } = await import("@shared/assessmentDraftContract");
+        const { renderPrintableSolutionPdf } = await import("./printablePaperExport");
+        const validation = validateAssessmentDraftPayload(input.payload);
+        if (!validation.valid || (validation.payload.mode !== "short" && validation.payload.mode !== "long")) {
+          throw new Error("Only a valid short- or long-question printable draft can have a solution key exported.");
+        }
+        const pdf = await renderPrintableSolutionPdf(validation.payload);
+        return {
+          fileName: `${validation.payload.title.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase() || "assessment"}-solution-key.pdf`,
+          data: pdf.toString("base64"),
+        };
+      }),
+  }),
+
   aiAgent: router({
     generateMCQs: adminProcedure
       .input(
@@ -530,6 +573,71 @@ export const appRouter = router({
           input.difficulty,
           sourceContext
         );
+      }),
+
+    generatePrintablePaper: adminProcedure
+      .input(z.object({
+        paperType: z.enum(["short", "long"]),
+        title: z.string().trim().min(3).max(160),
+        contentText: z.string().min(100, "Content must be at least 100 characters").optional(),
+        pairCount: z.number().int().min(1).max(10),
+        difficulty: z.enum(["balanced", "easy", "medium", "hard"]).default("balanced"),
+        patternSubject: z.enum(["physics", "chemistry", "computer_science"]).optional(),
+        scope: z.object({
+          subject: z.enum(["physics", "chemistry", "computer_science"]),
+          scopeType: z.enum(["single_chapter", "half_chapter", "multiple_chapters", "half_syllabus", "block"]),
+          chapterIds: z.array(z.number().int().positive()).optional(),
+          segmentIds: z.array(z.number().int().positive()).optional(),
+          scopeTemplateId: z.number().int().positive().optional(),
+        }).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { generatePrintablePaperFromContent } = await import("./printablePaper");
+        let contentText = input.contentText;
+        let sourceContext: import("./aiAgent").GenerationSourceContext | undefined;
+        if (input.scope) {
+          const { getActiveCurriculumScopeCatalog, listActiveAssessmentPatternSources } = await import("./db");
+          const { resolveCurriculumScope } = await import("./curriculumScope");
+          const [catalog, paperPatternSources] = await Promise.all([
+            getActiveCurriculumScopeCatalog(input.scope.subject),
+            listActiveAssessmentPatternSources(input.scope.subject),
+          ]);
+          if (!catalog) throw new Error("No active reviewed textbook source is available for the selected subject.");
+          const resolvedScope = resolveCurriculumScope(catalog, input.scope);
+          contentText = resolvedScope.sourceText;
+          sourceContext = {
+            sourceType: "curriculum_scope",
+            sourceTitle: resolvedScope.displayLabel,
+            subject: catalog.curriculumSet.subject,
+            classLevel: catalog.curriculumSet.grade,
+            curriculumSetId: catalog.curriculumSet.id,
+            scopeTemplateId: resolvedScope.scopeTemplateId,
+            scopeType: resolvedScope.scopeType,
+            selectedChapterIds: resolvedScope.chapterIds,
+            selectedSegmentIds: resolvedScope.segmentIds,
+            scopeSnapshot: resolvedScope.snapshot,
+            paperPatternGuidance: paperPatternSources.map((source) => ({ sourceKind: source.sourceKind, academicYear: source.academicYear })),
+          };
+        } else if (input.patternSubject) {
+          const { listActiveAssessmentPatternSources } = await import("./db");
+          const paperSources = await listActiveAssessmentPatternSources(input.patternSubject);
+          sourceContext = {
+            sourceType: "raw_text",
+            sourceTitle: "Teacher-provided custom source",
+            subject: input.patternSubject,
+            paperPatternGuidance: paperSources.map((source) => ({ sourceKind: source.sourceKind, academicYear: source.academicYear })),
+          };
+        }
+        if (!contentText || !sourceContext) throw new Error("Upload or paste at least 100 characters of material, or choose a reviewed curriculum scope.");
+        const payload = await generatePrintablePaperFromContent({
+          paperType: input.paperType,
+          title: input.title,
+          contentText,
+          pairCount: input.pairCount,
+          difficulty: input.difficulty,
+          sourceContext,
+        });
+        return { payload, reviewWarning: "Draft only: Portal Admin review and source verification are required before issuing this paper." };
       }),
 
     saveGeneratedQuiz: adminProcedure

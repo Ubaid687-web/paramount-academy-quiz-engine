@@ -21,7 +21,12 @@ Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
 });
 
 const generateMutation = vi.fn();
+const generatePrintablePaperMutation = vi.fn();
 const saveMutation = vi.fn();
+const renderPrintablePaperMutation = vi.fn();
+const renderPrintableSolutionMutation = vi.fn();
+const renderMcqPaperMutation = vi.fn();
+const renderMcqSolutionMutation = vi.fn();
 const saveAssessmentDraftMutation = vi.fn();
 const reviseAssessmentDraftMutation = vi.fn();
 const loadAssessmentDraftQuery = vi.fn((_input: { assessmentDraftId: number }) => ({ data: undefined as any, isFetching: false }));
@@ -36,8 +41,15 @@ vi.mock("@/lib/trpc", () => ({
     },
     aiAgent: {
       generateMCQs: { useMutation: () => ({ mutateAsync: generateMutation }) },
+      generatePrintablePaper: { useMutation: () => ({ mutateAsync: generatePrintablePaperMutation, isPending: false }) },
       saveGeneratedQuiz: { useMutation: () => ({ mutateAsync: saveMutation, isPending: false }) },
       getGenerationStatus: { useQuery: () => ({ data: undefined }) },
+    },
+    printablePaper: {
+      renderPaper: { useMutation: () => ({ mutateAsync: renderPrintablePaperMutation, isPending: false }) },
+      renderSolutionKey: { useMutation: () => ({ mutateAsync: renderPrintableSolutionMutation, isPending: false }) },
+      renderMcqPaper: { useMutation: () => ({ mutateAsync: renderMcqPaperMutation, isPending: false }) },
+      renderMcqSolutionKey: { useMutation: () => ({ mutateAsync: renderMcqSolutionMutation, isPending: false }) },
     },
     curriculum: {
       getActiveScopeCatalog: { useQuery: () => scopeCatalogQuery() },
@@ -64,7 +76,12 @@ describe("AI quiz generation feedback", () => {
   afterEach(() => {
     cleanup();
     generateMutation.mockReset();
+    generatePrintablePaperMutation.mockReset();
     saveMutation.mockReset();
+    renderPrintablePaperMutation.mockReset();
+    renderPrintableSolutionMutation.mockReset();
+    renderMcqPaperMutation.mockReset();
+    renderMcqSolutionMutation.mockReset();
     saveAssessmentDraftMutation.mockReset();
     reviseAssessmentDraftMutation.mockReset();
     loadAssessmentDraftQuery.mockReset();
@@ -372,28 +389,29 @@ describe("AI quiz generation feedback", () => {
     window.history.pushState({}, "", "/ai-agent");
   });
 
-  it("shows only the online MCQ path and never exposes manual-answer setup fields", () => {
+  it("offers a printable-only short-question path with paper and solution-key downloads", async () => {
+    generatePrintablePaperMutation.mockResolvedValue({ payload: { mode: "short", title: "Motion revision paper", estimatedDurationMinutes: 30, items: [
+      { kind: "short", question: "State a speed relationship.", expectedAnswer: "Speed is distance divided by time.", markingGuide: ["States the relationship."], difficulty: "easy", sourceReference: "Motion", learningObjective: "Relate speed, distance and time.", cognitiveLevel: "K", orGroup: 1, marks: 3 },
+      { kind: "short", question: "Calculate a speed.", expectedAnswer: "5 m/s.", markingGuide: ["Calculates correctly."], difficulty: "medium", sourceReference: "Motion", learningObjective: "Calculate speed.", cognitiveLevel: "A", orGroup: 1, marks: 3 },
+    ] } });
     render(<AIAgent />);
 
     expect(screen.getByRole("button", { name: /^MCQ quiz/i })).toBeEnabled();
-    expect(screen.queryByRole("button", { name: "Open saved draft" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /Short questions/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /Long questions/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /Full paper/i })).not.toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("button", { name: /^MCQ quiz/i }));
-    fireEvent.change(screen.getByLabelText("Or Paste Content"), { target: { value: "Source-grounded online MCQ practice content. ".repeat(4) } });
-    fireEvent.change(screen.getByLabelText("Quiz Title"), { target: { value: "Online MCQ practice" } });
+    expect(screen.getByRole("button", { name: /^Short question paper/i })).toBeEnabled();
+    expect(screen.getByRole("button", { name: /^Long question paper/i })).toBeEnabled();
+    fireEvent.click(screen.getByRole("button", { name: /^Short question paper/i }));
+    fireEvent.change(screen.getByLabelText("Or Paste Content"), { target: { value: "Source-grounded short question material. ".repeat(4) } });
+    fireEvent.change(screen.getByLabelText("Quiz Title"), { target: { value: "Motion revision paper" } });
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
 
-    expect(screen.queryByLabelText("Expected answer")).not.toBeInTheDocument();
-    expect(screen.queryByLabelText("Marks")).not.toBeInTheDocument();
-    expect(screen.queryByLabelText("Marking guide")).not.toBeInTheDocument();
-    expect(screen.queryByLabelText("Marking rubric")).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /Save .*draft for review/i })).not.toBeInTheDocument();
+    expect(await screen.findByText(/does not create an online student quiz/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /generate printable paper draft/i }));
+    expect(await screen.findByRole("button", { name: /download paper pdf/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /download solution key/i })).toBeInTheDocument();
+    expect(generatePrintablePaperMutation).toHaveBeenCalledWith(expect.objectContaining({ paperType: "short" }));
   });
 
-  it("keeps the Computer Science online-quiz entry MCQ-only even when supplied paper-pattern evidence is available", () => {
+  it("offers all approved Computer Science output types while keeping only MCQs online", () => {
     window.history.pushState({}, "", "/ai-agent?grade=10&subject=computer_science");
     assessmentAvailabilityQuery.mockReturnValue({
       data: {
@@ -409,7 +427,8 @@ describe("AI quiz generation feedback", () => {
 
     expect(screen.getByText("Grade 10 Computer Science")).toBeVisible();
     expect(screen.getByRole("button", { name: /^MCQ quiz/i })).toBeEnabled();
-    expect(screen.queryByRole("button", { name: /Short questions|Long questions|Full paper/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Short question paper/i })).toBeEnabled();
+    expect(screen.getByRole("button", { name: /^Long question paper/i })).toBeEnabled();
     window.history.pushState({}, "", "/ai-agent");
   });
 
