@@ -251,4 +251,26 @@ describe("AI quiz generation feedback", () => {
       expect(screen.getByRole("button", { name: "Generate MCQs" })).toBeEnabled();
     });
   });
+
+  it("shows active Grade 10 Chemistry chapters through the approved textbook path", async () => {
+    window.history.pushState({}, "", "/ai-agent?grade=10&subject=chemistry");
+    scopeCatalogQuery.mockReturnValue({
+      isLoading: false,
+      data: {
+        curriculumSet: { id: 30001, label: "FBISE Grade 10 Chemistry", editionLabel: "2020 NBF textbook · OCR-reviewed transcript" },
+        chapters: [{ id: 30002, code: "Unit 10", title: "Acids, Bases and Salts", startPage: 21, endPage: 46 }],
+        segments: [{ id: 30004, chapterId: 30002, label: "First half", startPage: 21, endPage: 33 }],
+        templates: [],
+        templateMemberships: [],
+      },
+    });
+
+    render(<AIAgent />);
+
+    expect(screen.getByText("Prepare Grade 10 Chemistry MCQ draft")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: /Approved textbook chapters/i }));
+    expect(await screen.findByRole("checkbox", { name: "Unit 10: Acids, Bases and Salts" })).toBeVisible();
+    expect(screen.getByText("Pages 21–46")).toBeVisible();
+    window.history.pushState({}, "", "/ai-agent");
+  });
 });

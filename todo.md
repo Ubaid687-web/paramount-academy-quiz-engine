@@ -90,3 +90,13 @@
 - [x] Enforce a reviewable draft output contract with source metadata, source references, structured validation, and safe failure responses.
 - [x] Verify the document-to-draft workflow with an integration test that connects real source ingestion to draft validation without invoking a paid model call.
 - [x] Add a non-mocked integration test for real PDF extraction followed by the source-grounded draft validation contract.
+
+## Phase 10: Grade 10 Chemistry Curriculum Activation
+- [x] Verify the approved Grade 10 Chemistry textbook source and recover an OCR-readable transcript where necessary.
+- [x] Create the Chemistry versioned curriculum set, source record, reviewed chapter boundaries, half-chapter segments, and reusable scope templates.
+- [x] Activate the Chemistry curriculum and verify its chapters appear through the Grade 10 Chemistry teacher builder path.
+- [ ] Re-run the full regression suite after managed TiDB connectivity stabilizes; focused Chemistry builder coverage already passes.
+- [x] Document, checkpoint, and report the activated Chemistry source workflow.
+
+## Phase 10A: Existing Material Provenance Reconciliation
+- [x] Reconcile the already supplied Chemistry and Computer Science material records with their curriculum activation status; do not request duplicate uploads.
