@@ -72,4 +72,47 @@ describe("Quiz Centre entry experience", () => {
     expect(screen.getByRole("button", { name: /Chemistry.*Continue/i })).toBeTruthy();
     expect(screen.queryByRole("combobox", { name: "Teaching focus" })).toBeNull();
   });
+
+  it("returns to class selection through the visible Change class button", () => {
+    quizzesQuery.mockReturnValue({ data: [], isLoading: false, error: null, refetch: vi.fn() });
+    render(<QuizList />);
+
+    fireEvent.click(screen.getByRole("button", { name: /Choose Grade 10/i }));
+    expect(screen.getByRole("heading", { name: "Choose a subject." })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Return to class selection" }));
+    expect(screen.getByRole("heading", { name: "Start with the class you teach." })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Choose Grade 9/i })).toBeTruthy();
+  });
+
+  it("returns to the subject cards through the visible Change subject button", () => {
+    quizzesQuery.mockReturnValue({ data: [], isLoading: false, error: null, refetch: vi.fn() });
+    render(<QuizList />);
+
+    fireEvent.click(screen.getByRole("button", { name: /Choose Grade 10/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Physics.*Continue/i }));
+    expect(screen.getByRole("heading", { name: "Grade 10 · Physics" })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Return to subject selection" }));
+    expect(screen.getByRole("heading", { name: "Choose a subject." })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Chemistry.*Continue/i })).toBeTruthy();
+  });
+
+  it("supports Enter and Space keyboard activation on the visible return controls", () => {
+    quizzesQuery.mockReturnValue({ data: [], isLoading: false, error: null, refetch: vi.fn() });
+    render(<QuizList />);
+
+    fireEvent.click(screen.getByRole("button", { name: /Choose Grade 10/i }));
+    const classReturn = screen.getByRole("button", { name: "Return to class selection" });
+    classReturn.focus();
+    fireEvent.keyDown(classReturn, { key: "Enter" });
+    expect(screen.getByRole("heading", { name: "Start with the class you teach." })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: /Choose Grade 10/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Physics.*Continue/i }));
+    const subjectReturn = screen.getByRole("button", { name: "Return to subject selection" });
+    subjectReturn.focus();
+    fireEvent.keyDown(subjectReturn, { key: " " });
+    expect(screen.getByRole("heading", { name: "Choose a subject." })).toBeTruthy();
+  });
 });

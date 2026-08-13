@@ -145,3 +145,11 @@
 - [x] Audit the current quiz-creation interface for any remaining all-at-once controls or unclear transitions.
 - [x] Refine the wizard stages, navigation, and motion only where the current implementation still needs improvement.
 - [x] Validate the progressive workflow, accessibility, and responsive behavior before reporting the result.
+
+## Phase 17: Mobile Subject-Selection Redesign
+- [x] Audit the mobile subject-selection screen, shared academy shell, typography, and back-navigation behavior.
+- [x] Define and apply a more cohesive Paramount Academy visual system for mobile spacing, colour, type, cards, and buttons.
+- [x] Repair the Change class back action and validate keyboard, touch, and browser navigation behavior.
+- [x] Add mobile-focused UI coverage, run validation, checkpoint, and report the completed refinement.
+- [x] Add keyboard-activation coverage for both Change class and Change subject controls.
+- [x] Verify the visible in-app return controls on the mobile flow and save the final Phase 17 checkpoint.

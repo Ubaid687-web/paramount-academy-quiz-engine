@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ArrowLeft, BookOpenCheck, ChevronRight, ClipboardCheck, FileQuestion, Loader2, Sparkles, Trash2 } from "lucide-react";
+import { ArrowLeft, Atom, Beaker, BookOpenCheck, ChevronRight, ClipboardCheck, FileQuestion, LaptopMinimal, Loader2, Sparkles, Trash2 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
 import { AcademyShell } from "@/components/AcademyShell";
@@ -15,10 +15,10 @@ const gradeCards: Array<{ grade: Grade; title: string; summary: string; state: s
   { grade: "9", title: "Grade 9", summary: "Choose a subject to view its separate curriculum-intake status. Grade 10 rules are not reused here.", state: "Curriculum intake", tone: "border-amber-200 bg-amber-50 text-amber-700" },
 ];
 
-const subjects: Array<{ id: Subject; title: string; short: string }> = [
-  { id: "physics", title: "Physics", short: "Conceptual board-style MCQ preparation" },
-  { id: "chemistry", title: "Chemistry", short: "Conceptual board-style MCQ preparation" },
-  { id: "computer_science", title: "Computer Science", short: "Conceptual board-style MCQ preparation" },
+const subjects: Array<{ id: Subject; title: string; short: string; eyebrow: string; Icon: typeof Atom; iconTone: string; cardTone: string; accentTone: string }> = [
+  { id: "physics", title: "Physics", short: "Conceptual board-style MCQ preparation", eyebrow: "Matter & motion", Icon: Atom, iconTone: "bg-sky-100 text-sky-700", cardTone: "border-sky-100 hover:border-sky-300", accentTone: "bg-sky-500" },
+  { id: "chemistry", title: "Chemistry", short: "Conceptual board-style MCQ preparation", eyebrow: "Matter & change", Icon: Beaker, iconTone: "bg-violet-100 text-violet-700", cardTone: "border-violet-100 hover:border-violet-300", accentTone: "bg-violet-500" },
+  { id: "computer_science", title: "Computer Science", short: "Conceptual board-style MCQ preparation", eyebrow: "Logic & systems", Icon: LaptopMinimal, iconTone: "bg-emerald-100 text-emerald-700", cardTone: "border-emerald-100 hover:border-emerald-300", accentTone: "bg-emerald-500" },
 ];
 
 export default function QuizList() {
@@ -33,6 +33,22 @@ export default function QuizList() {
   const selectGrade = (grade: Grade) => {
     setSelectedGrade(grade);
     setSelectedSubject(null);
+  };
+
+  const returnToGrades = () => {
+    setSelectedGrade(null);
+    setSelectedSubject(null);
+  };
+
+  const returnToSubjects = () => {
+    setSelectedSubject(null);
+  };
+
+  const handleReturnKey = (event: React.KeyboardEvent<HTMLButtonElement>, action: () => void) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      action();
+    }
   };
 
   const handleDelete = async (quizId: number) => {
@@ -53,25 +69,28 @@ export default function QuizList() {
 
   return (
     <AcademyShell eyebrow="Teacher MCQ Workspace">
-      <main className="container py-8 sm:py-12">
+      <main className="container py-6 sm:py-10">
         <section className="mx-auto max-w-4xl">
           {!selectedGrade ? <>
-            <div className="mb-8 text-center">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">Teacher workspace</p>
-              <h1 className="mt-3 text-3xl font-bold text-foreground sm:text-5xl">Start with the class you teach.</h1>
-              <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">Choose one grade first. The next screen will show only the relevant subjects and one clear action—no technical setup or unnecessary buttons.</p>
+            <div className="relative mb-7 overflow-hidden rounded-[1.75rem] border border-primary/10 bg-card px-5 py-7 shadow-[0_18px_55px_oklch(0.36_0.12_255_/_0.07)] sm:mb-9 sm:px-10 sm:py-10">
+              <div className="absolute -right-14 -top-16 h-44 w-44 rounded-full bg-primary/[0.045]" aria-hidden="true" />
+              <div className="relative max-w-2xl">
+                <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-primary">Teacher workspace</p>
+                <h1 className="mt-3 text-[2rem] font-extrabold tracking-[-0.055em] text-foreground sm:text-5xl">Start with the class you teach.</h1>
+                <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground sm:text-base">Choose one grade first. The next screen will show only the relevant subjects and one clear action—no technical setup or unnecessary buttons.</p>
+              </div>
             </div>
-            <div className="grid gap-5 md:grid-cols-2" aria-label="Choose a class">
-              {gradeCards.map((item) => <button key={item.grade} onClick={() => selectGrade(item.grade)} className="group rounded-3xl border border-border bg-card p-7 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"><div className="flex items-start justify-between gap-4"><div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary"><BookOpenCheck className="h-5 w-5" /></div><span className={`rounded-full border px-2.5 py-1 text-xs font-bold ${item.tone}`}>{item.state}</span></div><h2 className="mt-7 text-2xl font-bold text-foreground">{item.title}</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">{item.summary}</p><p className="mt-6 flex items-center gap-1 text-sm font-bold text-primary">Choose {item.title}<ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" /></p></button>)}
+            <div className="grid gap-4 md:grid-cols-2" aria-label="Choose a class">
+              {gradeCards.map((item) => <button key={item.grade} type="button" onClick={() => selectGrade(item.grade)} className="group rounded-[1.5rem] border border-border/80 bg-card p-5 text-left shadow-sm transition-[transform,box-shadow,border-color,background-color] duration-200 hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 active:translate-y-0 active:scale-[0.985] sm:p-7"><div className="flex items-start justify-between gap-4"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary"><BookOpenCheck className="h-5 w-5" /></div><span className={`rounded-full border px-2.5 py-1 text-[11px] font-extrabold ${item.tone}`}>{item.state}</span></div><h2 className="mt-6 text-xl font-extrabold tracking-[-0.035em] text-foreground sm:text-2xl">{item.title}</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">{item.summary}</p><p className="mt-5 flex items-center gap-1 text-sm font-extrabold text-primary">Choose {item.title}<ChevronRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" /></p></button>)}
             </div>
-            <p className="mt-7 text-center text-xs leading-5 text-muted-foreground">Curriculum configuration is managed separately through Portal Admin, so teachers can remain focused on preparation.</p>
+            <p className="mt-6 text-center text-xs leading-5 text-muted-foreground">Curriculum configuration is managed separately through Portal Admin, so teachers can remain focused on preparation.</p>
           </> : !selectedSubject ? <>
-            <button onClick={() => selectGrade(selectedGrade)} className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" />Change class</button>
-            <div className="mb-7"><p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">{selectedGrade === "10" ? "Grade 10 preparation" : "Grade 9 curriculum intake"}</p><h1 className="mt-2 text-3xl font-bold text-foreground">Choose a subject.</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">{selectedGrade === "10" ? "Only current MCQ-engine subjects are shown." : "Select a subject to see what is needed before Grade 9 MCQ drafting can begin."}</p></div>
-            <div className="grid gap-4 sm:grid-cols-3" aria-label="Choose a subject">{subjects.map((subject) => <button key={subject.id} onClick={() => setSelectedSubject(subject.id)} className="group rounded-2xl border border-border bg-card p-5 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"><div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary"><FileQuestion className="h-4 w-4" /></div><h2 className="mt-5 font-bold text-foreground">{subject.title}</h2><p className="mt-1 text-xs leading-5 text-muted-foreground">{selectedGrade === "10" ? subject.short : "Separate Grade 9 pattern and source confirmation"}</p><p className="mt-4 flex items-center gap-1 text-xs font-bold text-primary">Continue <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" /></p></button>)}</div>
+            <Button type="button" variant="ghost" className="academy-back-button mb-5" onClick={returnToGrades} onKeyDown={(event) => handleReturnKey(event, returnToGrades)} aria-label="Return to class selection"><ArrowLeft className="h-4 w-4" />Change class</Button>
+            <div className="mb-6 rounded-[1.5rem] border border-primary/10 bg-card px-5 py-6 shadow-[0_14px_42px_oklch(0.36_0.12_255_/_0.06)] sm:mb-7 sm:px-7"><p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-primary">{selectedGrade === "10" ? "Grade 10 preparation" : "Grade 9 curriculum intake"}</p><h1 className="mt-2 text-[2rem] font-extrabold tracking-[-0.055em] text-foreground">Choose a subject.</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">{selectedGrade === "10" ? "Choose one subject. Its preparation choices will open on the next screen." : "Select a subject to see what is needed before Grade 9 MCQ drafting can begin."}</p></div>
+            <div className="grid gap-3 sm:grid-cols-3 sm:gap-4" aria-label="Choose a subject">{subjects.map((subject) => { const SubjectIcon = subject.Icon; return <button key={subject.id} type="button" onClick={() => setSelectedSubject(subject.id)} className={`group relative overflow-hidden rounded-[1.35rem] border bg-card p-5 text-left shadow-sm transition-[transform,box-shadow,border-color,background-color] duration-200 hover:-translate-y-0.5 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 active:translate-y-0 active:scale-[0.985] ${subject.cardTone}`}><span className={`absolute inset-x-0 top-0 h-1 ${subject.accentTone}`} aria-hidden="true" /><div className={`flex h-10 w-10 items-center justify-center rounded-xl ${subject.iconTone}`}><SubjectIcon className="h-5 w-5" /></div><p className="mt-5 text-[10px] font-extrabold uppercase tracking-[0.16em] text-muted-foreground">{subject.eyebrow}</p><h2 className="mt-1 text-xl font-extrabold tracking-[-0.04em] text-foreground sm:text-2xl">{subject.title}</h2><p className="mt-2 text-sm leading-5 text-muted-foreground">{selectedGrade === "10" ? subject.short : "Separate Grade 9 pattern and source confirmation"}</p><p className="mt-5 flex items-center gap-1 text-sm font-extrabold text-primary">Continue <ChevronRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" /></p></button>; })}</div>
           </> : <>
-            <button onClick={() => setSelectedSubject(null)} className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" />Change subject</button>
-            <Card className="border-border bg-card shadow-sm"><CardContent className="p-7 sm:p-9"><p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">{selectedGrade === "10" ? "Ready for teacher preparation" : "Not yet enabled"}</p><h1 className="mt-3 text-3xl font-bold text-foreground">Grade {selectedGrade} · {selectedSubjectInfo?.title}</h1>{selectedGrade === "10" ? <><p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">Prepare one MCQ draft using temporary source text or the reviewed curriculum chosen by the academy administrator. You will see only the choices needed for this subject.</p><Link href={`/generate?grade=10&subject=${selectedSubject}`} className="mt-7 inline-flex no-underline"><Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90"><Sparkles className="mr-2 h-4 w-4" />Prepare {selectedSubjectInfo?.title} MCQ draft</Button></Link></> : <><p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">Grade 9 {selectedSubjectInfo?.title} is waiting for the revised FBISE pattern and approved material. Once confirmed, it will receive its own curriculum and MCQ settings—not a copied Grade 10 configuration.</p><div className="mt-7 inline-flex rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">Next input needed: current Grade 9 textbook and paper pattern</div></>}</CardContent></Card>
+            <Button type="button" variant="ghost" className="academy-back-button mb-5" onClick={returnToSubjects} onKeyDown={(event) => handleReturnKey(event, returnToSubjects)} aria-label="Return to subject selection"><ArrowLeft className="h-4 w-4" />Change subject</Button>
+            <Card className="overflow-hidden border-primary/15 bg-card shadow-[0_18px_55px_oklch(0.36_0.12_255_/_0.08)]"><CardContent className="p-6 sm:p-9"><p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-primary">{selectedGrade === "10" ? "Ready for teacher preparation" : "Not yet enabled"}</p><h1 className="mt-3 text-[2rem] font-extrabold tracking-[-0.055em] text-foreground sm:text-4xl">Grade {selectedGrade} · {selectedSubjectInfo?.title}</h1>{selectedGrade === "10" ? <><p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">Prepare one MCQ draft using temporary source text or the reviewed curriculum chosen by the academy administrator. You will see only the choices needed for this subject.</p><Link href={`/generate?grade=10&subject=${selectedSubject}`} className="mt-7 inline-flex no-underline"><Button size="lg" className="rounded-xl bg-primary px-5 font-extrabold text-primary-foreground shadow-lg shadow-primary/20 transition-transform duration-200 hover:bg-primary/90 active:scale-[0.98]"><Sparkles className="mr-2 h-4 w-4" />Prepare {selectedSubjectInfo?.title} MCQ draft</Button></Link></> : <><p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">Grade 9 {selectedSubjectInfo?.title} is waiting for the revised FBISE pattern and approved material. Once confirmed, it will receive its own curriculum and MCQ settings—not a copied Grade 10 configuration.</p><div className="mt-7 inline-flex rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">Next input needed: current Grade 9 textbook and paper pattern</div></>}</CardContent></Card>
           </>}
         </section>
 

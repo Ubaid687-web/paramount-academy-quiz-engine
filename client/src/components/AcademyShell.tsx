@@ -11,23 +11,23 @@ export function AcademyShell({ children, eyebrow = "FBISE Academic Workspace", s
   ];
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-40 border-b border-border/80 bg-background/85 backdrop-blur-xl">
-        <div className="container flex min-h-18 flex-wrap items-center justify-between gap-3 py-3">
+      <header className="sticky top-0 z-40 border-b border-border/70 bg-background/92 backdrop-blur-xl">
+        <div className="container flex min-h-16 flex-wrap items-center justify-between gap-3 py-3 sm:min-h-20">
           <Link href="/" className="flex items-center gap-3 no-underline">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-[0_8px_18px_oklch(0.36_0.12_255_/_0.2)] sm:h-10 sm:w-10">
               <BookOpenCheck className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-sm font-bold tracking-tight text-foreground">Paramount Academy</p>
-              <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">{eyebrow}</p>
+              <p className="text-sm font-extrabold tracking-[-0.03em] text-foreground sm:text-[15px]">Paramount Academy</p>
+              <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground sm:text-[10px]">{eyebrow}</p>
             </div>
           </Link>
-          <nav aria-label="Quiz engine navigation" className="flex items-center gap-1 rounded-xl border border-border/70 bg-card p-1 shadow-sm">
+          <nav aria-label="Quiz engine navigation" className="flex items-center gap-1 rounded-full border border-border/80 bg-card p-1 shadow-sm">
             {navigation.map((item) => {
               const Icon = item.icon;
               const active = item.href === "/" ? location === "/" : location.startsWith(item.href);
               return (
-                <Link key={item.href} href={item.href} className={cn("flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold no-underline transition-colors sm:text-sm", active ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground")}>
+                <Link key={item.href} href={item.href} aria-label={item.label} className={cn("flex h-9 items-center gap-2 rounded-full px-2.5 text-xs font-bold no-underline transition-[transform,background-color,color,box-shadow] duration-200 active:scale-[0.96] sm:px-3 sm:text-sm", active ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground")}>
                   <Icon className="h-4 w-4" />
                   <span className="hidden sm:inline">{item.label}</span>
                 </Link>
