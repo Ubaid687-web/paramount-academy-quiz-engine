@@ -135,3 +135,8 @@
 - [x] Correct only evidence-backed Computer Science source-status records and builder safeguards; do not substitute any external or inferred source.
 - [x] Apply the next targeted teacher-facing refinement that is safe for the verified source state.
 - [x] Validate, checkpoint, and report the reconciled refinement state.
+
+## Phase 15: Replit Integration Handoff
+- [x] Audit current architecture, source records, data contracts, and integration boundaries for a Replit implementation.
+- [x] Prepare a developer-ready Replit integration specification with required workflows, security controls, and acceptance criteria.
+- [x] Validate the handoff against the live project state and deliver the document to the user.
