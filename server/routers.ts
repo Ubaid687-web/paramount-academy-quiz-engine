@@ -319,6 +319,149 @@ export const appRouter = router({
       }),
   }),
 
+  assessment: router({
+    getAvailability: adminProcedure
+      .input(z.object({ subject: z.enum(["physics", "chemistry", "computer_science"]) }))
+      .query(async ({ input }) => {
+        const { getActiveCurriculumScopeCatalog, listActiveAssessmentPatternSources } = await import("./db");
+        const [catalog, paperSources] = await Promise.all([
+          getActiveCurriculumScopeCatalog(input.subject),
+          listActiveAssessmentPatternSources(input.subject),
+        ]);
+        const textbookReady = Boolean(catalog);
+        const paperPatternReady = paperSources.length > 0;
+        return {
+          textbookReady,
+          paperPatternReady,
+          supportedModes: {
+            mcq: textbookReady,
+            short: textbookReady,
+            long: textbookReady,
+            full_paper: textbookReady && paperPatternReady,
+          },
+          paperSources: paperSources.map((source) => ({
+            id: source.id,
+            sourceKind: source.sourceKind,
+            academicYear: source.academicYear,
+            originalFileName: source.originalFileName,
+          })),
+        };
+      }),
+
+    saveDraft: adminProcedure
+      .input(z.object({
+        assessmentMode: z.enum(["mcq", "short", "long", "full_paper"]),
+        scope: z.object({
+          subject: z.enum(["physics", "chemistry", "computer_science"]),
+          scopeType: z.enum(["single_chapter", "half_chapter", "multiple_chapters", "half_syllabus", "block"]),
+          chapterIds: z.array(z.number().int().positive()).optional(),
+          segmentIds: z.array(z.number().int().positive()).optional(),
+          scopeTemplateId: z.number().int().positive().optional(),
+        }),
+        paperPatternSourceIds: z.array(z.number().int().positive()).default([]),
+        payload: z.unknown(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { getActiveCurriculumScopeCatalog, listAssessmentPatternSourcesByIds, createAssessmentDraft } = await import("./db");
+        const { resolveCurriculumScope } = await import("./curriculumScope");
+        const { validateAssessmentDraftPayload } = await import("@shared/assessmentDraftContract");
+
+        const catalog = await getActiveCurriculumScopeCatalog(input.scope.subject);
+        if (!catalog) {
+          throw new Error("No active reviewed textbook source is available for the selected subject.");
+        }
+        const resolvedScope = resolveCurriculumScope(catalog, input.scope);
+        const validation = validateAssessmentDraftPayload(input.payload, input.assessmentMode);
+        if (!validation.valid) {
+          throw new Error(`Assessment draft failed validation: ${validation.issues.join(" ")}`);
+        }
+
+        const patternSources = await listAssessmentPatternSourcesByIds(input.scope.subject, input.paperPatternSourceIds);
+        if (input.assessmentMode === "full_paper") {
+          if (!input.paperPatternSourceIds.length || patternSources.length !== input.paperPatternSourceIds.length) {
+            throw new Error("A full-paper draft requires active, extracted paper-pattern sources supplied for the selected subject.");
+          }
+        }
+
+        const reviewWarnings = [
+          "Draft only: Portal Admin review is required before publication or assignment.",
+          "Verify every item source reference against the approved textbook scope before approval.",
+          ...(input.assessmentMode === "full_paper"
+            ? ["Verify the full-paper structure against the attached approved paper-pattern sources before approval."]
+            : ["No examination-pattern claim is made unless an approved paper source is attached during review."]),
+        ];
+
+        const draft = await createAssessmentDraft({
+          title: validation.payload.title,
+          assessmentMode: input.assessmentMode,
+          sourceState: "ready",
+          curriculumSetId: catalog.curriculumSet.id,
+          scopeSnapshot: JSON.stringify(resolvedScope.snapshot),
+          paperPatternReferences: patternSources.length
+            ? JSON.stringify(patternSources.map((source) => ({
+              id: source.id,
+              sourceKind: source.sourceKind,
+              academicYear: source.academicYear,
+              originalFileName: source.originalFileName,
+            })))
+            : undefined,
+          draftPayload: JSON.stringify(validation.payload),
+          totalMarks: validation.totalMarks,
+          estimatedDurationMinutes: validation.payload.estimatedDurationMinutes,
+          status: "draft",
+          reviewWarnings: JSON.stringify(reviewWarnings),
+          createdBy: ctx.user.id,
+        });
+
+        return { success: true, assessmentDraftId: draft.id, reviewWarnings };
+      }),
+
+    getDraft: adminProcedure
+      .input(z.object({ assessmentDraftId: z.number().int().positive() }))
+      .query(async ({ ctx, input }) => {
+        const { getAssessmentDraft } = await import("./db");
+        const draft = await getAssessmentDraft(input.assessmentDraftId);
+        if (!draft || draft.createdBy !== ctx.user.id) {
+          throw new Error("Assessment draft not found or unauthorized");
+        }
+        return draft;
+      }),
+
+    reviseDraft: adminProcedure
+      .input(z.object({
+        assessmentDraftId: z.number().int().positive(),
+        payload: z.unknown(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { getAssessmentDraft, updateAssessmentDraft } = await import("./db");
+        const { validateAssessmentDraftPayload } = await import("@shared/assessmentDraftContract");
+        const existing = await getAssessmentDraft(input.assessmentDraftId);
+        if (!existing || existing.createdBy !== ctx.user.id) {
+          throw new Error("Assessment draft not found or unauthorized");
+        }
+        const validation = validateAssessmentDraftPayload(input.payload, existing.assessmentMode);
+        if (!validation.valid) {
+          throw new Error(`Assessment draft failed validation: ${validation.issues.join(" ")}`);
+        }
+        const reviewWarnings = [
+          "Draft revised: Portal Admin review is required before publication or assignment.",
+          "Verify every item source reference against the original approved source snapshot before approval.",
+          ...(existing.assessmentMode === "full_paper" ? ["Verify the revised paper structure against the preserved approved paper-pattern references."] : []),
+        ];
+        const draft = await updateAssessmentDraft(existing.id, {
+          title: validation.payload.title,
+          draftPayload: JSON.stringify(validation.payload),
+          totalMarks: validation.totalMarks,
+          estimatedDurationMinutes: validation.payload.estimatedDurationMinutes,
+          status: "in_review",
+          reviewWarnings: JSON.stringify(reviewWarnings),
+          reviewedBy: ctx.user.id,
+          reviewedAt: new Date(),
+        });
+        return { success: true, assessmentDraftId: draft?.id, reviewWarnings };
+      }),
+  }),
+
   aiAgent: router({
     generateMCQs: adminProcedure
       .input(

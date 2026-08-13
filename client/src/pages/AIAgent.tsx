@@ -18,11 +18,33 @@ import { toast } from "sonner";
 type FbiseSubject = "physics" | "chemistry" | "computer_science";
 type GradeLevel = "9" | "10";
 type GenerationScope = "uploaded_content" | "single_chapter" | "half_chapter" | "multiple_chapters" | "half_syllabus" | "block";
+type AssessmentMode = "mcq" | "short" | "long" | "full_paper";
+type FullPaperDraftItem = {
+  id: string;
+  kind: "short" | "long";
+  question: string;
+  expectedAnswer?: string;
+  markingGuide?: string[];
+  expectedKeyPoints?: string[];
+  markingRubric?: Array<{ criterion: string; marks: number }>;
+  difficulty: "easy" | "medium" | "hard";
+  marks: number;
+  sourceReference: string;
+  learningObjective: string;
+};
+type FullPaperSection = { id: string; label: string; instructions: string; items: FullPaperDraftItem[] };
 
 const SUBJECT_LABELS: Record<FbiseSubject, string> = {
   physics: "Physics",
   chemistry: "Chemistry",
   computer_science: "Computer Science",
+};
+
+const ASSESSMENT_MODE_LABELS: Record<AssessmentMode, string> = {
+  mcq: "MCQ",
+  short: "Short questions",
+  long: "Long questions",
+  full_paper: "Full paper",
 };
 
 
@@ -53,11 +75,30 @@ export default function AIAgent() {
   const [selectedChapterIds, setSelectedChapterIds] = useState<number[]>([]);
   const [selectedSegmentId, setSelectedSegmentId] = useState<number | null>(null);
   const [selectedScopeTemplateId, setSelectedScopeTemplateId] = useState<number | null>(null);
+  const [assessmentMode, setAssessmentMode] = useState<AssessmentMode>("mcq");
+  const [draftQuestion, setDraftQuestion] = useState("");
+  const [draftExpectedAnswer, setDraftExpectedAnswer] = useState("");
+  const [draftMarkingPoints, setDraftMarkingPoints] = useState("");
+  const [draftRubric, setDraftRubric] = useState("");
+  const [draftMarks, setDraftMarks] = useState(2);
+  const [draftSourceReference, setDraftSourceReference] = useState("");
+  const [draftLearningObjective, setDraftLearningObjective] = useState("");
+  const [savedAssessmentDraftId, setSavedAssessmentDraftId] = useState<number | null>(null);
+  const [reviewDraftId, setReviewDraftId] = useState<number | null>(null);
+  const [requestedReviewDraftId, setRequestedReviewDraftId] = useState<number | null>(null);
+  const [fullPaperItemMode, setFullPaperItemMode] = useState<"short" | "long">("short");
+  const [fullPaperSections, setFullPaperSections] = useState<FullPaperSection[]>([{ id: "section-1", label: "Section A", instructions: "Attempt the following question.", items: [] }]);
+  const [activeFullPaperSectionId, setActiveFullPaperSectionId] = useState("section-1");
+  const [selectedPatternSourceIds, setSelectedPatternSourceIds] = useState<number[]>([]);
 
   const generateMutation = trpc.aiAgent.generateMCQs.useMutation();
   const saveMutation = trpc.aiAgent.saveGeneratedQuiz.useMutation();
+  const saveAssessmentDraftMutation = trpc.assessment.saveDraft.useMutation();
+  const reviseAssessmentDraftMutation = trpc.assessment.reviseDraft.useMutation();
   const pdfExtractMutation = trpc.pdfUpload.extractPdfText.useMutation();
   const scopeCatalogQuery = trpc.curriculum.getActiveScopeCatalog.useQuery({ subject }, { enabled: gradeLevel === "10" });
+  const assessmentAvailabilityQuery = trpc.assessment.getAvailability.useQuery({ subject }, { enabled: gradeLevel === "10" });
+  const assessmentDraftQuery = trpc.assessment.getDraft.useQuery({ assessmentDraftId: requestedReviewDraftId || 0 }, { enabled: requestedReviewDraftId !== null });
   const statusQuery = trpc.aiAgent.getGenerationStatus.useQuery(
     { jobId: jobId || 0 },
     { enabled: !!jobId && isGenerating, refetchInterval: 1000 }
@@ -82,6 +123,40 @@ export default function AIAgent() {
 
     return () => window.clearInterval(progressTimer);
   }, [isGenerating]);
+
+  useEffect(() => {
+    const draft = assessmentDraftQuery.data;
+    if (!draft || !requestedReviewDraftId) return;
+    try {
+      const payload = JSON.parse(draft.draftPayload);
+      setAssessmentMode(payload.mode as AssessmentMode);
+      setQuizTitle(payload.title ?? draft.title);
+      setSavedAssessmentDraftId(draft.id);
+      if (payload.mode === "full_paper") {
+        const sections = (payload.sections ?? []).map((section: { label: string; instructions: string; items: FullPaperDraftItem[] }, index: number) => ({
+          ...section,
+          id: `loaded-section-${index + 1}`,
+          items: section.items.map((item, itemIndex) => ({ ...item, id: `loaded-item-${index + 1}-${itemIndex + 1}` })),
+        }));
+        setFullPaperSections(sections);
+        if (sections[0]) setActiveFullPaperSectionId(sections[0].id);
+      } else {
+        const item = payload.items?.[0];
+        if (item) {
+          setDraftQuestion(item.question ?? "");
+          setDraftExpectedAnswer(item.expectedAnswer ?? "");
+          setDraftMarkingPoints((item.markingGuide ?? item.expectedKeyPoints ?? []).join("\n"));
+          setDraftRubric((item.markingRubric ?? []).map((criterion: { criterion: string; marks: number }) => `${criterion.criterion} | ${criterion.marks}`).join("\n"));
+          setDraftMarks(item.marks ?? 1);
+          setDraftSourceReference(item.sourceReference ?? "");
+          setDraftLearningObjective(item.learningObjective ?? "");
+        }
+      }
+      toast.success("Assessment draft loaded for review.");
+    } catch {
+      toast.error("The saved assessment draft could not be read.");
+    }
+  }, [assessmentDraftQuery.data, requestedReviewDraftId]);
 
   useEffect(() => {
     const trimmedContent = contentText.trim();
@@ -146,6 +221,12 @@ export default function AIAgent() {
   const hasGenerationSource = gradeLevel === "10" && (scopeType === "uploaded_content"
     ? Boolean(contentText.trim())
     : hasValidStoredScope);
+  const assessmentAvailability = assessmentAvailabilityQuery.data;
+  const isSelectedModeAvailable = assessmentAvailability
+    ? assessmentAvailability.supportedModes[assessmentMode]
+    : assessmentMode === "mcq";
+  const isAutomaticMcqMode = assessmentMode === "mcq";
+  const activeFullPaperSection = fullPaperSections.find((section) => section.id === activeFullPaperSectionId) ?? fullPaperSections[0];
 
   const toggleChapter = (chapterId: number, checked: boolean) => {
     setSelectedChapterIds((currentIds) => {
@@ -362,31 +443,227 @@ export default function AIAgent() {
     }
   };
 
+  const handleSaveManualAssessmentDraft = async () => {
+    if (assessmentMode === "mcq" || assessmentMode === "full_paper") return;
+    if (!savedAssessmentDraftId && (scopeType === "uploaded_content" || !hasValidStoredScope)) {
+      toast.error("Short and long drafts must use selected approved textbook chapters.");
+      return;
+    }
+    if (!quizTitle.trim() || !draftQuestion.trim() || !draftMarks || !draftSourceReference.trim() || !draftLearningObjective.trim()) {
+      toast.error("Add a title, question, marks, source reference, and learning objective before saving the draft.");
+      return;
+    }
+
+    const item = buildManualDraftItem(assessmentMode);
+    if (!item) return;
+
+    try {
+      const payload = { mode: assessmentMode, title: quizTitle.trim(), estimatedDurationMinutes: null, items: [item] };
+      if (savedAssessmentDraftId) {
+        await reviseAssessmentDraftMutation.mutateAsync({ assessmentDraftId: savedAssessmentDraftId, payload });
+        toast.success(`${ASSESSMENT_MODE_LABELS[assessmentMode]} draft updated for Portal Admin review.`);
+      } else {
+        const result = await saveAssessmentDraftMutation.mutateAsync({
+          assessmentMode,
+          scope: {
+            subject,
+            scopeType: generationScopeType,
+            chapterIds: selectedChapterIds,
+            segmentIds: selectedSegmentId ? [selectedSegmentId] : [],
+            scopeTemplateId: selectedScopeTemplateId ?? undefined,
+          },
+          payload,
+        });
+        setSavedAssessmentDraftId(result.assessmentDraftId);
+        toast.success(`${ASSESSMENT_MODE_LABELS[assessmentMode]} draft saved for Portal Admin review.`);
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "The assessment draft could not be saved.");
+    }
+  };
+
+  const buildManualDraftItem = (mode: "short" | "long") => {
+    if (!draftQuestion.trim() || !draftMarks || !draftSourceReference.trim() || !draftLearningObjective.trim()) {
+      toast.error("Add a question, marks, source reference, and learning objective before continuing.");
+      return null;
+    }
+    const markingPoints = draftMarkingPoints.split("\n").map((point) => point.trim()).filter(Boolean);
+    const baseItem = {
+      question: draftQuestion.trim(),
+      difficulty: difficulty === "balanced" ? "medium" as const : difficulty,
+      marks: draftMarks,
+      sourceReference: draftSourceReference.trim(),
+      learningObjective: draftLearningObjective.trim(),
+    };
+    if (mode === "short") {
+      if (!draftExpectedAnswer.trim() || !markingPoints.length) {
+        toast.error("Add an expected answer and at least one marking-guide point.");
+        return null;
+      }
+      return { kind: "short" as const, ...baseItem, expectedAnswer: draftExpectedAnswer.trim(), markingGuide: markingPoints };
+    }
+    const markingRubric = draftRubric.split("\n").map((line) => {
+      const [criterion, marks] = line.split("|");
+      return { criterion: criterion?.trim() ?? "", marks: Number(marks?.trim()) };
+    });
+    const rubricTotal = markingRubric.reduce((total, item) => total + item.marks, 0);
+    if (!markingPoints.length || !markingRubric.length || rubricTotal !== draftMarks) {
+      toast.error("Add expected key points and a complete rubric whose marks equal the question marks.");
+      return null;
+    }
+    return { kind: "long" as const, ...baseItem, expectedKeyPoints: markingPoints, markingRubric };
+  };
+
+  const handleSaveFullPaperDraft = async () => {
+    if (!savedAssessmentDraftId && (scopeType === "uploaded_content" || !hasValidStoredScope)) {
+      toast.error("A full-paper draft must use selected approved textbook chapters.");
+      return;
+    }
+    if (!selectedPatternSourceIds.length || !quizTitle.trim()) {
+      toast.error("Select an approved paper source and enter a draft title before saving.");
+      return;
+    }
+    if (!fullPaperSections.length || fullPaperSections.some((section) => !section.label.trim() || !section.instructions.trim() || !section.items.length)) {
+      toast.error("Every full-paper section needs a label, instructions, and at least one saved item.");
+      return;
+    }
+    const selectedPatternReferences = (assessmentAvailability?.paperSources ?? [])
+      .filter((source) => selectedPatternSourceIds.includes(source.id))
+      .map((source) => `${source.sourceKind}${source.academicYear ? ` ${source.academicYear}` : ""}: ${source.originalFileName}`);
+    const totalMarks = fullPaperSections.reduce((paperTotal, section) => paperTotal + section.items.reduce((sectionTotal, item) => sectionTotal + item.marks, 0), 0);
+
+    try {
+      const payload = {
+        mode: "full_paper" as const,
+        title: quizTitle.trim(),
+        estimatedDurationMinutes: null,
+        patternReferences: selectedPatternReferences,
+        totalMarks,
+        sections: fullPaperSections.map(({ label, instructions, items }) => ({ label, instructions, items })),
+      };
+      if (savedAssessmentDraftId) {
+        await reviseAssessmentDraftMutation.mutateAsync({ assessmentDraftId: savedAssessmentDraftId, payload });
+        toast.success("Full-paper draft updated for Portal Admin review.");
+      } else {
+        const result = await saveAssessmentDraftMutation.mutateAsync({
+          assessmentMode: "full_paper",
+          scope: {
+            subject,
+            scopeType: generationScopeType,
+            chapterIds: selectedChapterIds,
+            segmentIds: selectedSegmentId ? [selectedSegmentId] : [],
+            scopeTemplateId: selectedScopeTemplateId ?? undefined,
+          },
+          paperPatternSourceIds: selectedPatternSourceIds,
+          payload,
+        });
+        setSavedAssessmentDraftId(result.assessmentDraftId);
+        toast.success("Full-paper review draft saved for Portal Admin review.");
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "The full-paper draft could not be saved.");
+    }
+  };
+
+  const updateActiveFullPaperSection = (updates: Partial<Pick<FullPaperSection, "label" | "instructions">>) => {
+    setFullPaperSections((sections) => sections.map((section) => section.id === activeFullPaperSectionId ? { ...section, ...updates } : section));
+  };
+
+  const addFullPaperSection = () => {
+    const nextIndex = fullPaperSections.length + 1;
+    const section = { id: `section-${Date.now()}`, label: `Section ${String.fromCharCode(64 + nextIndex)}`, instructions: "Attempt the following question.", items: [] as FullPaperDraftItem[] };
+    setFullPaperSections((sections) => [...sections, section]);
+    setActiveFullPaperSectionId(section.id);
+  };
+
+  const addItemToFullPaperSection = () => {
+    const item = buildManualDraftItem(fullPaperItemMode);
+    if (!item) return;
+    const storedItem: FullPaperDraftItem = { ...item, id: `item-${Date.now()}` };
+    setFullPaperSections((sections) => sections.map((section) => section.id === activeFullPaperSectionId ? { ...section, items: [...section.items, storedItem] } : section));
+    setDraftQuestion("");
+    setDraftExpectedAnswer("");
+    setDraftMarkingPoints("");
+    setDraftRubric("");
+    setDraftSourceReference("");
+    setDraftLearningObjective("");
+  };
+
+  const handleLoadAssessmentDraft = () => {
+    if (!reviewDraftId) {
+      toast.error("Enter an assessment draft ID to load it for review.");
+      return;
+    }
+    setRequestedReviewDraftId(reviewDraftId);
+  };
+
   return (
-    <AcademyShell eyebrow="MCQ Draft Studio">
+    <AcademyShell eyebrow="Assessment Draft Studio">
       <main className="container py-8 sm:py-10">
         <div className="mb-8 rounded-2xl border border-border/80 bg-card px-5 py-6 shadow-sm sm:px-7">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-primary"><GraduationCap className="h-4 w-4" />Teacher preparation</p>
-              <h1 className="mt-2 text-3xl font-bold text-foreground sm:text-4xl">{!isContextEditing && gradeLevel === "10" ? `Prepare Grade 10 ${SUBJECT_LABELS[subject]} MCQ draft` : "Prepare an MCQ draft"}</h1>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">Add your lesson material, choose the question level, and create a draft. An academy reviewer checks it before students use it.</p>
+              <h1 className="mt-2 text-3xl font-bold text-foreground sm:text-4xl">{!isContextEditing && gradeLevel === "10" ? `Prepare Grade 10 ${SUBJECT_LABELS[subject]} ${ASSESSMENT_MODE_LABELS[assessmentMode]} draft` : "Prepare an assessment draft"}</h1>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">Choose a source and assessment format. Every draft remains under academy review before students use it.</p>
             </div>
             <div className="rounded-xl border border-primary/15 bg-primary/5 px-3 py-2 text-right">
               <p className="text-xs font-semibold text-primary">Assessment type</p>
-              <p className="mt-0.5 text-sm font-bold text-foreground">MCQ drafts only</p>
+              <p className="mt-0.5 text-sm font-bold text-foreground">{ASSESSMENT_MODE_LABELS[assessmentMode]} draft</p>
             </div>
           </div>
         </div>
 
+        <Card className="mb-6 border-border/80 bg-card shadow-sm">
+          <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-end">
+            <div className="flex-1">
+              <Label htmlFor="review-draft-id" className="mb-2 block text-sm font-medium">Open saved assessment draft</Label>
+              <Input id="review-draft-id" inputMode="numeric" value={reviewDraftId ?? ""} onChange={(event) => setReviewDraftId(Number(event.target.value) || null)} placeholder="Assessment draft ID" />
+            </div>
+            <Button type="button" variant="outline" onClick={handleLoadAssessmentDraft} disabled={assessmentDraftQuery.isFetching}>{assessmentDraftQuery.isFetching ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Loading…</> : "Load for review"}</Button>
+            {savedAssessmentDraftId && <p className="text-xs font-medium text-primary">Editing saved draft #{savedAssessmentDraftId}</p>}
+          </CardContent>
+        </Card>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content Area */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Content Input Card */}
             <Card className="border-border/80 bg-card shadow-sm">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-xl">
                   <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">1</span>
+                  Choose assessment format
+                </CardTitle>
+                <CardDescription>Formats are visible now, but a format can only draft from an active approved source. Full papers also require reviewed model or past-paper evidence.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-2 sm:grid-cols-2" aria-label="Choose assessment format">
+                  {(Object.keys(ASSESSMENT_MODE_LABELS) as AssessmentMode[]).map((mode) => {
+                    const available = assessmentAvailability ? assessmentAvailability.supportedModes[mode] : mode === "mcq";
+                    const selected = assessmentMode === mode;
+                    return <button
+                      key={mode}
+                      type="button"
+                      aria-pressed={selected}
+                      disabled={gradeLevel !== "10" || !available}
+                      onClick={() => setAssessmentMode(mode)}
+                      className={`rounded-xl border p-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-55 ${selected ? "border-primary bg-primary/[0.055] shadow-sm" : "border-border bg-muted/30 hover:border-primary/40"}`}
+                    >
+                      <span className="block text-sm font-bold text-foreground">{ASSESSMENT_MODE_LABELS[mode]}</span>
+                      <span className="mt-1 block text-xs leading-5 text-muted-foreground">{available ? "Approved source required" : mode === "full_paper" ? "Needs active textbook and reviewed paper evidence" : "Needs active approved textbook source"}</span>
+                    </button>;
+                  })}
+                </div>
+                {!isSelectedModeAvailable && <p className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs leading-5 text-muted-foreground">This format is locked because the required supplied source evidence is not active for {SUBJECT_LABELS[subject]}.</p>}
+                {assessmentMode !== "mcq" && isSelectedModeAvailable && <p className="mt-3 rounded-lg border border-primary/20 bg-primary/[0.04] p-3 text-xs leading-5 text-muted-foreground">The source-safe draft and review contract is ready for this format. Automatic question generation remains intentionally unavailable in this MCQ builder until its dedicated review workflow is connected; no unsupported questions will be created.</p>}
+              </CardContent>
+            </Card>
+
+            {/* Content Input Card */}
+            <Card className="border-border/80 bg-card shadow-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-xl">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">2</span>
                   Choose source material
                 </CardTitle>
                 <CardDescription>Upload one PDF or TXT file, or paste lesson material. If an approved chapter is already prepared, you can use it instead.</CardDescription>
@@ -510,8 +787,94 @@ export default function AIAgent() {
               </CardContent>
             </Card>
 
+            {assessmentMode !== "mcq" && assessmentMode !== "full_paper" && isSelectedModeAvailable && <Card className="border-primary/20 bg-card shadow-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-xl">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">3</span>
+                  Reviewable {ASSESSMENT_MODE_LABELS[assessmentMode].toLowerCase()} draft
+                </CardTitle>
+                <CardDescription>Write or paste only content grounded in your selected approved chapters. Every saved item requires marks, a source reference, and a learning objective.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {!savedAssessmentDraftId && (scopeType === "uploaded_content" || !hasValidStoredScope) ? <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm leading-6 text-muted-foreground">Select at least one approved textbook chapter above before saving a {ASSESSMENT_MODE_LABELS[assessmentMode].toLowerCase()} draft. Custom pasted material is not used for this review workflow.</div> : <>
+                  <div>
+                    <Label htmlFor="assessment-question" className="mb-2 block text-sm font-medium">Question</Label>
+                    <Textarea id="assessment-question" value={draftQuestion} onChange={(event) => setDraftQuestion(event.target.value)} placeholder="Enter a source-grounded question for review." className="min-h-28 resize-none" />
+                  </div>
+                  {assessmentMode === "short" && <div>
+                    <Label htmlFor="expected-answer" className="mb-2 block text-sm font-medium">Expected answer</Label>
+                    <Textarea id="expected-answer" value={draftExpectedAnswer} onChange={(event) => setDraftExpectedAnswer(event.target.value)} placeholder="State the concise expected answer." className="min-h-24 resize-none" />
+                  </div>}
+                  <div>
+                    <Label htmlFor="marking-points" className="mb-2 block text-sm font-medium">{assessmentMode === "short" ? "Marking guide" : "Expected key points"}</Label>
+                    <Textarea id="marking-points" value={draftMarkingPoints} onChange={(event) => setDraftMarkingPoints(event.target.value)} placeholder="One marking point per line" className="min-h-24 resize-none" />
+                  </div>
+                  {assessmentMode === "long" && <div>
+                    <Label htmlFor="marking-rubric" className="mb-2 block text-sm font-medium">Marking rubric</Label>
+                    <Textarea id="marking-rubric" value={draftRubric} onChange={(event) => setDraftRubric(event.target.value)} placeholder="One criterion per line using: criterion | marks" className="min-h-24 resize-none" />
+                  </div>}
+                  <div className="grid gap-4 sm:grid-cols-3">
+                    <div>
+                      <Label htmlFor="assessment-marks" className="mb-2 block text-sm font-medium">Marks</Label>
+                      <Input id="assessment-marks" type="number" min={1} value={draftMarks} onChange={(event) => setDraftMarks(Number(event.target.value) || 0)} />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <Label htmlFor="source-reference" className="mb-2 block text-sm font-medium">Source reference</Label>
+                      <Input id="source-reference" value={draftSourceReference} onChange={(event) => setDraftSourceReference(event.target.value)} placeholder="e.g., selected chapter heading and page range" />
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="learning-objective" className="mb-2 block text-sm font-medium">Learning objective</Label>
+                    <Input id="learning-objective" value={draftLearningObjective} onChange={(event) => setDraftLearningObjective(event.target.value)} placeholder="Describe the knowledge or skill this item assesses." />
+                  </div>
+                  <Button type="button" onClick={handleSaveManualAssessmentDraft} disabled={saveAssessmentDraftMutation.isPending} className="w-full bg-primary text-primary-foreground font-semibold shadow-sm hover:bg-primary/90">
+                    {saveAssessmentDraftMutation.isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Saving review draft…</> : `Save ${ASSESSMENT_MODE_LABELS[assessmentMode]} draft for review`}
+                  </Button>
+                  {savedAssessmentDraftId && <div className="rounded-lg border border-accent/30 bg-accent/10 p-3 text-sm text-foreground"><strong>Draft saved.</strong> Assessment draft #{savedAssessmentDraftId} is awaiting Portal Admin review.</div>}
+                </>}
+              </CardContent>
+            </Card>}
+
+            {assessmentMode === "full_paper" && isSelectedModeAvailable && <Card className="border-primary/20 bg-card shadow-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-xl">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">3</span>
+                  Full-paper review draft
+                </CardTitle>
+                <CardDescription>Start a reviewable paper section only from selected approved textbook chapters and active supplied paper sources. The structure remains a draft until Portal Admin review.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {!savedAssessmentDraftId && (scopeType === "uploaded_content" || !hasValidStoredScope) ? <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm leading-6 text-muted-foreground">Select at least one approved textbook chapter above before starting a full-paper draft.</div> : <>
+                  <fieldset className="space-y-2" aria-label="Select approved paper sources">
+                    <legend className="text-sm font-medium text-foreground">Approved paper evidence</legend>
+                    <p className="text-xs leading-5 text-muted-foreground">Select every reviewed model or past paper that supports this paper structure.</p>
+                    {(assessmentAvailability?.paperSources ?? []).map((source) => <label key={source.id} className="flex items-start gap-2 rounded-lg border border-border p-3 hover:bg-muted/60">
+                      <Checkbox checked={selectedPatternSourceIds.includes(source.id)} onCheckedChange={(checked) => setSelectedPatternSourceIds((current) => checked === true ? [...current, source.id] : current.filter((id) => id !== source.id))} aria-label={source.originalFileName} />
+                      <span className="text-sm text-foreground"><span className="font-medium">{source.originalFileName}</span><span className="block text-xs text-muted-foreground">{source.sourceKind.replace("_", " ")}{source.academicYear ? ` · ${source.academicYear}` : ""}</span></span>
+                    </label>)}
+                  </fieldset>
+                  <div className="flex flex-wrap gap-2" aria-label="Full-paper sections">{fullPaperSections.map((section) => <Button key={section.id} type="button" size="sm" variant={section.id === activeFullPaperSection?.id ? "default" : "outline"} onClick={() => setActiveFullPaperSectionId(section.id)}>{section.label || "Untitled section"} · {section.items.length} item{section.items.length === 1 ? "" : "s"}</Button>)}<Button type="button" size="sm" variant="outline" onClick={addFullPaperSection}>Add section</Button></div>
+                  {activeFullPaperSection && <><div className="grid gap-4 sm:grid-cols-2">
+                    <div><Label htmlFor="full-paper-section" className="mb-2 block text-sm font-medium">Section label</Label><Input id="full-paper-section" value={activeFullPaperSection.label} onChange={(event) => updateActiveFullPaperSection({ label: event.target.value })} /></div>
+                    <div><Label htmlFor="full-paper-item-kind" className="mb-2 block text-sm font-medium">Question form</Label><Select value={fullPaperItemMode} onValueChange={(value) => setFullPaperItemMode(value as "short" | "long")}><SelectTrigger id="full-paper-item-kind"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="short">Short question</SelectItem><SelectItem value="long">Long question</SelectItem></SelectContent></Select></div>
+                  </div>
+                  <div><Label htmlFor="full-paper-instructions" className="mb-2 block text-sm font-medium">Section instructions</Label><Input id="full-paper-instructions" value={activeFullPaperSection.instructions} onChange={(event) => updateActiveFullPaperSection({ instructions: event.target.value })} /></div></>}
+                  <div><Label htmlFor="assessment-question" className="mb-2 block text-sm font-medium">Question</Label><Textarea id="assessment-question" value={draftQuestion} onChange={(event) => setDraftQuestion(event.target.value)} placeholder="Enter a source-grounded question for review." className="min-h-28 resize-none" /></div>
+                  {fullPaperItemMode === "short" ? <div><Label htmlFor="expected-answer" className="mb-2 block text-sm font-medium">Expected answer</Label><Textarea id="expected-answer" value={draftExpectedAnswer} onChange={(event) => setDraftExpectedAnswer(event.target.value)} placeholder="State the concise expected answer." className="min-h-24 resize-none" /></div> : null}
+                  <div><Label htmlFor="marking-points" className="mb-2 block text-sm font-medium">{fullPaperItemMode === "short" ? "Marking guide" : "Expected key points"}</Label><Textarea id="marking-points" value={draftMarkingPoints} onChange={(event) => setDraftMarkingPoints(event.target.value)} placeholder="One marking point per line" className="min-h-24 resize-none" /></div>
+                  {fullPaperItemMode === "long" && <div><Label htmlFor="marking-rubric" className="mb-2 block text-sm font-medium">Marking rubric</Label><Textarea id="marking-rubric" value={draftRubric} onChange={(event) => setDraftRubric(event.target.value)} placeholder="One criterion per line using: criterion | marks" className="min-h-24 resize-none" /></div>}
+                  <div className="grid gap-4 sm:grid-cols-3"><div><Label htmlFor="assessment-marks" className="mb-2 block text-sm font-medium">Marks</Label><Input id="assessment-marks" type="number" min={1} value={draftMarks} onChange={(event) => setDraftMarks(Number(event.target.value) || 0)} /></div><div className="sm:col-span-2"><Label htmlFor="source-reference" className="mb-2 block text-sm font-medium">Textbook source reference</Label><Input id="source-reference" value={draftSourceReference} onChange={(event) => setDraftSourceReference(event.target.value)} placeholder="e.g., selected chapter heading and page range" /></div></div>
+                  <div><Label htmlFor="learning-objective" className="mb-2 block text-sm font-medium">Learning objective</Label><Input id="learning-objective" value={draftLearningObjective} onChange={(event) => setDraftLearningObjective(event.target.value)} placeholder="Describe the knowledge or skill this item assesses." /></div>
+                  <Button type="button" variant="outline" onClick={addItemToFullPaperSection} className="w-full">Add this item to {activeFullPaperSection?.label || "section"}</Button>
+                  {activeFullPaperSection?.items.length ? <div className="space-y-2 rounded-xl border border-border bg-muted/20 p-3" aria-label="Items in active full-paper section">{activeFullPaperSection.items.map((item, index) => <div key={item.id} className="flex items-start justify-between gap-3 rounded-lg bg-background p-3 text-sm"><span><strong>{index + 1}. {item.kind === "short" ? "Short" : "Long"} · {item.marks} mark{item.marks === 1 ? "" : "s"}</strong><span className="mt-1 block text-muted-foreground">{item.question}</span></span><Button type="button" variant="ghost" size="sm" onClick={() => setFullPaperSections((sections) => sections.map((section) => section.id === activeFullPaperSection.id ? { ...section, items: section.items.filter((candidate) => candidate.id !== item.id) } : section))}>Remove</Button></div>)}</div> : <p className="rounded-lg border border-dashed border-border p-3 text-xs text-muted-foreground">Add at least one validated item to this section before saving the full-paper draft.</p>}
+                  <Button type="button" onClick={handleSaveFullPaperDraft} disabled={saveAssessmentDraftMutation.isPending} className="w-full bg-primary text-primary-foreground font-semibold shadow-sm hover:bg-primary/90">{saveAssessmentDraftMutation.isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Saving full-paper draft…</> : "Save full-paper draft for review"}</Button>
+                  {savedAssessmentDraftId && <div className="rounded-lg border border-accent/30 bg-accent/10 p-3 text-sm text-foreground"><strong>Draft saved.</strong> Assessment draft #{savedAssessmentDraftId} is awaiting Portal Admin review.</div>}
+                </>}
+              </CardContent>
+            </Card>}
+
             {/* Content Analysis Card */}
-            {contentAnalysis && (
+            {assessmentMode === "mcq" && contentAnalysis && (
               <Card className="border-secondary/20 bg-secondary/5">
                 <CardHeader>
                   <CardTitle className="text-lg">Content Analysis</CardTitle>
@@ -829,7 +1192,7 @@ export default function AIAgent() {
                 </div>
 
                 {/* Difficulty */}
-                <div>
+                {assessmentMode === "mcq" && <div>
                   <Label htmlFor="difficulty" className="text-sm font-medium mb-2 block">
                     Difficulty profile
                   </Label>
@@ -844,13 +1207,18 @@ export default function AIAgent() {
                       <SelectItem value="hard">Hard Focus (10% Easy, 20% Medium, 70% Hard)</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
+                </div>}
+
+                {assessmentMode !== "mcq" && <div className="rounded-xl border border-primary/20 bg-primary/[0.04] p-3 text-sm leading-6 text-muted-foreground">
+                  <p className="font-semibold text-foreground">{ASSESSMENT_MODE_LABELS[assessmentMode]} review framework</p>
+                  <p className="mt-1">The system will require explicit marks, source references, learning objectives, and a reviewable marking structure before this format can be saved. No automatic question content is produced here yet.</p>
+                </div>}
 
                 {/* Generate Button */}
                 <Button
                   onClick={handleGenerate}
                   aria-label="Generate MCQs"
-                  disabled={gradeLevel !== "10" || isGenerating || isProcessingFile || !hasGenerationSource || !quizTitle.trim()}
+                  disabled={!isAutomaticMcqMode || gradeLevel !== "10" || isGenerating || isProcessingFile || !hasGenerationSource || !quizTitle.trim()}
                   className="w-full bg-primary text-primary-foreground font-semibold shadow-sm hover:bg-primary/90"
                 >
                   {isGenerating ? (
@@ -861,7 +1229,7 @@ export default function AIAgent() {
                   ) : (
                     <>
                       <Sparkles className="h-4 w-4 mr-2" />
-                      Generate MCQ Draft
+                      {isAutomaticMcqMode ? "Generate MCQ Draft" : `${ASSESSMENT_MODE_LABELS[assessmentMode]} generation is not enabled yet`}
                     </>
                   )}
                 </Button>

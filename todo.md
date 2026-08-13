@@ -112,3 +112,11 @@
 - [x] Use only the single user-supplied Grade 10 Computer Science textbook identified as FBISE Curriculum 2022–2023 and the files already supplied in this chat.
 - [x] Do not substitute external textbooks, newer editions, public papers, or inferred chapter lists for the supplied source.
 - [x] Add a builder regression safeguard that hides approved Computer Science chapters while no exact supplied curriculum source is active.
+
+## Phase 12: Source-Safe Multi-Mode Assessment Framework
+- [x] Audit and publish an exact access register for user-supplied Grade 10 textbooks, model papers, and the 2024 and 2025 past-paper sets across Physics, Chemistry, and Computer Science.
+- [x] Define shared source-grounded contracts for MCQ, short-question, long-question, and full-paper draft modes.
+- [x] Extend backend validation and draft persistence to enforce source references and marks for every assessment mode.
+- [x] Add a teacher-facing saved-draft review/edit flow that loads an existing assessment draft before revision.
+- [x] Add UI coverage for long-question revision and the intentional disabled full-paper mode when approved paper evidence is unavailable.
+- [x] Checkpoint and report the completed framework and access register.

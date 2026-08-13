@@ -22,8 +22,12 @@ Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
 
 const generateMutation = vi.fn();
 const saveMutation = vi.fn();
+const saveAssessmentDraftMutation = vi.fn();
+const reviseAssessmentDraftMutation = vi.fn();
+const loadAssessmentDraftQuery = vi.fn((_input: { assessmentDraftId: number }) => ({ data: undefined as any, isFetching: false }));
 const pdfExtractMutation = vi.fn();
 const scopeCatalogQuery = vi.fn((..._args: unknown[]) => ({ data: null as any, isLoading: false }));
+const assessmentAvailabilityQuery = vi.fn((..._args: unknown[]) => ({ data: undefined as any, isLoading: false }));
 
 vi.mock("@/lib/trpc", () => ({
   trpc: {
@@ -37,6 +41,12 @@ vi.mock("@/lib/trpc", () => ({
     },
     curriculum: {
       getActiveScopeCatalog: { useQuery: () => scopeCatalogQuery() },
+    },
+    assessment: {
+      getAvailability: { useQuery: () => assessmentAvailabilityQuery() },
+      saveDraft: { useMutation: () => ({ mutateAsync: saveAssessmentDraftMutation, isPending: false }) },
+      reviseDraft: { useMutation: () => ({ mutateAsync: reviseAssessmentDraftMutation, isPending: false }) },
+      getDraft: { useQuery: (input: { assessmentDraftId: number }) => loadAssessmentDraftQuery(input) },
     },
   },
 }));
@@ -55,9 +65,15 @@ describe("AI quiz generation feedback", () => {
     cleanup();
     generateMutation.mockReset();
     saveMutation.mockReset();
+    saveAssessmentDraftMutation.mockReset();
+    reviseAssessmentDraftMutation.mockReset();
+    loadAssessmentDraftQuery.mockReset();
+    loadAssessmentDraftQuery.mockReturnValue({ data: undefined, isFetching: false });
     pdfExtractMutation.mockReset();
     scopeCatalogQuery.mockReset();
     scopeCatalogQuery.mockReturnValue({ data: null, isLoading: false });
+    assessmentAvailabilityQuery.mockReset();
+    assessmentAvailabilityQuery.mockReturnValue({ data: undefined, isLoading: false });
   });
 
   it("shows an accessible staged loading panel while the quiz request is in progress", async () => {
@@ -285,5 +301,181 @@ describe("AI quiz generation feedback", () => {
     expect(await screen.findByText("No approved Computer Science textbook is active yet.")).toBeVisible();
     expect(screen.queryByRole("checkbox", { name: /Unit|Chapter/i })).not.toBeInTheDocument();
     window.history.pushState({}, "", "/ai-agent");
+  });
+
+  it("shows the four assessment formats but keeps full-paper drafting locked without approved paper evidence", async () => {
+    assessmentAvailabilityQuery.mockReturnValue({
+      data: {
+        textbookReady: true,
+        paperPatternReady: false,
+        supportedModes: { mcq: true, short: true, long: true, full_paper: false },
+        paperSources: [],
+      },
+      isLoading: false,
+    });
+
+    render(<AIAgent />);
+
+    expect(screen.getByRole("button", { name: /^MCQ/i })).toBeEnabled();
+    expect(screen.getByRole("button", { name: /Short questions/i })).toBeEnabled();
+    expect(screen.getByRole("button", { name: /Long questions/i })).toBeEnabled();
+    expect(screen.getByRole("button", { name: /Full paper/i })).toBeDisabled();
+    expect(screen.getByText("Needs active textbook and reviewed paper evidence")).toBeVisible();
+  });
+
+  it("saves a source-grounded short-question draft through the assessment review workflow", async () => {
+    scopeCatalogQuery.mockReturnValue({
+      data: {
+        curriculumSet: { id: 1, grade: "10", subject: "physics", label: "Physics", editionLabel: "Reviewed source" },
+        chapters: [{ id: 10, code: "Unit 10", title: "Heat", startPage: 13, endPage: 46 }],
+        segments: [],
+        templates: [],
+        templateMemberships: [],
+      },
+      isLoading: false,
+    });
+    assessmentAvailabilityQuery.mockReturnValue({
+      data: {
+        textbookReady: true,
+        paperPatternReady: false,
+        supportedModes: { mcq: true, short: true, long: true, full_paper: false },
+        paperSources: [],
+      },
+      isLoading: false,
+    });
+    saveAssessmentDraftMutation.mockResolvedValue({ assessmentDraftId: 901 });
+
+    render(<AIAgent />);
+    fireEvent.click(screen.getByRole("button", { name: /Approved textbook chapters/i }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Unit 10: Heat" }));
+    fireEvent.click(screen.getByRole("button", { name: /Short questions/i }));
+
+    fireEvent.change(screen.getByLabelText("Draft title"), { target: { value: "Heat short draft" } });
+    fireEvent.change(screen.getByLabelText("Question"), { target: { value: "State the source-grounded concept." } });
+    fireEvent.change(screen.getByLabelText("Expected answer"), { target: { value: "A concise answer." } });
+    fireEvent.change(screen.getByLabelText("Marking guide"), { target: { value: "Identifies the key idea" } });
+    fireEvent.change(screen.getByLabelText("Source reference"), { target: { value: "Unit 10, pages 13–46" } });
+    fireEvent.change(screen.getByLabelText("Learning objective"), { target: { value: "State the concept accurately." } });
+    fireEvent.click(screen.getByRole("button", { name: /Save Short questions draft for review/i }));
+
+    await waitFor(() => expect(saveAssessmentDraftMutation).toHaveBeenCalledWith(expect.objectContaining({
+      assessmentMode: "short",
+      scope: expect.objectContaining({ subject: "physics", chapterIds: [10] }),
+    })));
+    expect(await screen.findByText(/Assessment draft #901 is awaiting Portal Admin review/i)).toBeVisible();
+
+    reviseAssessmentDraftMutation.mockResolvedValue({ assessmentDraftId: 901 });
+    fireEvent.click(screen.getByRole("button", { name: /Save Short questions draft for review/i }));
+    await waitFor(() => expect(reviseAssessmentDraftMutation).toHaveBeenCalledWith(expect.objectContaining({ assessmentDraftId: 901 })));
+  });
+
+  it("saves a source-grounded long-question draft with an explicit matching rubric", async () => {
+    scopeCatalogQuery.mockReturnValue({
+      data: {
+        curriculumSet: { id: 1, grade: "10", subject: "physics", label: "Physics", editionLabel: "Reviewed source" },
+        chapters: [{ id: 10, code: "Unit 10", title: "Heat", startPage: 13, endPage: 46 }], segments: [], templates: [], templateMemberships: [],
+      }, isLoading: false,
+    });
+    assessmentAvailabilityQuery.mockReturnValue({ data: { textbookReady: true, paperPatternReady: false, supportedModes: { mcq: true, short: true, long: true, full_paper: false }, paperSources: [] }, isLoading: false });
+    saveAssessmentDraftMutation.mockResolvedValue({ assessmentDraftId: 903 });
+
+    render(<AIAgent />);
+    fireEvent.click(screen.getByRole("button", { name: /Approved textbook chapters/i }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Unit 10: Heat" }));
+    fireEvent.click(screen.getByRole("button", { name: /Long questions/i }));
+    fireEvent.change(screen.getByLabelText("Draft title"), { target: { value: "Heat long draft" } });
+    fireEvent.change(screen.getByLabelText("Question"), { target: { value: "Explain the supported concept." } });
+    fireEvent.change(screen.getByLabelText("Expected key points"), { target: { value: "States the first supported point" } });
+    fireEvent.change(screen.getByLabelText("Marking rubric"), { target: { value: "Explains the supported point | 2" } });
+    fireEvent.change(screen.getByLabelText("Source reference"), { target: { value: "Unit 10, pages 13–46" } });
+    fireEvent.change(screen.getByLabelText("Learning objective"), { target: { value: "Explain the concept accurately." } });
+    fireEvent.click(screen.getByRole("button", { name: /Save Long questions draft for review/i }));
+
+    await waitFor(() => expect(saveAssessmentDraftMutation).toHaveBeenCalledWith(expect.objectContaining({ assessmentMode: "long" })));
+    expect(await screen.findByText(/Assessment draft #903 is awaiting Portal Admin review/i)).toBeVisible();
+  });
+
+  it("loads a saved long-question draft for review and revises that same draft", async () => {
+    assessmentAvailabilityQuery.mockReturnValue({ data: { textbookReady: true, paperPatternReady: false, supportedModes: { mcq: true, short: true, long: true, full_paper: false }, paperSources: [] }, isLoading: false });
+    loadAssessmentDraftQuery.mockReturnValue({
+      isFetching: false,
+      data: {
+        id: 904,
+        title: "Saved long draft",
+        draftPayload: JSON.stringify({
+          mode: "long",
+          title: "Saved long draft",
+          estimatedDurationMinutes: null,
+          items: [{ kind: "long", question: "Explain the saved concept.", expectedKeyPoints: ["Key point"], markingRubric: [{ criterion: "Explains key point", marks: 2 }], difficulty: "medium", marks: 2, sourceReference: "Unit 10, page 18", learningObjective: "Explain the concept." }],
+        }),
+      },
+    });
+    reviseAssessmentDraftMutation.mockResolvedValue({ assessmentDraftId: 904 });
+
+    render(<AIAgent />);
+    fireEvent.change(screen.getByLabelText("Open saved assessment draft"), { target: { value: "904" } });
+    await waitFor(() => expect(screen.getByLabelText("Open saved assessment draft")).toHaveValue("904"));
+    fireEvent.click(screen.getByRole("button", { name: "Load for review" }));
+
+    expect(await screen.findByDisplayValue("Explain the saved concept.")).toBeVisible();
+    expect(screen.getByText("Editing saved draft #904")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: /Save Long questions draft for review/i }));
+    await waitFor(() => expect(reviseAssessmentDraftMutation).toHaveBeenCalledWith(expect.objectContaining({ assessmentDraftId: 904 })));
+  });
+
+  it("saves a full-paper review draft only with selected approved paper evidence", async () => {
+    scopeCatalogQuery.mockReturnValue({
+      data: {
+        curriculumSet: { id: 1, grade: "10", subject: "physics", label: "Physics", editionLabel: "Reviewed source" },
+        chapters: [{ id: 10, code: "Unit 10", title: "Heat", startPage: 13, endPage: 46 }],
+        segments: [],
+        templates: [],
+        templateMemberships: [],
+      },
+      isLoading: false,
+    });
+    assessmentAvailabilityQuery.mockReturnValue({
+      data: {
+        textbookReady: true,
+        paperPatternReady: true,
+        supportedModes: { mcq: true, short: true, long: true, full_paper: true },
+        paperSources: [{ id: 61, sourceKind: "past_paper", academicYear: "2024", originalFileName: "physics-past-paper-2024.pdf" }],
+      },
+      isLoading: false,
+    });
+    saveAssessmentDraftMutation.mockResolvedValue({ assessmentDraftId: 902 });
+
+    render(<AIAgent />);
+    fireEvent.click(screen.getByRole("button", { name: /Approved textbook chapters/i }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Unit 10: Heat" }));
+    fireEvent.click(screen.getByRole("button", { name: /^Full paper/i }));
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "physics-past-paper-2024.pdf" }));
+    fireEvent.change(screen.getByLabelText("Draft title"), { target: { value: "Physics paper draft" } });
+    fireEvent.change(screen.getByLabelText("Question"), { target: { value: "State the supported concept." } });
+    fireEvent.change(screen.getByLabelText("Expected answer"), { target: { value: "A concise answer." } });
+    fireEvent.change(screen.getByLabelText("Marking guide"), { target: { value: "Identifies the key idea" } });
+    fireEvent.change(screen.getByLabelText("Textbook source reference"), { target: { value: "Unit 10, pages 13–46" } });
+    fireEvent.change(screen.getByLabelText("Learning objective"), { target: { value: "State the concept accurately." } });
+    fireEvent.click(screen.getByRole("button", { name: /Add this item to Section A/i }));
+    fireEvent.click(screen.getByRole("button", { name: "Add section" }));
+    expect(screen.getByRole("button", { name: /Section B.*0 items/i })).toBeVisible();
+    fireEvent.change(screen.getByLabelText("Question"), { target: { value: "State a second supported concept." } });
+    fireEvent.change(screen.getByLabelText("Expected answer"), { target: { value: "Another concise answer." } });
+    fireEvent.change(screen.getByLabelText("Marking guide"), { target: { value: "Identifies the second key idea" } });
+    fireEvent.change(screen.getByLabelText("Textbook source reference"), { target: { value: "Unit 10, pages 13–46" } });
+    fireEvent.change(screen.getByLabelText("Learning objective"), { target: { value: "State a second concept accurately." } });
+    fireEvent.click(screen.getByRole("button", { name: /Add this item to Section B/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Save full-paper draft for review/i }));
+
+    await waitFor(() => expect(saveAssessmentDraftMutation).toHaveBeenCalledWith(expect.objectContaining({
+      assessmentMode: "full_paper",
+      paperPatternSourceIds: [61],
+      payload: expect.objectContaining({ sections: expect.arrayContaining([
+        expect.objectContaining({ label: "Section A", items: expect.arrayContaining([expect.any(Object)]) }),
+        expect.objectContaining({ label: "Section B", items: expect.arrayContaining([expect.any(Object)]) }),
+      ]) }),
+    })));
+    expect(await screen.findByText(/Assessment draft #902 is awaiting Portal Admin review/i)).toBeVisible();
   });
 });

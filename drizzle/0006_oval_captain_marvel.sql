@@ -1,0 +1,20 @@
+CREATE TABLE `assessmentDrafts` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`title` varchar(255) NOT NULL,
+	`assessmentMode` enum('mcq','short','long','full_paper') NOT NULL,
+	`sourceState` enum('ready','blocked') NOT NULL DEFAULT 'blocked',
+	`curriculumSetId` int,
+	`scopeSnapshot` longtext,
+	`paperPatternReferences` longtext,
+	`draftPayload` longtext NOT NULL,
+	`totalMarks` int NOT NULL,
+	`estimatedDurationMinutes` int,
+	`status` enum('draft','in_review','published','archived') NOT NULL DEFAULT 'draft',
+	`reviewWarnings` longtext,
+	`createdBy` int NOT NULL,
+	`reviewedBy` int,
+	`reviewedAt` timestamp,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `assessmentDrafts_id` PRIMARY KEY(`id`)
+);

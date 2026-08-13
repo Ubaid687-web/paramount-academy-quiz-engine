@@ -24,6 +24,10 @@ import {
   InsertCurriculumChapter,
   InsertCurriculumChapterSegment,
   InsertCurriculumScopeTemplate,
+  assessmentDrafts,
+  assessmentPatternSources,
+  InsertAssessmentDraft,
+  AssessmentDraft,
 } from "../drizzle/schema";
 import type { FbiseSubject, ScopeCatalog } from "./curriculumScope";
 import { ENV } from './_core/env';
@@ -401,6 +405,52 @@ export async function activateCurriculumSet(curriculumSetId: number) {
   await db.update(curriculumSets).set({ status: "active", activatedAt: new Date(), archivedAt: null }).where(eq(curriculumSets.id, curriculumSetId));
   const activated = await db.select().from(curriculumSets).where(eq(curriculumSets.id, curriculumSetId)).limit(1);
   return activated[0];
+}
+
+export async function listActiveAssessmentPatternSources(subject: FbiseSubject) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.select().from(assessmentPatternSources).where(and(
+    eq(assessmentPatternSources.grade, "10"),
+    eq(assessmentPatternSources.subject, subject),
+    eq(assessmentPatternSources.status, "active"),
+    eq(assessmentPatternSources.extractionStatus, "extracted"),
+  )).orderBy(asc(assessmentPatternSources.id));
+}
+
+export async function listAssessmentPatternSourcesByIds(subject: FbiseSubject, sourceIds: number[]) {
+  if (!sourceIds.length) return [];
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.select().from(assessmentPatternSources).where(and(
+    eq(assessmentPatternSources.grade, "10"),
+    eq(assessmentPatternSources.subject, subject),
+    eq(assessmentPatternSources.status, "active"),
+    eq(assessmentPatternSources.extractionStatus, "extracted"),
+    inArray(assessmentPatternSources.id, sourceIds),
+  ));
+}
+
+export async function createAssessmentDraft(values: InsertAssessmentDraft) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(assessmentDrafts).values(values);
+  const rows = await db.select().from(assessmentDrafts).where(eq(assessmentDrafts.id, result[0].insertId as number)).limit(1);
+  return rows[0];
+}
+
+export async function getAssessmentDraft(assessmentDraftId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const rows = await db.select().from(assessmentDrafts).where(eq(assessmentDrafts.id, assessmentDraftId)).limit(1);
+  return rows[0];
+}
+
+export async function updateAssessmentDraft(assessmentDraftId: number, updates: Partial<AssessmentDraft>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(assessmentDrafts).set(updates).where(eq(assessmentDrafts.id, assessmentDraftId));
+  return getAssessmentDraft(assessmentDraftId);
 }
 
 export async function createAiGeneratedQuiz(quiz: InsertQuiz) {

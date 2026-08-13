@@ -113,6 +113,55 @@ export const generationJobs = mysqlTable("generationJobs", {
 export type GenerationJob = typeof generationJobs.$inferSelect;
 export type InsertGenerationJob = typeof generationJobs.$inferInsert;
 
+// Assessment drafts support all approved question modes while keeping their source and paper-pattern
+// provenance separate from the legacy MCQ-only quiz-attempt tables.
+export const assessmentDrafts = mysqlTable("assessmentDrafts", {
+  id: int("id").autoincrement().primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  assessmentMode: mysqlEnum("assessmentMode", ["mcq", "short", "long", "full_paper"]).notNull(),
+  sourceState: mysqlEnum("sourceState", ["ready", "blocked"]).default("blocked").notNull(),
+  curriculumSetId: int("curriculumSetId"),
+  scopeSnapshot: longtext("scopeSnapshot"),
+  paperPatternReferences: longtext("paperPatternReferences"),
+  draftPayload: longtext("draftPayload").notNull(),
+  totalMarks: int("totalMarks").notNull(),
+  estimatedDurationMinutes: int("estimatedDurationMinutes"),
+  status: mysqlEnum("status", ["draft", "in_review", "published", "archived"]).default("draft").notNull(),
+  reviewWarnings: longtext("reviewWarnings"),
+  createdBy: int("createdBy").notNull(),
+  reviewedBy: int("reviewedBy"),
+  reviewedAt: timestamp("reviewedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type AssessmentDraft = typeof assessmentDrafts.$inferSelect;
+export type InsertAssessmentDraft = typeof assessmentDrafts.$inferInsert;
+
+// Paper sources are stored independently from textbooks. A paper-pattern claim can be used only
+// after its specific user-supplied file has been extracted and activated here.
+export const assessmentPatternSources = mysqlTable("assessmentPatternSources", {
+  id: int("id").autoincrement().primaryKey(),
+  grade: mysqlEnum("grade", ["10"]).default("10").notNull(),
+  subject: mysqlEnum("subject", ["physics", "chemistry", "computer_science"]).notNull(),
+  sourceKind: mysqlEnum("sourceKind", ["model_paper", "past_paper"]).notNull(),
+  academicYear: varchar("academicYear", { length: 20 }),
+  storageKey: varchar("storageKey", { length: 512 }).notNull(),
+  storageUrl: text("storageUrl").notNull(),
+  originalFileName: varchar("originalFileName", { length: 255 }).notNull(),
+  mimeType: varchar("mimeType", { length: 100 }).notNull(),
+  extractedText: longtext("extractedText"),
+  extractionStatus: mysqlEnum("extractionStatus", ["pending", "extracted", "needs_review", "failed"]).default("pending").notNull(),
+  status: mysqlEnum("status", ["draft", "active", "archived"]).default("draft").notNull(),
+  uploadedBy: int("uploadedBy").notNull(),
+  activatedAt: timestamp("activatedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type AssessmentPatternSource = typeof assessmentPatternSources.$inferSelect;
+export type InsertAssessmentPatternSource = typeof assessmentPatternSources.$inferInsert;
+
 // Versioned FBISE curriculum material. A replacement textbook is represented by a new set;
 // historical quiz drafts retain their curriculum and source snapshots.
 export const curriculumSets = mysqlTable("curriculumSets", {
