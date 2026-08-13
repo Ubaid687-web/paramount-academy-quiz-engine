@@ -1,5 +1,23 @@
 # Project TODO
 
+## Phase 6: Progressive Teacher Workflow
+- [x] Audit the current portal density against Ammara Faisal, Danish Butt, and Ubaidullah Butt's teaching responsibilities.
+- [x] Define and document progressive teacher flow: grade → subject → action, with unnecessary technical detail hidden by default.
+- [x] Rebuild the Quiz Centre around readable Grade 9 and Grade 10 subject paths instead of all controls at once.
+- [x] Add subject-aware builder entry states that reveal only the selected teacher's next relevant action.
+- [x] Superseded: all teachers receive access to all current MCQ subjects through Portal Admin; no individual subject-assignment model is needed now.
+- [x] Superseded: replace the temporary teaching-focus selector with the confirmed all-teachers, all-current-subjects workflow.
+- [x] Superseded: use the existing Portal Admin role for curriculum administration rather than a founder-specific guard.
+
+## Phase 7: Portal Admin Access Simplification
+- [x] Remove teacher-name and founder wording from the quiz-engine interface and temporary planning controls.
+- [x] Replace the temporary teaching-focus selector with a clean all-teachers workflow covering all current MCQ subjects.
+- [x] Describe curriculum management as a Portal Admin capability, without exposing it in the teacher workflow.
+- [x] Update tests and documentation for the Portal Admin access model.
+- [x] Separate founder-only curriculum administration from teacher-facing draft preparation screens.
+- [x] Add UI tests for progressive grade and subject navigation, then validate and report the role-aware roadmap.
+- [x] Save a verified Portal Admin access roadmap covering shared Grade 10 teaching flow, Grade 9 intake, and admin responsibilities.
+
 ## Phase 5: Academy Portal Frontend Redesign
 - [x] Audit the current portal-facing screens and reconfirm Grade 9 versus Grade 10 curriculum readiness.
 - [x] Replace the duplicate quiz-generation entry actions with one clear academy workflow.

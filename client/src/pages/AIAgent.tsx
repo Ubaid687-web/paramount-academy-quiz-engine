@@ -30,6 +30,9 @@ const SUBJECT_LABELS: Record<FbiseSubject, string> = {
 
 export default function AIAgent() {
   const [, navigate] = useLocation();
+  const requestedGrade = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("grade") : null;
+  const requestedSubject = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("subject") : null;
+  const requestedSubjectIsValid = requestedSubject === "physics" || requestedSubject === "chemistry" || requestedSubject === "computer_science";
   const [contentText, setContentText] = useState("");
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isProcessingFile, setIsProcessingFile] = useState(false);
@@ -43,8 +46,9 @@ export default function AIAgent() {
   const [jobId, setJobId] = useState<number | null>(null);
   const [generationProgress, setGenerationProgress] = useState(0);
   const [contentAnalysis, setContentAnalysis] = useState<any>(null);
-  const [subject, setSubject] = useState<FbiseSubject>("physics");
-  const [gradeLevel, setGradeLevel] = useState<GradeLevel>("10");
+  const [subject, setSubject] = useState<FbiseSubject>(() => requestedSubjectIsValid ? requestedSubject : "physics");
+  const [gradeLevel, setGradeLevel] = useState<GradeLevel>(() => requestedGrade === "9" ? "9" : "10");
+  const [isContextEditing, setIsContextEditing] = useState(() => !requestedSubjectIsValid);
   const [scopeType, setScopeType] = useState<GenerationScope>("uploaded_content");
   const [selectedChapterIds, setSelectedChapterIds] = useState<number[]>([]);
   const [selectedSegmentId, setSelectedSegmentId] = useState<number | null>(null);
@@ -361,9 +365,9 @@ export default function AIAgent() {
         <div className="mb-8 rounded-2xl border border-border/80 bg-card px-5 py-6 shadow-sm sm:px-7">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-primary"><GraduationCap className="h-4 w-4" />Administrator workspace</p>
-              <h1 className="mt-2 text-3xl font-bold text-foreground sm:text-4xl">Build a reviewed MCQ draft</h1>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">Select a grade and source scope, set the board-style difficulty, then generate a draft that remains under administrator review.</p>
+              <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-primary"><GraduationCap className="h-4 w-4" />Teacher preparation</p>
+              <h1 className="mt-2 text-3xl font-bold text-foreground sm:text-4xl">{!isContextEditing && gradeLevel === "10" ? `Prepare Grade 10 ${SUBJECT_LABELS[subject]} MCQ draft` : "Prepare an MCQ draft"}</h1>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">Add your lesson material, choose the question level, and create a draft. An academy reviewer checks it before students use it.</p>
             </div>
             <div className="rounded-xl border border-primary/15 bg-primary/5 px-3 py-2 text-right">
               <p className="text-xs font-semibold text-primary">Assessment type</p>
@@ -382,7 +386,7 @@ export default function AIAgent() {
                   <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">1</span>
                   Choose source material
                 </CardTitle>
-                <CardDescription>Upload one PDF or TXT file, paste a temporary source, or select reviewed curriculum from the workspace panel.</CardDescription>
+                <CardDescription>Upload one PDF or TXT file, or paste lesson material. If an approved chapter is already prepared, you can use it instead.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {scopeType === "uploaded_content" ? <>
@@ -463,8 +467,7 @@ export default function AIAgent() {
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"><LibraryBig className="h-5 w-5" /></div>
                       <div>
                         <p className="font-bold text-foreground">Reviewed curriculum source</p>
-                        <p className="mt-1 text-sm leading-6 text-muted-foreground">Complete the grade, subject, and scope choices in <strong className="font-semibold text-foreground">Draft setup</strong>. The generator will load only the approved source evidence stored in Curriculum Management.</p>
-                        <Button type="button" variant="link" className="mt-2 h-auto p-0 text-primary" onClick={() => navigate("/curriculum")}>Open Curriculum Management</Button>
+                        <p className="mt-1 text-sm leading-6 text-muted-foreground">Choose the approved chapter range in <strong className="font-semibold text-foreground">MCQ settings</strong>. If no approved chapter is listed, ask an academy administrator to prepare it first.</p>
                       </div>
                     </div>
                   </div>
@@ -677,11 +680,18 @@ export default function AIAgent() {
                 {/* FBISE curriculum scope */}
                 <div className="space-y-4 rounded-xl border border-border bg-muted/35 p-4">
                   <div>
-                    <p className="text-sm font-semibold text-foreground">FBISE Curriculum Scope</p>
-                    <p className="mt-1 text-xs text-muted-foreground">Choose the grade, subject, and approved source range before creating an administrator draft.</p>
+                    <p className="text-sm font-semibold text-foreground">MCQ settings</p>
+                    <p className="mt-1 text-xs text-muted-foreground">Choose where the questions come from and how challenging they should be.</p>
                   </div>
 
-                  <div>
+                  {!isContextEditing && <div className="rounded-xl border border-primary/15 bg-primary/[0.035] p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div><p className="text-xs font-bold uppercase tracking-[0.12em] text-primary">Teacher context</p><p className="mt-1 text-sm font-bold text-foreground">Grade 10 · {SUBJECT_LABELS[subject]}</p></div>
+                      <Button type="button" variant="outline" size="sm" onClick={() => setIsContextEditing(true)}>Change</Button>
+                    </div>
+                  </div>}
+
+                  <div className={isContextEditing ? "" : "hidden"}>
                     <Label htmlFor="class-level" className="mb-2 block text-xs font-medium">Class level</Label>
                     <Select value={gradeLevel} onValueChange={(value) => setGradeLevel(value as GradeLevel)}>
                       <SelectTrigger id="class-level" aria-label="Class level"><SelectValue /></SelectTrigger>
@@ -694,7 +704,7 @@ export default function AIAgent() {
 
                   {gradeLevel === "9" && <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-800"><strong>Grade 9 is intentionally not using Grade 10 rules.</strong> Its revised pattern and approved material must be confirmed before MCQ draft generation is enabled. The portal structure is ready for its separate curriculum intake.</div>}
 
-                  {gradeLevel === "10" && <div>
+                  {gradeLevel === "10" && <div className={isContextEditing ? "" : "hidden"}>
                     <Label htmlFor="subject" className="mb-2 block text-xs font-medium">Subject</Label>
                     <Select value={subject} onValueChange={(value) => setSubject(value as FbiseSubject)}>
                       <SelectTrigger id="subject" aria-label="Subject"><SelectValue /></SelectTrigger>
@@ -704,17 +714,19 @@ export default function AIAgent() {
                     </Select>
                   </div>}
 
+                  {isContextEditing && gradeLevel === "10" && <Button type="button" variant="outline" size="sm" className="w-full" onClick={() => setIsContextEditing(false)}>Continue with Grade 10 {SUBJECT_LABELS[subject]}</Button>}
+
                   {gradeLevel === "10" && <div>
                     <Label htmlFor="generation-scope" className="mb-2 block text-xs font-medium">Generation scope</Label>
                     <Select value={scopeType} onValueChange={(value) => setScopeType(value as GenerationScope)}>
                       <SelectTrigger id="generation-scope" aria-label="Generation scope"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="uploaded_content">Uploaded or pasted material</SelectItem>
-                        <SelectItem value="single_chapter">Single chapter</SelectItem>
-                        <SelectItem value="half_chapter">Half chapter</SelectItem>
-                        <SelectItem value="multiple_chapters">Selected chapters</SelectItem>
-                        <SelectItem value="half_syllabus">Half syllabus</SelectItem>
-                        <SelectItem value="block">Full block</SelectItem>
+                        <SelectItem value="uploaded_content">My uploaded or pasted lesson material</SelectItem>
+                        <SelectItem value="single_chapter">An approved chapter</SelectItem>
+                        <SelectItem value="half_chapter">Part of an approved chapter</SelectItem>
+                        <SelectItem value="multiple_chapters">Several approved chapters</SelectItem>
+                        <SelectItem value="half_syllabus">An approved half-syllabus range</SelectItem>
+                        <SelectItem value="block">An approved study block</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>}
@@ -723,8 +735,7 @@ export default function AIAgent() {
                     <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-2.5 text-xs text-muted-foreground">
                       {scopeCatalogQuery.error
                         ? "This account cannot load reviewed curriculum scopes. Sign in with an administrator account to use stored sources."
-                        : `No active ${SUBJECT_LABELS[subject]} curriculum is available yet. Upload, review, and activate its chapters in Curriculum Management before using a stored scope.`}
-                      <Button type="button" variant="link" className="mt-1 h-auto p-0 text-xs" onClick={() => navigate("/curriculum")}>{scopeCatalogQuery.error ? "Open administrator workspace" : "Open Curriculum Management"}</Button>
+                        : `No approved ${SUBJECT_LABELS[subject]} chapter is available yet. Please ask an academy administrator to prepare the source before using this option.`}
                     </div>
                   )}
 

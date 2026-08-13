@@ -1,10 +1,15 @@
 import React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import QuizList from "../client/src/pages/QuizList";
 
 const quizzesQuery = vi.fn();
 const deleteMutation = vi.fn();
+
+Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+  writable: true,
+  value: vi.fn(),
+});
 
 vi.mock("@/lib/trpc", () => ({
   trpc: {
@@ -29,18 +34,42 @@ describe("Quiz Centre entry experience", () => {
     deleteMutation.mockReset();
   });
 
-  it("presents one clear builder entry while explaining Grade 10 readiness and Grade 9 intake status", () => {
+  it("guides teachers from Grade 10 to a subject and then one relevant draft action", () => {
     quizzesQuery.mockReturnValue({ data: [], isLoading: false, error: null, refetch: vi.fn() });
     render(<QuizList />);
 
-    expect(screen.getByRole("heading", { name: "A focused quiz engine for better board preparation." })).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Open Quiz Builder" }).getAttribute("href")).toBe("/generate");
-    expect(screen.getAllByText("Open Quiz Builder")).toHaveLength(1);
+    expect(screen.getByRole("heading", { name: "Start with the class you teach." })).toBeTruthy();
     expect(screen.getByText("Grade 10")).toBeTruthy();
-    expect(screen.getByText("Ready for setup")).toBeTruthy();
     expect(screen.getByText("Grade 9")).toBeTruthy();
-    expect(screen.getByText("Awaiting curriculum")).toBeTruthy();
-    expect(screen.getByText("No draft has been saved yet.")).toBeTruthy();
-    expect(screen.queryByText(/Create Your First Quiz/i)).toBeNull();
+    expect(screen.queryByText("Open Quiz Builder")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: /Choose Grade 10/i }));
+    expect(screen.getByRole("heading", { name: "Choose a subject." })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /Physics.*Continue/i }));
+    expect(screen.getByRole("heading", { name: "Grade 10 · Physics" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Prepare Physics MCQ draft" }).getAttribute("href")).toBe("/generate?grade=10&subject=physics");
+  });
+
+  it("shows Grade 9 subject intake without exposing a Grade 10 draft action", () => {
+    quizzesQuery.mockReturnValue({ data: [], isLoading: false, error: null, refetch: vi.fn() });
+    render(<QuizList />);
+
+    fireEvent.click(screen.getByRole("button", { name: /Choose Grade 9/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Physics.*Continue/i }));
+    expect(screen.getByRole("heading", { name: "Grade 9 · Physics" })).toBeTruthy();
+    expect(screen.getByText(/Next input needed: current Grade 9 textbook and paper pattern/)).toBeTruthy();
+    expect(screen.queryByRole("link", { name: /Prepare Physics MCQ draft/i })).toBeNull();
+  });
+
+  it("shows the current shared Grade 10 MCQ subjects without a staff-detail selector", async () => {
+    quizzesQuery.mockReturnValue({ data: [], isLoading: false, error: null, refetch: vi.fn() });
+    render(<QuizList />);
+
+    fireEvent.click(screen.getByRole("button", { name: /Choose Grade 10/i }));
+
+    expect(screen.getByRole("button", { name: /Physics.*Continue/i })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Computer Science.*Continue/i })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Chemistry.*Continue/i })).toBeTruthy();
+    expect(screen.queryByRole("combobox", { name: "Teaching focus" })).toBeNull();
   });
 });

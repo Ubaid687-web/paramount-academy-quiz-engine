@@ -1,16 +1,14 @@
 import React from "react";
-import { BookOpenCheck, ClipboardList, LibraryBig, Settings2 } from "lucide-react";
+import { BookOpenCheck, ClipboardList, LibraryBig } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 
-const navigation = [
-  { href: "/", label: "Quiz Centre", icon: ClipboardList },
-  { href: "/generate", label: "Build Draft", icon: BookOpenCheck },
-  { href: "/curriculum", label: "Curriculum", icon: LibraryBig },
-];
-
-export function AcademyShell({ children, eyebrow = "FBISE Academic Workspace" }: { children: React.ReactNode; eyebrow?: string }) {
+export function AcademyShell({ children, eyebrow = "FBISE Academic Workspace", showAdministration = false }: { children: React.ReactNode; eyebrow?: string; showAdministration?: boolean }) {
   const [location] = useLocation();
+  const navigation = [
+    { href: "/", label: "Quiz Centre", icon: ClipboardList },
+    ...(showAdministration ? [{ href: "/curriculum", label: "Curriculum", icon: LibraryBig }] : []),
+  ];
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-40 border-b border-border/80 bg-background/85 backdrop-blur-xl">

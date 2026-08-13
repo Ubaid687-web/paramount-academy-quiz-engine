@@ -214,12 +214,12 @@ export default function CurriculumManagement() {
   };
 
   return (
-    <AcademyShell eyebrow="Curriculum Workspace">
+    <AcademyShell eyebrow="Portal Admin" showAdministration>
       <main className="container py-8 sm:py-10">
         <div className="mb-8 rounded-2xl border border-border/80 bg-card px-5 py-6 shadow-sm sm:px-7">
           <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">Administrator workspace</p>
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">Portal Admin</p>
             <h1 className="mt-2 text-3xl font-bold text-foreground">Prepare reviewed curriculum evidence</h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">Upload one source file at a time, review its chapter evidence, define half-chapters or reusable groups, then activate the edition for FBISE MCQ draft generation.</p>
           </div>

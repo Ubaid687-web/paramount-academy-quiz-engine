@@ -147,7 +147,7 @@ describe("AI quiz generation feedback", () => {
     expect(screen.getByRole("combobox", { name: "Class level" })).toHaveTextContent("10th Grade · FBISE (configured)");
     expect(screen.getByRole("combobox", { name: "Subject" })).toBeVisible();
     expect(screen.getByRole("combobox", { name: "Generation scope" })).toBeVisible();
-    expect(screen.getByText("FBISE Curriculum Scope")).toBeVisible();
+    expect(screen.getByText("MCQ settings")).toBeVisible();
   });
 
   it("shows Grade 9 as a separate curriculum-intake state without enabling Grade 10 generation rules", async () => {
@@ -166,7 +166,7 @@ describe("AI quiz generation feedback", () => {
     render(<AIAgent />);
 
     fireEvent.click(screen.getByRole("combobox", { name: "Generation scope" }));
-    fireEvent.click(await screen.findByRole("option", { name: "Single chapter" }));
+    fireEvent.click(await screen.findByRole("option", { name: "An approved chapter" }));
 
     expect(await screen.findByText(/This account cannot load reviewed curriculum scopes/)).toBeVisible();
   });
@@ -186,7 +186,7 @@ describe("AI quiz generation feedback", () => {
     render(<AIAgent />);
 
     fireEvent.click(screen.getByRole("combobox", { name: "Generation scope" }));
-    fireEvent.click(await screen.findByRole("option", { name: "Single chapter" }));
+    fireEvent.click(await screen.findByRole("option", { name: "An approved chapter" }));
     fireEvent.click(await screen.findByRole("checkbox", { name: "Ch. 10: Simple Harmonic Motion" }));
     fireEvent.change(screen.getByLabelText("Draft title"), { target: { value: "Physics Chapter 10 Draft" } });
 
