@@ -303,6 +303,27 @@ describe("AI quiz generation feedback", () => {
     window.history.pushState({}, "", "/ai-agent");
   });
 
+  it("offers only the activated supplied Computer Science units after source verification", async () => {
+    window.history.pushState({}, "", "/ai-agent?grade=10&subject=computer_science");
+    scopeCatalogQuery.mockReturnValue({
+      data: {
+        curriculumSet: { id: 40001, label: "FBISE Grade 10 Computer Science", editionLabel: "NCP 2022–23 supplied textbook · OCR-reviewed transcript" },
+        chapters: [{ id: 40011, code: "Unit 1", title: "Computer Systems", startPage: 7, endPage: 53 }],
+        segments: [{ id: 40021, chapterId: 40011, label: "First half", startPage: 7, endPage: 30 }],
+        templates: [],
+        templateMemberships: [],
+      },
+      isLoading: false,
+    });
+
+    render(<AIAgent />);
+
+    fireEvent.click(screen.getByRole("button", { name: /Approved textbook chapters/i }));
+    expect(await screen.findByRole("checkbox", { name: "Unit 1: Computer Systems" })).toBeVisible();
+    expect(screen.getByText("Pages 7–53")).toBeVisible();
+    window.history.pushState({}, "", "/ai-agent");
+  });
+
   it("shows the four assessment formats but keeps full-paper drafting locked without approved paper evidence", async () => {
     assessmentAvailabilityQuery.mockReturnValue({
       data: {

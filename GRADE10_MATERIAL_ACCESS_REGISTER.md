@@ -4,7 +4,7 @@
 
 | Material category | Physics | Chemistry | Computer Science | Current project access |
 |---|---|---|---|---|
-| Textbook | **Available.** Active managed OCR transcript; 364 source pages; 1,237,123 extracted characters. | **Available.** Original PDF remains in local uploads and an active managed OCR transcript is stored; 169 source pages; 207,707 extracted characters. | **Not retrievable.** The user-supplied FBISE Curriculum 2022–2023 textbook is recorded, but no local file, managed transcript, curriculum-source record, or source snapshot remains. | Physics and Chemistry can support approved-chapter drafting now. Computer Science must stay locked. |
+| Textbook | **Available.** Active managed OCR transcript; 364 source pages; 1,237,123 extracted characters. | **Available.** Original PDF remains in local uploads and an active managed OCR transcript is stored; 169 source pages; 207,707 extracted characters. | **Available.** Exact user-supplied `class10computerbookpdffederalboard.pdf` was re-supplied, preserved as a managed page-preserving OCR transcript, and activated as curriculum set 60001; 262 source pages; 473,848 extracted characters. | Physics, Chemistry, and Computer Science can support approved-chapter drafting now. |
 | Model paper(s) | **Not retrievable as raw file.** | **Previously supplied and analyzed**, but no raw model-paper file is accessible now. | **Not retrievable as raw file.** | Do not create paper-pattern content from any of these until their supplied source files are recoverable. |
 | Past-paper set: 2024 | **Not retrievable as raw file.** | **Previously supplied and analyzed**, but no raw 2024-paper file is accessible now. | **Not retrievable as raw file.** | Current project storage has no raw 2024 paper source. |
 | Past-paper set: 2025 | **Not retrievable as raw file.** | **Not retrievable as raw file.** | **Not retrievable as raw file.** | Current project storage has no raw 2025 paper source. |
@@ -15,7 +15,7 @@
 |---|---:|---|---|
 | Physics | 1 | Active, extracted, source-grounded | Approved textbook chapters available |
 | Chemistry | 30001 | Active, extracted, source-grounded | Approved textbook chapters available |
-| Computer Science | — | No exact supplied source record is currently retrievable | Approved textbook chapters intentionally unavailable |
+| Computer Science | 60001 | Active, extracted from the exact re-supplied FBISE Curriculum 2022–2023 textbook, source-grounded | Approved textbook units available |
 
 ## Operating rule
 

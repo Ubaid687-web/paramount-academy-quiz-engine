@@ -103,8 +103,9 @@
 
 ## Phase 11: Grade 10 Computer Science Curriculum and Assessment Evidence
 - [x] Reconcile the previously supplied Grade 10 Computer Science textbook and paper-analysis records without requesting duplicate uploads.
-- [ ] Recover the retained Computer Science textbook into a managed, page-preserving transcript and review its chapter boundaries.
-- [ ] Create and activate the Grade 10 Computer Science curriculum set with chapter records, half-chapter segments, and reusable scope templates.
+- [x] Verify, preserve, and ingest the newly re-supplied FBISE Curriculum 2022–2023 Computer Science textbook as the sole permitted Computer Science source.
+- [x] Recover the retained Computer Science textbook into a managed, page-preserving transcript and review its chapter boundaries.
+- [x] Create and activate the Grade 10 Computer Science curriculum set with chapter records, half-chapter segments, and reusable scope templates.
 - [ ] Document evidence-grounded paper patterns for MCQ, short-question, long-question, and full-exam preparation without generating unsupported content.
 - [ ] Add Computer Science builder coverage, run regression validation, checkpoint, and report the activated source.
 
