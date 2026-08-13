@@ -8,7 +8,7 @@ The Grade 10 material set was supplied and analyzed incrementally. It is **not**
 |---|---|---|
 | Physics | Textbook and FBISE past paper | Active approved source |
 | Chemistry | Textbook, FBISE past paper, model paper, and 2024 past paper | Active approved source |
-| Computer Science | Textbook and FBISE past paper, including the later 2025 set referenced by the user | Analyzed source record; activation remains the next source-preparation task |
+| Computer Science | Single FBISE Curriculum 2022–2023 textbook and the files supplied by the user in this chat | Analyzed source record; activation is blocked until this exact supplied source is available through the preserved project evidence path |
 
 ## Why analysis and activation are different
 
@@ -25,4 +25,4 @@ The Chemistry source is derived from the already supplied textbook `FBISE10thChe
 
 ## Operating rule
 
-Future work must build from the already supplied material records and retained source artifacts. Teachers must never be asked to upload the same textbook or paper again merely because the internal curriculum activation step has not yet been completed.
+Future work must build only from the already supplied material records and retained source artifacts. The Computer Science source must remain the supplied FBISE Curriculum 2022–2023 textbook; it must not be replaced with external books, public papers, newer editions, or inferred content. Teachers must never be asked to upload the same textbook or paper again merely because the internal curriculum activation step has not yet been completed.

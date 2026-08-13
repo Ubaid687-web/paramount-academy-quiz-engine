@@ -273,4 +273,17 @@ describe("AI quiz generation feedback", () => {
     expect(screen.getByText("Pages 21–46")).toBeVisible();
     window.history.pushState({}, "", "/ai-agent");
   });
+
+  it("does not offer unapproved Computer Science chapters when no supplied curriculum source is active", async () => {
+    window.history.pushState({}, "", "/ai-agent?grade=10&subject=computer_science");
+    scopeCatalogQuery.mockReturnValue({ data: null, isLoading: false });
+
+    render(<AIAgent />);
+
+    expect(screen.getByText("Prepare Grade 10 Computer Science MCQ draft")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: /Approved textbook chapters/i }));
+    expect(await screen.findByText("No approved Computer Science textbook is active yet.")).toBeVisible();
+    expect(screen.queryByRole("checkbox", { name: /Unit|Chapter/i })).not.toBeInTheDocument();
+    window.history.pushState({}, "", "/ai-agent");
+  });
 });

@@ -100,3 +100,15 @@
 
 ## Phase 10A: Existing Material Provenance Reconciliation
 - [x] Reconcile the already supplied Chemistry and Computer Science material records with their curriculum activation status; do not request duplicate uploads.
+
+## Phase 11: Grade 10 Computer Science Curriculum and Assessment Evidence
+- [x] Reconcile the previously supplied Grade 10 Computer Science textbook and paper-analysis records without requesting duplicate uploads.
+- [ ] Recover the retained Computer Science textbook into a managed, page-preserving transcript and review its chapter boundaries.
+- [ ] Create and activate the Grade 10 Computer Science curriculum set with chapter records, half-chapter segments, and reusable scope templates.
+- [ ] Document evidence-grounded paper patterns for MCQ, short-question, long-question, and full-exam preparation without generating unsupported content.
+- [ ] Add Computer Science builder coverage, run regression validation, checkpoint, and report the activated source.
+
+## Phase 11A: Corrected Computer Science Source Boundary
+- [x] Use only the single user-supplied Grade 10 Computer Science textbook identified as FBISE Curriculum 2022–2023 and the files already supplied in this chat.
+- [x] Do not substitute external textbooks, newer editions, public papers, or inferred chapter lists for the supplied source.
+- [x] Add a builder regression safeguard that hides approved Computer Science chapters while no exact supplied curriculum source is active.
