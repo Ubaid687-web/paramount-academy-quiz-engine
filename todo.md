@@ -126,10 +126,18 @@
 - [x] For each user-supplied model or past paper, preserve the exact file and extraction artifact in managed storage before analysis.
 - [x] Extract and document only the paper-supported assessment structure, marks, sections, choices, and question-type evidence.
 - [x] Register each verified paper as an active assessment-pattern source and enable only the matching subject workflow.
-- [ ] Validate the source record, update the material access register, checkpoint, and report the supported assessment modes.
+- [x] Validate the source record, update the material access register, checkpoint, and report the supported assessment modes.
 
 ## Phase 13A: Grade 10 Computer Science Past-Paper Intake
 - [x] Verify and preserve the exact supplied 2024 Computer Science past-paper PDF and its extraction artifact.
 - [x] Verify and preserve the exact supplied 2025 Computer Science past-paper PDF and its extraction artifact.
 - [x] Analyze and document the evidence-grounded structure of each supplied Computer Science past paper.
-- [ ] Register both papers as active Computer Science assessment-pattern sources, validate the enabled workflow, checkpoint, and report.
+- [x] Register both papers as active Computer Science assessment-pattern sources, validate the enabled workflow, checkpoint, and report.
+
+## Phase 13B: Additional Grade 10 Model and Chemistry Paper Intake
+- [x] Preserve the supplied Grade 10 Chemistry model paper and its extraction artifact in managed storage.
+- [x] Preserve the supplied Grade 10 Physics model paper and its extraction artifact in managed storage.
+- [x] Preserve the supplied Grade 10 Computer Science model paper and its extraction artifact in managed storage.
+- [x] Preserve the supplied Grade 10 Chemistry 2024 and 2025 past papers and their extraction artifacts in managed storage.
+- [x] Analyze each supplied file independently and document only its direct structural evidence.
+- [ ] Register verified active sources by subject, validate any newly supported workflow, update evidence registers, checkpoint, and report.
