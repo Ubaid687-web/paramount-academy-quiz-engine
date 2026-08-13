@@ -43,6 +43,8 @@
 }
 
 :root {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --primary: oklch(0.38 0.14 258);
   --primary-foreground: oklch(0.98 0.005 260);
   --sidebar-primary: oklch(0.38 0.14 258);
@@ -144,9 +146,8 @@
     @apply text-2xl md:text-3xl;
   }
 
-  /* Smooth Transitions */
-  * {
-    @apply transition-colors duration-200;
+  html {
+    scroll-behavior: smooth;
   }
 
   .container {
@@ -174,7 +175,8 @@
 
   /* Premium Button */
   .btn-premium {
-    @apply bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-2 px-4 rounded-lg transition-all duration-300 hover:shadow-lg;
+    @apply bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-2 px-4 rounded-lg shadow-sm;
+    transition: transform 160ms var(--ease-out), box-shadow 160ms var(--ease-out), background-color 160ms var(--ease-out);
   }
 
   /* Premium Input */
@@ -194,6 +196,7 @@
 
   .btn {
     @apply inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50;
+    transition: transform 160ms var(--ease-out), box-shadow 160ms var(--ease-out), background-color 160ms var(--ease-out), border-color 160ms var(--ease-out), color 160ms var(--ease-out);
   }
 
   .btn-default {
@@ -210,5 +213,53 @@
 
   .textarea {
     @apply flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-base text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm;
+  }
+
+  .workflow-choice {
+    @apply relative rounded-2xl border border-border bg-card p-4 text-left shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/45 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-55;
+    transition: transform 180ms var(--ease-out), box-shadow 180ms var(--ease-out), border-color 180ms var(--ease-out), background-color 180ms var(--ease-out);
+  }
+
+  .workflow-choice:hover:not(:disabled) {
+    @apply -translate-y-0.5 border-primary/35 shadow-md;
+  }
+
+  .workflow-choice[data-state="selected"] {
+    @apply border-primary bg-primary/[0.055] shadow-sm;
+  }
+
+  .workflow-choice[data-state="selected"]::after {
+    content: "";
+    @apply absolute right-3 top-3 h-2 w-2 rounded-full bg-primary shadow-sm;
+  }
+
+  .teacher-step {
+    @apply flex min-w-0 items-center gap-2 rounded-xl border border-border/70 bg-card/75 px-3 py-2 text-xs text-muted-foreground;
+  }
+
+  .teacher-step[data-state="active"] {
+    @apply border-primary/30 bg-primary/[0.06] text-primary;
+  }
+
+  .teacher-step[data-state="complete"] {
+    @apply border-emerald-200 bg-emerald-50 text-emerald-700;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  button:not(:disabled):active,
+  [role="button"]:not([aria-disabled="true"]):active {
+    transform: scale(0.97);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
   }
 }

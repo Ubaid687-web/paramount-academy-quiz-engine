@@ -416,6 +416,18 @@ describe("AI quiz generation feedback", () => {
     expect(await screen.findByText(/Assessment draft #903 is awaiting Portal Admin review/i)).toBeVisible();
   });
 
+  it("keeps saved-draft retrieval optional while displaying the teacher workflow progress", () => {
+    render(<AIAgent />);
+
+    expect(screen.getByLabelText("Draft workflow progress")).toBeVisible();
+    expect(screen.getByText(/Continue a saved draft/i)).toBeVisible();
+    const reviewInput = screen.getByLabelText("Assessment draft ID");
+    expect(reviewInput.closest("details")).not.toHaveAttribute("open");
+
+    fireEvent.click(screen.getByText(/Continue a saved draft/i));
+    expect(reviewInput.closest("details")).toHaveAttribute("open");
+  });
+
   it("loads a saved long-question draft for review and revises that same draft", async () => {
     assessmentAvailabilityQuery.mockReturnValue({ data: { textbookReady: true, paperPatternReady: false, supportedModes: { mcq: true, short: true, long: true, full_paper: false }, paperSources: [] }, isLoading: false });
     loadAssessmentDraftQuery.mockReturnValue({
@@ -434,12 +446,13 @@ describe("AI quiz generation feedback", () => {
     reviseAssessmentDraftMutation.mockResolvedValue({ assessmentDraftId: 904 });
 
     render(<AIAgent />);
-    fireEvent.change(screen.getByLabelText("Open saved assessment draft"), { target: { value: "904" } });
-    await waitFor(() => expect(screen.getByLabelText("Open saved assessment draft")).toHaveValue("904"));
+    fireEvent.click(screen.getByText(/Continue a saved draft/i));
+    fireEvent.change(screen.getByLabelText("Assessment draft ID"), { target: { value: "904" } });
+    await waitFor(() => expect(screen.getByLabelText("Assessment draft ID")).toHaveValue("904"));
     fireEvent.click(screen.getByRole("button", { name: "Load for review" }));
 
     expect(await screen.findByDisplayValue("Explain the saved concept.")).toBeVisible();
-    expect(screen.getByText("Editing saved draft #904")).toBeVisible();
+    expect(screen.getByText("Editing draft #904")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: /Save Long questions draft for review/i }));
     await waitFor(() => expect(reviseAssessmentDraftMutation).toHaveBeenCalledWith(expect.objectContaining({ assessmentDraftId: 904 })));
   });

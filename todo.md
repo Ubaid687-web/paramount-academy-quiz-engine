@@ -140,4 +140,10 @@
 - [x] Preserve the supplied Grade 10 Computer Science model paper and its extraction artifact in managed storage.
 - [x] Preserve the supplied Grade 10 Chemistry 2024 and 2025 past papers and their extraction artifacts in managed storage.
 - [x] Analyze each supplied file independently and document only its direct structural evidence.
-- [ ] Register verified active sources by subject, validate any newly supported workflow, update evidence registers, checkpoint, and report.
+- [x] Register verified active sources by subject, validate any newly supported workflow, update evidence registers, checkpoint, and report.
+
+## Phase 14: Teacher Experience and Workflow Refinement
+- [x] Audit the current Quiz Centre and builder journeys for visual hierarchy, unclear controls, redundant actions, and workflow friction.
+- [x] Define a focused visual and interaction refinement plan for navigation, buttons, feedback states, and accessible motion.
+- [x] Implement the approved teacher-facing workflow, button, animation, and readability refinements without weakening source-safety controls.
+- [ ] Add focused UI coverage, validate responsive behavior and TypeScript, checkpoint, and report the refined experience.
