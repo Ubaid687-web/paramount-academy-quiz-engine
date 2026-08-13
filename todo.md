@@ -140,3 +140,8 @@
 - [x] Audit current architecture, source records, data contracts, and integration boundaries for a Replit implementation.
 - [x] Prepare a developer-ready Replit integration specification with required workflows, security controls, and acceptance criteria.
 - [x] Validate the handoff against the live project state and deliver the document to the user.
+
+## Phase 16: Quiz-Creation Wizard Verification
+- [x] Audit the current quiz-creation interface for any remaining all-at-once controls or unclear transitions.
+- [x] Refine the wizard stages, navigation, and motion only where the current implementation still needs improvement.
+- [x] Validate the progressive workflow, accessibility, and responsive behavior before reporting the result.
