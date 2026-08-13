@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation } from "wouter";
-import { ArrowLeft, BookMarked, CheckCircle2, FileText, FolderPlus, Loader2, Plus, Upload } from "lucide-react";
+import { BookMarked, CheckCircle2, FileText, FolderPlus, Loader2, Plus, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
+import { AcademyShell } from "@/components/AcademyShell";
 
 type Subject = "physics" | "chemistry" | "computer_science";
 type ScopeKind = "half_syllabus" | "block";
@@ -36,7 +36,6 @@ function fileToBase64(file: File): Promise<string> {
 }
 
 export default function CurriculumManagement() {
-  const [, navigate] = useLocation();
   const utils = trpc.useUtils();
   const [selectedSetId, setSelectedSetId] = useState<number | null>(null);
   const [setSubject, setSetSubject] = useState<Subject>("physics");
@@ -215,15 +214,17 @@ export default function CurriculumManagement() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container py-8">
-        <Button variant="ghost" onClick={() => navigate("/generate")} className="mb-5"><ArrowLeft className="mr-2 h-4 w-4" />Back to Quiz Builder</Button>
-        <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
+    <AcademyShell eyebrow="Curriculum Workspace">
+      <main className="container py-8 sm:py-10">
+        <div className="mb-8 rounded-2xl border border-border/80 bg-card px-5 py-6 shadow-sm sm:px-7">
+          <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Curriculum Management</h1>
-            <p className="mt-2 max-w-3xl text-muted-foreground">Upload one source file at a time, review its chapter evidence, define half-chapters or reusable groups, then activate the edition for FBISE draft generation.</p>
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">Administrator workspace</p>
+            <h1 className="mt-2 text-3xl font-bold text-foreground">Prepare reviewed curriculum evidence</h1>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">Upload one source file at a time, review its chapter evidence, define half-chapters or reusable groups, then activate the edition for FBISE MCQ draft generation.</p>
           </div>
-          {details && <Button onClick={handleActivate} disabled={activateSet.isPending || details.curriculumSet.status === "active"}><CheckCircle2 className="mr-2 h-4 w-4" />{details.curriculumSet.status === "active" ? "Active Curriculum" : "Activate Curriculum"}</Button>}
+          {details && <Button className="bg-primary text-primary-foreground hover:bg-primary/90" onClick={handleActivate} disabled={activateSet.isPending || details.curriculumSet.status === "active"}><CheckCircle2 className="mr-2 h-4 w-4" />{details.curriculumSet.status === "active" ? "Active Curriculum" : "Activate Curriculum"}</Button>}
+          </div>
         </div>
 
         {setsQuery.error && <Card className="mb-6 border-destructive/50"><CardContent className="py-4 text-sm text-destructive">Curriculum management is restricted to administrators. Sign in with the Paramount Academy administrator account, then return to this page.</CardContent></Card>}
@@ -285,7 +286,7 @@ export default function CurriculumManagement() {
             </>}
           </div>
         </div>
-      </div>
-    </div>
+      </main>
+    </AcademyShell>
   );
 }

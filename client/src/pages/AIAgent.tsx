@@ -7,14 +7,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
+import { AcademyShell } from "@/components/AcademyShell";
 import { trpc } from "@/lib/trpc";
 import { GENERATION_STEPS, getGenerationStep, getNextSimulatedProgress } from "@/lib/generation-progress";
 import { calculateQuestionRecommendation } from "@shared/questionRecommendation";
 import { useLocation } from "wouter";
-import { Loader2, Sparkles, CheckCircle2, AlertCircle, ArrowLeft, Upload, FileText, X } from "lucide-react";
+import { Loader2, Sparkles, CheckCircle2, AlertCircle, Upload, FileText, X, GraduationCap, LibraryBig, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
 
 type FbiseSubject = "physics" | "chemistry" | "computer_science";
+type GradeLevel = "9" | "10";
 type GenerationScope = "uploaded_content" | "single_chapter" | "half_chapter" | "multiple_chapters" | "half_syllabus" | "block";
 
 const SUBJECT_LABELS: Record<FbiseSubject, string> = {
@@ -42,6 +44,7 @@ export default function AIAgent() {
   const [generationProgress, setGenerationProgress] = useState(0);
   const [contentAnalysis, setContentAnalysis] = useState<any>(null);
   const [subject, setSubject] = useState<FbiseSubject>("physics");
+  const [gradeLevel, setGradeLevel] = useState<GradeLevel>("10");
   const [scopeType, setScopeType] = useState<GenerationScope>("uploaded_content");
   const [selectedChapterIds, setSelectedChapterIds] = useState<number[]>([]);
   const [selectedSegmentId, setSelectedSegmentId] = useState<number | null>(null);
@@ -50,7 +53,7 @@ export default function AIAgent() {
   const generateMutation = trpc.aiAgent.generateMCQs.useMutation();
   const saveMutation = trpc.aiAgent.saveGeneratedQuiz.useMutation();
   const pdfExtractMutation = trpc.pdfUpload.extractPdfText.useMutation();
-  const scopeCatalogQuery = trpc.curriculum.getActiveScopeCatalog.useQuery({ subject });
+  const scopeCatalogQuery = trpc.curriculum.getActiveScopeCatalog.useQuery({ subject }, { enabled: gradeLevel === "10" });
   const statusQuery = trpc.aiAgent.getGenerationStatus.useQuery(
     { jobId: jobId || 0 },
     { enabled: !!jobId && isGenerating, refetchInterval: 1000 }
@@ -113,7 +116,7 @@ export default function AIAgent() {
     setSelectedChapterIds([]);
     setSelectedSegmentId(null);
     setSelectedScopeTemplateId(null);
-  }, [subject, scopeType]);
+  }, [gradeLevel, subject, scopeType]);
 
   useEffect(() => {
     if (scopeType !== "uploaded_content" && !isQuestionCountManual) {
@@ -133,9 +136,9 @@ export default function AIAgent() {
     || (scopeType === "multiple_chapters" && selectedChapterIds.length >= 2)
     || ((scopeType === "half_syllabus" || scopeType === "block") && selectedScopeTemplateId !== null)
   );
-  const hasGenerationSource = scopeType === "uploaded_content"
+  const hasGenerationSource = gradeLevel === "10" && (scopeType === "uploaded_content"
     ? Boolean(contentText.trim())
-    : hasValidStoredScope;
+    : hasValidStoredScope);
 
   const toggleChapter = (chapterId: number, checked: boolean) => {
     setSelectedChapterIds((currentIds) => {
@@ -258,6 +261,10 @@ export default function AIAgent() {
   };
 
   const handleGenerate = async () => {
+    if (gradeLevel !== "10") {
+      toast.error("Grade 9 generation will unlock after its revised FBISE pattern and approved materials are configured.");
+      return;
+    }
     const usesStoredScope = scopeType !== "uploaded_content";
 
     if (!hasGenerationSource && !usesStoredScope) {
@@ -349,43 +356,39 @@ export default function AIAgent() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto py-8 px-4">
-        {/* Header */}
-        <div className="mb-8">
-          <Button
-            variant="ghost"
-            onClick={() => navigate("/")}
-            className="mb-4"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Quizzes
-          </Button>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-accent via-secondary to-accent bg-clip-text text-transparent">
-            Paramount Academy Quiz Builder
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            Create source-grounded FBISE MCQ drafts for admin review before assignment or publication.
-          </p>
+    <AcademyShell eyebrow="MCQ Draft Studio">
+      <main className="container py-8 sm:py-10">
+        <div className="mb-8 rounded-2xl border border-border/80 bg-card px-5 py-6 shadow-sm sm:px-7">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-primary"><GraduationCap className="h-4 w-4" />Administrator workspace</p>
+              <h1 className="mt-2 text-3xl font-bold text-foreground sm:text-4xl">Build a reviewed MCQ draft</h1>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">Select a grade and source scope, set the board-style difficulty, then generate a draft that remains under administrator review.</p>
+            </div>
+            <div className="rounded-xl border border-primary/15 bg-primary/5 px-3 py-2 text-right">
+              <p className="text-xs font-semibold text-primary">Assessment type</p>
+              <p className="mt-0.5 text-sm font-bold text-foreground">MCQ drafts only</p>
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content Area */}
           <div className="lg:col-span-2 space-y-6">
             {/* Content Input Card */}
-            <Card className="border-accent/20 bg-card/50 backdrop-blur">
+            <Card className="border-border/80 bg-card shadow-sm">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-accent" />
-                  Add Content
+                <CardTitle className="flex items-center gap-2 text-xl">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">1</span>
+                  Choose source material
                 </CardTitle>
-                <CardDescription>Upload a PDF/TXT file or paste content directly</CardDescription>
+                <CardDescription>Upload one PDF or TXT file, paste a temporary source, or select reviewed curriculum from the workspace panel.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* File Upload */}
+                {scopeType === "uploaded_content" ? <>
                 <div>
-                  <Label className="text-sm font-medium mb-2 block">Upload Document</Label>
-                  <label className="flex items-center justify-center w-full p-6 border-2 border-dashed border-accent/30 rounded-lg hover:border-accent/60 cursor-pointer transition-colors">
+                  <Label className="text-sm font-medium mb-2 block">Upload one source file</Label>
+                  <label className="flex items-center justify-center w-full p-6 border-2 border-dashed border-border rounded-xl bg-muted/35 hover:border-primary/45 hover:bg-primary/[0.03] cursor-pointer transition-colors">
                     <input
                       type="file"
                       id="file-upload"
@@ -394,7 +397,7 @@ export default function AIAgent() {
                       onChange={handleFileUpload}
                     />
                     <div className="flex flex-col items-center gap-2">
-                      {isProcessingFile ? <Loader2 className="h-8 w-8 animate-spin text-accent" /> : <FileText className="h-8 w-8 text-muted-foreground" />}
+                      {isProcessingFile ? <Loader2 className="h-8 w-8 animate-spin text-primary" /> : <Upload className="h-8 w-8 text-primary" />}
                       <div>
                         <p className="font-semibold text-foreground">{isProcessingFile ? "Extracting document text…" : "Upload a PDF or TXT file"}</p>
                         <p className="text-sm text-muted-foreground">{isProcessingFile ? "Please keep this page open while we prepare the quiz source." : "or click to browse"}</p>
@@ -430,11 +433,12 @@ export default function AIAgent() {
                 {/* Text Input */}
                 <div>
                   <Label htmlFor="content" className="text-sm font-medium mb-2 block">
-                    Or Paste Content
+                    Temporary source text
                   </Label>
                   <Textarea
                     id="content"
-                    placeholder="Paste your lecture notes, textbook content, research material, etc."
+                    aria-label="Or Paste Content"
+                    placeholder="Paste approved lesson notes or a reviewed source excerpt when a permanent curriculum source is not yet available."
                     value={contentText}
                     onChange={(e) => setContentText(e.target.value)}
                     className="min-h-[200px] resize-none"
@@ -448,11 +452,27 @@ export default function AIAgent() {
                   </Label>
                   <Input
                     id="title"
-                    placeholder="e.g., Machine Learning Basics, Biology Chapter 5"
+                    placeholder="e.g., Grade 10 Physics — Chapter 10 practice draft"
                     value={quizTitle}
                     onChange={(e) => setQuizTitle(e.target.value)}
                   />
                 </div>
+                </> : <>
+                  <div className="rounded-xl border border-primary/15 bg-primary/[0.035] p-5">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"><LibraryBig className="h-5 w-5" /></div>
+                      <div>
+                        <p className="font-bold text-foreground">Reviewed curriculum source</p>
+                        <p className="mt-1 text-sm leading-6 text-muted-foreground">Complete the grade, subject, and scope choices in <strong className="font-semibold text-foreground">Draft setup</strong>. The generator will load only the approved source evidence stored in Curriculum Management.</p>
+                        <Button type="button" variant="link" className="mt-2 h-auto p-0 text-primary" onClick={() => navigate("/curriculum")}>Open Curriculum Management</Button>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="title" className="text-sm font-medium mb-2 block">Draft title</Label>
+                    <Input id="title" placeholder="e.g., Grade 10 Physics — Chapter 10 practice draft" value={quizTitle} onChange={(e) => setQuizTitle(e.target.value)} />
+                  </div>
+                </>}
 
               </CardContent>
             </Card>
@@ -607,11 +627,11 @@ export default function AIAgent() {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Generation Settings */}
-            <Card className="border-accent/20 bg-card/50 backdrop-blur sticky top-4">
+            <Card className="border-border/80 bg-card shadow-sm lg:sticky lg:top-22">
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-accent" />
-                  Generation Settings
+                  <SlidersHorizontal className="h-5 w-5 text-primary" />
+                  Draft setup
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -655,18 +675,26 @@ export default function AIAgent() {
                 </div>
 
                 {/* FBISE curriculum scope */}
-                <div className="space-y-3 rounded-xl border border-secondary/20 bg-secondary/5 p-3">
+                <div className="space-y-4 rounded-xl border border-border bg-muted/35 p-4">
                   <div>
                     <p className="text-sm font-semibold text-foreground">FBISE Curriculum Scope</p>
-                    <p className="mt-1 text-xs text-muted-foreground">Choose the approved 10th-grade source range before creating an admin draft.</p>
+                    <p className="mt-1 text-xs text-muted-foreground">Choose the grade, subject, and approved source range before creating an administrator draft.</p>
                   </div>
 
                   <div>
                     <Label htmlFor="class-level" className="mb-2 block text-xs font-medium">Class level</Label>
-                    <Input id="class-level" value="10th Grade • FBISE" readOnly aria-readonly="true" className="h-9 bg-muted/50 text-sm" />
+                    <Select value={gradeLevel} onValueChange={(value) => setGradeLevel(value as GradeLevel)}>
+                      <SelectTrigger id="class-level" aria-label="Class level"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="10">10th Grade · FBISE (configured)</SelectItem>
+                        <SelectItem value="9">9th Grade · FBISE (curriculum intake)</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
-                  <div>
+                  {gradeLevel === "9" && <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-800"><strong>Grade 9 is intentionally not using Grade 10 rules.</strong> Its revised pattern and approved material must be confirmed before MCQ draft generation is enabled. The portal structure is ready for its separate curriculum intake.</div>}
+
+                  {gradeLevel === "10" && <div>
                     <Label htmlFor="subject" className="mb-2 block text-xs font-medium">Subject</Label>
                     <Select value={subject} onValueChange={(value) => setSubject(value as FbiseSubject)}>
                       <SelectTrigger id="subject" aria-label="Subject"><SelectValue /></SelectTrigger>
@@ -674,9 +702,9 @@ export default function AIAgent() {
                         {Object.entries(SUBJECT_LABELS).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}
                       </SelectContent>
                     </Select>
-                  </div>
+                  </div>}
 
-                  <div>
+                  {gradeLevel === "10" && <div>
                     <Label htmlFor="generation-scope" className="mb-2 block text-xs font-medium">Generation scope</Label>
                     <Select value={scopeType} onValueChange={(value) => setScopeType(value as GenerationScope)}>
                       <SelectTrigger id="generation-scope" aria-label="Generation scope"><SelectValue /></SelectTrigger>
@@ -689,9 +717,9 @@ export default function AIAgent() {
                         <SelectItem value="block">Full block</SelectItem>
                       </SelectContent>
                     </Select>
-                  </div>
+                  </div>}
 
-                  {scopeType !== "uploaded_content" && !activeScopeCatalog && !scopeCatalogQuery.isLoading && (
+                  {gradeLevel === "10" && scopeType !== "uploaded_content" && !activeScopeCatalog && !scopeCatalogQuery.isLoading && (
                     <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-2.5 text-xs text-muted-foreground">
                       {scopeCatalogQuery.error
                         ? "This account cannot load reviewed curriculum scopes. Sign in with an administrator account to use stored sources."
@@ -700,7 +728,7 @@ export default function AIAgent() {
                     </div>
                   )}
 
-                  {(scopeType === "single_chapter" || scopeType === "half_chapter" || scopeType === "multiple_chapters") && activeScopeCatalog && (
+                  {gradeLevel === "10" && (scopeType === "single_chapter" || scopeType === "half_chapter" || scopeType === "multiple_chapters") && activeScopeCatalog && (
                     <fieldset className="space-y-2" aria-label="Select chapters">
                       <legend className="mb-2 text-xs font-medium text-foreground">{scopeType === "multiple_chapters" ? "Select chapters" : "Select a chapter"}</legend>
                       <div className="max-h-36 space-y-2 overflow-y-auto pr-1">
@@ -724,7 +752,7 @@ export default function AIAgent() {
                     </fieldset>
                   )}
 
-                  {scopeType === "half_chapter" && selectedChapter && (
+                  {gradeLevel === "10" && scopeType === "half_chapter" && selectedChapter && (
                     <div>
                       <Label htmlFor="chapter-segment" className="mb-2 block text-xs font-medium">Chapter segment</Label>
                       <Select value={selectedSegmentId?.toString() ?? undefined} onValueChange={(value) => setSelectedSegmentId(Number(value))}>
@@ -737,7 +765,7 @@ export default function AIAgent() {
                     </div>
                   )}
 
-                  {(scopeType === "half_syllabus" || scopeType === "block") && activeScopeCatalog && (
+                  {gradeLevel === "10" && (scopeType === "half_syllabus" || scopeType === "block") && activeScopeCatalog && (
                     <div>
                       <Label htmlFor="scope-template" className="mb-2 block text-xs font-medium">{scopeType === "block" ? "Configured block" : "Configured half syllabus"}</Label>
                       <Select value={selectedScopeTemplateId?.toString() ?? undefined} onValueChange={(value) => setSelectedScopeTemplateId(Number(value))}>
@@ -750,7 +778,7 @@ export default function AIAgent() {
                     </div>
                   )}
 
-                  {scopeType !== "uploaded_content" && activeScopeCatalog && (
+                  {gradeLevel === "10" && scopeType !== "uploaded_content" && activeScopeCatalog && (
                     <p className="text-xs text-muted-foreground">Active source: <span className="font-medium text-foreground">{activeScopeCatalog.curriculumSet.label}</span>{activeScopeCatalog.curriculumSet.editionLabel ? ` — ${activeScopeCatalog.curriculumSet.editionLabel}` : ""}</p>
                   )}
                 </div>
@@ -758,7 +786,7 @@ export default function AIAgent() {
                 {/* Difficulty */}
                 <div>
                   <Label htmlFor="difficulty" className="text-sm font-medium mb-2 block">
-                    Difficulty Level
+                    Difficulty profile
                   </Label>
                   <Select value={difficulty} onValueChange={(value: any) => setDifficulty(value)}>
                     <SelectTrigger>
@@ -776,8 +804,9 @@ export default function AIAgent() {
                 {/* Generate Button */}
                 <Button
                   onClick={handleGenerate}
-                  disabled={isGenerating || isProcessingFile || !hasGenerationSource || !quizTitle.trim()}
-                  className="w-full bg-gradient-to-r from-accent to-secondary hover:shadow-lg hover:shadow-accent/20 text-accent-foreground font-semibold"
+                  aria-label="Generate MCQs"
+                  disabled={gradeLevel !== "10" || isGenerating || isProcessingFile || !hasGenerationSource || !quizTitle.trim()}
+                  className="w-full bg-primary text-primary-foreground font-semibold shadow-sm hover:bg-primary/90"
                 >
                   {isGenerating ? (
                     <>
@@ -787,7 +816,7 @@ export default function AIAgent() {
                   ) : (
                     <>
                       <Sparkles className="h-4 w-4 mr-2" />
-                      Generate MCQs
+                      Generate MCQ Draft
                     </>
                   )}
                 </Button>
@@ -808,7 +837,7 @@ export default function AIAgent() {
                     ) : (
                       <>
                         <CheckCircle2 className="h-4 w-4 mr-2" />
-                        Save Quiz
+                        Save Reviewed Draft
                       </>
                     )}
                   </Button>
@@ -833,7 +862,7 @@ export default function AIAgent() {
             </Card>
           </div>
         </div>
-      </div>
-    </div>
+      </main>
+    </AcademyShell>
   );
 }

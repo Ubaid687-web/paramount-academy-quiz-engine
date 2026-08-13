@@ -1,228 +1,78 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { trpc } from "@/lib/trpc";
-import { useLocation, Link } from "wouter";
-import { BookOpen, Loader2, AlertCircle, Sparkles, ArrowRight, Zap, Trash2, AlertTriangle } from "lucide-react";
+import React, { useState } from "react";
+import { BookOpenCheck, ChevronRight, ClipboardCheck, FileQuestion, Loader2, ShieldCheck, Sparkles, Trash2 } from "lucide-react";
+import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
+import { AcademyShell } from "@/components/AcademyShell";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { trpc } from "@/lib/trpc";
+
+const gradeReadiness = [
+  { grade: "Grade 10", label: "Current priority", detail: "Physics, Chemistry, and Computer Science specifications are analysed and ready for curriculum setup.", status: "Ready for setup", tone: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  { grade: "Grade 9", label: "Structured for intake", detail: "The grade has a changed pattern. Its workflow is ready; approved books and current paper pattern must be confirmed before use.", status: "Awaiting curriculum", tone: "bg-amber-50 text-amber-700 border-amber-200" },
+];
 
 export default function QuizList() {
   const [, navigate] = useLocation();
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
-  
   const { data: quizzes, isLoading, error, refetch } = trpc.quiz.getAll.useQuery();
   const deleteQuizMutation = trpc.quiz.deleteQuiz.useMutation();
 
-  const handleDeleteClick = (e: React.MouseEvent, quizId: number) => {
-    e.stopPropagation();
-    setConfirmDelete(quizId);
-  };
-
-  const handleConfirmDelete = async (quizId: number) => {
+  const handleDelete = async (quizId: number) => {
     setDeletingId(quizId);
     try {
       await deleteQuizMutation.mutateAsync({ quizId });
-      toast.success("Quiz deleted successfully");
+      await refetch();
+      toast.success("Quiz removed.");
       setConfirmDelete(null);
-      refetch();
     } catch (err) {
-      console.error("Delete error:", err);
-      toast.error(err instanceof Error ? err.message : "Failed to delete quiz");
+      toast.error(err instanceof Error ? err.message : "Quiz could not be removed.");
     } finally {
       setDeletingId(null);
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-accent" />
-          <p className="text-muted-foreground">Loading quizzes...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error || !quizzes) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Card className="w-full max-w-md border-destructive/50">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-destructive" />
-              <CardTitle>Error Loading Quizzes</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">{error?.message || "Failed to load quizzes. Please try again."}</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-background">
-      <div className="border-b border-border/50 bg-gradient-to-b from-card/50 to-background backdrop-blur-sm sticky top-0 z-10">
-        <div className="container py-8 sm:py-12">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 bg-accent/10 rounded-lg">
-                  <BookOpen className="h-7 w-7 text-accent" />
-                </div>
-                <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-accent to-secondary bg-clip-text text-transparent">
-                  Paramount Academy
-                </h1>
-              </div>
-              <p className="text-lg text-muted-foreground max-w-2xl">
-                FBISE 10th-grade MCQ drafts for Physics, Chemistry, and Computer Science.
-              </p>
+    <AcademyShell>
+      <main className="container py-8 sm:py-12">
+        <section className="relative overflow-hidden rounded-3xl border border-border bg-card px-6 py-9 shadow-sm sm:px-10 sm:py-12">
+          <div className="absolute inset-y-0 right-0 hidden w-[42%] bg-[radial-gradient(circle_at_80%_20%,oklch(0.91_0.07_250),transparent_58%),radial-gradient(circle_at_42%_80%,oklch(0.94_0.06_90),transparent_45%)] lg:block" />
+          <div className="relative max-w-2xl">
+            <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/5 px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-primary"><ClipboardCheck className="h-3.5 w-3.5" />MCQ assessment workspace</p>
+            <h1 className="max-w-xl text-4xl font-bold leading-tight text-foreground sm:text-5xl">A focused quiz engine for better board preparation.</h1>
+            <p className="mt-5 max-w-xl text-base leading-7 text-muted-foreground">Create source-grounded MCQ drafts, review every item, and keep assessment evidence connected to the approved curriculum—not to guesses.</p>
+            <div className="mt-7 flex flex-wrap items-center gap-3">
+              <Link href="/generate" className="no-underline"><Button size="lg" className="bg-primary px-5 text-primary-foreground shadow-sm hover:bg-primary/90"><Sparkles className="mr-2 h-4 w-4" />Open Quiz Builder</Button></Link>
+              <span className="text-sm text-muted-foreground">Drafts require administrator review.</span>
             </div>
-            <Link href="/generate" className="no-underline">
-              <Button className="bg-gradient-to-r from-accent to-secondary hover:shadow-lg hover:shadow-accent/20 text-accent-foreground font-semibold px-6 py-3 rounded-lg whitespace-nowrap group">
-                <Sparkles className="mr-2 h-5 w-5 group-hover:rotate-12 transition-transform" />
-                Create MCQ Draft
-              </Button>
-            </Link>
           </div>
-        </div>
-      </div>
+        </section>
 
-      <div className="container py-12 sm:py-16">
-        {quizzes.length === 0 ? (
-          <div className="max-w-2xl mx-auto">
-            <Card className="border-border/50 bg-card/50 backdrop-blur">
-              <CardHeader className="text-center py-12">
-                <div className="flex justify-center mb-4">
-                  <div className="p-4 bg-accent/10 rounded-full">
-                    <Sparkles className="h-8 w-8 text-accent" />
-                  </div>
-                </div>
-                <CardTitle className="text-2xl">No Quizzes Yet</CardTitle>
-                <CardDescription className="text-base mt-2">
-                  Start with approved study material, then review the generated MCQ draft before student use.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="text-center pb-8">
-                <Link href="/generate" className="no-underline">
-                  <Button className="bg-accent hover:bg-accent/90 text-accent-foreground font-semibold px-8 py-3">
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    Create First MCQ Draft
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-          </div>
-        ) : (
-          <div>
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-foreground mb-2">Quiz Drafts and Practice Sets</h2>
-              <p className="text-muted-foreground">
-                {quizzes.length} quiz{quizzes.length !== 1 ? "zes" : ""} available for practice
-              </p>
-            </div>
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {quizzes.map((quiz) => (
-                <div key={quiz.id} className="relative group">
-                  <Card
-                    className="group card-premium cursor-pointer overflow-hidden flex flex-col hover:border-accent/50 transition-all"
-                    onClick={() => navigate(`/quiz/${quiz.id}`)}
-                  >
-                    <CardHeader className="pb-4">
-                      <div className="flex items-start justify-between mb-2">
-                        <CardTitle className="line-clamp-2 group-hover:text-accent transition-colors text-lg">
-                          {quiz.title}
-                        </CardTitle>
-                        <div className="flex gap-1">
-                          <div className="p-2 bg-accent/10 rounded-lg group-hover:bg-accent/20 transition-colors">
-                            <Zap className="h-4 w-4 text-accent" />
-                          </div>
-                          <Button
-                            onClick={(e) => handleDeleteClick(e, quiz.id)}
-                            variant="ghost"
-                            size="icon"
-                            className="h-10 w-10 hover:bg-destructive/10 hover:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                      <CardDescription className="line-clamp-2 text-sm">
-                        {quiz.description}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex-1 flex flex-col justify-between">
-                      <div className="mb-4">
-                        <div className="flex items-center justify-between text-sm mb-2">
-                          <span className="text-muted-foreground">Total Questions</span>
-                          <span className="font-semibold text-accent text-lg">{quiz.totalQuestions}</span>
-                        </div>
-                        <div className="w-full bg-border/50 rounded-full h-2">
-                          <div className="bg-gradient-to-r from-accent to-secondary h-2 rounded-full w-full"></div>
-                        </div>
-                      </div>
-                      <Button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/quiz/${quiz.id}`);
-                        }}
-                        className="w-full bg-accent hover:bg-accent/90 text-accent-foreground font-semibold group-hover:shadow-lg transition-all"
-                      >
-                        Start Quiz
-                        <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                      </Button>
-                    </CardContent>
-                  </Card>
+        <section className="mt-8 grid gap-4 md:grid-cols-2" aria-label="Grade readiness">
+          {gradeReadiness.map((item) => (
+            <Card key={item.grade} className="border-border/80 shadow-sm"><CardContent className="flex h-full flex-col gap-4 p-5 sm:flex-row sm:items-start sm:justify-between">
+              <div><p className="text-lg font-bold text-foreground">{item.grade}</p><p className="mt-1 text-sm font-semibold text-primary">{item.label}</p><p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">{item.detail}</p></div>
+              <span className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold ${item.tone}`}>{item.status}</span>
+            </CardContent></Card>
+          ))}
+        </section>
 
-                  {confirmDelete === quiz.id && (
-                    <div className="absolute inset-0 bg-black/80 rounded-lg flex items-center justify-center z-20 backdrop-blur-sm">
-                      <Card className="card-premium border-destructive/50 bg-destructive/5 w-80">
-                        <CardHeader>
-                          <div className="flex items-center gap-2">
-                            <AlertTriangle className="h-5 w-5 text-destructive" />
-                            <CardTitle>Delete Quiz?</CardTitle>
-                          </div>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                          <p className="text-sm text-muted-foreground">
-                            This will permanently delete "{quiz.title}" and all associated attempts. This action cannot be undone.
-                          </p>
-                          <div className="flex gap-2">
-                            <Button
-                              onClick={() => setConfirmDelete(null)}
-                              variant="outline"
-                              className="flex-1"
-                            >
-                              Cancel
-                            </Button>
-                            <Button
-                              onClick={() => handleConfirmDelete(quiz.id)}
-                              disabled={deletingId === quiz.id}
-                              className="flex-1 bg-destructive hover:bg-destructive/90 text-destructive-foreground"
-                            >
-                              {deletingId === quiz.id ? (
-                                <>
-                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                  Deleting...
-                                </>
-                              ) : (
-                                "Delete"
-                              )}
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+        <section className="mt-10">
+          <div className="mb-4 flex items-end justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">Assessment library</p><h2 className="mt-1 text-2xl font-bold text-foreground">MCQ drafts and practice sets</h2></div><span className="text-sm text-muted-foreground">{quizzes?.length ?? 0} available</span></div>
+          {isLoading && <Card><CardContent className="flex items-center gap-3 py-10 text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin" />Loading assessment library…</CardContent></Card>}
+          {error && <Card className="border-destructive/40"><CardContent className="py-8 text-sm text-destructive">The assessment library could not be loaded. {error.message}</CardContent></Card>}
+          {!isLoading && !error && quizzes?.length === 0 && <Card className="border-dashed border-border bg-card/70"><CardContent className="flex flex-col items-start gap-4 p-7 sm:flex-row sm:items-center"><div className="flex h-11 w-11 items-center justify-center rounded-xl bg-muted text-primary"><FileQuestion className="h-5 w-5" /></div><div><p className="font-bold text-foreground">No draft has been saved yet.</p><p className="mt-1 text-sm leading-6 text-muted-foreground">Use the Quiz Builder above when you are ready to create the first reviewed MCQ draft.</p></div></CardContent></Card>}
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {quizzes?.map((quiz) => <Card key={quiz.id} className="group border-border/80 shadow-sm transition-shadow hover:shadow-md"><CardContent className="flex min-h-56 flex-col p-5"><div className="flex items-start justify-between gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/8 text-primary"><BookOpenCheck className="h-5 w-5" /></div><Button variant="ghost" size="icon" aria-label={`Delete ${quiz.title}`} className="text-muted-foreground hover:text-destructive" onClick={() => setConfirmDelete(quiz.id)}><Trash2 className="h-4 w-4" /></Button></div><div className="mt-5 flex-1"><p className="line-clamp-2 text-lg font-bold text-foreground">{quiz.title}</p><p className="mt-2 line-clamp-2 text-sm leading-6 text-muted-foreground">{quiz.description || "Source-grounded MCQ assessment"}</p></div><div className="mt-5 flex items-center justify-between border-t border-border pt-4"><span className="text-sm text-muted-foreground"><strong className="text-foreground">{quiz.totalQuestions}</strong> MCQs</span><Button variant="ghost" className="h-auto p-0 text-primary hover:bg-transparent hover:text-primary/75" onClick={() => navigate(`/quiz/${quiz.id}`)}>Open <ChevronRight className="ml-1 h-4 w-4" /></Button></div></CardContent></Card>)}
           </div>
-        )}
-      </div>
-    </div>
+          {confirmDelete !== null && <Card className="fixed inset-x-4 bottom-5 z-50 mx-auto max-w-md border-destructive/30 shadow-xl"><CardContent className="p-5"><p className="font-bold text-foreground">Remove this quiz?</p><p className="mt-1 text-sm text-muted-foreground">The quiz and its associated attempts will be removed.</p><div className="mt-4 flex justify-end gap-2"><Button variant="outline" onClick={() => setConfirmDelete(null)}>Keep quiz</Button><Button variant="destructive" disabled={deletingId === confirmDelete} onClick={() => handleDelete(confirmDelete)}>{deletingId === confirmDelete ? "Removing…" : "Remove"}</Button></div></CardContent></Card>}
+        </section>
+
+        <section className="mt-8 grid gap-4 md:grid-cols-3" aria-label="Workflow safeguards">
+          {[{ icon: ShieldCheck, title: "Review first", text: "Every AI-created item stays in draft status until reviewed." }, { icon: BookOpenCheck, title: "Use approved sources", text: "Curriculum setup connects chapter and half-chapter scopes to reviewed text." }, { icon: ClipboardCheck, title: "MCQ only", text: "This module is deliberately focused on multiple-choice assessment." }].map(({ icon: Icon, title, text }) => <div key={title} className="rounded-2xl border border-border/75 bg-card/60 p-5"><Icon className="h-5 w-5 text-primary" /><p className="mt-3 font-bold text-foreground">{title}</p><p className="mt-1 text-sm leading-6 text-muted-foreground">{text}</p></div>)}
+        </section>
+      </main>
+    </AcademyShell>
   );
 }

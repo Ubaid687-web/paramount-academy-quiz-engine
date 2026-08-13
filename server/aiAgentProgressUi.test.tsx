@@ -43,6 +43,7 @@ vi.mock("@/lib/trpc", () => ({
 
 vi.mock("wouter", () => ({
   useLocation: () => ["/ai-agent", vi.fn()],
+  Link: ({ href, children, ...props }: { href: string; children: React.ReactNode }) => <a href={href} {...props}>{children}</a>,
 }));
 
 vi.mock("sonner", () => ({
@@ -143,10 +144,21 @@ describe("AI quiz generation feedback", () => {
     });
     render(<AIAgent />);
 
-    expect(screen.getByDisplayValue("10th Grade • FBISE")).toBeVisible();
+    expect(screen.getByRole("combobox", { name: "Class level" })).toHaveTextContent("10th Grade · FBISE (configured)");
     expect(screen.getByRole("combobox", { name: "Subject" })).toBeVisible();
     expect(screen.getByRole("combobox", { name: "Generation scope" })).toBeVisible();
     expect(screen.getByText("FBISE Curriculum Scope")).toBeVisible();
+  });
+
+  it("shows Grade 9 as a separate curriculum-intake state without enabling Grade 10 generation rules", async () => {
+    render(<AIAgent />);
+
+    fireEvent.click(screen.getByRole("combobox", { name: "Class level" }));
+    fireEvent.click(await screen.findByRole("option", { name: "9th Grade · FBISE (curriculum intake)" }));
+
+    expect(await screen.findByText(/Grade 9 is intentionally not using Grade 10 rules/)).toBeVisible();
+    expect(screen.queryByRole("combobox", { name: "Subject" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Generate MCQs" })).toBeDisabled();
   });
 
   it("explains the administrator requirement when a stored curriculum catalog cannot be loaded", async () => {
@@ -176,7 +188,7 @@ describe("AI quiz generation feedback", () => {
     fireEvent.click(screen.getByRole("combobox", { name: "Generation scope" }));
     fireEvent.click(await screen.findByRole("option", { name: "Single chapter" }));
     fireEvent.click(await screen.findByRole("checkbox", { name: "Ch. 10: Simple Harmonic Motion" }));
-    fireEvent.change(screen.getByLabelText("Quiz Title"), { target: { value: "Physics Chapter 10 Draft" } });
+    fireEvent.change(screen.getByLabelText("Draft title"), { target: { value: "Physics Chapter 10 Draft" } });
 
     await waitFor(() => expect(screen.getByRole("spinbutton")).toHaveValue(12));
     fireEvent.click(screen.getByRole("button", { name: "Generate MCQs" }));

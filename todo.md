@@ -1,5 +1,15 @@
 # Project TODO
 
+## Phase 5: Academy Portal Frontend Redesign
+- [x] Audit the current portal-facing screens and reconfirm Grade 9 versus Grade 10 curriculum readiness.
+- [x] Replace the duplicate quiz-generation entry actions with one clear academy workflow.
+- [x] Redesign the quiz-engine dashboard as a structured, modern Paramount Academy portal module.
+- [x] Make the MCQ-only purpose, grade readiness, subjects, drafts, and curriculum setup states visually clear.
+- [x] Refine the quiz builder as a professional grade-aware, subject-aware admin workflow.
+- [x] Add frontend tests for the redesigned entry and builder states, then validate and report the confirmed roadmap.
+- [x] Add UI test coverage for the redesigned Quiz Centre single-entry action, grade readiness messaging, and empty library state.
+- [x] Deliver the confirmed frontend roadmap covering Grade 10 readiness, Grade 9 intake status, and portal integration steps.
+
 ## Phase 1: 10th Grade Material Analysis (Physics, Chemistry, Computer Science)
 - [x] Analyze 10th grade Physics textbook structure and chapters
 - [x] Extract 10th grade Physics past paper exam format
