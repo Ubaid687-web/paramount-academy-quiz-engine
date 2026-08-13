@@ -17,6 +17,10 @@ export type GenerationSourceContext = {
   selectedChapterIds?: number[];
   selectedSegmentIds?: number[];
   scopeSnapshot?: unknown;
+  paperPatternGuidance?: Array<{
+    sourceKind: "model_paper" | "past_paper";
+    academicYear: string | null;
+  }>;
 };
 
 const MCQ_GENERATION_PROMPT = `You are an advanced academic assessment designer and subject-matter expert. Your task is to generate high-quality multiple-choice questions that test deep understanding and conceptual mastery, NOT surface-level recall.
@@ -137,6 +141,15 @@ export async function generateMCQsFromContent(
 
     const systemPrompt = MCQ_GENERATION_PROMPT + difficultyInstruction;
 
+    const paperPatternInstruction = sourceContext.paperPatternGuidance?.length
+      ? `
+
+VERIFIED BOARD-STYLE GUIDANCE (METADATA ONLY):
+- Active supplied pattern evidence: ${sourceContext.paperPatternGuidance.map((source) => `${source.sourceKind.replace("_", " ")}${source.academicYear ? ` ${source.academicYear}` : ""}`).join(", ")}.
+- Use this evidence only to maintain a balanced board-style mixture of knowledge, conceptual-understanding, and applied-understanding MCQs.
+- Do not copy, paraphrase, or treat paper questions as source content. The source material below remains the only examinable content boundary.`
+      : "";
+
     const userPrompt = `Generate exactly ${finalNumQuestions} high-quality MCQs based on this content. Analyze the ENTIRE content thoroughly to extract key concepts and principles.
 
 CONTENT ANALYSIS:
@@ -159,7 +172,7 @@ REQUIREMENTS:
 - Professional, exam-ready language
 - Focus on conceptual understanding, NOT direct recall
 - Include scenario-based and application questions where appropriate
-- Generate questions that span the entire content, not just the beginning`;
+- Generate questions that span the entire content, not just the beginning${paperPatternInstruction}`;
 
     // Call LLM to generate MCQs
     // Chunk content for better analysis
@@ -262,6 +275,7 @@ REQUIREMENTS:
           classLevel: sourceContext.classLevel ?? "",
           language: "",
           difficultyProfile: difficulty,
+          paperPatternEvidence: sourceContext.paperPatternGuidance ?? [],
           generatedAt: new Date().toISOString(),
           notes: "Draft only. Review before publication or assignment.",
         },

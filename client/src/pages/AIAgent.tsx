@@ -47,6 +47,8 @@ const ASSESSMENT_MODE_LABELS: Record<AssessmentMode, string> = {
   full_paper: "Full paper",
 };
 
+const ONLINE_MCQS_ONLY = true;
+
 
 
 
@@ -142,6 +144,13 @@ export default function AIAgent() {
     if (!draft || !requestedReviewDraftId) return;
     try {
       const payload = JSON.parse(draft.draftPayload);
+      if (ONLINE_MCQS_ONLY && payload.mode !== "mcq") {
+        setRequestedReviewDraftId(null);
+        setSavedAssessmentDraftId(null);
+        setActiveStep(1);
+        toast.error("Only MCQ quiz drafts are available in the online teacher flow.");
+        return;
+      }
       setAssessmentMode(payload.mode as AssessmentMode);
       setQuizTitle(payload.title ?? draft.title);
       setSavedAssessmentDraftId(draft.id);
@@ -406,6 +415,7 @@ export default function AIAgent() {
       const result = await generateMutation.mutateAsync({
         numQuestions: numQuestions || 10,
         difficulty,
+        patternSubject: subject,
         ...(usesStoredScope
           ? {
               scope: {
@@ -634,9 +644,9 @@ export default function AIAgent() {
           </div>
           <nav className="mt-6 grid gap-2 sm:grid-cols-3" aria-label="Assessment preparation steps">
             {[
-              { id: 1, label: "Format" },
+              { id: 1, label: "Quiz type" },
               { id: 2, label: "Source" },
-              { id: 3, label: "Setup" },
+              { id: 3, label: "Quiz settings" },
             ].map((step) => {
               const isCurrent = activeStep === step.id;
               const isCompleted = activeStep > step.id;
@@ -662,21 +672,6 @@ export default function AIAgent() {
           </nav>
         </div>
 
-        <div className="mb-6 flex justify-end">
-          <Button type="button" variant="outline" size="sm" onClick={() => setShowSavedDraftLoader((visible) => !visible)} aria-expanded={showSavedDraftLoader} aria-controls="saved-draft-loader"><ClipboardCheck className="mr-2 h-4 w-4" />{showSavedDraftLoader ? "Close draft" : "Open saved draft"}</Button>
-        </div>
-
-        {showSavedDraftLoader && <Card id="saved-draft-loader" className="mb-6 border-primary/20 bg-card shadow-sm motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-2 motion-safe:duration-200">
-          <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-end">
-            <div className="flex-1">
-              <Label htmlFor="review-draft-id" className="mb-2 block text-sm font-medium">Open saved assessment draft</Label>
-              <Input id="review-draft-id" inputMode="numeric" value={reviewDraftId ?? ""} onChange={(event) => setReviewDraftId(Number(event.target.value) || null)} placeholder="Assessment draft ID" />
-            </div>
-            <Button type="button" variant="outline" onClick={handleLoadAssessmentDraft} disabled={assessmentDraftQuery.isFetching}>{assessmentDraftQuery.isFetching ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Loading…</> : "Load for review"}</Button>
-            {savedAssessmentDraftId && <p className="text-xs font-medium text-primary">Editing saved draft #{savedAssessmentDraftId}</p>}
-          </CardContent>
-        </Card>}
-
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content Area */}
           <div className="lg:col-span-2 space-y-6">
@@ -684,9 +679,9 @@ export default function AIAgent() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-xl">
                   <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">1</span>
-                  Choose assessment format
+                  Create an online quiz
                 </CardTitle>
-                <CardDescription>Select an assessment type.</CardDescription>
+                <CardDescription>Online quizzes use MCQs only.</CardDescription>
               </CardHeader>
               <CardContent>
                 {isContextEditing ? <div className="mb-5 rounded-xl border border-primary/20 bg-primary/[0.035] p-4">
@@ -697,32 +692,16 @@ export default function AIAgent() {
                   </div>
                   {gradeLevel === "9" ? <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-800">Grade 9 setup is pending.</div> : <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => setIsContextEditing(false)}>Continue</Button>}
                 </div> : <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/15 bg-primary/[0.035] p-3"><div><p className="text-xs font-bold uppercase tracking-[0.12em] text-primary">Teacher context</p><p className="mt-1 text-sm font-bold text-foreground">Grade 10 · {SUBJECT_LABELS[subject]}</p></div><Button type="button" variant="outline" size="sm" onClick={() => { setIsContextEditing(true); setActiveStep(1); }}>Change</Button></div>}
-                <div className="grid gap-2 sm:grid-cols-2" aria-label="Choose assessment format">
-                  {(Object.keys(ASSESSMENT_MODE_LABELS) as AssessmentMode[]).map((mode) => {
-                    const available = assessmentAvailability ? assessmentAvailability.supportedModes[mode] : mode === "mcq";
-                    const selected = assessmentMode === mode;
-                    const sourceStatus = !available
-                      ? mode === "full_paper" ? "Book + paper required" : "Verified book required"
-                      : mode === "full_paper"
-                        ? "Book + paper ready"
-                        : assessmentAvailability?.textbookReady
-                          ? "Book ready"
-                          : "Custom source only";
-                    return <button
-                      key={mode}
-                      type="button"
-                      aria-pressed={selected}
-                      disabled={gradeLevel !== "10" || !available}
-                      onClick={() => { setAssessmentMode(mode); setActiveStep(2); }}
-                      className={`rounded-xl border p-3 text-left transition-[transform,background-color,border-color,box-shadow] duration-200 ease-out active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-55 ${selected ? "border-primary bg-primary/[0.055] shadow-sm" : "border-border bg-muted/30 hover:border-primary/40"}`}
-                    >
-                      <span className="block text-sm font-bold text-foreground">{ASSESSMENT_MODE_LABELS[mode]}</span>
-                      <span className="mt-1 block text-xs leading-5 text-muted-foreground">{sourceStatus}</span>
-                    </button>;
-                  })}
-                </div>
-                {!isSelectedModeAvailable && <p className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs leading-5 text-muted-foreground">This format needs verified source evidence.</p>}
-                {assessmentMode !== "mcq" && isSelectedModeAvailable && <p className="mt-3 rounded-lg border border-primary/20 bg-primary/[0.04] p-3 text-xs leading-5 text-muted-foreground">Manual review draft.</p>}
+                <button
+                  type="button"
+                  aria-pressed="true"
+                  disabled={gradeLevel !== "10"}
+                  onClick={() => { setAssessmentMode("mcq"); setActiveStep(2); }}
+                  className="w-full rounded-xl border border-primary bg-primary/[0.055] p-4 text-left shadow-sm transition-[transform,background-color,border-color,box-shadow] duration-200 ease-out active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-55"
+                >
+                  <span className="block text-sm font-bold text-foreground">MCQ quiz</span>
+                  <span className="mt-1 block text-xs leading-5 text-muted-foreground">Board-style practice from your selected source.</span>
+                </button>
               </CardContent>
             </Card>}
 
@@ -859,7 +838,7 @@ export default function AIAgent() {
               </CardContent>
             </Card>}
 
-            {activeStep === 3 && assessmentMode !== "mcq" && assessmentMode !== "full_paper" && isSelectedModeAvailable && <Card className="border-primary/20 bg-card shadow-sm motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-200">
+            {!ONLINE_MCQS_ONLY && activeStep === 3 && assessmentMode !== "mcq" && assessmentMode !== "full_paper" && isSelectedModeAvailable && <Card className="border-primary/20 bg-card shadow-sm motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-200">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-xl">
                   <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">3</span>
@@ -907,7 +886,7 @@ export default function AIAgent() {
               </CardContent>
             </Card>}
 
-            {activeStep === 3 && assessmentMode === "full_paper" && isSelectedModeAvailable && <Card className="border-primary/20 bg-card shadow-sm motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-200">
+            {!ONLINE_MCQS_ONLY && activeStep === 3 && assessmentMode === "full_paper" && isSelectedModeAvailable && <Card className="border-primary/20 bg-card shadow-sm motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-200">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-xl">
                   <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">3</span>

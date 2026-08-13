@@ -161,3 +161,17 @@
 - [x] Add source-integrity and streamlined-interface coverage, validate, checkpoint, and report the result.
 - [x] Save the verified Phase 18 checkpoint after the Chemistry source correction and teacher-interface refinement.
 - [x] Report the archived Chemistry source decision and custom-source-only Chemistry flow to the user.
+
+## Phase 19: MCQ-Only Product Alignment
+- [x] Audit all Quiz Centre and builder controls that expose short-question, long-question, full-paper, marks, expected-answer, rubric, or manual-answer fields.
+- [x] Simplify the live teacher workflow to source-grounded MCQ quiz preparation only, retaining chapter and custom-source paths.
+- [x] Preserve verified user-supplied model and annual paper evidence as MCQ-pattern guidance without exposing non-MCQ quiz modes.
+- [x] Document a controlled intake and comparison process for the user's upcoming current-year paper.
+- [x] Add focused MCQ-only UI coverage, validate, checkpoint, and report the aligned product scope.
+- [x] Reconcile the live Physics approved-source availability with the verified active Physics curriculum record before final validation.
+- [x] Make the read-only chapter catalog and MCQ source-readiness status available to the live teacher flow without exposing textbook content or management actions.
+- [x] Hard-disable non-MCQ saved-draft and setup branches so the live teacher builder cannot surface short, long, full-paper, marks, expected-answer, or rubric controls.
+- [x] Replace deferred non-MCQ UI tests with explicit MCQ-only regression coverage for every entry path.
+- [x] Implement and test source-safe paper-aware MCQ generation guidance using only verified model and annual paper pattern metadata.
+- [x] Save the verified Phase 19 checkpoint after the passing MCQ-only regression suite and TypeScript validation.
+- [x] Report the finalized MCQ-only scope, restored Physics chapter path, and paper-aware guidance behavior to the user.

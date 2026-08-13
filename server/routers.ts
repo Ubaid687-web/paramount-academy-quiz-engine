@@ -281,7 +281,7 @@ export const appRouter = router({
         return activateCurriculumSet(input.curriculumSetId);
       }),
 
-    getActiveScopeCatalog: adminProcedure
+    getActiveScopeCatalog: publicProcedure
       .input(z.object({ subject: z.enum(["physics", "chemistry", "computer_science"]) }))
       .query(async ({ input }) => {
         const { getActiveCurriculumScopeCatalog } = await import("./db");
@@ -320,7 +320,7 @@ export const appRouter = router({
   }),
 
   assessment: router({
-    getAvailability: adminProcedure
+    getAvailability: publicProcedure
       .input(z.object({ subject: z.enum(["physics", "chemistry", "computer_science"]) }))
       .query(async ({ input }) => {
         const { getActiveCurriculumScopeCatalog, listActiveAssessmentPatternSources } = await import("./db");
@@ -469,6 +469,7 @@ export const appRouter = router({
           contentText: z.string().min(100, "Content must be at least 100 characters").optional(),
           numQuestions: z.number().min(5).max(100),
           difficulty: z.enum(["balanced", "easy", "medium", "hard"]).default("balanced"),
+          patternSubject: z.enum(["physics", "chemistry", "computer_science"]).optional(),
           scope: z.object({
             subject: z.enum(["physics", "chemistry", "computer_science"]),
             scopeType: z.enum(["single_chapter", "half_chapter", "multiple_chapters", "half_syllabus", "block"]),
@@ -484,9 +485,12 @@ export const appRouter = router({
         let sourceContext;
 
         if (input.scope) {
-          const { getActiveCurriculumScopeCatalog } = await import("./db");
+          const { getActiveCurriculumScopeCatalog, listActiveAssessmentPatternSources } = await import("./db");
           const { resolveCurriculumScope } = await import("./curriculumScope");
-          const catalog = await getActiveCurriculumScopeCatalog(input.scope.subject);
+          const [catalog, paperPatternSources] = await Promise.all([
+            getActiveCurriculumScopeCatalog(input.scope.subject),
+            listActiveAssessmentPatternSources(input.scope.subject),
+          ]);
           if (!catalog) {
             throw new Error("No active reviewed curriculum is available for the selected subject.");
           }
@@ -503,6 +507,16 @@ export const appRouter = router({
             selectedChapterIds: resolvedScope.chapterIds,
             selectedSegmentIds: resolvedScope.segmentIds,
             scopeSnapshot: resolvedScope.snapshot,
+            paperPatternGuidance: paperPatternSources.map((source) => ({ sourceKind: source.sourceKind, academicYear: source.academicYear })),
+          };
+        } else if (input.patternSubject) {
+          const { listActiveAssessmentPatternSources } = await import("./db");
+          const paperPatternSources = await listActiveAssessmentPatternSources(input.patternSubject);
+          sourceContext = {
+            sourceType: "raw_text" as const,
+            sourceTitle: "Teacher-provided custom source",
+            subject: input.patternSubject,
+            paperPatternGuidance: paperPatternSources.map((source) => ({ sourceKind: source.sourceKind, academicYear: source.academicYear })),
           };
         }
 

@@ -162,7 +162,7 @@ describe("AI quiz generation feedback", () => {
   it("reveals only the next relevant decision group and allows a teacher to review the selected source", () => {
     render(<AIAgent />);
 
-    expect(screen.getByRole("button", { name: "Step 1: Format" })).toHaveAttribute("aria-current", "step");
+    expect(screen.getByRole("button", { name: "Step 1: Quiz type" })).toHaveAttribute("aria-current", "step");
     expect(screen.queryByRole("button", { name: /Approved textbook chapters/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("slider", { name: "Number of questions" })).not.toBeInTheDocument();
 
@@ -175,7 +175,7 @@ describe("AI quiz generation feedback", () => {
     fireEvent.change(screen.getByLabelText("Quiz Title"), { target: { value: "Kinematics practice" } });
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
 
-    expect(screen.getByRole("button", { name: "Step 3: Setup" })).toHaveAttribute("aria-current", "step");
+    expect(screen.getByRole("button", { name: "Step 3: Quiz settings" })).toHaveAttribute("aria-current", "step");
     expect(screen.queryByRole("button", { name: /Approved textbook chapters/i })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Review source" })).toBeVisible();
 
@@ -187,7 +187,7 @@ describe("AI quiz generation feedback", () => {
     render(<AIAgent />);
 
     fireEvent.click(screen.getByRole("button", { name: /^MCQ/i }));
-    const formatStep = screen.getByRole("button", { name: "Step 1: Format" });
+    const formatStep = screen.getByRole("button", { name: "Step 1: Quiz type" });
     formatStep.focus();
     fireEvent.keyDown(formatStep, { key: "Enter" });
 
@@ -276,6 +276,7 @@ describe("AI quiz generation feedback", () => {
       expect(generateMutation).toHaveBeenCalledWith({
         numQuestions: 12,
         difficulty: "balanced",
+        patternSubject: "physics",
         scope: {
           subject: "physics",
           scopeType: "single_chapter",
@@ -371,28 +372,28 @@ describe("AI quiz generation feedback", () => {
     window.history.pushState({}, "", "/ai-agent");
   });
 
-  it("shows the four assessment formats but keeps full-paper drafting locked without approved paper evidence", async () => {
-    assessmentAvailabilityQuery.mockReturnValue({
-      data: {
-        textbookReady: true,
-        paperPatternReady: false,
-        supportedModes: { mcq: true, short: true, long: true, full_paper: false },
-        paperSources: [],
-      },
-      isLoading: false,
-    });
-
+  it("shows only the online MCQ path and never exposes manual-answer setup fields", () => {
     render(<AIAgent />);
 
-    expect(screen.getByRole("button", { name: /^MCQ/i })).toBeEnabled();
-    expect(screen.getByRole("button", { name: /Short questions/i })).toBeEnabled();
-    expect(screen.getByRole("button", { name: /Long questions/i })).toBeEnabled();
-    expect(screen.getByRole("button", { name: /Full paper/i })).toBeDisabled();
-    expect(screen.getAllByText("Book ready")).toHaveLength(3);
-    expect(screen.getByText("Book + paper required")).toBeVisible();
+    expect(screen.getByRole("button", { name: /^MCQ quiz/i })).toBeEnabled();
+    expect(screen.queryByRole("button", { name: "Open saved draft" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Short questions/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Long questions/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Full paper/i })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /^MCQ quiz/i }));
+    fireEvent.change(screen.getByLabelText("Or Paste Content"), { target: { value: "Source-grounded online MCQ practice content. ".repeat(4) } });
+    fireEvent.change(screen.getByLabelText("Quiz Title"), { target: { value: "Online MCQ practice" } });
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+
+    expect(screen.queryByLabelText("Expected answer")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Marks")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Marking guide")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Marking rubric")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Save .*draft for review/i })).not.toBeInTheDocument();
   });
 
-  it("communicates the verified Computer Science textbook and supplied paper-pattern readiness", () => {
+  it("keeps the Computer Science online-quiz entry MCQ-only even when supplied paper-pattern evidence is available", () => {
     window.history.pushState({}, "", "/ai-agent?grade=10&subject=computer_science");
     assessmentAvailabilityQuery.mockReturnValue({
       data: {
@@ -407,12 +408,12 @@ describe("AI quiz generation feedback", () => {
     render(<AIAgent />);
 
     expect(screen.getByText("Grade 10 Computer Science")).toBeVisible();
-    expect(screen.getAllByText("Book ready")).toHaveLength(3);
-    expect(screen.getByText("Book + paper ready")).toBeVisible();
-    expect(screen.getByRole("button", { name: /Full paper/i })).toBeEnabled();
+    expect(screen.getByRole("button", { name: /^MCQ quiz/i })).toBeEnabled();
+    expect(screen.queryByRole("button", { name: /Short questions|Long questions|Full paper/i })).not.toBeInTheDocument();
     window.history.pushState({}, "", "/ai-agent");
   });
 
+  /* Deferred manual-assessment persistence coverage. These browser paths are intentionally unavailable while the product is MCQ-only.
   it("saves a source-grounded short-question draft through the assessment review workflow", async () => {
     scopeCatalogQuery.mockReturnValue({
       data: {
@@ -459,7 +460,7 @@ describe("AI quiz generation feedback", () => {
     await waitFor(() => expect(reviseAssessmentDraftMutation).toHaveBeenCalledWith(expect.objectContaining({ assessmentDraftId: 901 })));
   });
 
-  it("saves a source-grounded long-question draft with an explicit matching rubric", async () => {
+  it.skip("saves a source-grounded long-question draft with an explicit matching rubric", async () => {
     scopeCatalogQuery.mockReturnValue({
       data: {
         curriculumSet: { id: 1, grade: "10", subject: "physics", label: "Physics", editionLabel: "Reviewed source" },
@@ -486,7 +487,7 @@ describe("AI quiz generation feedback", () => {
     expect(await screen.findByText(/Assessment draft #903 is awaiting Portal Admin review/i)).toBeVisible();
   });
 
-  it("loads a saved long-question draft for review and revises that same draft", async () => {
+  it.skip("loads a saved long-question draft for review and revises that same draft", async () => {
     assessmentAvailabilityQuery.mockReturnValue({ data: { textbookReady: true, paperPatternReady: false, supportedModes: { mcq: true, short: true, long: true, full_paper: false }, paperSources: [] }, isLoading: false });
     loadAssessmentDraftQuery.mockReturnValue({
       isFetching: false,
@@ -571,4 +572,5 @@ describe("AI quiz generation feedback", () => {
     })));
     expect(await screen.findByText(/Assessment draft #902 is awaiting Portal Admin review/i)).toBeVisible();
   });
+  */
 });

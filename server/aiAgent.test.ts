@@ -99,6 +99,24 @@ describe("AI Agent - MCQ Generation", () => {
     }));
   });
 
+  it("uses verified paper metadata only as board-style MCQ guidance, not as source content", async () => {
+    await generateMCQsFromContent(1, validContent, 5, "balanced", {
+      sourceType: "curriculum_scope",
+      sourceTitle: "Kinematics",
+      subject: "physics",
+      paperPatternGuidance: [
+        { sourceKind: "model_paper", academicYear: null },
+        { sourceKind: "past_paper", academicYear: "2025" },
+      ],
+    });
+
+    const prompt = mocks.invokeLLM.mock.calls[0][0].messages[1].content as string;
+    expect(prompt).toContain("VERIFIED BOARD-STYLE GUIDANCE");
+    expect(prompt).toContain("model paper");
+    expect(prompt).toContain("past paper 2025");
+    expect(prompt).toContain("only examinable content boundary");
+  });
+
   it("returns a structured failure contract when a model response omits required source fields", async () => {
     mocks.invokeLLM.mockResolvedValue({
       choices: [{ message: { content: JSON.stringify({

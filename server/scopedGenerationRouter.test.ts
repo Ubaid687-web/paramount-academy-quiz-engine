@@ -3,10 +3,14 @@ import type { TrpcContext } from "./_core/context";
 
 const mocks = vi.hoisted(() => ({
   getActiveCurriculumScopeCatalog: vi.fn(),
+  listActiveAssessmentPatternSources: vi.fn(),
   generateMCQsFromContent: vi.fn(),
 }));
 
-vi.mock("./db", () => ({ getActiveCurriculumScopeCatalog: mocks.getActiveCurriculumScopeCatalog }));
+vi.mock("./db", () => ({
+  getActiveCurriculumScopeCatalog: mocks.getActiveCurriculumScopeCatalog,
+  listActiveAssessmentPatternSources: mocks.listActiveAssessmentPatternSources,
+}));
 vi.mock("./aiAgent", () => ({ generateMCQsFromContent: mocks.generateMCQsFromContent }));
 
 import { appRouter } from "./routers";
@@ -31,6 +35,7 @@ function createAdminContext(): TrpcContext {
 
 describe("scoped curriculum draft generation", () => {
   it("resolves the reviewed chapter server-side and passes its immutable provenance to the draft engine", async () => {
+    mocks.listActiveAssessmentPatternSources.mockResolvedValue([{ sourceKind: "past_paper", academicYear: "2025" }]);
     mocks.getActiveCurriculumScopeCatalog.mockResolvedValue({
       curriculumSet: { id: 77, grade: "10", subject: "physics", label: "FBISE Grade 10 Physics", editionLabel: "2026" },
       chapters: [{
@@ -63,6 +68,7 @@ describe("scoped curriculum draft generation", () => {
         scopeType: "single_chapter",
         selectedChapterIds: [10],
         scopeSnapshot: expect.objectContaining({ displayLabel: "Kinematics" }),
+        paperPatternGuidance: [{ sourceKind: "past_paper", academicYear: "2025" }],
       })
     );
   });

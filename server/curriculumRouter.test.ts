@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { TRPCError } from "@trpc/server";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
 
@@ -21,11 +20,20 @@ function createContext(role: "admin" | "user"): TrpcContext {
   };
 }
 
-describe("curriculum.getActiveScopeCatalog", () => {
-  it("rejects students because chapter sources and scope options are administrator-only", async () => {
+describe("teacher-facing curriculum catalog", () => {
+  it("returns the read-only active chapter catalog without requiring an administrator role", async () => {
     const caller = appRouter.createCaller(createContext("user"));
 
-    await expect(caller.curriculum.getActiveScopeCatalog({ subject: "physics" }))
-      .rejects.toMatchObject<Partial<TRPCError>>({ code: "FORBIDDEN" });
+    const result = await caller.curriculum.getActiveScopeCatalog({ subject: "physics" });
+
+    expect(result === null || typeof result === "object").toBe(true);
+  });
+
+  it("returns read-only MCQ source readiness without exposing curriculum management actions", async () => {
+    const caller = appRouter.createCaller(createContext("user"));
+
+    const result = await caller.assessment.getAvailability({ subject: "physics" });
+
+    expect(typeof result.supportedModes.mcq).toBe("boolean");
   });
 });
