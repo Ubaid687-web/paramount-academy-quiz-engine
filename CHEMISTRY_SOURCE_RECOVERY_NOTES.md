@@ -33,3 +33,5 @@ The reviewed source has now been activated as **curriculum set 30001**. It conta
 | TypeScript | Clean |
 | Non-database regression coverage | 14 test files / 46 tests passed |
 | Remaining validation limitation | The database-backed `quiz.test.ts` and `e2e.test.ts` suites could not complete because the managed TiDB gateway intermittently timed out or failed DNS resolution from the workspace; this is recorded separately from the Chemistry activation itself. |
+
+At the time of this note, an independent DNS-over-HTTPS lookup resolved the managed TiDB hostname, while the local sandbox resolver continued to return no result. This confirms the remaining regression follow-up is an environment connectivity issue rather than an unresolved Chemistry source or builder defect.

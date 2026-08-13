@@ -95,7 +95,7 @@
 - [x] Verify the approved Grade 10 Chemistry textbook source and recover an OCR-readable transcript where necessary.
 - [x] Create the Chemistry versioned curriculum set, source record, reviewed chapter boundaries, half-chapter segments, and reusable scope templates.
 - [x] Activate the Chemistry curriculum and verify its chapters appear through the Grade 10 Chemistry teacher builder path.
-- [ ] Re-run the full regression suite after managed TiDB connectivity stabilizes; focused Chemistry builder coverage already passes.
+- [x] Re-run the full regression suite after managed TiDB connectivity stabilizes; focused Chemistry builder coverage already passes.
 - [x] Document, checkpoint, and report the activated Chemistry source workflow.
 
 ## Phase 10A: Existing Material Provenance Reconciliation
