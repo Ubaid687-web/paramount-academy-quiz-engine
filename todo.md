@@ -146,4 +146,5 @@
 - [x] Audit the current Quiz Centre and builder journeys for visual hierarchy, unclear controls, redundant actions, and workflow friction.
 - [x] Define a focused visual and interaction refinement plan for navigation, buttons, feedback states, and accessible motion.
 - [x] Implement the approved teacher-facing workflow, button, animation, and readability refinements without weakening source-safety controls.
-- [ ] Add focused UI coverage, validate responsive behavior and TypeScript, checkpoint, and report the refined experience.
+- [x] Add focused UI coverage, validate responsive behavior and TypeScript, checkpoint, and report the refined experience.
+- [ ] Verify the refined Quiz Centre and builder at compact and wide viewports, then report the completed experience checkpoint.

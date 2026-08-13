@@ -428,6 +428,14 @@ describe("AI quiz generation feedback", () => {
     expect(reviewInput.closest("details")).toHaveAttribute("open");
   });
 
+  it("uses compact-first responsive layout classes for the refined teacher workflow", () => {
+    render(<AIAgent />);
+
+    expect(screen.getByLabelText("Draft workflow progress")).toHaveClass("grid", "sm:grid-cols-4");
+    expect(screen.getByLabelText("Choose assessment format")).toHaveClass("grid", "sm:grid-cols-2");
+    expect(screen.getByLabelText("Choose a source path")).toHaveClass("grid", "sm:grid-cols-2");
+  });
+
   it("loads a saved long-question draft for review and revises that same draft", async () => {
     assessmentAvailabilityQuery.mockReturnValue({ data: { textbookReady: true, paperPatternReady: false, supportedModes: { mcq: true, short: true, long: true, full_paper: false }, paperSources: [] }, isLoading: false });
     loadAssessmentDraftQuery.mockReturnValue({
