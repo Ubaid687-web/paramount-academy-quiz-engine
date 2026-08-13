@@ -4,6 +4,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import QuizList from "../client/src/pages/QuizList";
 
 const quizzesQuery = vi.fn();
+const quizQueryOptions = vi.fn();
 const deleteMutation = vi.fn();
 
 Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
@@ -14,7 +15,7 @@ Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
 vi.mock("@/lib/trpc", () => ({
   trpc: {
     quiz: {
-      getAll: { useQuery: () => quizzesQuery() },
+      getAll: { useQuery: (...args: unknown[]) => { quizQueryOptions(...args); return quizzesQuery(); } },
       deleteQuiz: { useMutation: () => ({ mutateAsync: deleteMutation }) },
     },
   },
@@ -31,6 +32,7 @@ describe("Quiz Centre entry experience", () => {
   afterEach(() => {
     cleanup();
     quizzesQuery.mockReset();
+    quizQueryOptions.mockReset();
     deleteMutation.mockReset();
   });
 
@@ -48,6 +50,15 @@ describe("Quiz Centre entry experience", () => {
     fireEvent.click(screen.getByRole("button", { name: /Physics.*Continue/i }));
     expect(screen.getByRole("heading", { name: "Grade 10 · Physics" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Open builder" }).getAttribute("href")).toBe("/generate?grade=10&subject=physics");
+  });
+
+  it("defers the draft-library request on the initial preview and enables it after class selection", () => {
+    quizzesQuery.mockReturnValue({ data: [], isLoading: false, error: null, refetch: vi.fn() });
+    render(<QuizList />);
+
+    expect(quizQueryOptions.mock.calls[0]?.[1]).toMatchObject({ enabled: false, staleTime: 300000, refetchOnWindowFocus: false });
+    fireEvent.click(screen.getByRole("button", { name: /Choose Grade 10/i }));
+    expect(quizQueryOptions.mock.calls.at(-1)?.[1]).toMatchObject({ enabled: true });
   });
 
   it("shows Grade 9 subject intake without exposing a Grade 10 draft action", () => {

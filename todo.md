@@ -182,3 +182,8 @@
 - [x] Preserve MCQ generation for both online quiz-taking and professional printable PDF download.
 - [x] Apply verified user-supplied textbook and paper-pattern evidence to each output type without inventing content or patterns.
 - [x] Add coverage for online MCQs and printable MCQ/short/long routes, validate, checkpoint, and report the restored workflow.
+
+## Phase 21: Preview and Route Loading Performance
+- [x] Diagnose slow opening and loading previews in the academy workspace and assessment-builder routes.
+- [x] Reduce unnecessary client requests, render work, or route dependencies that delay first usable content.
+- [x] Add regression coverage, validate the improvement, checkpoint, and report the result.
