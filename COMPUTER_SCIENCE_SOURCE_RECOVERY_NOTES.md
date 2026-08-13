@@ -1,19 +1,27 @@
-# Grade 10 Computer Science Source Boundary
+# Grade 10 Computer Science Source Boundary and Verified Activation
 
 ## Approved source
 
-The only approved Grade 10 Computer Science textbook source is the **single FBISE Curriculum 2022–2023 textbook supplied by the user in this chat**. The approved evidence base also includes only the other files already supplied by the user in this chat.
+The only approved Grade 10 Computer Science textbook source is the **single FBISE Curriculum 2022–2023 textbook supplied by the user in this chat**. No external textbook, newer or older edition, public paper, website, video, mirror, chapter list, or inferred material may be used for Computer Science curriculum content, assessments, answers, marks, or paper-pattern claims.
 
-## Non-negotiable rule
+## Verified current evidence
 
-No external textbook, newer or older edition, public past paper, website, video, mirror, search result, chapter list, or inferred material may be used to create Computer Science curriculum chapters, source snapshots, MCQs, short questions, long questions, or full exams.
+The re-supplied source is now present in managed project evidence and has been activated exactly as supplied:
 
-## Activation safeguard
+| Evidence field | Verified value |
+|---|---|
+| Curriculum set | `60001` — FBISE Grade 10 Computer Science |
+| Edition label | NCP 2022–23 supplied textbook · OCR-reviewed transcript |
+| Preserved source | `class10computerbookpdffederalboard.pdf` |
+| Managed transcript | Page-preserving OCR transcript in managed storage |
+| Source pages | 262 |
+| Extracted text | 473,848 characters |
+| Curriculum scope | 8 active reviewed units, 16 half-unit segments, and 4 reusable templates |
 
-The Computer Science curriculum activation remains intentionally blocked until the supplied 2022–2023 source itself is available through the preserved project evidence path. The absence of a local copy after a sandbox reset does **not** mean that the user failed to supply it, and the user must not be asked to upload it again.
+## Assessment evidence
 
-Project-side reconciliation confirmed that the current curriculum database has active Grade 10 source records only for Physics and Chemistry. No Computer Science curriculum set, source record, managed transcript, local upload, session-storage file, or generated-quiz source snapshot contains the supplied 2022–2023 textbook. This is a persistence gap in the restored workspace, not a gap in the user’s material submission.
+The database also contains active Computer Science paper-pattern evidence. Any generated or manually authored assessment must continue to cite the selected approved textbook scope and, where required, the selected active supplied paper-pattern source. The source-grounding and Portal Admin review safeguards remain mandatory.
 
-## Assessment safeguard
+## Operating rule
 
-Paper-based assessment patterns may be recorded only from the user-supplied papers once their preserved source records are available. Until then, the application must not claim a Computer Science paper blueprint or generate Computer Science questions of any type.
+The previously recorded persistence gap is resolved for the exact user-supplied Computer Science textbook. The platform may expose its reviewed chapters to teachers, but it must remain restricted to these verified records and must not supplement them with external materials.

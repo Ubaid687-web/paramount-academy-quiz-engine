@@ -398,7 +398,29 @@ describe("AI quiz generation feedback", () => {
     expect(screen.getByRole("button", { name: /Short questions/i })).toBeEnabled();
     expect(screen.getByRole("button", { name: /Long questions/i })).toBeEnabled();
     expect(screen.getByRole("button", { name: /Full paper/i })).toBeDisabled();
+    expect(screen.getAllByText("Approved textbook source ready")).toHaveLength(3);
     expect(screen.getByText("Needs active textbook and reviewed paper evidence")).toBeVisible();
+  });
+
+  it("communicates the verified Computer Science textbook and supplied paper-pattern readiness", () => {
+    window.history.pushState({}, "", "/ai-agent?grade=10&subject=computer_science");
+    assessmentAvailabilityQuery.mockReturnValue({
+      data: {
+        textbookReady: true,
+        paperPatternReady: true,
+        supportedModes: { mcq: true, short: true, long: true, full_paper: true },
+        paperSources: [{ id: 3, sourceKind: "past_paper", academicYear: "2025", originalFileName: "computer-science-2025.pdf" }],
+      },
+      isLoading: false,
+    });
+
+    render(<AIAgent />);
+
+    expect(screen.getByText("Prepare Grade 10 Computer Science MCQ draft")).toBeVisible();
+    expect(screen.getAllByText("Approved textbook source ready")).toHaveLength(3);
+    expect(screen.getByText("Approved textbook and supplied paper pattern ready")).toBeVisible();
+    expect(screen.getByRole("button", { name: /Full paper/i })).toBeEnabled();
+    window.history.pushState({}, "", "/ai-agent");
   });
 
   it("saves a source-grounded short-question draft through the assessment review workflow", async () => {

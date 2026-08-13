@@ -692,6 +692,13 @@ export default function AIAgent() {
                   {(Object.keys(ASSESSMENT_MODE_LABELS) as AssessmentMode[]).map((mode) => {
                     const available = assessmentAvailability ? assessmentAvailability.supportedModes[mode] : mode === "mcq";
                     const selected = assessmentMode === mode;
+                    const sourceStatus = !available
+                      ? mode === "full_paper" ? "Needs active textbook and reviewed paper evidence" : "Needs active approved textbook source"
+                      : mode === "full_paper"
+                        ? "Approved textbook and supplied paper pattern ready"
+                        : assessmentAvailability?.textbookReady
+                          ? "Approved textbook source ready"
+                          : "Approved source required";
                     return <button
                       key={mode}
                       type="button"
@@ -701,7 +708,7 @@ export default function AIAgent() {
                       className={`rounded-xl border p-3 text-left transition-[transform,background-color,border-color,box-shadow] duration-200 ease-out active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-55 ${selected ? "border-primary bg-primary/[0.055] shadow-sm" : "border-border bg-muted/30 hover:border-primary/40"}`}
                     >
                       <span className="block text-sm font-bold text-foreground">{ASSESSMENT_MODE_LABELS[mode]}</span>
-                      <span className="mt-1 block text-xs leading-5 text-muted-foreground">{available ? "Approved source required" : mode === "full_paper" ? "Needs active textbook and reviewed paper evidence" : "Needs active approved textbook source"}</span>
+                      <span className="mt-1 block text-xs leading-5 text-muted-foreground">{sourceStatus}</span>
                     </button>;
                   })}
                 </div>
