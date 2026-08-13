@@ -131,7 +131,7 @@ describe("AI quiz generation feedback", () => {
     expect(screen.getAllByText(/Recommended/).length).toBeGreaterThanOrEqual(1);
   });
 
-  it("shows Grade 10 FBISE subject and stored-scope controls for an active curriculum", () => {
+  it("shows separate approved-chapter and custom-content source paths for an active Grade 10 curriculum", () => {
     scopeCatalogQuery.mockReturnValue({
       isLoading: false,
       data: {
@@ -144,10 +144,8 @@ describe("AI quiz generation feedback", () => {
     });
     render(<AIAgent />);
 
-    expect(screen.getByRole("combobox", { name: "Class level" })).toHaveTextContent("10th Grade · FBISE (configured)");
-    expect(screen.getByRole("combobox", { name: "Subject" })).toBeVisible();
-    expect(screen.getByRole("combobox", { name: "Generation scope" })).toBeVisible();
-    expect(screen.getByText("MCQ settings")).toBeVisible();
+    expect(screen.getByRole("button", { name: /Approved textbook chapters/i })).toBeVisible();
+    expect(screen.getByRole("button", { name: /My custom lesson material/i })).toBeVisible();
   });
 
   it("shows Grade 9 as a separate curriculum-intake state without enabling Grade 10 generation rules", async () => {
@@ -165,10 +163,9 @@ describe("AI quiz generation feedback", () => {
     scopeCatalogQuery.mockReturnValue({ data: null, isLoading: false, error: new Error("FORBIDDEN") } as any);
     render(<AIAgent />);
 
-    fireEvent.click(screen.getByRole("combobox", { name: "Generation scope" }));
-    fireEvent.click(await screen.findByRole("option", { name: "An approved chapter" }));
+    fireEvent.click(screen.getByRole("button", { name: /Approved textbook chapters/i }));
 
-    expect(await screen.findByText(/This account cannot load reviewed curriculum scopes/)).toBeVisible();
+    expect(await screen.findByText(/This account cannot load approved chapter choices/)).toBeVisible();
   });
 
   it("sends a reviewed single-chapter selection instead of browser text when generating a draft", async () => {
@@ -185,8 +182,7 @@ describe("AI quiz generation feedback", () => {
     generateMutation.mockResolvedValue({ jobId: 99, mcqs: [], analysis: null, draft: { status: "error", message: "No draft", safeRetryAdvice: "Retry" } });
     render(<AIAgent />);
 
-    fireEvent.click(screen.getByRole("combobox", { name: "Generation scope" }));
-    fireEvent.click(await screen.findByRole("option", { name: "An approved chapter" }));
+    fireEvent.click(screen.getByRole("button", { name: /Approved textbook chapters/i }));
     fireEvent.click(await screen.findByRole("checkbox", { name: "Ch. 10: Simple Harmonic Motion" }));
     fireEvent.change(screen.getByLabelText("Draft title"), { target: { value: "Physics Chapter 10 Draft" } });
 

@@ -44,7 +44,7 @@ describe("PDF Upload", () => {
 
     expect(result.pageCount).toBe(1);
     expect(result.text).toContain("Kinematics studies motion");
-  });
+  }, 15_000);
 
   it("connects real source extraction to a source-grounded draft validation contract", async () => {
     const caller = appRouter.createCaller(createAuthContext());

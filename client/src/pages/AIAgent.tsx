@@ -137,9 +137,12 @@ export default function AIAgent() {
   const hasValidStoredScope = (
     (scopeType === "single_chapter" && selectedChapterIds.length === 1)
     || (scopeType === "half_chapter" && selectedChapterIds.length === 1 && selectedSegmentId !== null)
-    || (scopeType === "multiple_chapters" && selectedChapterIds.length >= 2)
+    || (scopeType === "multiple_chapters" && selectedChapterIds.length >= 1)
     || ((scopeType === "half_syllabus" || scopeType === "block") && selectedScopeTemplateId !== null)
   );
+  const generationScopeType = (scopeType === "multiple_chapters" && selectedChapterIds.length === 1
+    ? "single_chapter"
+    : scopeType) as Exclude<GenerationScope, "uploaded_content">;
   const hasGenerationSource = gradeLevel === "10" && (scopeType === "uploaded_content"
     ? Boolean(contentText.trim())
     : hasValidStoredScope);
@@ -304,7 +307,7 @@ export default function AIAgent() {
           ? {
               scope: {
                 subject,
-                scopeType,
+                scopeType: generationScopeType,
                 chapterIds: selectedChapterIds,
                 segmentIds: selectedSegmentId ? [selectedSegmentId] : [],
                 scopeTemplateId: selectedScopeTemplateId ?? undefined,
@@ -389,6 +392,16 @@ export default function AIAgent() {
                 <CardDescription>Upload one PDF or TXT file, or paste lesson material. If an approved chapter is already prepared, you can use it instead.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div className="grid gap-3 sm:grid-cols-2" aria-label="Choose a source path">
+                  <button type="button" onClick={() => setScopeType("multiple_chapters")} className={`rounded-xl border p-4 text-left transition-colors ${scopeType !== "uploaded_content" ? "border-primary bg-primary/[0.055] shadow-sm" : "border-border bg-muted/30 hover:border-primary/40"}`}>
+                    <div className="flex items-center gap-2"><LibraryBig className="h-4 w-4 text-primary" /><span className="text-sm font-bold text-foreground">Approved textbook chapters</span></div>
+                    <p className="mt-2 text-xs leading-5 text-muted-foreground">Select one or more named chapters from the active Grade 10 book.</p>
+                  </button>
+                  <button type="button" onClick={() => setScopeType("uploaded_content")} className={`rounded-xl border p-4 text-left transition-colors ${scopeType === "uploaded_content" ? "border-primary bg-primary/[0.055] shadow-sm" : "border-border bg-muted/30 hover:border-primary/40"}`}>
+                    <div className="flex items-center gap-2"><FileText className="h-4 w-4 text-primary" /><span className="text-sm font-bold text-foreground">My custom lesson material</span></div>
+                    <p className="mt-2 text-xs leading-5 text-muted-foreground">Upload one PDF/TXT file or paste a lesson excerpt for one-off practice.</p>
+                  </button>
+                </div>
                 {scopeType === "uploaded_content" ? <>
                 <div>
                   <Label className="text-sm font-medium mb-2 block">Upload one source file</Label>
@@ -467,10 +480,27 @@ export default function AIAgent() {
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"><LibraryBig className="h-5 w-5" /></div>
                       <div>
                         <p className="font-bold text-foreground">Reviewed curriculum source</p>
-                        <p className="mt-1 text-sm leading-6 text-muted-foreground">Choose the approved chapter range in <strong className="font-semibold text-foreground">MCQ settings</strong>. If no approved chapter is listed, ask an academy administrator to prepare it first.</p>
+                        <p className="mt-1 text-sm leading-6 text-muted-foreground">Select the book chapters you want to include. One tick creates chapter practice; several ticks create combined-chapter practice.</p>
                       </div>
                     </div>
                   </div>
+                  {!activeScopeCatalog && !scopeCatalogQuery.isLoading && <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs leading-5 text-muted-foreground">{scopeCatalogQuery.error ? "This account cannot load approved chapter choices. Ask Portal Admin to confirm access." : `No approved ${SUBJECT_LABELS[subject]} textbook is active yet.`}</div>}
+                  {scopeCatalogQuery.isLoading && <div className="flex items-center gap-2 rounded-lg bg-muted/60 p-3 text-xs text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Loading approved chapters…</div>}
+                  {activeScopeCatalog && <fieldset className="space-y-2" aria-label="Select textbook chapters">
+                    <legend className="text-sm font-bold text-foreground">Select the chapters for this draft</legend>
+                    <p className="text-xs leading-5 text-muted-foreground">Tick one chapter for focused practice, or tick several chapters for a combined draft.</p>
+                    <div className="max-h-64 space-y-2 overflow-y-auto rounded-lg border border-border bg-background/60 p-2 pr-1">
+                      {chapters.map((chapter) => {
+                        const selected = selectedChapterIds.includes(chapter.id);
+                        return <label key={chapter.id} className="flex cursor-pointer items-start gap-2 rounded-md p-2 hover:bg-muted/70">
+                          <Checkbox checked={selected} onCheckedChange={(checked) => toggleChapter(chapter.id, checked === true)} aria-label={`${chapter.code ? `${chapter.code}: ` : ""}${chapter.title}`} />
+                          <span className="min-w-0 text-sm leading-5 text-foreground"><span className="font-medium">{chapter.code ? `${chapter.code}: ` : ""}{chapter.title}</span>{chapter.startPage && chapter.endPage && <span className="block text-xs text-muted-foreground">Textbook pages {chapter.startPage}–{chapter.endPage}</span>}</span>
+                        </label>;
+                      })}
+                    </div>
+                    <p className="text-xs font-medium text-primary">{selectedChapterIds.length === 0 ? "Choose at least one chapter." : selectedChapterIds.length === 1 ? "One chapter selected." : `${selectedChapterIds.length} chapters selected.`}</p>
+                    <p className="text-xs text-muted-foreground">Active source: <span className="font-medium text-foreground">{activeScopeCatalog.curriculumSet.label}</span>{activeScopeCatalog.curriculumSet.editionLabel ? ` — ${activeScopeCatalog.curriculumSet.editionLabel}` : ""}</p>
+                  </fieldset>}
                   <div>
                     <Label htmlFor="title" className="text-sm font-medium mb-2 block">Draft title</Label>
                     <Input id="title" placeholder="e.g., Grade 10 Physics — Chapter 10 practice draft" value={quizTitle} onChange={(e) => setQuizTitle(e.target.value)} />
@@ -677,8 +707,8 @@ export default function AIAgent() {
                   )}
                 </div>
 
-                {/* FBISE curriculum scope */}
-                <div className="space-y-4 rounded-xl border border-border bg-muted/35 p-4">
+                {/* Teacher context */}
+                <div className="space-y-3">
                   <div>
                     <p className="text-sm font-semibold text-foreground">MCQ settings</p>
                     <p className="mt-1 text-xs text-muted-foreground">Choose where the questions come from and how challenging they should be.</p>
@@ -716,6 +746,10 @@ export default function AIAgent() {
 
                   {isContextEditing && gradeLevel === "10" && <Button type="button" variant="outline" size="sm" className="w-full" onClick={() => setIsContextEditing(false)}>Continue with Grade 10 {SUBJECT_LABELS[subject]}</Button>}
 
+                </div>
+
+                {/* Legacy sidebar scope controls are superseded by the explicit source cards above. */}
+                <div className="hidden" aria-hidden="true">
                   {gradeLevel === "10" && <div>
                     <Label htmlFor="generation-scope" className="mb-2 block text-xs font-medium">Generation scope</Label>
                     <Select value={scopeType} onValueChange={(value) => setScopeType(value as GenerationScope)}>

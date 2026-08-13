@@ -1,5 +1,20 @@
 # Project TODO
 
+## Phase 9: Material Reconciliation and Two-Path MCQ Workflow
+- [x] Recheck project records and material-analysis artifacts for all previously supplied Grade 10 textbooks, papers, model papers, and patterns.
+- [x] Document verified Grade 10 coverage by subject, including chapter evidence and paper-pattern sources.
+- [x] Present approved chapter selection as a clear first teacher path, with chapter names and multi-select controls.
+- [x] Present pasted/uploaded content as a separate customization path without mixing it into approved chapter selection.
+- [x] Identify only the remaining storage/evidence gap required to activate existing analysed textbook material as a true approved source.
+- [x] Test, checkpoint, and report the reconciled two-path workflow.
+
+## Phase 8: First Active Grade 10 Curriculum Source
+- [x] Locate and verify the first eligible Grade 10 textbook source for curriculum intake.
+- [x] Create the source's versioned curriculum set and ingest the verified file into managed storage.
+- [x] Review and save chapter and half-chapter boundaries for the first active scope.
+- [x] Activate the approved curriculum and verify teachers can select it for source-grounded MCQ drafting.
+- [x] Test, checkpoint, and report the available first curriculum scope.
+
 ## Phase 6: Progressive Teacher Workflow
 - [x] Audit the current portal density against Ammara Faisal, Danish Butt, and Ubaidullah Butt's teaching responsibilities.
 - [x] Define and document progressive teacher flow: grade → subject → action, with unnecessary technical detail hidden by default.
