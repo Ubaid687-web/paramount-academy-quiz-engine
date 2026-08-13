@@ -147,4 +147,4 @@
 - [x] Define a focused visual and interaction refinement plan for navigation, buttons, feedback states, and accessible motion.
 - [x] Implement the approved teacher-facing workflow, button, animation, and readability refinements without weakening source-safety controls.
 - [x] Add focused UI coverage, validate responsive behavior and TypeScript, checkpoint, and report the refined experience.
-- [ ] Verify the refined Quiz Centre and builder at compact and wide viewports, then report the completed experience checkpoint.
+- [x] Verify the refined Quiz Centre and builder at compact and wide viewports, then report the completed experience checkpoint.
