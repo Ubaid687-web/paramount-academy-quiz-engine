@@ -17,14 +17,6 @@ vi.mock("@/lib/trpc", () => ({
       getAll: { useQuery: () => quizzesQuery() },
       deleteQuiz: { useMutation: () => ({ mutateAsync: deleteMutation }) },
     },
-    useUtils: () => ({
-      client: {
-        quiz: {
-          downloadQuizPdf: { query: vi.fn() },
-          downloadSolutionPdf: { query: vi.fn() },
-        },
-      },
-    }),
   },
 }));
 

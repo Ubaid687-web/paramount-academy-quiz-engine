@@ -103,11 +103,10 @@
 
 ## Phase 11: Grade 10 Computer Science Curriculum and Assessment Evidence
 - [x] Reconcile the previously supplied Grade 10 Computer Science textbook and paper-analysis records without requesting duplicate uploads.
-- [x] Verify, preserve, and ingest the newly re-supplied FBISE Curriculum 2022–2023 Computer Science textbook as the sole permitted Computer Science source.
-- [x] Recover the retained Computer Science textbook into a managed, page-preserving transcript and review its chapter boundaries.
-- [x] Create and activate the Grade 10 Computer Science curriculum set with chapter records, half-chapter segments, and reusable scope templates.
-- [x] Document paper-pattern evidence status for MCQ, short-question, long-question, and full-exam preparation without generating unsupported content.
-- [x] Add Computer Science builder coverage, run regression validation, checkpoint, and report the activated source.
+- [ ] Recover the retained Computer Science textbook into a managed, page-preserving transcript and review its chapter boundaries.
+- [ ] Create and activate the Grade 10 Computer Science curriculum set with chapter records, half-chapter segments, and reusable scope templates.
+- [ ] Document evidence-grounded paper patterns for MCQ, short-question, long-question, and full-exam preparation without generating unsupported content.
+- [ ] Add Computer Science builder coverage, run regression validation, checkpoint, and report the activated source.
 
 ## Phase 11A: Corrected Computer Science Source Boundary
 - [x] Use only the single user-supplied Grade 10 Computer Science textbook identified as FBISE Curriculum 2022–2023 and the files already supplied in this chat.
@@ -122,29 +121,11 @@
 - [x] Add UI coverage for long-question revision and the intentional disabled full-paper mode when approved paper evidence is unavailable.
 - [x] Checkpoint and report the completed framework and access register.
 
-## Phase 13: Supplied Paper Preservation and Pattern Evidence Intake
-- [x] For each user-supplied model or past paper, preserve the exact file and extraction artifact in managed storage before analysis.
-- [x] Extract and document only the paper-supported assessment structure, marks, sections, choices, and question-type evidence.
-- [x] Register each verified paper as an active assessment-pattern source and enable only the matching subject workflow.
-- [x] Validate the source record, update the material access register, checkpoint, and report the supported assessment modes.
-
-## Phase 13A: Grade 10 Computer Science Past-Paper Intake
-- [x] Verify and preserve the exact supplied 2024 Computer Science past-paper PDF and its extraction artifact.
-- [x] Verify and preserve the exact supplied 2025 Computer Science past-paper PDF and its extraction artifact.
-- [x] Analyze and document the evidence-grounded structure of each supplied Computer Science past paper.
-- [x] Register both papers as active Computer Science assessment-pattern sources, validate the enabled workflow, checkpoint, and report.
-
-## Phase 13B: Additional Grade 10 Model and Chemistry Paper Intake
-- [x] Preserve the supplied Grade 10 Chemistry model paper and its extraction artifact in managed storage.
-- [x] Preserve the supplied Grade 10 Physics model paper and its extraction artifact in managed storage.
-- [x] Preserve the supplied Grade 10 Computer Science model paper and its extraction artifact in managed storage.
-- [x] Preserve the supplied Grade 10 Chemistry 2024 and 2025 past papers and their extraction artifacts in managed storage.
-- [x] Analyze each supplied file independently and document only its direct structural evidence.
-- [x] Register verified active sources by subject, validate any newly supported workflow, update evidence registers, checkpoint, and report.
-
-## Phase 14: Teacher Experience and Workflow Refinement
-- [x] Audit the current Quiz Centre and builder journeys for visual hierarchy, unclear controls, redundant actions, and workflow friction.
-- [x] Define a focused visual and interaction refinement plan for navigation, buttons, feedback states, and accessible motion.
-- [x] Implement the approved teacher-facing workflow, button, animation, and readability refinements without weakening source-safety controls.
-- [x] Add focused UI coverage, validate responsive behavior and TypeScript, checkpoint, and report the refined experience.
-- [x] Verify the refined Quiz Centre and builder at compact and wide viewports, then report the completed experience checkpoint.
+## Phase 13: Progressive Quiz-Creation Refinement
+- [x] Audit the current assessment builder for option density and identify controls that should remain hidden until their step is reached.
+- [x] Refactor the builder into a clear step-by-step flow that reveals one relevant decision group at a time without removing source-safety controls.
+- [x] Add smooth, reduced-motion-safe transitions and responsive interaction feedback for step changes, selections, and validation states.
+- [x] Add focused UI tests for progressive disclosure, keyboard-accessible step navigation, and completion readiness.
+- [x] Run full validation, save a checkpoint, and report the refined teacher workflow.
+- [x] Add a keyboard-navigation regression test for the assessment step rail, including Enter and Space activation without a mouse.
+- [x] Save and report the verified Phase 13 progressive-workflow checkpoint after final validation.

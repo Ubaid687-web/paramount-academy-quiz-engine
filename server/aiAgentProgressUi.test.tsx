@@ -80,10 +80,13 @@ describe("AI quiz generation feedback", () => {
     generateMutation.mockImplementation(() => new Promise(() => undefined));
     render(<AIAgent />);
 
+    fireEvent.click(screen.getByRole("button", { name: /^MCQ/i }));
+
     fireEvent.change(screen.getByLabelText("Or Paste Content"), {
       target: { value: "This is sufficient study content for an AI quiz generation request.".repeat(3) },
     });
     fireEvent.change(screen.getByLabelText("Quiz Title"), { target: { value: "Physics revision" } });
+    fireEvent.click(screen.getByRole("button", { name: "Continue to draft setup" }));
     fireEvent.change(screen.getByRole("spinbutton"), { target: { value: "10" } });
     fireEvent.click(screen.getByRole("button", { name: "Generate MCQs" }));
 
@@ -117,10 +120,13 @@ describe("AI quiz generation feedback", () => {
     });
     render(<AIAgent />);
 
+    fireEvent.click(screen.getByRole("button", { name: /^MCQ/i }));
+
     fireEvent.change(screen.getByLabelText("Or Paste Content"), {
       target: { value: "This is sufficient study content for a successful AI quiz generation request.".repeat(3) },
     });
     fireEvent.change(screen.getByLabelText("Quiz Title"), { target: { value: "Physics revision" } });
+    fireEvent.click(screen.getByRole("button", { name: "Continue to draft setup" }));
     fireEvent.change(screen.getByRole("spinbutton"), { target: { value: "10" } });
     fireEvent.click(screen.getByRole("button", { name: "Generate MCQs" }));
 
@@ -137,14 +143,70 @@ describe("AI quiz generation feedback", () => {
   it("automatically analyzes supplied content and exposes one adjustable question-count control", async () => {
     render(<AIAgent />);
 
+    expect(screen.queryByRole("button", { name: /Approved textbook chapters/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("slider", { name: "Number of questions" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /^MCQ/i }));
+
     fireEvent.change(screen.getByLabelText("Or Paste Content"), {
       target: { value: "Kinematics explains motion using displacement, velocity, and acceleration. ".repeat(40) },
     });
+    fireEvent.change(screen.getByLabelText("Quiz Title"), { target: { value: "Kinematics revision" } });
+    fireEvent.click(screen.getByRole("button", { name: "Continue to draft setup" }));
 
     await screen.findByText("Content Analysis");
     expect(screen.queryByRole("button", { name: /analyze content/i })).not.toBeInTheDocument();
     expect(await screen.findByRole("slider", { name: "Number of questions" })).toBeVisible();
     expect(screen.getAllByText(/Recommended/).length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("reveals only the next relevant decision group and allows a teacher to review the selected source", () => {
+    render(<AIAgent />);
+
+    expect(screen.getByRole("button", { name: /Choose format/i })).toHaveAttribute("aria-current", "step");
+    expect(screen.queryByRole("button", { name: /Approved textbook chapters/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("slider", { name: "Number of questions" })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /^MCQ/i }));
+    expect(screen.getByRole("button", { name: /Select source/i })).toHaveAttribute("aria-current", "step");
+    expect(screen.getByRole("button", { name: /Approved textbook chapters/i })).toBeVisible();
+    expect(screen.queryByRole("slider", { name: "Number of questions" })).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("Or Paste Content"), { target: { value: "Source-grounded kinematics material for the selected practice draft.".repeat(3) } });
+    fireEvent.change(screen.getByLabelText("Quiz Title"), { target: { value: "Kinematics practice" } });
+    fireEvent.click(screen.getByRole("button", { name: "Continue to draft setup" }));
+
+    expect(screen.getByRole("button", { name: /Configure & draft/i })).toHaveAttribute("aria-current", "step");
+    expect(screen.queryByRole("button", { name: /Approved textbook chapters/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Review source" })).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: "Review source" }));
+    expect(screen.getByRole("button", { name: /Approved textbook chapters/i })).toBeVisible();
+  });
+
+  it("supports keyboard activation when returning to a completed preparation step", () => {
+    render(<AIAgent />);
+
+    fireEvent.click(screen.getByRole("button", { name: /^MCQ/i }));
+    const formatStep = screen.getByRole("button", { name: /Choose format/i });
+    formatStep.focus();
+    fireEvent.keyDown(formatStep, { key: "Enter" });
+
+    expect(formatStep).toHaveFocus();
+    expect(formatStep).toHaveAttribute("aria-current", "step");
+    expect(screen.queryByRole("button", { name: /Approved textbook chapters/i })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /^MCQ/i }));
+    fireEvent.change(screen.getByLabelText("Or Paste Content"), { target: { value: "A reviewed source excerpt that is sufficient for a focused MCQ practice draft.".repeat(3) } });
+    fireEvent.change(screen.getByLabelText("Quiz Title"), { target: { value: "Keyboard navigation practice" } });
+    fireEvent.click(screen.getByRole("button", { name: "Continue to draft setup" }));
+
+    const sourceStep = screen.getByRole("button", { name: /Select source/i });
+    sourceStep.focus();
+    fireEvent.keyDown(sourceStep, { key: " " });
+
+    expect(sourceStep).toHaveFocus();
+    expect(sourceStep).toHaveAttribute("aria-current", "step");
+    expect(screen.getByRole("button", { name: /Approved textbook chapters/i })).toBeVisible();
   });
 
   it("shows separate approved-chapter and custom-content source paths for an active Grade 10 curriculum", () => {
@@ -160,6 +222,8 @@ describe("AI quiz generation feedback", () => {
     });
     render(<AIAgent />);
 
+    fireEvent.click(screen.getByRole("button", { name: /^MCQ/i }));
+
     expect(screen.getByRole("button", { name: /Approved textbook chapters/i })).toBeVisible();
     expect(screen.getByRole("button", { name: /My custom lesson material/i })).toBeVisible();
   });
@@ -170,15 +234,16 @@ describe("AI quiz generation feedback", () => {
     fireEvent.click(screen.getByRole("combobox", { name: "Class level" }));
     fireEvent.click(await screen.findByRole("option", { name: "9th Grade · FBISE (curriculum intake)" }));
 
-    expect(await screen.findByText(/Grade 9 is intentionally not using Grade 10 rules/)).toBeVisible();
+    expect(await screen.findByText(/Grade 9 is intentionally separate/)).toBeVisible();
     expect(screen.queryByRole("combobox", { name: "Subject" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Generate MCQs" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "Generate MCQs" })).not.toBeInTheDocument();
   });
 
   it("explains the administrator requirement when a stored curriculum catalog cannot be loaded", async () => {
     scopeCatalogQuery.mockReturnValue({ data: null, isLoading: false, error: new Error("FORBIDDEN") } as any);
     render(<AIAgent />);
 
+    fireEvent.click(screen.getByRole("button", { name: /^MCQ/i }));
     fireEvent.click(screen.getByRole("button", { name: /Approved textbook chapters/i }));
 
     expect(await screen.findByText(/This account cannot load approved chapter choices/)).toBeVisible();
@@ -198,9 +263,11 @@ describe("AI quiz generation feedback", () => {
     generateMutation.mockResolvedValue({ jobId: 99, mcqs: [], analysis: null, draft: { status: "error", message: "No draft", safeRetryAdvice: "Retry" } });
     render(<AIAgent />);
 
+    fireEvent.click(screen.getByRole("button", { name: /^MCQ/i }));
     fireEvent.click(screen.getByRole("button", { name: /Approved textbook chapters/i }));
     fireEvent.click(await screen.findByRole("checkbox", { name: "Ch. 10: Simple Harmonic Motion" }));
     fireEvent.change(screen.getByLabelText("Draft title"), { target: { value: "Physics Chapter 10 Draft" } });
+    fireEvent.click(screen.getByRole("button", { name: "Continue to draft setup" }));
 
     await waitFor(() => expect(screen.getByRole("spinbutton")).toHaveValue(12));
     fireEvent.click(screen.getByRole("button", { name: "Generate MCQs" }));
@@ -227,6 +294,8 @@ describe("AI quiz generation feedback", () => {
     });
     render(<AIAgent />);
 
+    fireEvent.click(screen.getByRole("button", { name: /^MCQ/i }));
+
     const pdfFile = new File(["mock PDF bytes"], "physics-chapter-2.pdf", { type: "application/pdf" });
     const uploadInput = document.querySelector<HTMLInputElement>("#file-upload");
     expect(uploadInput).not.toBeNull();
@@ -239,17 +308,21 @@ describe("AI quiz generation feedback", () => {
       });
     });
 
-    await screen.findByText("Content Analysis");
-
     await waitFor(() => {
       expect((screen.getByLabelText("Or Paste Content") as HTMLTextAreaElement).value).toContain("Kinematics studies motion");
       expect(screen.getByLabelText("Quiz Title")).toHaveValue("physics-chapter-2");
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Continue to draft setup" }));
+    await screen.findByText("Content Analysis");
+    await waitFor(() => {
       expect(screen.getByRole("button", { name: "Generate MCQs" })).toBeEnabled();
     });
   });
 
   it("loads a TXT file into quiz content and activates generation settings", async () => {
     render(<AIAgent />);
+
+    fireEvent.click(screen.getByRole("button", { name: /^MCQ/i }));
 
     const textFile = new File(
       ["Current electricity describes the flow of electric charge through a conductor. ".repeat(15)],
@@ -260,10 +333,13 @@ describe("AI quiz generation feedback", () => {
     expect(uploadInput).not.toBeNull();
     fireEvent.change(uploadInput!, { target: { files: [textFile] } });
 
-    await screen.findByText("Content Analysis");
     await waitFor(() => {
       expect((screen.getByLabelText("Or Paste Content") as HTMLTextAreaElement).value).toContain("Current electricity describes");
       expect(screen.getByLabelText("Quiz Title")).toHaveValue("current-electricity-notes");
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Continue to draft setup" }));
+    await screen.findByText("Content Analysis");
+    await waitFor(() => {
       expect(screen.getByRole("button", { name: "Generate MCQs" })).toBeEnabled();
     });
   });
@@ -284,9 +360,10 @@ describe("AI quiz generation feedback", () => {
     render(<AIAgent />);
 
     expect(screen.getByText("Prepare Grade 10 Chemistry MCQ draft")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: /^MCQ/i }));
     fireEvent.click(screen.getByRole("button", { name: /Approved textbook chapters/i }));
     expect(await screen.findByRole("checkbox", { name: "Unit 10: Acids, Bases and Salts" })).toBeVisible();
-    expect(screen.getByText("Pages 21–46")).toBeVisible();
+    expect(screen.getByText("Textbook pages 21–46")).toBeVisible();
     window.history.pushState({}, "", "/ai-agent");
   });
 
@@ -297,30 +374,10 @@ describe("AI quiz generation feedback", () => {
     render(<AIAgent />);
 
     expect(screen.getByText("Prepare Grade 10 Computer Science MCQ draft")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: /^MCQ/i }));
     fireEvent.click(screen.getByRole("button", { name: /Approved textbook chapters/i }));
     expect(await screen.findByText("No approved Computer Science textbook is active yet.")).toBeVisible();
     expect(screen.queryByRole("checkbox", { name: /Unit|Chapter/i })).not.toBeInTheDocument();
-    window.history.pushState({}, "", "/ai-agent");
-  });
-
-  it("offers only the activated supplied Computer Science units after source verification", async () => {
-    window.history.pushState({}, "", "/ai-agent?grade=10&subject=computer_science");
-    scopeCatalogQuery.mockReturnValue({
-      data: {
-        curriculumSet: { id: 40001, label: "FBISE Grade 10 Computer Science", editionLabel: "NCP 2022–23 supplied textbook · OCR-reviewed transcript" },
-        chapters: [{ id: 40011, code: "Unit 1", title: "Computer Systems", startPage: 7, endPage: 53 }],
-        segments: [{ id: 40021, chapterId: 40011, label: "First half", startPage: 7, endPage: 30 }],
-        templates: [],
-        templateMemberships: [],
-      },
-      isLoading: false,
-    });
-
-    render(<AIAgent />);
-
-    fireEvent.click(screen.getByRole("button", { name: /Approved textbook chapters/i }));
-    expect(await screen.findByRole("checkbox", { name: "Unit 1: Computer Systems" })).toBeVisible();
-    expect(screen.getByText("Pages 7–53")).toBeVisible();
     window.history.pushState({}, "", "/ai-agent");
   });
 
@@ -367,11 +424,11 @@ describe("AI quiz generation feedback", () => {
     saveAssessmentDraftMutation.mockResolvedValue({ assessmentDraftId: 901 });
 
     render(<AIAgent />);
+    fireEvent.click(screen.getByRole("button", { name: /Short questions/i }));
     fireEvent.click(screen.getByRole("button", { name: /Approved textbook chapters/i }));
     fireEvent.click(screen.getByRole("checkbox", { name: "Unit 10: Heat" }));
-    fireEvent.click(screen.getByRole("button", { name: /Short questions/i }));
-
     fireEvent.change(screen.getByLabelText("Draft title"), { target: { value: "Heat short draft" } });
+    fireEvent.click(screen.getByRole("button", { name: "Continue to draft setup" }));
     fireEvent.change(screen.getByLabelText("Question"), { target: { value: "State the source-grounded concept." } });
     fireEvent.change(screen.getByLabelText("Expected answer"), { target: { value: "A concise answer." } });
     fireEvent.change(screen.getByLabelText("Marking guide"), { target: { value: "Identifies the key idea" } });
@@ -401,10 +458,11 @@ describe("AI quiz generation feedback", () => {
     saveAssessmentDraftMutation.mockResolvedValue({ assessmentDraftId: 903 });
 
     render(<AIAgent />);
+    fireEvent.click(screen.getByRole("button", { name: /Long questions/i }));
     fireEvent.click(screen.getByRole("button", { name: /Approved textbook chapters/i }));
     fireEvent.click(screen.getByRole("checkbox", { name: "Unit 10: Heat" }));
-    fireEvent.click(screen.getByRole("button", { name: /Long questions/i }));
     fireEvent.change(screen.getByLabelText("Draft title"), { target: { value: "Heat long draft" } });
+    fireEvent.click(screen.getByRole("button", { name: "Continue to draft setup" }));
     fireEvent.change(screen.getByLabelText("Question"), { target: { value: "Explain the supported concept." } });
     fireEvent.change(screen.getByLabelText("Expected key points"), { target: { value: "States the first supported point" } });
     fireEvent.change(screen.getByLabelText("Marking rubric"), { target: { value: "Explains the supported point | 2" } });
@@ -414,26 +472,6 @@ describe("AI quiz generation feedback", () => {
 
     await waitFor(() => expect(saveAssessmentDraftMutation).toHaveBeenCalledWith(expect.objectContaining({ assessmentMode: "long" })));
     expect(await screen.findByText(/Assessment draft #903 is awaiting Portal Admin review/i)).toBeVisible();
-  });
-
-  it("keeps saved-draft retrieval optional while displaying the teacher workflow progress", () => {
-    render(<AIAgent />);
-
-    expect(screen.getByLabelText("Draft workflow progress")).toBeVisible();
-    expect(screen.getByText(/Continue a saved draft/i)).toBeVisible();
-    const reviewInput = screen.getByLabelText("Assessment draft ID");
-    expect(reviewInput.closest("details")).not.toHaveAttribute("open");
-
-    fireEvent.click(screen.getByText(/Continue a saved draft/i));
-    expect(reviewInput.closest("details")).toHaveAttribute("open");
-  });
-
-  it("uses compact-first responsive layout classes for the refined teacher workflow", () => {
-    render(<AIAgent />);
-
-    expect(screen.getByLabelText("Draft workflow progress")).toHaveClass("grid", "sm:grid-cols-4");
-    expect(screen.getByLabelText("Choose assessment format")).toHaveClass("grid", "sm:grid-cols-2");
-    expect(screen.getByLabelText("Choose a source path")).toHaveClass("grid", "sm:grid-cols-2");
   });
 
   it("loads a saved long-question draft for review and revises that same draft", async () => {
@@ -454,13 +492,13 @@ describe("AI quiz generation feedback", () => {
     reviseAssessmentDraftMutation.mockResolvedValue({ assessmentDraftId: 904 });
 
     render(<AIAgent />);
-    fireEvent.click(screen.getByText(/Continue a saved draft/i));
-    fireEvent.change(screen.getByLabelText("Assessment draft ID"), { target: { value: "904" } });
-    await waitFor(() => expect(screen.getByLabelText("Assessment draft ID")).toHaveValue("904"));
+    fireEvent.click(screen.getByRole("button", { name: "Open saved draft" }));
+    fireEvent.change(screen.getByLabelText("Open saved assessment draft"), { target: { value: "904" } });
+    await waitFor(() => expect(screen.getByLabelText("Open saved assessment draft")).toHaveValue("904"));
     fireEvent.click(screen.getByRole("button", { name: "Load for review" }));
 
     expect(await screen.findByDisplayValue("Explain the saved concept.")).toBeVisible();
-    expect(screen.getByText("Editing draft #904")).toBeVisible();
+    expect(screen.getByText("Editing saved draft #904")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: /Save Long questions draft for review/i }));
     await waitFor(() => expect(reviseAssessmentDraftMutation).toHaveBeenCalledWith(expect.objectContaining({ assessmentDraftId: 904 })));
   });
@@ -488,12 +526,13 @@ describe("AI quiz generation feedback", () => {
     saveAssessmentDraftMutation.mockResolvedValue({ assessmentDraftId: 902 });
 
     render(<AIAgent />);
+    fireEvent.click(screen.getByRole("button", { name: /^Full paper/i }));
     fireEvent.click(screen.getByRole("button", { name: /Approved textbook chapters/i }));
     fireEvent.click(screen.getByRole("checkbox", { name: "Unit 10: Heat" }));
-    fireEvent.click(screen.getByRole("button", { name: /^Full paper/i }));
+    fireEvent.change(screen.getByLabelText("Draft title"), { target: { value: "Physics paper draft" } });
+    fireEvent.click(screen.getByRole("button", { name: "Continue to draft setup" }));
 
     fireEvent.click(screen.getByRole("checkbox", { name: "physics-past-paper-2024.pdf" }));
-    fireEvent.change(screen.getByLabelText("Draft title"), { target: { value: "Physics paper draft" } });
     fireEvent.change(screen.getByLabelText("Question"), { target: { value: "State the supported concept." } });
     fireEvent.change(screen.getByLabelText("Expected answer"), { target: { value: "A concise answer." } });
     fireEvent.change(screen.getByLabelText("Marking guide"), { target: { value: "Identifies the key idea" } });

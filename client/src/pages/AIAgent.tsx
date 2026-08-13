@@ -12,7 +12,7 @@ import { trpc } from "@/lib/trpc";
 import { GENERATION_STEPS, getGenerationStep, getNextSimulatedProgress } from "@/lib/generation-progress";
 import { calculateQuestionRecommendation } from "@shared/questionRecommendation";
 import { useLocation } from "wouter";
-import { Loader2, Sparkles, CheckCircle2, AlertCircle, Upload, FileText, X, GraduationCap, LibraryBig, SlidersHorizontal, ChevronDown, CircleCheck } from "lucide-react";
+import { Loader2, Sparkles, CheckCircle2, AlertCircle, Upload, FileText, X, GraduationCap, LibraryBig, SlidersHorizontal, ChevronLeft, ChevronRight, ClipboardCheck } from "lucide-react";
 import { toast } from "sonner";
 
 type FbiseSubject = "physics" | "chemistry" | "computer_science";
@@ -90,7 +90,8 @@ export default function AIAgent() {
   const [fullPaperSections, setFullPaperSections] = useState<FullPaperSection[]>([{ id: "section-1", label: "Section A", instructions: "Attempt the following question.", items: [] }]);
   const [activeFullPaperSectionId, setActiveFullPaperSectionId] = useState("section-1");
   const [selectedPatternSourceIds, setSelectedPatternSourceIds] = useState<number[]>([]);
-  const [isReviewPanelOpen, setIsReviewPanelOpen] = useState(false);
+  const [activeStep, setActiveStep] = useState<1 | 2 | 3>(1);
+  const [showSavedDraftLoader, setShowSavedDraftLoader] = useState(false);
 
   const generateMutation = trpc.aiAgent.generateMCQs.useMutation();
   const saveMutation = trpc.aiAgent.saveGeneratedQuiz.useMutation();
@@ -133,6 +134,7 @@ export default function AIAgent() {
       setAssessmentMode(payload.mode as AssessmentMode);
       setQuizTitle(payload.title ?? draft.title);
       setSavedAssessmentDraftId(draft.id);
+      setActiveStep(3);
       if (payload.mode === "full_paper") {
         const sections = (payload.sections ?? []).map((section: { label: string; instructions: string; items: FullPaperDraftItem[] }, index: number) => ({
           ...section,
@@ -199,6 +201,10 @@ export default function AIAgent() {
   }, [gradeLevel, subject, scopeType]);
 
   useEffect(() => {
+    if (gradeLevel !== "10") setActiveStep(1);
+  }, [gradeLevel]);
+
+  useEffect(() => {
     if (scopeType !== "uploaded_content" && !isQuestionCountManual) {
       setNumQuestions(subject === "computer_science" ? 13 : 12);
     }
@@ -227,9 +233,11 @@ export default function AIAgent() {
     ? assessmentAvailability.supportedModes[assessmentMode]
     : assessmentMode === "mcq";
   const isAutomaticMcqMode = assessmentMode === "mcq";
+  const canAdvanceToDraft = gradeLevel === "10"
+    && !isProcessingFile
+    && Boolean(quizTitle.trim())
+    && (isAutomaticMcqMode ? hasGenerationSource : scopeType !== "uploaded_content" && hasValidStoredScope);
   const activeFullPaperSection = fullPaperSections.find((section) => section.id === activeFullPaperSectionId) ?? fullPaperSections[0];
-  const hasChosenSource = scopeType === "uploaded_content" ? Boolean(contentText.trim()) : hasValidStoredScope;
-  const draftActionLabel = assessmentMode === "mcq" ? "Generate MCQ draft" : assessmentMode === "full_paper" ? "Build full-paper review draft" : `Save ${ASSESSMENT_MODE_LABELS[assessmentMode]} draft`;
 
   const toggleChapter = (chapterId: number, checked: boolean) => {
     setSelectedChapterIds((currentIds) => {
@@ -603,54 +611,83 @@ export default function AIAgent() {
   return (
     <AcademyShell eyebrow="Assessment Draft Studio">
       <main className="container py-8 sm:py-10">
-        <div className="mb-5 rounded-3xl border border-border/80 bg-card px-5 py-6 shadow-sm sm:px-7">
+        <div className="mb-6 rounded-2xl border border-border/80 bg-card px-5 py-6 shadow-sm sm:px-7">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-primary"><GraduationCap className="h-4 w-4" />Teacher preparation</p>
               <h1 className="mt-2 text-3xl font-bold text-foreground sm:text-4xl">{!isContextEditing && gradeLevel === "10" ? `Prepare Grade 10 ${SUBJECT_LABELS[subject]} ${ASSESSMENT_MODE_LABELS[assessmentMode]} draft` : "Prepare an assessment draft"}</h1>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">Choose a source and assessment format. Every draft remains under academy review before students use it.</p>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">Complete one decision at a time. Each draft stays under academy review before students use it.</p>
             </div>
-            <div className="rounded-2xl border border-primary/15 bg-primary/5 px-4 py-3 text-right">
-              <p className="text-xs font-semibold text-primary">Current format</p>
-              <p className="mt-0.5 text-sm font-bold text-foreground">{ASSESSMENT_MODE_LABELS[assessmentMode]} draft</p>
+            <div className="rounded-xl border border-primary/15 bg-primary/5 px-3 py-2 text-right">
+              <p className="text-xs font-semibold text-primary">Preparation progress</p>
+              <p className="mt-0.5 text-sm font-bold text-foreground">Step {activeStep} of 3</p>
             </div>
           </div>
+          <nav className="mt-6 grid gap-2 sm:grid-cols-3" aria-label="Assessment preparation steps">
+            {[
+              { id: 1, label: "Choose format", detail: "What to prepare" },
+              { id: 2, label: "Select source", detail: "Where it comes from" },
+              { id: 3, label: "Configure & draft", detail: "Final settings" },
+            ].map((step) => {
+              const isCurrent = activeStep === step.id;
+              const isCompleted = activeStep > step.id;
+              return <button
+                key={step.id}
+                type="button"
+                aria-current={isCurrent ? "step" : undefined}
+                disabled={step.id > activeStep}
+                onClick={() => setActiveStep(step.id as 1 | 2 | 3)}
+                onKeyDown={(event) => {
+                  if ((event.key === "Enter" || event.key === " ") && step.id <= activeStep) {
+                    event.preventDefault();
+                    setActiveStep(step.id as 1 | 2 | 3);
+                  }
+                }}
+                className={`group flex min-h-16 items-center gap-3 rounded-xl border px-3 py-2 text-left transition-[transform,background-color,border-color,box-shadow] duration-200 ease-out active:scale-[0.98] disabled:cursor-default disabled:opacity-55 ${isCurrent ? "border-primary bg-primary/[0.055] shadow-sm" : isCompleted ? "border-primary/20 bg-primary/[0.025] hover:border-primary/40" : "border-border bg-muted/30"}`}
+              >
+                <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${isCurrent ? "bg-primary text-primary-foreground" : isCompleted ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`}>{isCompleted ? "✓" : step.id}</span>
+                <span className="min-w-0"><span className="block text-sm font-bold text-foreground">{step.label}</span><span className="block text-xs text-muted-foreground">{step.detail}</span></span>
+              </button>;
+            })}
+          </nav>
         </div>
 
-        <div className="mb-5 grid gap-2 sm:grid-cols-4" aria-label="Draft workflow progress">
-          <div className="teacher-step" data-state={!isContextEditing ? "complete" : "active"}><CircleCheck className="h-4 w-4 shrink-0" /><span><strong>Context</strong><span className="hidden sm:inline"> · Grade 10 {SUBJECT_LABELS[subject]}</span></span></div>
-          <div className="teacher-step" data-state="active"><span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-current text-[10px] text-card">2</span><span><strong>Format</strong> · {ASSESSMENT_MODE_LABELS[assessmentMode]}</span></div>
-          <div className="teacher-step" data-state={hasChosenSource ? "complete" : "active"}><span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-current text-[10px] text-card">3</span><span><strong>Source</strong> · {hasChosenSource ? "ready" : "choose"}</span></div>
-          <div className="teacher-step" data-state={generatedMcqs.length || savedAssessmentDraftId ? "complete" : "idle"}><span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-current text-[10px] text-card">4</span><span><strong>Draft</strong> · review first</span></div>
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/70 bg-card/75 px-4 py-3 shadow-sm">
+          <p className="text-sm text-muted-foreground"><span className="font-semibold text-foreground">Starting fresh?</span> Select a format to begin. Saved drafts are available when you need to continue review.</p>
+          <Button type="button" variant="outline" size="sm" onClick={() => setShowSavedDraftLoader((visible) => !visible)} aria-expanded={showSavedDraftLoader} aria-controls="saved-draft-loader"><ClipboardCheck className="mr-2 h-4 w-4" />{showSavedDraftLoader ? "Close saved draft" : "Open saved draft"}</Button>
         </div>
 
-        <details className="mb-6 rounded-2xl border border-border/80 bg-card/70 shadow-sm" open={isReviewPanelOpen} onToggle={(event) => setIsReviewPanelOpen(event.currentTarget.open)}>
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 text-sm font-semibold text-foreground marker:content-none">
-            <span>Continue a saved draft <span className="ml-1 font-normal text-muted-foreground">(optional)</span></span>
-            <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 group-open:rotate-180" />
-          </summary>
-          <CardContent className="flex flex-col gap-3 border-t border-border/70 p-4 sm:flex-row sm:items-end sm:px-5 sm:pb-5">
+        {showSavedDraftLoader && <Card id="saved-draft-loader" className="mb-6 border-primary/20 bg-card shadow-sm motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-2 motion-safe:duration-200">
+          <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-end">
             <div className="flex-1">
-              <Label htmlFor="review-draft-id" className="mb-2 block text-sm font-medium">Assessment draft ID</Label>
-              <Input id="review-draft-id" inputMode="numeric" value={reviewDraftId ?? ""} onChange={(event) => setReviewDraftId(Number(event.target.value) || null)} placeholder="Enter the saved draft number" />
+              <Label htmlFor="review-draft-id" className="mb-2 block text-sm font-medium">Open saved assessment draft</Label>
+              <Input id="review-draft-id" inputMode="numeric" value={reviewDraftId ?? ""} onChange={(event) => setReviewDraftId(Number(event.target.value) || null)} placeholder="Assessment draft ID" />
             </div>
             <Button type="button" variant="outline" onClick={handleLoadAssessmentDraft} disabled={assessmentDraftQuery.isFetching}>{assessmentDraftQuery.isFetching ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Loading…</> : "Load for review"}</Button>
-            {savedAssessmentDraftId && <p className="text-xs font-medium text-primary">Editing draft #{savedAssessmentDraftId}</p>}
+            {savedAssessmentDraftId && <p className="text-xs font-medium text-primary">Editing saved draft #{savedAssessmentDraftId}</p>}
           </CardContent>
-        </details>
+        </Card>}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content Area */}
           <div className="lg:col-span-2 space-y-6">
-            <Card className="border-border/80 bg-card shadow-sm">
+            {activeStep === 1 && <Card className="border-border/80 bg-card shadow-sm motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-200">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-xl">
                   <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">1</span>
                   Choose assessment format
                 </CardTitle>
-                <CardDescription>Formats are visible now, but a format can only draft from an active approved source. Full papers also require reviewed model or past-paper evidence.</CardDescription>
+                <CardDescription>First choose what you want to prepare. Source controls stay hidden until you make this decision.</CardDescription>
               </CardHeader>
               <CardContent>
+                {isContextEditing ? <div className="mb-5 rounded-xl border border-primary/20 bg-primary/[0.035] p-4">
+                  <div className="mb-3"><p className="text-sm font-bold text-foreground">Set teacher context</p><p className="mt-1 text-xs leading-5 text-muted-foreground">Select the class and subject before choosing a draft format.</p></div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div><Label htmlFor="class-level" className="mb-2 block text-xs font-medium">Class level</Label><Select value={gradeLevel} onValueChange={(value) => { setGradeLevel(value as GradeLevel); setActiveStep(1); }}><SelectTrigger id="class-level" aria-label="Class level"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="10">10th Grade · FBISE (configured)</SelectItem><SelectItem value="9">9th Grade · FBISE (curriculum intake)</SelectItem></SelectContent></Select></div>
+                    {gradeLevel === "10" && <div><Label htmlFor="subject" className="mb-2 block text-xs font-medium">Subject</Label><Select value={subject} onValueChange={(value) => { setSubject(value as FbiseSubject); setActiveStep(1); }}><SelectTrigger id="subject" aria-label="Subject"><SelectValue /></SelectTrigger><SelectContent>{Object.entries(SUBJECT_LABELS).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select></div>}
+                  </div>
+                  {gradeLevel === "9" ? <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-800"><strong>Grade 9 is intentionally separate.</strong> Its revised pattern and approved material must be confirmed before draft generation is enabled.</div> : <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => setIsContextEditing(false)}>Use Grade 10 {SUBJECT_LABELS[subject]}</Button>}
+                </div> : <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/15 bg-primary/[0.035] p-3"><div><p className="text-xs font-bold uppercase tracking-[0.12em] text-primary">Teacher context</p><p className="mt-1 text-sm font-bold text-foreground">Grade 10 · {SUBJECT_LABELS[subject]}</p></div><Button type="button" variant="outline" size="sm" onClick={() => { setIsContextEditing(true); setActiveStep(1); }}>Change</Button></div>}
                 <div className="grid gap-2 sm:grid-cols-2" aria-label="Choose assessment format">
                   {(Object.keys(ASSESSMENT_MODE_LABELS) as AssessmentMode[]).map((mode) => {
                     const available = assessmentAvailability ? assessmentAvailability.supportedModes[mode] : mode === "mcq";
@@ -660,9 +697,8 @@ export default function AIAgent() {
                       type="button"
                       aria-pressed={selected}
                       disabled={gradeLevel !== "10" || !available}
-                      onClick={() => setAssessmentMode(mode)}
-                      data-state={selected ? "selected" : "idle"}
-                      className="workflow-choice"
+                      onClick={() => { setAssessmentMode(mode); setActiveStep(2); }}
+                      className={`rounded-xl border p-3 text-left transition-[transform,background-color,border-color,box-shadow] duration-200 ease-out active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-55 ${selected ? "border-primary bg-primary/[0.055] shadow-sm" : "border-border bg-muted/30 hover:border-primary/40"}`}
                     >
                       <span className="block text-sm font-bold text-foreground">{ASSESSMENT_MODE_LABELS[mode]}</span>
                       <span className="mt-1 block text-xs leading-5 text-muted-foreground">{available ? "Approved source required" : mode === "full_paper" ? "Needs active textbook and reviewed paper evidence" : "Needs active approved textbook source"}</span>
@@ -672,10 +708,10 @@ export default function AIAgent() {
                 {!isSelectedModeAvailable && <p className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs leading-5 text-muted-foreground">This format is locked because the required supplied source evidence is not active for {SUBJECT_LABELS[subject]}.</p>}
                 {assessmentMode !== "mcq" && isSelectedModeAvailable && <p className="mt-3 rounded-lg border border-primary/20 bg-primary/[0.04] p-3 text-xs leading-5 text-muted-foreground">The source-safe draft and review contract is ready for this format. Automatic question generation remains intentionally unavailable in this MCQ builder until its dedicated review workflow is connected; no unsupported questions will be created.</p>}
               </CardContent>
-            </Card>
+            </Card>}
 
             {/* Content Input Card */}
-            <Card className="border-border/80 bg-card shadow-sm">
+            {activeStep === 2 && <Card className="border-border/80 bg-card shadow-sm motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-200">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-xl">
                   <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">2</span>
@@ -685,11 +721,11 @@ export default function AIAgent() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-3 sm:grid-cols-2" aria-label="Choose a source path">
-                  <button type="button" onClick={() => setScopeType("multiple_chapters")} data-state={scopeType !== "uploaded_content" ? "selected" : "idle"} className="workflow-choice">
+                  <button type="button" onClick={() => setScopeType("multiple_chapters")} className={`rounded-xl border p-4 text-left transition-[transform,background-color,border-color,box-shadow] duration-200 ease-out active:scale-[0.98] ${scopeType !== "uploaded_content" ? "border-primary bg-primary/[0.055] shadow-sm" : "border-border bg-muted/30 hover:border-primary/40"}`}>
                     <div className="flex items-center gap-2"><LibraryBig className="h-4 w-4 text-primary" /><span className="text-sm font-bold text-foreground">Approved textbook chapters</span></div>
                     <p className="mt-2 text-xs leading-5 text-muted-foreground">Select one or more named chapters from the active Grade 10 book.</p>
                   </button>
-                  <button type="button" onClick={() => setScopeType("uploaded_content")} data-state={scopeType === "uploaded_content" ? "selected" : "idle"} className="workflow-choice">
+                  <button type="button" onClick={() => setScopeType("uploaded_content")} className={`rounded-xl border p-4 text-left transition-[transform,background-color,border-color,box-shadow] duration-200 ease-out active:scale-[0.98] ${scopeType === "uploaded_content" ? "border-primary bg-primary/[0.055] shadow-sm" : "border-border bg-muted/30 hover:border-primary/40"}`}>
                     <div className="flex items-center gap-2"><FileText className="h-4 w-4 text-primary" /><span className="text-sm font-bold text-foreground">My custom lesson material</span></div>
                     <p className="mt-2 text-xs leading-5 text-muted-foreground">Upload one PDF/TXT file or paste a lesson excerpt for one-off practice.</p>
                   </button>
@@ -697,7 +733,7 @@ export default function AIAgent() {
                 {scopeType === "uploaded_content" ? <>
                 <div>
                   <Label className="text-sm font-medium mb-2 block">Upload one source file</Label>
-                  <label className="flex w-full cursor-pointer items-center justify-center rounded-2xl border-2 border-dashed border-border bg-muted/35 p-7 transition-colors hover:border-primary/45 hover:bg-primary/[0.03] focus-within:ring-2 focus-within:ring-primary/40 focus-within:ring-offset-2">
+                  <label className="flex items-center justify-center w-full p-6 border-2 border-dashed border-border rounded-xl bg-muted/35 hover:border-primary/45 hover:bg-primary/[0.03] cursor-pointer transition-colors">
                     <input
                       type="file"
                       id="file-upload"
@@ -799,10 +835,15 @@ export default function AIAgent() {
                   </div>
                 </>}
 
-              </CardContent>
-            </Card>
+                <div className="flex flex-col gap-3 rounded-xl border border-dashed border-primary/25 bg-primary/[0.025] p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div aria-live="polite"><p className="text-sm font-bold text-foreground">{canAdvanceToDraft ? "Source ready for the next step" : "Complete this source step"}</p><p className="mt-1 text-xs leading-5 text-muted-foreground">{canAdvanceToDraft ? "Your source and draft title are ready. Configure the final settings next." : scopeType === "uploaded_content" ? "Add source text and a draft title to continue." : "Select at least one reviewed chapter and enter a draft title to continue."}</p></div>
+                  <div className="flex gap-2"><Button type="button" variant="outline" size="sm" onClick={() => setActiveStep(1)}><ChevronLeft className="mr-1 h-4 w-4" />Format</Button><Button type="button" size="sm" disabled={!canAdvanceToDraft} onClick={() => setActiveStep(3)}>Continue to draft setup<ChevronRight className="ml-1 h-4 w-4" /></Button></div>
+                </div>
 
-            {assessmentMode !== "mcq" && assessmentMode !== "full_paper" && isSelectedModeAvailable && <Card className="border-primary/20 bg-card shadow-sm">
+              </CardContent>
+            </Card>}
+
+            {activeStep === 3 && assessmentMode !== "mcq" && assessmentMode !== "full_paper" && isSelectedModeAvailable && <Card className="border-primary/20 bg-card shadow-sm motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-200">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-xl">
                   <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">3</span>
@@ -850,7 +891,7 @@ export default function AIAgent() {
               </CardContent>
             </Card>}
 
-            {assessmentMode === "full_paper" && isSelectedModeAvailable && <Card className="border-primary/20 bg-card shadow-sm">
+            {activeStep === 3 && assessmentMode === "full_paper" && isSelectedModeAvailable && <Card className="border-primary/20 bg-card shadow-sm motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-200">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-xl">
                   <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">3</span>
@@ -889,8 +930,8 @@ export default function AIAgent() {
             </Card>}
 
             {/* Content Analysis Card */}
-            {assessmentMode === "mcq" && contentAnalysis && (
-              <Card className="border-secondary/20 bg-secondary/5">
+            {activeStep === 3 && assessmentMode === "mcq" && contentAnalysis && (
+              <Card className="border-secondary/20 bg-secondary/5 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-200">
                 <CardHeader>
                   <CardTitle className="text-lg">Content Analysis</CardTitle>
                 </CardHeader>
@@ -1038,25 +1079,16 @@ export default function AIAgent() {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Generation Settings */}
-            <Card className="border-border/80 bg-card shadow-sm lg:sticky lg:top-22">
+            {activeStep === 3 && isAutomaticMcqMode && <Card className="border-border/80 bg-card shadow-sm motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-200 lg:sticky lg:top-22">
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                   <SlidersHorizontal className="h-5 w-5 text-primary" />
-                  Draft plan
+                  Draft setup
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="rounded-xl border border-primary/15 bg-primary/[0.035] p-3">
-                  <p className="text-xs font-bold uppercase tracking-[0.12em] text-primary">Readiness</p>
-                  <div className="mt-2 flex flex-wrap gap-2 text-xs font-medium">
-                    <span className={`rounded-full px-2.5 py-1 ${hasChosenSource ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-800"}`}>{hasChosenSource ? "Source ready" : "Choose a source"}</span>
-                    <span className={`rounded-full px-2.5 py-1 ${isSelectedModeAvailable ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-800"}`}>{isSelectedModeAvailable ? "Format available" : "Format locked"}</span>
-                  </div>
-                  <p className="mt-2 text-xs leading-5 text-muted-foreground">Next: {hasChosenSource ? draftActionLabel : "select source material"}.</p>
-                </div>
-
                 {/* Number of Questions */}
-                {assessmentMode === "mcq" && <div>
+                <div>
                   <Label className="text-sm font-medium mb-2 block">
                     Number of Questions: <span className="text-accent font-bold">{numQuestions || "Auto"}</span>
                   </Label>
@@ -1092,13 +1124,13 @@ export default function AIAgent() {
                       </div>
                     </div>
                   )}
-                </div>}
+                </div>
 
                 {/* Teacher context */}
-                <div className="space-y-3">
+                <div className="hidden" aria-hidden="true">
                   <div>
-                    <p className="text-sm font-semibold text-foreground">Draft context</p>
-                    <p className="mt-1 text-xs text-muted-foreground">Your selected grade and subject remain visible while you prepare this reviewable draft.</p>
+                    <p className="text-sm font-semibold text-foreground">MCQ settings</p>
+                    <p className="mt-1 text-xs text-muted-foreground">Choose where the questions come from and how challenging they should be.</p>
                   </div>
 
                   {!isContextEditing && <div className="rounded-xl border border-primary/15 bg-primary/[0.035] p-3">
@@ -1133,6 +1165,11 @@ export default function AIAgent() {
 
                   {isContextEditing && gradeLevel === "10" && <Button type="button" variant="outline" size="sm" className="w-full" onClick={() => setIsContextEditing(false)}>Continue with Grade 10 {SUBJECT_LABELS[subject]}</Button>}
 
+                </div>
+
+                <div className="flex items-center justify-between gap-3 rounded-xl border border-primary/15 bg-primary/[0.035] p-3">
+                  <div><p className="text-xs font-bold uppercase tracking-[0.12em] text-primary">Draft context</p><p className="mt-1 text-sm font-bold text-foreground">Grade 10 · {SUBJECT_LABELS[subject]}</p></div>
+                  <Button type="button" variant="outline" size="sm" onClick={() => setActiveStep(2)}>Review source</Button>
                 </div>
 
                 {/* Legacy sidebar scope controls are superseded by the explicit source cards above. */}
@@ -1280,10 +1317,10 @@ export default function AIAgent() {
                   </Button>
                 )}
               </CardContent>
-            </Card>
+            </Card>}
 
             {/* Info Card */}
-            <Card className="border-secondary/20 bg-secondary/5">
+            {activeStep === 3 && isAutomaticMcqMode && <Card className="border-secondary/20 bg-secondary/5 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-200">
               <CardHeader>
                 <CardTitle className="text-sm flex items-center gap-2">
                   <AlertCircle className="h-4 w-4" />
@@ -1296,7 +1333,7 @@ export default function AIAgent() {
                 <p>✓ Preserves a source reference and learning objective for every item</p>
                 <p>✓ Requires admin review before any assignment or publication</p>
               </CardContent>
-            </Card>
+            </Card>}
           </div>
         </div>
       </main>
