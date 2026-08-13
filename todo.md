@@ -121,3 +121,15 @@
 - [x] Add a teacher-facing saved-draft review/edit flow that loads an existing assessment draft before revision.
 - [x] Add UI coverage for long-question revision and the intentional disabled full-paper mode when approved paper evidence is unavailable.
 - [x] Checkpoint and report the completed framework and access register.
+
+## Phase 13: Supplied Paper Preservation and Pattern Evidence Intake
+- [x] For each user-supplied model or past paper, preserve the exact file and extraction artifact in managed storage before analysis.
+- [x] Extract and document only the paper-supported assessment structure, marks, sections, choices, and question-type evidence.
+- [x] Register each verified paper as an active assessment-pattern source and enable only the matching subject workflow.
+- [ ] Validate the source record, update the material access register, checkpoint, and report the supported assessment modes.
+
+## Phase 13A: Grade 10 Computer Science Past-Paper Intake
+- [x] Verify and preserve the exact supplied 2024 Computer Science past-paper PDF and its extraction artifact.
+- [x] Verify and preserve the exact supplied 2025 Computer Science past-paper PDF and its extraction artifact.
+- [x] Analyze and document the evidence-grounded structure of each supplied Computer Science past paper.
+- [ ] Register both papers as active Computer Science assessment-pattern sources, validate the enabled workflow, checkpoint, and report.

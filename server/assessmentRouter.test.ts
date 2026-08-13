@@ -86,6 +86,26 @@ describe("assessment router", () => {
     });
   });
 
+  it("enables the Computer Science full-paper workflow only when active supplied paper evidence accompanies its active textbook", async () => {
+    mocks.getActiveCurriculumScopeCatalog.mockResolvedValue({
+      ...physicsCatalog,
+      curriculumSet: { id: 60001, grade: "10", subject: "computer_science", label: "Computer Science", editionLabel: "Supplied textbook" },
+    });
+    mocks.listActiveAssessmentPatternSources.mockResolvedValue([
+      { id: 70001, sourceKind: "past_paper", academicYear: "2024", originalFileName: "class-10-computer-science-past-paper-2024.pdf" },
+    ]);
+    const caller = appRouter.createCaller(createAdminContext());
+
+    const availability = await caller.assessment.getAvailability({ subject: "computer_science" });
+
+    expect(availability).toMatchObject({
+      textbookReady: true,
+      paperPatternReady: true,
+      supportedModes: { mcq: true, short: true, long: true, full_paper: true },
+      paperSources: [{ id: 70001, sourceKind: "past_paper", academicYear: "2024" }],
+    });
+  });
+
   it("saves a validated short-question draft only with an approved textbook scope", async () => {
     mocks.getActiveCurriculumScopeCatalog.mockResolvedValue(physicsCatalog);
     mocks.createAssessmentDraft.mockResolvedValue({ id: 801 });
