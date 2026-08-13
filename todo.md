@@ -192,3 +192,8 @@
 - [x] Add accessible skeleton cards for the draft library while its deferred request is loading.
 - [x] Verify the skeleton layout remains responsive and disappears when the data, empty state, or error state arrives.
 - [x] Add regression coverage, validate, checkpoint, and report the loading-state refinement.
+
+## Phase 23: Printable Paper Validation Repair
+- [x] Diagnose the short-paper item-mode validation failure shown after generation completes.
+- [x] Correct the server-side generated payload contract and return a concise, actionable retry message if generation is incomplete.
+- [x] Add short- and long-paper validation regression coverage, validate, checkpoint, and report the repair.

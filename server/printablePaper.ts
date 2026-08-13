@@ -4,6 +4,12 @@ import type { GenerationSourceContext } from "./aiAgent";
 import { chunkContent } from "./contentAnalyzer";
 
 export type PrintablePaperType = "short" | "long";
+export type NormalizedPrintablePaperPayload = {
+  mode: PrintablePaperType;
+  title: string;
+  estimatedDurationMinutes: number | null;
+  items: Array<Record<string, unknown> & { kind: PrintablePaperType; marks: number }>;
+};
 
 export const PRINTABLE_PAPER_PROMPT = `You are a careful FBISE-style assessment designer. Create a PRINTABLE paper draft grounded strictly and exclusively in the supplied source material.
 
@@ -92,6 +98,22 @@ function buildSchema(type: PrintablePaperType) {
   };
 }
 
+export function normalizePrintablePaperPayload(paperType: PrintablePaperType, title: string, generated: unknown): NormalizedPrintablePaperPayload {
+  const candidate = generated && typeof generated === "object" ? generated as Record<string, unknown> : {};
+  const sourceItems = Array.isArray(candidate.items) ? candidate.items : [];
+  const payload = {
+    ...candidate,
+    mode: paperType,
+    title,
+    items: sourceItems.map((item) => ({ ...(item as Record<string, unknown>), kind: paperType })),
+  };
+  const validation = validateAssessmentDraftPayload(payload, paperType);
+  if (!validation.valid || (validation.payload.mode !== "short" && validation.payload.mode !== "long")) {
+    throw new Error(`The generated ${paperType}-question paper was incomplete. No draft was saved; please try again.`);
+  }
+  return validation.payload as unknown as NormalizedPrintablePaperPayload;
+}
+
 export async function generatePrintablePaperFromContent(params: {
   paperType: PrintablePaperType;
   title: string;
@@ -118,13 +140,8 @@ export async function generatePrintablePaperFromContent(params: {
   const responseContent = response.choices[0]?.message?.content;
   if (typeof responseContent !== "string") throw new Error("Printable paper generation did not return structured text output.");
   const parsed = JSON.parse(responseContent || "{}");
-  const payload = { ...parsed, mode: paperType, title };
-  const validation = validateAssessmentDraftPayload(payload, paperType);
-  if (!validation.valid) throw new Error(`Printable paper failed validation: ${validation.issues.join(" ")}`);
-  if (validation.payload.mode !== "short" && validation.payload.mode !== "long") {
-    throw new Error("Printable paper generation returned an invalid paper mode.");
-  }
-  const printedCount = validation.payload.items.length;
+  const printablePayload = normalizePrintablePaperPayload(paperType, title, parsed);
+  const printedCount = printablePayload.items.length;
   if (printedCount !== pairCount * 2) throw new Error("Printable paper generation returned an incomplete set of OR alternatives. Please try again.");
-  return validation.payload;
+  return printablePayload as unknown as ModeDraftPayload;
 }
