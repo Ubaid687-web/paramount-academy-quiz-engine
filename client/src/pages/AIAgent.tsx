@@ -106,6 +106,17 @@ export default function AIAgent() {
     { enabled: !!jobId && isGenerating, refetchInterval: 1000 }
   );
 
+  const hasActiveApprovedTextbook = Boolean(scopeCatalogQuery.data);
+
+  useEffect(() => {
+    if (!scopeCatalogQuery.isLoading && !scopeCatalogQuery.data && scopeType !== "uploaded_content") {
+      setScopeType("uploaded_content");
+      setSelectedChapterIds([]);
+      setSelectedSegmentId(null);
+      setSelectedScopeTemplateId(null);
+    }
+  }, [scopeCatalogQuery.data, scopeCatalogQuery.isLoading, scopeType]);
+
   useEffect(() => {
     if (!statusQuery.data) return;
     setGenerationProgress(statusQuery.data.progress);
@@ -614,26 +625,25 @@ export default function AIAgent() {
         <div className="mb-6 rounded-2xl border border-border/80 bg-card px-5 py-6 shadow-sm sm:px-7">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-primary"><GraduationCap className="h-4 w-4" />Teacher preparation</p>
-              <h1 className="mt-2 text-3xl font-bold text-foreground sm:text-4xl">{!isContextEditing && gradeLevel === "10" ? `Prepare Grade 10 ${SUBJECT_LABELS[subject]} ${ASSESSMENT_MODE_LABELS[assessmentMode]} draft` : "Prepare an assessment draft"}</h1>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">Complete one decision at a time. Each draft stays under academy review before students use it.</p>
+              <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-primary"><GraduationCap className="h-4 w-4" />Assessment builder</p>
+              <h1 className="mt-2 text-3xl font-bold text-foreground sm:text-4xl">{!isContextEditing && gradeLevel === "10" ? `Grade 10 ${SUBJECT_LABELS[subject]}` : "New assessment"}</h1>
             </div>
             <div className="rounded-xl border border-primary/15 bg-primary/5 px-3 py-2 text-right">
-              <p className="text-xs font-semibold text-primary">Preparation progress</p>
-              <p className="mt-0.5 text-sm font-bold text-foreground">Step {activeStep} of 3</p>
+              <p className="text-xs font-semibold text-primary">Step {activeStep} / 3</p>
             </div>
           </div>
           <nav className="mt-6 grid gap-2 sm:grid-cols-3" aria-label="Assessment preparation steps">
             {[
-              { id: 1, label: "Choose format", detail: "What to prepare" },
-              { id: 2, label: "Select source", detail: "Where it comes from" },
-              { id: 3, label: "Configure & draft", detail: "Final settings" },
+              { id: 1, label: "Format" },
+              { id: 2, label: "Source" },
+              { id: 3, label: "Setup" },
             ].map((step) => {
               const isCurrent = activeStep === step.id;
               const isCompleted = activeStep > step.id;
               return <button
                 key={step.id}
                 type="button"
+                aria-label={`Step ${step.id}: ${step.label}`}
                 aria-current={isCurrent ? "step" : undefined}
                 disabled={step.id > activeStep}
                 onClick={() => setActiveStep(step.id as 1 | 2 | 3)}
@@ -646,15 +656,14 @@ export default function AIAgent() {
                 className={`group flex min-h-16 items-center gap-3 rounded-xl border px-3 py-2 text-left transition-[transform,background-color,border-color,box-shadow] duration-200 ease-out active:scale-[0.98] disabled:cursor-default disabled:opacity-55 ${isCurrent ? "border-primary bg-primary/[0.055] shadow-sm" : isCompleted ? "border-primary/20 bg-primary/[0.025] hover:border-primary/40" : "border-border bg-muted/30"}`}
               >
                 <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${isCurrent ? "bg-primary text-primary-foreground" : isCompleted ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`}>{isCompleted ? "✓" : step.id}</span>
-                <span className="min-w-0"><span className="block text-sm font-bold text-foreground">{step.label}</span><span className="block text-xs text-muted-foreground">{step.detail}</span></span>
+                <span className="min-w-0"><span className="block text-sm font-bold text-foreground">{step.label}</span></span>
               </button>;
             })}
           </nav>
         </div>
 
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/70 bg-card/75 px-4 py-3 shadow-sm">
-          <p className="text-sm text-muted-foreground"><span className="font-semibold text-foreground">Starting fresh?</span> Select a format to begin. Saved drafts are available when you need to continue review.</p>
-          <Button type="button" variant="outline" size="sm" onClick={() => setShowSavedDraftLoader((visible) => !visible)} aria-expanded={showSavedDraftLoader} aria-controls="saved-draft-loader"><ClipboardCheck className="mr-2 h-4 w-4" />{showSavedDraftLoader ? "Close saved draft" : "Open saved draft"}</Button>
+        <div className="mb-6 flex justify-end">
+          <Button type="button" variant="outline" size="sm" onClick={() => setShowSavedDraftLoader((visible) => !visible)} aria-expanded={showSavedDraftLoader} aria-controls="saved-draft-loader"><ClipboardCheck className="mr-2 h-4 w-4" />{showSavedDraftLoader ? "Close draft" : "Open saved draft"}</Button>
         </div>
 
         {showSavedDraftLoader && <Card id="saved-draft-loader" className="mb-6 border-primary/20 bg-card shadow-sm motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-2 motion-safe:duration-200">
@@ -677,28 +686,28 @@ export default function AIAgent() {
                   <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">1</span>
                   Choose assessment format
                 </CardTitle>
-                <CardDescription>First choose what you want to prepare. Source controls stay hidden until you make this decision.</CardDescription>
+                <CardDescription>Select an assessment type.</CardDescription>
               </CardHeader>
               <CardContent>
                 {isContextEditing ? <div className="mb-5 rounded-xl border border-primary/20 bg-primary/[0.035] p-4">
-                  <div className="mb-3"><p className="text-sm font-bold text-foreground">Set teacher context</p><p className="mt-1 text-xs leading-5 text-muted-foreground">Select the class and subject before choosing a draft format.</p></div>
+                  <div className="mb-3"><p className="text-sm font-bold text-foreground">Class and subject</p></div>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div><Label htmlFor="class-level" className="mb-2 block text-xs font-medium">Class level</Label><Select value={gradeLevel} onValueChange={(value) => { setGradeLevel(value as GradeLevel); setActiveStep(1); }}><SelectTrigger id="class-level" aria-label="Class level"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="10">10th Grade · FBISE (configured)</SelectItem><SelectItem value="9">9th Grade · FBISE (curriculum intake)</SelectItem></SelectContent></Select></div>
                     {gradeLevel === "10" && <div><Label htmlFor="subject" className="mb-2 block text-xs font-medium">Subject</Label><Select value={subject} onValueChange={(value) => { setSubject(value as FbiseSubject); setActiveStep(1); }}><SelectTrigger id="subject" aria-label="Subject"><SelectValue /></SelectTrigger><SelectContent>{Object.entries(SUBJECT_LABELS).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select></div>}
                   </div>
-                  {gradeLevel === "9" ? <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-800"><strong>Grade 9 is intentionally separate.</strong> Its revised pattern and approved material must be confirmed before draft generation is enabled.</div> : <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => setIsContextEditing(false)}>Use Grade 10 {SUBJECT_LABELS[subject]}</Button>}
+                  {gradeLevel === "9" ? <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-800">Grade 9 setup is pending.</div> : <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => setIsContextEditing(false)}>Continue</Button>}
                 </div> : <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/15 bg-primary/[0.035] p-3"><div><p className="text-xs font-bold uppercase tracking-[0.12em] text-primary">Teacher context</p><p className="mt-1 text-sm font-bold text-foreground">Grade 10 · {SUBJECT_LABELS[subject]}</p></div><Button type="button" variant="outline" size="sm" onClick={() => { setIsContextEditing(true); setActiveStep(1); }}>Change</Button></div>}
                 <div className="grid gap-2 sm:grid-cols-2" aria-label="Choose assessment format">
                   {(Object.keys(ASSESSMENT_MODE_LABELS) as AssessmentMode[]).map((mode) => {
                     const available = assessmentAvailability ? assessmentAvailability.supportedModes[mode] : mode === "mcq";
                     const selected = assessmentMode === mode;
                     const sourceStatus = !available
-                      ? mode === "full_paper" ? "Needs active textbook and reviewed paper evidence" : "Needs active approved textbook source"
+                      ? mode === "full_paper" ? "Book + paper required" : "Verified book required"
                       : mode === "full_paper"
-                        ? "Approved textbook and supplied paper pattern ready"
+                        ? "Book + paper ready"
                         : assessmentAvailability?.textbookReady
-                          ? "Approved textbook source ready"
-                          : "Approved source required";
+                          ? "Book ready"
+                          : "Custom source only";
                     return <button
                       key={mode}
                       type="button"
@@ -712,8 +721,8 @@ export default function AIAgent() {
                     </button>;
                   })}
                 </div>
-                {!isSelectedModeAvailable && <p className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs leading-5 text-muted-foreground">This format is locked because the required supplied source evidence is not active for {SUBJECT_LABELS[subject]}.</p>}
-                {assessmentMode !== "mcq" && isSelectedModeAvailable && <p className="mt-3 rounded-lg border border-primary/20 bg-primary/[0.04] p-3 text-xs leading-5 text-muted-foreground">The source-safe draft and review contract is ready for this format. Automatic question generation remains intentionally unavailable in this MCQ builder until its dedicated review workflow is connected; no unsupported questions will be created.</p>}
+                {!isSelectedModeAvailable && <p className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs leading-5 text-muted-foreground">This format needs verified source evidence.</p>}
+                {assessmentMode !== "mcq" && isSelectedModeAvailable && <p className="mt-3 rounded-lg border border-primary/20 bg-primary/[0.04] p-3 text-xs leading-5 text-muted-foreground">Manual review draft.</p>}
               </CardContent>
             </Card>}
 
@@ -722,21 +731,22 @@ export default function AIAgent() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-xl">
                   <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">2</span>
-                  Choose source material
+                  Select source
                 </CardTitle>
-                <CardDescription>Upload one PDF or TXT file, or paste lesson material. If an approved chapter is already prepared, you can use it instead.</CardDescription>
+                <CardDescription>Use a verified book or add a custom source.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-3 sm:grid-cols-2" aria-label="Choose a source path">
-                  <button type="button" onClick={() => setScopeType("multiple_chapters")} className={`rounded-xl border p-4 text-left transition-[transform,background-color,border-color,box-shadow] duration-200 ease-out active:scale-[0.98] ${scopeType !== "uploaded_content" ? "border-primary bg-primary/[0.055] shadow-sm" : "border-border bg-muted/30 hover:border-primary/40"}`}>
+                  {hasActiveApprovedTextbook && <button type="button" onClick={() => setScopeType("multiple_chapters")} className={`rounded-xl border p-4 text-left transition-[transform,background-color,border-color,box-shadow] duration-200 ease-out active:scale-[0.98] ${scopeType !== "uploaded_content" ? "border-primary bg-primary/[0.055] shadow-sm" : "border-border bg-muted/30 hover:border-primary/40"}`}>
                     <div className="flex items-center gap-2"><LibraryBig className="h-4 w-4 text-primary" /><span className="text-sm font-bold text-foreground">Approved textbook chapters</span></div>
-                    <p className="mt-2 text-xs leading-5 text-muted-foreground">Select one or more named chapters from the active Grade 10 book.</p>
-                  </button>
+                    <p className="mt-2 text-xs leading-5 text-muted-foreground">Choose reviewed chapters.</p>
+                  </button>}
                   <button type="button" onClick={() => setScopeType("uploaded_content")} className={`rounded-xl border p-4 text-left transition-[transform,background-color,border-color,box-shadow] duration-200 ease-out active:scale-[0.98] ${scopeType === "uploaded_content" ? "border-primary bg-primary/[0.055] shadow-sm" : "border-border bg-muted/30 hover:border-primary/40"}`}>
                     <div className="flex items-center gap-2"><FileText className="h-4 w-4 text-primary" /><span className="text-sm font-bold text-foreground">My custom lesson material</span></div>
-                    <p className="mt-2 text-xs leading-5 text-muted-foreground">Upload one PDF/TXT file or paste a lesson excerpt for one-off practice.</p>
+                    <p className="mt-2 text-xs leading-5 text-muted-foreground">Upload a file or paste source text.</p>
                   </button>
                 </div>
+                {!scopeCatalogQuery.isLoading && !hasActiveApprovedTextbook && <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs leading-5 text-muted-foreground"><strong>No verified {SUBJECT_LABELS[subject]} textbook is active.</strong> Use a custom source.</div>}
                 {scopeType === "uploaded_content" ? <>
                 <div>
                   <Label className="text-sm font-medium mb-2 block">Upload one source file</Label>
@@ -785,12 +795,12 @@ export default function AIAgent() {
                 {/* Text Input */}
                 <div>
                   <Label htmlFor="content" className="text-sm font-medium mb-2 block">
-                    Temporary source text
+                    Source text
                   </Label>
                   <Textarea
                     id="content"
                     aria-label="Or Paste Content"
-                    placeholder="Paste approved lesson notes or a reviewed source excerpt when a permanent curriculum source is not yet available."
+                    placeholder="Paste source text"
                     value={contentText}
                     onChange={(e) => setContentText(e.target.value)}
                     className="min-h-[200px] resize-none"
@@ -814,16 +824,15 @@ export default function AIAgent() {
                     <div className="flex items-start gap-3">
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"><LibraryBig className="h-5 w-5" /></div>
                       <div>
-                        <p className="font-bold text-foreground">Reviewed curriculum source</p>
-                        <p className="mt-1 text-sm leading-6 text-muted-foreground">Select the book chapters you want to include. One tick creates chapter practice; several ticks create combined-chapter practice.</p>
+                    <p className="font-bold text-foreground">Reviewed textbook</p>
+                        <p className="mt-1 text-sm leading-6 text-muted-foreground">Choose one or more chapters.</p>
                       </div>
                     </div>
                   </div>
-                  {!activeScopeCatalog && !scopeCatalogQuery.isLoading && <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs leading-5 text-muted-foreground">{scopeCatalogQuery.error ? "This account cannot load approved chapter choices. Ask Portal Admin to confirm access." : `No approved ${SUBJECT_LABELS[subject]} textbook is active yet.`}</div>}
+                  {!activeScopeCatalog && !scopeCatalogQuery.isLoading && <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs leading-5 text-muted-foreground">{scopeCatalogQuery.error ? "Approved chapters are unavailable." : `No verified ${SUBJECT_LABELS[subject]} textbook is active.`}</div>}
                   {scopeCatalogQuery.isLoading && <div className="flex items-center gap-2 rounded-lg bg-muted/60 p-3 text-xs text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Loading approved chapters…</div>}
                   {activeScopeCatalog && <fieldset className="space-y-2" aria-label="Select textbook chapters">
                     <legend className="text-sm font-bold text-foreground">Select the chapters for this draft</legend>
-                    <p className="text-xs leading-5 text-muted-foreground">Tick one chapter for focused practice, or tick several chapters for a combined draft.</p>
                     <div className="max-h-64 space-y-2 overflow-y-auto rounded-lg border border-border bg-background/60 p-2 pr-1">
                       {chapters.map((chapter) => {
                         const selected = selectedChapterIds.includes(chapter.id);
@@ -843,8 +852,8 @@ export default function AIAgent() {
                 </>}
 
                 <div className="flex flex-col gap-3 rounded-xl border border-dashed border-primary/25 bg-primary/[0.025] p-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div aria-live="polite"><p className="text-sm font-bold text-foreground">{canAdvanceToDraft ? "Source ready for the next step" : "Complete this source step"}</p><p className="mt-1 text-xs leading-5 text-muted-foreground">{canAdvanceToDraft ? "Your source and draft title are ready. Configure the final settings next." : scopeType === "uploaded_content" ? "Add source text and a draft title to continue." : "Select at least one reviewed chapter and enter a draft title to continue."}</p></div>
-                  <div className="flex gap-2"><Button type="button" variant="outline" size="sm" onClick={() => setActiveStep(1)}><ChevronLeft className="mr-1 h-4 w-4" />Format</Button><Button type="button" size="sm" disabled={!canAdvanceToDraft} onClick={() => setActiveStep(3)}>Continue to draft setup<ChevronRight className="ml-1 h-4 w-4" /></Button></div>
+                  <div aria-live="polite"><p className="text-sm font-bold text-foreground">{canAdvanceToDraft ? "Ready" : "Source and title required"}</p></div>
+                  <div className="flex gap-2"><Button type="button" variant="outline" size="sm" onClick={() => setActiveStep(1)}><ChevronLeft className="mr-1 h-4 w-4" />Back</Button><Button type="button" size="sm" disabled={!canAdvanceToDraft} onClick={() => setActiveStep(3)}>Continue<ChevronRight className="ml-1 h-4 w-4" /></Button></div>
                 </div>
 
               </CardContent>

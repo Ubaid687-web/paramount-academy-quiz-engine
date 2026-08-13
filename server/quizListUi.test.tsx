@@ -38,7 +38,7 @@ describe("Quiz Centre entry experience", () => {
     quizzesQuery.mockReturnValue({ data: [], isLoading: false, error: null, refetch: vi.fn() });
     render(<QuizList />);
 
-    expect(screen.getByRole("heading", { name: "Start with the class you teach." })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Select a class." })).toBeTruthy();
     expect(screen.getByText("Grade 10")).toBeTruthy();
     expect(screen.getByText("Grade 9")).toBeTruthy();
     expect(screen.queryByText("Open Quiz Builder")).toBeNull();
@@ -47,7 +47,7 @@ describe("Quiz Centre entry experience", () => {
     expect(screen.getByRole("heading", { name: "Choose a subject." })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /Physics.*Continue/i }));
     expect(screen.getByRole("heading", { name: "Grade 10 · Physics" })).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Prepare Physics MCQ draft" }).getAttribute("href")).toBe("/generate?grade=10&subject=physics");
+    expect(screen.getByRole("link", { name: "Open builder" }).getAttribute("href")).toBe("/generate?grade=10&subject=physics");
   });
 
   it("shows Grade 9 subject intake without exposing a Grade 10 draft action", () => {
@@ -57,8 +57,8 @@ describe("Quiz Centre entry experience", () => {
     fireEvent.click(screen.getByRole("button", { name: /Choose Grade 9/i }));
     fireEvent.click(screen.getByRole("button", { name: /Physics.*Continue/i }));
     expect(screen.getByRole("heading", { name: "Grade 9 · Physics" })).toBeTruthy();
-    expect(screen.getByText(/Next input needed: current Grade 9 textbook and paper pattern/)).toBeTruthy();
-    expect(screen.queryByRole("link", { name: /Prepare Physics MCQ draft/i })).toBeNull();
+    expect(screen.getByText("Curriculum setup pending")).toBeTruthy();
+    expect(screen.queryByRole("link", { name: "Open builder" })).toBeNull();
   });
 
   it("shows the current shared Grade 10 MCQ subjects without a staff-detail selector", async () => {
@@ -81,7 +81,7 @@ describe("Quiz Centre entry experience", () => {
     expect(screen.getByRole("heading", { name: "Choose a subject." })).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "Return to class selection" }));
-    expect(screen.getByRole("heading", { name: "Start with the class you teach." })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Select a class." })).toBeTruthy();
     expect(screen.getByRole("button", { name: /Choose Grade 9/i })).toBeTruthy();
   });
 
@@ -106,7 +106,7 @@ describe("Quiz Centre entry experience", () => {
     const classReturn = screen.getByRole("button", { name: "Return to class selection" });
     classReturn.focus();
     fireEvent.keyDown(classReturn, { key: "Enter" });
-    expect(screen.getByRole("heading", { name: "Start with the class you teach." })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Select a class." })).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: /Choose Grade 10/i }));
     fireEvent.click(screen.getByRole("button", { name: /Physics.*Continue/i }));

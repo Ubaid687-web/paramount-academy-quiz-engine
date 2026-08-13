@@ -153,3 +153,11 @@
 - [x] Add mobile-focused UI coverage, run validation, checkpoint, and report the completed refinement.
 - [x] Add keyboard-activation coverage for both Change class and Change subject controls.
 - [x] Verify the visible in-app return controls on the mobile flow and save the final Phase 17 checkpoint.
+
+## Phase 18: Chemistry Source Integrity and Teacher UI Focus
+- [x] Audit the active Grade 10 Chemistry curriculum, source provenance, storage record, and assessment-pattern links against user-supplied evidence only.
+- [x] Correct or disable any Chemistry curriculum record that cannot be verified as the exact user-supplied textbook; do not substitute a source.
+- [x] Reduce article-like teacher-facing explanations and retain only concise decisions, status, and next actions.
+- [x] Add source-integrity and streamlined-interface coverage, validate, checkpoint, and report the result.
+- [x] Save the verified Phase 18 checkpoint after the Chemistry source correction and teacher-interface refinement.
+- [x] Report the archived Chemistry source decision and custom-source-only Chemistry flow to the user.
