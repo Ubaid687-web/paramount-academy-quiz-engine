@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { AcademyShell } from "@/components/AcademyShell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
 
 type Grade = "9" | "10";
@@ -100,7 +101,7 @@ export default function QuizList() {
 
         <section className="mt-14 border-t border-border pt-8">
           <div className="mb-4 flex items-end justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">Assessment library</p><h2 className="mt-1 text-2xl font-bold text-foreground">Recent MCQ drafts</h2></div><span className="text-sm text-muted-foreground">{shouldLoadLibrary ? `${quizzes?.length ?? 0} available` : "Loads after class selection"}</span></div>
-          {isLoading && <Card><CardContent className="flex items-center gap-3 py-10 text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin" />Loading drafts…</CardContent></Card>}
+          {shouldLoadLibrary && isLoading && <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" role="status" aria-live="polite" aria-label="Loading recent MCQ drafts" aria-busy="true"><span className="sr-only">Loading recent MCQ drafts</span>{Array.from({ length: 3 }, (_, index) => <Card key={index} className="border-border/70 shadow-sm"><CardContent className="min-h-52 p-5"><div className="flex items-start justify-between"><Skeleton className="h-10 w-10 rounded-xl bg-primary/10" /><Skeleton className="h-8 w-8 rounded-lg bg-muted" /></div><div className="mt-5 space-y-3"><Skeleton className="h-5 w-4/5 bg-muted" /><Skeleton className="h-4 w-full bg-muted" /><Skeleton className="h-4 w-3/5 bg-muted" /></div><div className="mt-7 flex items-center justify-between border-t border-border pt-4"><Skeleton className="h-4 w-20 bg-muted" /><Skeleton className="h-4 w-12 bg-muted" /></div></CardContent></Card>)}</div>}
           {error && <Card className="border-destructive/40"><CardContent className="py-8 text-sm text-destructive">The assessment library could not be loaded. {error.message}</CardContent></Card>}
           {!shouldLoadLibrary && <Card className="border-dashed border-border bg-card/70"><CardContent className="flex items-center gap-3 p-6 text-sm text-muted-foreground"><ClipboardCheck className="h-5 w-5 shrink-0 text-primary" />Choose a class above to load its recent MCQ drafts.</CardContent></Card>}
           {shouldLoadLibrary && !isLoading && !error && quizzes?.length === 0 && <Card className="border-dashed border-border bg-card/70"><CardContent className="flex items-center gap-3 p-6 text-sm text-muted-foreground"><ClipboardCheck className="h-5 w-5 shrink-0 text-primary" />No MCQ draft has been saved yet. Follow the class and subject path above when you are ready.</CardContent></Card>}

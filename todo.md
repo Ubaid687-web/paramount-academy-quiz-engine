@@ -187,3 +187,8 @@
 - [x] Diagnose slow opening and loading previews in the academy workspace and assessment-builder routes.
 - [x] Reduce unnecessary client requests, render work, or route dependencies that delay first usable content.
 - [x] Add regression coverage, validate the improvement, checkpoint, and report the result.
+
+## Phase 22: Draft Library Skeleton Loading
+- [x] Add accessible skeleton cards for the draft library while its deferred request is loading.
+- [x] Verify the skeleton layout remains responsive and disappears when the data, empty state, or error state arrives.
+- [x] Add regression coverage, validate, checkpoint, and report the loading-state refinement.

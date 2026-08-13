@@ -61,6 +61,16 @@ describe("Quiz Centre entry experience", () => {
     expect(quizQueryOptions.mock.calls.at(-1)?.[1]).toMatchObject({ enabled: true });
   });
 
+  it("shows three accessible skeleton draft cards while the deferred library request is loading", () => {
+    quizzesQuery.mockReturnValue({ data: undefined, isLoading: true, error: null, refetch: vi.fn() });
+    render(<QuizList />);
+
+    expect(screen.queryByRole("status", { name: /loading recent mcq drafts/i })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /Choose Grade 10/i }));
+    expect(screen.getByRole("status", { name: /loading recent mcq drafts/i }).getAttribute("aria-busy")).toBe("true");
+    expect(document.querySelectorAll('[data-slot="skeleton"]').length).toBe(21);
+  });
+
   it("shows Grade 9 subject intake without exposing a Grade 10 draft action", () => {
     quizzesQuery.mockReturnValue({ data: [], isLoading: false, error: null, refetch: vi.fn() });
     render(<QuizList />);
