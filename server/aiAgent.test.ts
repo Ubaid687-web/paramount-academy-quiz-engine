@@ -99,7 +99,7 @@ describe("AI Agent - MCQ Generation", () => {
     }));
   });
 
-  it("uses verified paper metadata only as board-style MCQ guidance, not as source content", async () => {
+  it("uses verified paper metadata only for FBISE-style guidance while keeping textbook material as factual evidence", async () => {
     await generateMCQsFromContent(1, validContent, 5, "balanced", {
       sourceType: "curriculum_scope",
       sourceTitle: "Kinematics",
@@ -111,10 +111,12 @@ describe("AI Agent - MCQ Generation", () => {
     });
 
     const prompt = mocks.invokeLLM.mock.calls[0][0].messages[1].content as string;
-    expect(prompt).toContain("VERIFIED BOARD-STYLE GUIDANCE");
+    expect(prompt).toContain("VERIFIED BOARD-PATTERN GUIDANCE");
     expect(prompt).toContain("model paper");
     expect(prompt).toContain("past paper 2025");
     expect(prompt).toContain("only examinable content boundary");
+    expect(prompt).toContain("Do not use any analysis note as factual evidence");
+    expect(prompt).toContain("concise FBISE-style wording");
   });
 
   it("returns a structured failure contract when a model response omits required source fields", async () => {

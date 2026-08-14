@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildPrintablePairBatches, normalizePrintablePaperPayload } from "./printablePaper";
+import { buildPrintablePairBatches, buildPrintablePaperPatternInstruction, normalizePrintablePaperPayload } from "./printablePaper";
 
 const shortGenerated = {
   estimatedDurationMinutes: 30,
@@ -12,6 +12,17 @@ const longGenerated = {
 };
 
 describe("printable paper payload normalization", () => {
+  it("uses paper-pattern records for wording and K/U/A guidance only, not answer evidence", () => {
+    const instruction = buildPrintablePaperPatternInstruction({
+      sourceType: "curriculum_scope",
+      sourceTitle: "Computer Science Unit 3",
+      paperPatternGuidance: [{ sourceKind: "past_paper", academicYear: "2025" }],
+    });
+    expect(instruction).toContain("past paper 2025");
+    expect(instruction).toContain("K/U/A balance only");
+    expect(instruction).toContain("use them as answer evidence");
+  });
+
   it("adds the required short-item type before contract validation", () => {
     const payload = normalizePrintablePaperPayload("short", "Motion short paper", shortGenerated);
     expect(payload.mode).toBe("short");

@@ -277,3 +277,9 @@
 - [x] Add an admin-only proposal service that parses an uploaded new-edition textbook extraction into reviewable chapter boundaries.
 - [x] Add Portal Admin controls to generate, inspect, amend, and save proposed chapters for a draft replacement edition.
 - [x] Add regression coverage for PDF parsing, review gating, source-boundary preservation, validation, checkpoint, and report.
+
+## Phase 38: Computer Science Textbook-and-Paper Assessment Calibration
+- [x] Define textbook-only factual evidence, paper-pattern-only guidance, and non-evidence Claude-analysis boundaries.
+- [x] Review the stored Grade 10 Computer Science textbook and supplied model/2024/2025 paper-pattern records for verified wording and cognitive-balance guidance.
+- [x] Apply controlled Computer Science guidance to assessment generation and textbook-faithful, memorisation-oriented solution-key output.
+- [x] Add source-boundary and solution-presentation regression coverage, validate, checkpoint, and report.

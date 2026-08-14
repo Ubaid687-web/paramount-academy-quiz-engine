@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { renderPrintablePaperPdf, renderPrintableSolutionPdf } from "./printablePaperExport";
+import { classifySolutionKeyPoint, renderPrintablePaperPdf, renderPrintableSolutionPdf } from "./printablePaperExport";
 
 const shortPaper = {
   mode: "short" as const,
@@ -34,6 +34,12 @@ const shortPaper = {
 };
 
 describe("printable paper PDF export", () => {
+  it("recognises textbook-supported paired comparisons and labelled-sketch prompts without inventing content", () => {
+    expect(classifySolutionKeyPoint("Purpose — RAM: stores working data; ROM: stores startup instructions")).toMatchObject({ kind: "comparison", aspect: "Purpose", leftLabel: "RAM", rightLabel: "ROM" });
+    expect(classifySolutionKeyPoint("Labelled sketch: block diagram of a computer system")).toEqual({ kind: "diagram", label: "block diagram of a computer system" });
+    expect(classifySolutionKeyPoint("States the textbook definition accurately.")).toEqual({ kind: "bullet", text: "States the textbook definition accurately." });
+  });
+
   it("renders a printable paper with an OR alternative as a PDF", async () => {
     const pdf = await renderPrintablePaperPdf(shortPaper);
     expect(pdf.subarray(0, 5).toString()).toBe("%PDF-");

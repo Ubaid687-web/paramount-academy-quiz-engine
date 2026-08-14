@@ -21,15 +21,18 @@ SOURCE SAFETY:
 
 QUALITY:
 - Use plain, accessible language suitable for secondary students. Test the subject, not difficult English.
+- Use concise, familiar FBISE-style wording and textbook terminology. Avoid idioms, unnecessary long scenarios, and unfamiliar English.
 - Create a new scenario only when it assesses a verified source concept. Do not copy or paraphrase past-paper questions.
 - Balance cognitive levels across the whole paper: approximately 30% K (knowledge), 50% U (understanding), and 20% A (application), adjusting minimally where item count makes exact ratios impossible.
 - Supply each question as an OR pair. Both alternatives in a pair must assess the same learning objective, have the same marks, and be distinct valid ways to assess it.
 - Never claim that this is an official current-year paper. This is a draft for Portal Admin review.
 
 ANSWER MATERIAL:
-- Short questions need a concise expected answer and marking points in learner-friendly wording.
-- Long questions need expected key points and a marking rubric whose marks exactly total the item marks.
-- If a diagram would help, name the exact diagram or labelled sketch in the answer material; do not invent unsupported diagram content.`;
+- Short questions need a concise expected answer followed by short, easy-to-memorise marking points in learner-friendly textbook wording.
+- Long questions need short expected key points and a marking rubric whose marks exactly total the item marks.
+- Where a textbook-supported comparison helps, write each key point as a paired contrast in the form "Aspect — Item A: …; Item B: …" so it can be reviewed as a comparison table.
+- If a diagram would help, name the exact diagram or labelled sketch in the answer material; do not invent unsupported diagram content.
+- Pattern papers and external analysis may guide format and wording only. They never supply answer facts.`;
 
 function buildSchema(type: PrintablePaperType) {
   const base = {
@@ -125,6 +128,12 @@ export function buildPrintablePairBatches(pairCount: number, maximumPairsPerBatc
   return batches;
 }
 
+export function buildPrintablePaperPatternInstruction(sourceContext: GenerationSourceContext) {
+  return sourceContext.paperPatternGuidance?.length
+    ? `Supplied board-pattern records (${sourceContext.paperPatternGuidance.map((source) => `${source.sourceKind.replace("_", " ")}${source.academicYear ? ` ${source.academicYear}` : ""}`).join(", ")}) may guide concise FBISE-style wording, marks presentation, and K/U/A balance only. Do not copy their questions or use them as answer evidence.`
+    : "No reviewed board-pattern record is attached. Use the source material alone for all content and keep the language plain.";
+}
+
 export async function generatePrintablePaperFromContent(params: {
   paperType: PrintablePaperType;
   title: string;
@@ -139,6 +148,7 @@ export async function generatePrintablePaperFromContent(params: {
     ? "Each short question is normally 3 marks unless the selected source requires another value."
     : "Each long question must be 5–8 marks; its rubric total must exactly match its marks.";
   const batchPlan = buildPrintablePairBatches(pairCount);
+  const paperPatternInstruction = buildPrintablePaperPatternInstruction(sourceContext);
   const items: Array<Record<string, unknown> & { kind: PrintablePaperType; marks: number }> = [];
   let completedGroups = 0;
 
@@ -150,7 +160,7 @@ export async function generatePrintablePaperFromContent(params: {
         const response = await invokeLLM({
           messages: [
             { role: "system", content: PRINTABLE_PAPER_PROMPT },
-            { role: "user", content: `This is batch ${batchIndex + 1} of ${batchPlan.length}. Create exactly ${batchPairs} numbered OR pairs (${batchPairs * 2} printed prompts) for a ${paperType}-question paper. Difficulty preference: ${difficulty}. ${marksRule}\n\nPaper title: ${title}\nSource title: ${sourceContext.sourceTitle}\n\n${safeSections}` },
+            { role: "user", content: `This is batch ${batchIndex + 1} of ${batchPlan.length}. Create exactly ${batchPairs} numbered OR pairs (${batchPairs * 2} printed prompts) for a ${paperType}-question paper. Difficulty preference: ${difficulty}. ${marksRule}\n\nPaper title: ${title}\nSource title: ${sourceContext.sourceTitle}\n${paperPatternInstruction}\n\n${safeSections}` },
           ],
           response_format: {
             type: "json_schema",

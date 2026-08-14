@@ -9,6 +9,19 @@ type PrintablePayload = {
   items: PrintableItem[];
 };
 
+export type SolutionKeyPointPresentation =
+  | { kind: "comparison"; aspect: string; leftLabel: string; leftValue: string; rightLabel: string; rightValue: string }
+  | { kind: "diagram"; label: string }
+  | { kind: "bullet"; text: string };
+
+export function classifySolutionKeyPoint(point: string): SolutionKeyPointPresentation {
+  const diagram = point.match(/^(?:diagram|labelled sketch|labeled sketch)\s*:\s*(.+)$/i);
+  if (diagram) return { kind: "diagram", label: diagram[1].trim() };
+  const comparison = point.match(/^(.+?)\s+—\s+([^:;]+):\s*(.+?);\s*([^:;]+):\s*(.+)$/);
+  if (comparison) return { kind: "comparison", aspect: comparison[1].trim(), leftLabel: comparison[2].trim(), leftValue: comparison[3].trim(), rightLabel: comparison[4].trim(), rightValue: comparison[5].trim() };
+  return { kind: "bullet", text: point };
+}
+
 function printableTotalMarks(payload: PrintablePayload) {
   return payload.items.reduce((total, item) => total + item.marks, 0);
 }
@@ -42,6 +55,41 @@ function pageHeader(doc: PDFKit.PDFDocument, title: string, subtitle: string) {
 
 function ensureSpace(doc: PDFKit.PDFDocument, required: number) {
   if (doc.y + required > doc.page.height - 60) doc.addPage();
+}
+
+function renderSolutionKeyPoint(doc: PDFKit.PDFDocument, index: number, point: string) {
+  const presentation = classifySolutionKeyPoint(point);
+  if (presentation.kind === "bullet") {
+    doc.fillColor("#1F2937").font("Helvetica").text(`${index + 1}. ${presentation.text}`);
+    return;
+  }
+  if (presentation.kind === "diagram") {
+    ensureSpace(doc, 52);
+    const y = doc.y;
+    doc.fillColor("#173F62").font("Helvetica-Bold").fontSize(8.5).text(`Labelled sketch: ${presentation.label}`);
+    doc.strokeColor("#9EB6C8").dash(3, { space: 2 }).rect(56, doc.y + 4, 470, 30).stroke().undash();
+    doc.fillColor("#607284").font("Helvetica-Oblique").fontSize(7.5).text("Draw and label only the textbook-supported features named above.", 64, doc.y + 15, { width: 450, align: "center" });
+    doc.y = Math.max(doc.y, y + 44);
+    return;
+  }
+  ensureSpace(doc, 54);
+  const y = doc.y;
+  const widths = [104, 183, 183];
+  const cells = [presentation.aspect, `${presentation.leftLabel}: ${presentation.leftValue}`, `${presentation.rightLabel}: ${presentation.rightValue}`];
+  let x = 56;
+  doc.font("Helvetica-Bold").fontSize(7.5).fillColor("#EAF1F6").rect(x, y, 470, 16).fill();
+  doc.fillColor("#173F62").text("Comparison", x + 5, y + 4, { width: widths[0] - 10 });
+  doc.text(presentation.leftLabel, x + widths[0] + 5, y + 4, { width: widths[1] - 10 });
+  doc.text(presentation.rightLabel, x + widths[0] + widths[1] + 5, y + 4, { width: widths[2] - 10 });
+  x = 56;
+  doc.font("Helvetica").fontSize(7.5).fillColor("#1F2937");
+  cells.forEach((cell, cellIndex) => {
+    const width = widths[cellIndex];
+    doc.strokeColor("#C7D5E0").rect(x, y + 16, width, 28).stroke();
+    doc.text(cell, x + 5, y + 21, { width: width - 10, height: 18 });
+    x += width;
+  });
+  doc.y = y + 50;
 }
 
 function pairItems(items: PrintableItem[]) {
@@ -109,10 +157,10 @@ export async function renderPrintableSolutionPdf(payload: PrintablePayload) {
           doc.fillColor("#173F62").font("Helvetica-Bold").fontSize(9).text("Expected answer");
           doc.fillColor("#1F2937").font("Helvetica").text(item.expectedAnswer);
           doc.fillColor("#173F62").font("Helvetica-Bold").text("Marking points");
-          item.markingGuide.forEach((point: string, pointIndex: number) => doc.fillColor("#1F2937").font("Helvetica").text(`${pointIndex + 1}. ${point}`));
+          item.markingGuide.forEach((point: string, pointIndex: number) => renderSolutionKeyPoint(doc, pointIndex, point));
         } else {
           doc.fillColor("#173F62").font("Helvetica-Bold").fontSize(9).text("Expected key points");
-          item.expectedKeyPoints.forEach((point: string, pointIndex: number) => doc.fillColor("#1F2937").font("Helvetica").text(`${pointIndex + 1}. ${point}`));
+          item.expectedKeyPoints.forEach((point: string, pointIndex: number) => renderSolutionKeyPoint(doc, pointIndex, point));
           doc.fillColor("#173F62").font("Helvetica-Bold").text("Marking rubric");
           item.markingRubric.forEach((criterion: { criterion: string; marks: number }) => doc.fillColor("#1F2937").font("Helvetica").text(`• ${criterion.criterion} — ${criterion.marks} mark${criterion.marks === 1 ? "" : "s"}`));
         }
