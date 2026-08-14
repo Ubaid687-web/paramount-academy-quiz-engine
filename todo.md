@@ -289,3 +289,9 @@
 - [x] Analyse each paper’s sections, marks, time allocation, command wording, choice rules, and cognitive-demand signals.
 - [x] Save separate, evidence-noted reviewed profiles without treating past-paper questions as factual source content.
 - [x] Verify profile persistence and source-boundary safeguards, validate, checkpoint, and report.
+
+## Phase 40: Computer Science Model-Paper Profile and Comparison
+- [x] Inspect the supplied Computer Science model paper and record only verifiable structural evidence.
+- [x] Save a separate, evidence-noted reviewed model-paper profile without using it as factual answer content.
+- [x] Compare the model paper against reviewed 2024 and 2025 profiles to identify stable format guidance and variation.
+- [x] Verify profile persistence and source boundaries, validate, checkpoint, and report.
