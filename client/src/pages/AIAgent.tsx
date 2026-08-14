@@ -9,6 +9,7 @@ import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AcademyShell } from "@/components/AcademyShell";
 import { trpc } from "@/lib/trpc";
+import { downloadPdfFile } from "@/lib/pdfDownload";
 import { GENERATION_STEPS, getGenerationStep, getNextSimulatedProgress } from "@/lib/generation-progress";
 import { calculateQuestionRecommendation } from "@shared/questionRecommendation";
 import { useLocation } from "wouter";
@@ -47,15 +48,6 @@ const ASSESSMENT_MODE_LABELS: Record<AssessmentMode, string> = {
   full_paper: "Full paper",
 };
 
-function downloadPdf(data: string, fileName: string) {
-  const bytes = Uint8Array.from(window.atob(data), (character) => character.charCodeAt(0));
-  const url = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = fileName;
-  anchor.click();
-  URL.revokeObjectURL(url);
-}
 export default function AIAgent() {
   const [, navigate] = useLocation();
   const requestedGrade = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("grade") : null;
@@ -513,10 +505,23 @@ export default function AIAgent() {
       const result = kind === "paper"
         ? await renderPrintablePaperMutation.mutateAsync({ payload: generatedPrintablePaper })
         : await renderPrintableSolutionMutation.mutateAsync({ payload: generatedPrintablePaper });
-      downloadPdf(result.data, result.fileName);
-      toast.success(kind === "paper" ? "Printable paper downloaded." : "Solution key downloaded.");
+      const savedFileName = downloadPdfFile(result.data, result.fileName);
+      toast.success(`${kind === "paper" ? "Printable paper" : "Solution key"} download started: ${savedFileName}`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "The PDF could not be created.");
+    }
+  };
+
+  const handleMcqDownload = async (kind: "paper" | "solution") => {
+    if (!generatedMcqs.length) return;
+    try {
+      const result = kind === "paper"
+        ? await renderMcqPaperMutation.mutateAsync({ title: quizTitle, mcqs: generatedMcqs })
+        : await renderMcqSolutionMutation.mutateAsync({ title: quizTitle, mcqs: generatedMcqs });
+      const savedFileName = downloadPdfFile(result.data, result.fileName);
+      toast.success(`${kind === "paper" ? "MCQ paper" : "MCQ solution key"} download started: ${savedFileName}`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "The MCQ PDF could not be created.");
     }
   };
 
@@ -1121,6 +1126,7 @@ export default function AIAgent() {
                       </p>
                     )}
                   </div>
+                  <div className="mt-4 flex flex-col gap-2 sm:flex-row"><Button type="button" variant="outline" className="flex-1" onClick={() => handleMcqDownload("paper")} disabled={renderMcqPaperMutation.isPending}>Download MCQ paper PDF</Button><Button type="button" variant="outline" className="flex-1" onClick={() => handleMcqDownload("solution")} disabled={renderMcqSolutionMutation.isPending}>Download MCQ solution key</Button></div>
                 </CardContent>
               </Card>
             )}

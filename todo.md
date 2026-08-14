@@ -197,3 +197,9 @@
 - [x] Diagnose the short-paper item-mode validation failure shown after generation completes.
 - [x] Correct the server-side generated payload contract and return a concise, actionable retry message if generation is incomplete.
 - [x] Add short- and long-paper validation regression coverage, validate, checkpoint, and report the repair.
+
+## Phase 24: Mobile PDF Delivery and Reliability Audit
+- [x] Trace the conflicting PDF download success/failure notices and absent mobile file download.
+- [x] Repair mobile-safe PDF delivery for MCQ, short-paper, long-paper, and solution-key exports.
+- [x] Audit adjacent generation, PDF export, and preview paths for hidden user-visible failures.
+- [x] Add regression coverage, validate, checkpoint, and report the reliability repair.
