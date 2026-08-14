@@ -252,4 +252,10 @@
 ## Phase 33: In-App Preview PDF Compatibility
 - [x] Identify the in-app preview response/download constraint from the current live failure path.
 - [x] Test a preview-inline fallback while preserving normal attachment delivery for published use.
-- [ ] Validate the same attachment delivery route on a published build, because the in-app iframe does not support file delivery.
+- [x] Validate the same attachment delivery route on a published build, because the in-app iframe does not support file delivery.
+
+## Phase 34: FBISE-Aligned Reusable Intake Roadmap
+- [x] Reconcile the uploaded FBISE design guidance with the current Grade 10 source and assessment architecture.
+- [x] Audit existing subject, textbook, curriculum, replacement, and pattern-paper intake capabilities.
+- [x] Design a reusable Portal Admin workflow with explicit source-governance and exam-pattern safeguards.
+- [x] Present a staged implementation plan for approval before building the next capability.
