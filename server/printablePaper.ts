@@ -114,6 +114,17 @@ export function normalizePrintablePaperPayload(paperType: PrintablePaperType, ti
   return validation.payload as unknown as NormalizedPrintablePaperPayload;
 }
 
+export function buildPrintablePairBatches(pairCount: number, maximumPairsPerBatch = 2) {
+  const batches: number[] = [];
+  let remaining = pairCount;
+  while (remaining > 0) {
+    const next = Math.min(maximumPairsPerBatch, remaining);
+    batches.push(next);
+    remaining -= next;
+  }
+  return batches;
+}
+
 export async function generatePrintablePaperFromContent(params: {
   paperType: PrintablePaperType;
   title: string;
@@ -127,21 +138,43 @@ export async function generatePrintablePaperFromContent(params: {
   const marksRule = paperType === "short"
     ? "Each short question is normally 3 marks unless the selected source requires another value."
     : "Each long question must be 5–8 marks; its rubric total must exactly match its marks.";
-  const response = await invokeLLM({
-    messages: [
-      { role: "system", content: PRINTABLE_PAPER_PROMPT },
-      { role: "user", content: `Create exactly ${pairCount} numbered OR pairs (${pairCount * 2} printed prompts) for a ${paperType}-question paper. Difficulty preference: ${difficulty}. ${marksRule}\n\nPaper title: ${title}\nSource title: ${sourceContext.sourceTitle}\n\n${safeSections}` },
-    ],
-    response_format: {
-      type: "json_schema",
-      json_schema: { name: `${paperType}_paper_draft`, strict: true, schema: buildSchema(paperType) },
-    },
-  });
-  const responseContent = response.choices[0]?.message?.content;
-  if (typeof responseContent !== "string") throw new Error("Printable paper generation did not return structured text output.");
-  const parsed = JSON.parse(responseContent || "{}");
-  const printablePayload = normalizePrintablePaperPayload(paperType, title, parsed);
-  const printedCount = printablePayload.items.length;
-  if (printedCount !== pairCount * 2) throw new Error("Printable paper generation returned an incomplete set of OR alternatives. Please try again.");
-  return printablePayload as unknown as ModeDraftPayload;
+  const batchPlan = buildPrintablePairBatches(pairCount);
+  const items: Array<Record<string, unknown> & { kind: PrintablePaperType; marks: number }> = [];
+  let completedGroups = 0;
+
+  for (let batchIndex = 0; batchIndex < batchPlan.length; batchIndex += 1) {
+    const batchPairs = batchPlan[batchIndex]!;
+    let batchPayload: NormalizedPrintablePaperPayload | null = null;
+    for (let attempt = 0; attempt < 2 && !batchPayload; attempt += 1) {
+      try {
+        const response = await invokeLLM({
+          messages: [
+            { role: "system", content: PRINTABLE_PAPER_PROMPT },
+            { role: "user", content: `This is batch ${batchIndex + 1} of ${batchPlan.length}. Create exactly ${batchPairs} numbered OR pairs (${batchPairs * 2} printed prompts) for a ${paperType}-question paper. Difficulty preference: ${difficulty}. ${marksRule}\n\nPaper title: ${title}\nSource title: ${sourceContext.sourceTitle}\n\n${safeSections}` },
+          ],
+          response_format: {
+            type: "json_schema",
+            json_schema: { name: `${paperType}_paper_batch`, strict: true, schema: buildSchema(paperType) },
+          },
+        });
+        const responseContent = response.choices[0]?.message?.content;
+        if (typeof responseContent !== "string") throw new Error("No structured batch output.");
+        const candidate = normalizePrintablePaperPayload(paperType, title, JSON.parse(responseContent || "{}"));
+        if (candidate.items.length !== batchPairs * 2) throw new Error("Incomplete OR-pair batch.");
+        batchPayload = candidate;
+      } catch {
+        // Retry once with the same small batch; no partial output is exposed to the teacher.
+      }
+    }
+    if (!batchPayload) throw new Error("The printable paper could not be completed from the approved material. Please try again with fewer OR pairs or a narrower scope.");
+    items.push(...batchPayload.items.map((item, index) => ({ ...item, orGroup: completedGroups + Math.floor(index / 2) + 1 })));
+    completedGroups += batchPairs;
+  }
+
+  return {
+    mode: paperType,
+    title,
+    estimatedDurationMinutes: paperType === "short" ? pairCount * 6 : pairCount * 10,
+    items,
+  } as unknown as ModeDraftPayload;
 }

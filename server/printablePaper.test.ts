@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizePrintablePaperPayload } from "./printablePaper";
+import { buildPrintablePairBatches, normalizePrintablePaperPayload } from "./printablePaper";
 
 const shortGenerated = {
   estimatedDurationMinutes: 30,
@@ -22,5 +22,10 @@ describe("printable paper payload normalization", () => {
     const payload = normalizePrintablePaperPayload("long", "Physics long paper", longGenerated);
     expect(payload.mode).toBe("long");
     expect(payload.items[0]?.kind).toBe("long");
+  });
+
+  it("splits a large paper into small complete OR-pair batches", () => {
+    expect(buildPrintablePairBatches(10)).toEqual([2, 2, 2, 2, 2]);
+    expect(buildPrintablePairBatches(5)).toEqual([2, 2, 1]);
   });
 });

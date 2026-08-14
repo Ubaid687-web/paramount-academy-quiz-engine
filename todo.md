@@ -231,3 +231,9 @@
 - [x] Capture the live mobile export request outcome and identify the remaining delivery failure.
 - [x] Replace the current mobile download trigger with a reliable fallback and remove false success feedback.
 - [x] Verify PDF-only delivery behaviour, checkpoint, and report the resolution before resuming other work.
+
+## Phase 30: Printable Validation and Preview Opening Reliability
+- [x] Trace and eliminate the recurring short-paper validation failure shown on mobile.
+- [x] Ensure only valid printable drafts expose a PDF preparation control, with no internal validator details shown to users.
+- [x] Identify and reduce the slow first-open preview path while keeping the loaded application responsive.
+- [x] Add regression coverage, validate, checkpoint, and report both focused repairs.
