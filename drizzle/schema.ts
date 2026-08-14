@@ -1,4 +1,4 @@
-import { int, longtext, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { int, longtext, mysqlEnum, mysqlTable, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -138,12 +138,34 @@ export const assessmentDrafts = mysqlTable("assessmentDrafts", {
 export type AssessmentDraft = typeof assessmentDrafts.$inferSelect;
 export type InsertAssessmentDraft = typeof assessmentDrafts.$inferInsert;
 
+// Programme Catalogue is the controlled entry point for every board / grade / subject combination.
+// New programmes remain intake-only until a reviewed active curriculum edition exists and an
+// administrator explicitly marks the programme ready for teacher use.
+export const programmeCatalogues = mysqlTable("programmeCatalogues", {
+  id: int("id").autoincrement().primaryKey(),
+  board: varchar("board", { length: 50 }).notNull(),
+  grade: varchar("grade", { length: 20 }).notNull(),
+  subject: varchar("subject", { length: 100 }).notNull(),
+  teacherLabel: varchar("teacherLabel", { length: 255 }).notNull(),
+  status: mysqlEnum("status", ["intake_only", "ready"]).default("intake_only").notNull(),
+  createdBy: int("createdBy").notNull(),
+  activatedAt: timestamp("activatedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => [
+  uniqueIndex("programmeCatalogues_board_grade_subject_unique").on(table.board, table.grade, table.subject),
+]);
+
+export type ProgrammeCatalogue = typeof programmeCatalogues.$inferSelect;
+export type InsertProgrammeCatalogue = typeof programmeCatalogues.$inferInsert;
+
 // Paper sources are stored independently from textbooks. A paper-pattern claim can be used only
 // after its specific user-supplied file has been extracted and activated here.
 export const assessmentPatternSources = mysqlTable("assessmentPatternSources", {
   id: int("id").autoincrement().primaryKey(),
-  grade: mysqlEnum("grade", ["10"]).default("10").notNull(),
-  subject: mysqlEnum("subject", ["physics", "chemistry", "computer_science"]).notNull(),
+  board: varchar("board", { length: 50 }).default("FBISE").notNull(),
+  grade: varchar("grade", { length: 20 }).notNull(),
+  subject: varchar("subject", { length: 100 }).notNull(),
   sourceKind: mysqlEnum("sourceKind", ["model_paper", "past_paper"]).notNull(),
   academicYear: varchar("academicYear", { length: 20 }),
   storageKey: varchar("storageKey", { length: 512 }).notNull(),
@@ -195,8 +217,8 @@ export type InsertAssessmentPatternProfile = typeof assessmentPatternProfiles.$i
 // historical quiz drafts retain their curriculum and source snapshots.
 export const curriculumSets = mysqlTable("curriculumSets", {
   id: int("id").autoincrement().primaryKey(),
-  grade: mysqlEnum("grade", ["10"]).default("10").notNull(),
-  subject: mysqlEnum("subject", ["physics", "chemistry", "computer_science"]).notNull(),
+  grade: varchar("grade", { length: 20 }).notNull(),
+  subject: varchar("subject", { length: 100 }).notNull(),
   board: varchar("board", { length: 50 }).default("FBISE").notNull(),
   label: varchar("label", { length: 255 }).notNull(),
   editionLabel: varchar("editionLabel", { length: 255 }),

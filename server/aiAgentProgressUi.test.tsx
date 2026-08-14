@@ -33,6 +33,11 @@ const loadAssessmentDraftQuery = vi.fn((_input: { assessmentDraftId: number }) =
 const pdfExtractMutation = vi.fn();
 const scopeCatalogQuery = vi.fn((..._args: unknown[]) => ({ data: null as any, isLoading: false }));
 const assessmentAvailabilityQuery = vi.fn((..._args: unknown[]) => ({ data: undefined as any, isLoading: false }));
+const readyProgrammesQuery = vi.fn(() => ({ data: [
+  { id: 1, board: "FBISE", grade: "10", subject: "physics", teacherLabel: "Physics", status: "ready" },
+  { id: 2, board: "FBISE", grade: "10", subject: "chemistry", teacherLabel: "Chemistry", status: "ready" },
+  { id: 3, board: "FBISE", grade: "10", subject: "computer_science", teacherLabel: "Computer Science", status: "ready" },
+], isLoading: false }));
 
 vi.mock("@/lib/trpc", () => ({
   trpc: {
@@ -53,6 +58,7 @@ vi.mock("@/lib/trpc", () => ({
     },
     curriculum: {
       getActiveScopeCatalog: { useQuery: () => scopeCatalogQuery() },
+      listReadyProgrammes: { useQuery: () => readyProgrammesQuery() },
     },
     assessment: {
       getAvailability: { useQuery: () => assessmentAvailabilityQuery() },
@@ -245,15 +251,12 @@ describe("AI quiz generation feedback", () => {
     expect(screen.getByRole("button", { name: /My custom lesson material/i })).toBeVisible();
   });
 
-  it("shows Grade 9 as a separate curriculum-intake state without enabling Grade 10 generation rules", async () => {
+  it("does not expose Grade 9 while it has no ready Programme Catalogue entry", async () => {
     render(<AIAgent />);
 
     fireEvent.click(screen.getByRole("combobox", { name: "Class level" }));
-    fireEvent.click(await screen.findByRole("option", { name: "9th Grade · FBISE (curriculum intake)" }));
-
-    expect(await screen.findByText("Grade 9 setup is pending.")).toBeVisible();
-    expect(screen.queryByRole("combobox", { name: "Subject" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Generate MCQs" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: /Grade 9/i })).toBeNull();
+    expect(screen.getByRole("option", { name: "Grade 10 · approved programmes" })).toBeTruthy();
   });
 
   it("explains the administrator requirement when a stored curriculum catalog cannot be loaded", async () => {
@@ -293,8 +296,10 @@ describe("AI quiz generation feedback", () => {
       expect(generateMutation).toHaveBeenCalledWith({
         numQuestions: 12,
         difficulty: "balanced",
-        patternSubject: "physics",
+        patternProgramme: { board: "FBISE", grade: "10", subject: "physics" },
         scope: {
+          board: "FBISE",
+          grade: "10",
           subject: "physics",
           scopeType: "single_chapter",
           chapterIds: [1],

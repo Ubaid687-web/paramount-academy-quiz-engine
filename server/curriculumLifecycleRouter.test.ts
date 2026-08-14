@@ -5,6 +5,8 @@ const mocks = vi.hoisted(() => ({
   activateAssessmentPatternSource: vi.fn(),
   getAssessmentPatternSource: vi.fn(),
   saveAssessmentPatternProfile: vi.fn(),
+  createProgrammeCatalogue: vi.fn(),
+  activateProgrammeCatalogue: vi.fn(),
 }));
 
 vi.mock("./db", () => ({
@@ -12,6 +14,8 @@ vi.mock("./db", () => ({
   activateAssessmentPatternSource: mocks.activateAssessmentPatternSource,
   getAssessmentPatternSource: mocks.getAssessmentPatternSource,
   saveAssessmentPatternProfile: mocks.saveAssessmentPatternProfile,
+  createProgrammeCatalogue: mocks.createProgrammeCatalogue,
+  activateProgrammeCatalogue: mocks.activateProgrammeCatalogue,
 }));
 
 import { appRouter } from "./routers";
@@ -26,6 +30,26 @@ function createContext(role: "admin" | "user"): TrpcContext {
 }
 
 describe("curriculum lifecycle administration", () => {
+  it("creates new programme combinations as controlled intake-only records through Portal Admin", async () => {
+    mocks.createProgrammeCatalogue.mockResolvedValue({ id: 71, board: "FBISE", grade: "9", subject: "physics", teacherLabel: "Physics", status: "intake_only" });
+    const caller = appRouter.createCaller(createContext("admin"));
+
+    await expect(caller.curriculum.createProgramme({ board: "FBISE", grade: "9", subject: "physics", teacherLabel: "Physics" })).resolves.toMatchObject({ id: 71, status: "intake_only" });
+    expect(mocks.createProgrammeCatalogue).toHaveBeenCalledWith({ board: "FBISE", grade: "9", subject: "physics", teacherLabel: "Physics", createdBy: 77 });
+  });
+
+  it("does not allow a non-admin to activate a programme", async () => {
+    const caller = appRouter.createCaller(createContext("user"));
+    await expect(caller.curriculum.activateProgramme({ programmeId: 71 })).rejects.toMatchObject({ code: "FORBIDDEN" });
+    expect(mocks.activateProgrammeCatalogue).not.toHaveBeenCalled();
+  });
+
+  it("surfaces the active-edition readiness block instead of activating a programme automatically", async () => {
+    mocks.activateProgrammeCatalogue.mockRejectedValue(new Error("Activate a reviewed curriculum edition for this programme before making it available to teachers."));
+    const caller = appRouter.createCaller(createContext("admin"));
+    await expect(caller.curriculum.activateProgramme({ programmeId: 71 })).rejects.toThrow("Activate a reviewed curriculum edition");
+  });
+
   it("creates a linked draft replacement only through Portal Admin", async () => {
     mocks.createReplacementCurriculumSet.mockResolvedValue({ id: 901, status: "draft", replacesSetId: 60001 });
     const caller = appRouter.createCaller(createContext("admin"));

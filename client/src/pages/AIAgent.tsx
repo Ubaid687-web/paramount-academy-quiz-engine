@@ -16,8 +16,8 @@ import { useLocation } from "wouter";
 import { Loader2, Sparkles, CheckCircle2, AlertCircle, Upload, FileText, X, GraduationCap, LibraryBig, SlidersHorizontal, ChevronLeft, ChevronRight, ClipboardCheck } from "lucide-react";
 import { toast } from "sonner";
 
-type FbiseSubject = "physics" | "chemistry" | "computer_science";
-type GradeLevel = "9" | "10";
+type FbiseSubject = string;
+type GradeLevel = string;
 type GenerationScope = "uploaded_content" | "single_chapter" | "half_chapter" | "multiple_chapters" | "half_syllabus" | "block";
 type AssessmentMode = "mcq" | "short" | "long" | "full_paper";
 type FullPaperDraftItem = {
@@ -35,11 +35,13 @@ type FullPaperDraftItem = {
 };
 type FullPaperSection = { id: string; label: string; instructions: string; items: FullPaperDraftItem[] };
 
-const SUBJECT_LABELS: Record<FbiseSubject, string> = {
+const SUBJECT_LABELS: Record<string, string> = {
   physics: "Physics",
   chemistry: "Chemistry",
   computer_science: "Computer Science",
 };
+
+const formatSubjectLabel = (subject: string) => SUBJECT_LABELS[subject] ?? subject.replace(/[_-]+/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 
 const ASSESSMENT_MODE_LABELS: Record<AssessmentMode, string> = {
   mcq: "MCQ",
@@ -50,9 +52,11 @@ const ASSESSMENT_MODE_LABELS: Record<AssessmentMode, string> = {
 
 export default function AIAgent() {
   const [, navigate] = useLocation();
+  const readyProgrammesQuery = trpc.curriculum.listReadyProgrammes.useQuery();
   const requestedGrade = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("grade") : null;
   const requestedSubject = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("subject") : null;
-  const requestedSubjectIsValid = requestedSubject === "physics" || requestedSubject === "chemistry" || requestedSubject === "computer_science";
+  const requestedBoard = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("board") : null;
+  const requestedSubjectIsValid = Boolean(requestedSubject?.trim());
   const [contentText, setContentText] = useState("");
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isProcessingFile, setIsProcessingFile] = useState(false);
@@ -68,8 +72,8 @@ export default function AIAgent() {
   const [jobId, setJobId] = useState<number | null>(null);
   const [generationProgress, setGenerationProgress] = useState(0);
   const [contentAnalysis, setContentAnalysis] = useState<any>(null);
-  const [subject, setSubject] = useState<FbiseSubject>(() => requestedSubjectIsValid ? requestedSubject : "physics");
-  const [gradeLevel, setGradeLevel] = useState<GradeLevel>(() => requestedGrade === "9" ? "9" : "10");
+  const [subject, setSubject] = useState<FbiseSubject>(() => requestedSubjectIsValid ? requestedSubject! : "physics");
+  const [gradeLevel, setGradeLevel] = useState<GradeLevel>(() => requestedGrade?.trim() || "10");
   const [isContextEditing, setIsContextEditing] = useState(() => !requestedSubjectIsValid);
   const [scopeType, setScopeType] = useState<GenerationScope>("uploaded_content");
   const [selectedChapterIds, setSelectedChapterIds] = useState<number[]>([]);
@@ -93,14 +97,21 @@ export default function AIAgent() {
   const [activeStep, setActiveStep] = useState<1 | 2 | 3>(1);
   const [showSavedDraftLoader, setShowSavedDraftLoader] = useState(false);
 
+  const readyProgrammes = readyProgrammesQuery.data ?? [];
+  const programmeBoard = readyProgrammes.find((programme) => programme.board === (requestedBoard || "FBISE") && programme.grade === gradeLevel && programme.subject === subject)?.board ?? requestedBoard ?? "FBISE";
+  const selectedReadyProgramme = readyProgrammes.find((programme) => programme.board === programmeBoard && programme.grade === gradeLevel && programme.subject === subject);
+  const isProgrammeReady = Boolean(selectedReadyProgramme);
+  const readyGrades = Array.from(new Set(readyProgrammes.map((programme) => programme.grade))).sort((left, right) => Number(right) - Number(left) || left.localeCompare(right));
+  const readySubjectsForGrade = readyProgrammes.filter((programme) => programme.grade === gradeLevel && programme.board === programmeBoard);
+
   const generateMutation = trpc.aiAgent.generateMCQs.useMutation();
   const generatePrintablePaperMutation = trpc.aiAgent.generatePrintablePaper.useMutation();
   const saveMutation = trpc.aiAgent.saveGeneratedQuiz.useMutation();
   const saveAssessmentDraftMutation = trpc.assessment.saveDraft.useMutation();
   const reviseAssessmentDraftMutation = trpc.assessment.reviseDraft.useMutation();
   const pdfExtractMutation = trpc.pdfUpload.extractPdfText.useMutation();
-  const scopeCatalogQuery = trpc.curriculum.getActiveScopeCatalog.useQuery({ subject }, { enabled: gradeLevel === "10" });
-  const assessmentAvailabilityQuery = trpc.assessment.getAvailability.useQuery({ subject }, { enabled: gradeLevel === "10" });
+  const scopeCatalogQuery = trpc.curriculum.getActiveScopeCatalog.useQuery({ board: "FBISE", grade: gradeLevel, subject });
+  const assessmentAvailabilityQuery = trpc.assessment.getAvailability.useQuery({ board: "FBISE", grade: gradeLevel, subject });
   const assessmentDraftQuery = trpc.assessment.getDraft.useQuery({ assessmentDraftId: requestedReviewDraftId || 0 }, { enabled: requestedReviewDraftId !== null });
   const statusQuery = trpc.aiAgent.getGenerationStatus.useQuery(
     { jobId: jobId || 0 },
@@ -213,8 +224,8 @@ export default function AIAgent() {
   }, [gradeLevel, subject, scopeType]);
 
   useEffect(() => {
-    if (gradeLevel !== "10") setActiveStep(1);
-  }, [gradeLevel]);
+    if (!isProgrammeReady) setActiveStep(1);
+  }, [isProgrammeReady]);
 
   useEffect(() => {
     if (scopeType !== "uploaded_content" && !isQuestionCountManual) {
@@ -237,7 +248,7 @@ export default function AIAgent() {
   const generationScopeType = (scopeType === "multiple_chapters" && selectedChapterIds.length === 1
     ? "single_chapter"
     : scopeType) as Exclude<GenerationScope, "uploaded_content">;
-  const hasGenerationSource = gradeLevel === "10" && (scopeType === "uploaded_content"
+  const hasGenerationSource = isProgrammeReady && (scopeType === "uploaded_content"
     ? Boolean(contentText.trim())
     : hasValidStoredScope);
   const assessmentAvailability = assessmentAvailabilityQuery.data;
@@ -246,7 +257,7 @@ export default function AIAgent() {
     : assessmentMode !== "full_paper";
   const isAutomaticMcqMode = assessmentMode === "mcq";
   const isPrintablePaperMode = assessmentMode === "short" || assessmentMode === "long";
-  const canAdvanceToDraft = gradeLevel === "10"
+  const canAdvanceToDraft = isProgrammeReady
     && !isProcessingFile
     && Boolean(quizTitle.trim())
     && ((isAutomaticMcqMode || isPrintablePaperMode) ? hasGenerationSource : scopeType !== "uploaded_content" && hasValidStoredScope);
@@ -373,8 +384,8 @@ export default function AIAgent() {
   };
 
   const handleGenerate = async () => {
-    if (gradeLevel !== "10") {
-      toast.error("Grade 9 generation will unlock after its revised FBISE pattern and approved materials are configured.");
+    if (!isProgrammeReady) {
+      toast.error("This programme is not ready for teacher generation. Portal Admin must activate a reviewed curriculum edition first.");
       return;
     }
     const usesStoredScope = scopeType !== "uploaded_content";
@@ -408,10 +419,12 @@ export default function AIAgent() {
       const result = await generateMutation.mutateAsync({
         numQuestions: numQuestions || 10,
         difficulty,
-        patternSubject: subject,
+        patternProgramme: { board: "FBISE", grade: gradeLevel, subject },
         ...(usesStoredScope
           ? {
               scope: {
+                board: "FBISE",
+                grade: gradeLevel,
                 subject,
                 scopeType: generationScopeType,
                 chapterIds: selectedChapterIds,
@@ -482,8 +495,8 @@ export default function AIAgent() {
         title: quizTitle.trim(),
         pairCount: paperPairCount,
         difficulty,
-        patternSubject: subject,
-        ...(scopeType !== "uploaded_content" ? { scope: { subject, scopeType: generationScopeType, chapterIds: selectedChapterIds, segmentIds: selectedSegmentId ? [selectedSegmentId] : [], scopeTemplateId: selectedScopeTemplateId ?? undefined } } : { contentText }),
+        patternProgramme: { board: "FBISE", grade: gradeLevel, subject },
+        ...(scopeType !== "uploaded_content" ? { scope: { board: "FBISE", grade: gradeLevel, subject, scopeType: generationScopeType, chapterIds: selectedChapterIds, segmentIds: selectedSegmentId ? [selectedSegmentId] : [], scopeTemplateId: selectedScopeTemplateId ?? undefined } } : { contentText }),
       });
       setGenerationProgress(100);
       setGeneratedPrintablePaper(result.payload);
@@ -528,6 +541,8 @@ export default function AIAgent() {
         const result = await saveAssessmentDraftMutation.mutateAsync({
           assessmentMode,
           scope: {
+            board: "FBISE",
+            grade: gradeLevel,
             subject,
             scopeType: generationScopeType,
             chapterIds: selectedChapterIds,
@@ -610,6 +625,8 @@ export default function AIAgent() {
         const result = await saveAssessmentDraftMutation.mutateAsync({
           assessmentMode: "full_paper",
           scope: {
+            board: "FBISE",
+            grade: gradeLevel,
             subject,
             scopeType: generationScopeType,
             chapterIds: selectedChapterIds,
@@ -666,7 +683,7 @@ export default function AIAgent() {
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-primary"><GraduationCap className="h-4 w-4" />Assessment builder</p>
-              <h1 className="mt-2 text-3xl font-bold text-foreground sm:text-4xl">{!isContextEditing && gradeLevel === "10" ? `Grade 10 ${SUBJECT_LABELS[subject]}` : "New assessment"}</h1>
+              <h1 className="mt-2 text-3xl font-bold text-foreground sm:text-4xl">{!isContextEditing && isProgrammeReady ? `Grade ${gradeLevel} ${selectedReadyProgramme?.teacherLabel ?? formatSubjectLabel(subject)}` : "New assessment"}</h1>
             </div>
             <div className="rounded-xl border border-primary/15 bg-primary/5 px-3 py-2 text-right">
               <p className="text-xs font-semibold text-primary">Step {activeStep} / 3</p>
@@ -717,17 +734,17 @@ export default function AIAgent() {
                 {isContextEditing ? <div className="mb-5 rounded-xl border border-primary/20 bg-primary/[0.035] p-4">
                   <div className="mb-3"><p className="text-sm font-bold text-foreground">Class and subject</p></div>
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <div><Label htmlFor="class-level" className="mb-2 block text-xs font-medium">Class level</Label><Select value={gradeLevel} onValueChange={(value) => { setGradeLevel(value as GradeLevel); setActiveStep(1); }}><SelectTrigger id="class-level" aria-label="Class level"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="10">10th Grade · FBISE (configured)</SelectItem><SelectItem value="9">9th Grade · FBISE (curriculum intake)</SelectItem></SelectContent></Select></div>
-                    {gradeLevel === "10" && <div><Label htmlFor="subject" className="mb-2 block text-xs font-medium">Subject</Label><Select value={subject} onValueChange={(value) => { setSubject(value as FbiseSubject); setActiveStep(1); }}><SelectTrigger id="subject" aria-label="Subject"><SelectValue /></SelectTrigger><SelectContent>{Object.entries(SUBJECT_LABELS).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select></div>}
+                    <div><Label htmlFor="class-level" className="mb-2 block text-xs font-medium">Class level</Label><Select value={gradeLevel} onValueChange={(value) => { const firstProgramme = readyProgrammes.find((programme) => programme.grade === value); setGradeLevel(value); if (firstProgramme) setSubject(firstProgramme.subject); setActiveStep(1); }}><SelectTrigger id="class-level" aria-label="Class level"><SelectValue /></SelectTrigger><SelectContent>{readyGrades.map((grade) => <SelectItem key={grade} value={grade}>Grade {grade} · approved programmes</SelectItem>)}</SelectContent></Select></div>
+                    <div><Label htmlFor="subject" className="mb-2 block text-xs font-medium">Subject</Label><Select value={subject} onValueChange={(value) => { setSubject(value); setActiveStep(1); }}><SelectTrigger id="subject" aria-label="Subject"><SelectValue /></SelectTrigger><SelectContent>{readySubjectsForGrade.map((programme) => <SelectItem key={programme.id} value={programme.subject}>{programme.teacherLabel}</SelectItem>)}</SelectContent></Select></div>
                   </div>
-                  {gradeLevel === "9" ? <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-800">Grade 9 setup is pending.</div> : <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => setIsContextEditing(false)}>Continue</Button>}
-                </div> : <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/15 bg-primary/[0.035] p-3"><div><p className="text-xs font-bold uppercase tracking-[0.12em] text-primary">Teacher context</p><p className="mt-1 text-sm font-bold text-foreground">Grade 10 · {SUBJECT_LABELS[subject]}</p></div><Button type="button" variant="outline" size="sm" onClick={() => { setIsContextEditing(true); setActiveStep(1); }}>Change</Button></div>}
+                  {!isProgrammeReady ? <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-800">This programme is not ready. Choose one of the approved programme entries above.</div> : <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => setIsContextEditing(false)}>Continue</Button>}
+                </div> : <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/15 bg-primary/[0.035] p-3"><div><p className="text-xs font-bold uppercase tracking-[0.12em] text-primary">Teacher context</p><p className="mt-1 text-sm font-bold text-foreground">Grade {gradeLevel} · {selectedReadyProgramme?.teacherLabel ?? formatSubjectLabel(subject)}</p></div><Button type="button" variant="outline" size="sm" onClick={() => { setIsContextEditing(true); setActiveStep(1); }}>Change</Button></div>}
                 <div className="grid gap-3 sm:grid-cols-3" aria-label="Assessment output type">
                   {[
                     { mode: "mcq" as const, title: "MCQ quiz", detail: "Online practice and printable PDF." },
                     { mode: "short" as const, title: "Short question paper", detail: "Printable paper and solution key only." },
                     { mode: "long" as const, title: "Long question paper", detail: "Printable paper and solution key only." },
-                  ].map((option) => <button key={option.mode} type="button" aria-pressed={assessmentMode === option.mode} disabled={gradeLevel !== "10" || (assessmentAvailability ? !assessmentAvailability.supportedModes[option.mode] : false)} onClick={() => { setAssessmentMode(option.mode); setGeneratedPrintablePaper(null); setActiveStep(2); }} className={`rounded-xl border p-4 text-left transition-[transform,background-color,border-color,box-shadow] duration-200 ease-out active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-55 ${assessmentMode === option.mode ? "border-primary bg-primary/[0.055] shadow-sm" : "border-border bg-muted/30 hover:border-primary/40"}`}><span className="block text-sm font-bold text-foreground">{option.title}</span><span className="mt-1 block text-xs leading-5 text-muted-foreground">{option.detail}</span></button>)}
+                  ].map((option) => <button key={option.mode} type="button" aria-pressed={assessmentMode === option.mode} disabled={!isProgrammeReady || (assessmentAvailability ? !assessmentAvailability.supportedModes[option.mode] : false)} onClick={() => { setAssessmentMode(option.mode); setGeneratedPrintablePaper(null); setActiveStep(2); }} className={`rounded-xl border p-4 text-left transition-[transform,background-color,border-color,box-shadow] duration-200 ease-out active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-55 ${assessmentMode === option.mode ? "border-primary bg-primary/[0.055] shadow-sm" : "border-border bg-muted/30 hover:border-primary/40"}`}><span className="block text-sm font-bold text-foreground">{option.title}</span><span className="mt-1 block text-xs leading-5 text-muted-foreground">{option.detail}</span></button>)}
                 </div>
               </CardContent>
             </Card>}

@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
 import { AcademyShell } from "@/components/AcademyShell";
 
-type Subject = "physics" | "chemistry" | "computer_science";
+type Subject = string;
 type ScopeKind = "half_syllabus" | "block";
 type PaperPatternKind = "model_paper" | "past_paper";
 type PatternReviewStatus = "draft" | "reviewed" | "needs_revision";
@@ -37,11 +37,13 @@ const emptyPaperPatternProfile: PaperPatternProfileForm = {
   sectionAInstruction: "", sectionBInstruction: "", sectionCInstruction: "", mcqCount: "", mcqMarksEach: "", shortOrPairCount: "", shortMarksEach: "", longOrPairCount: "", longMarksEach: "", totalMarks: "", durationMinutes: "", orRule: "", profileEvidenceNotes: "", reviewStatus: "draft",
 };
 
-const subjectLabels: Record<Subject, string> = {
+const subjectLabels: Record<string, string> = {
   physics: "Physics",
   chemistry: "Chemistry",
   computer_science: "Computer Science",
 };
+
+const formatSubjectLabel = (subject: string) => subjectLabels[subject] ?? subject.replace(/[_-]+/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -61,7 +63,11 @@ function fileToBase64(file: File): Promise<string> {
 export default function CurriculumManagement() {
   const utils = trpc.useUtils();
   const [selectedSetId, setSelectedSetId] = useState<number | null>(null);
-  const [setSubject, setSetSubject] = useState<Subject>("physics");
+  const [setProgrammeId, setSetProgrammeId] = useState<number | null>(null);
+  const [programmeBoard, setProgrammeBoard] = useState("FBISE");
+  const [programmeGrade, setProgrammeGrade] = useState("");
+  const [programmeSubject, setProgrammeSubject] = useState("");
+  const [programmeTeacherLabel, setProgrammeTeacherLabel] = useState("");
   const [setLabel, setSetLabel] = useState("");
   const [editionLabel, setEditionLabel] = useState("");
   const [replacementLabel, setReplacementLabel] = useState("");
@@ -85,6 +91,7 @@ export default function CurriculumManagement() {
   const [scopeChapterIds, setScopeChapterIds] = useState<number[]>([]);
 
   const setsQuery = trpc.curriculum.listSets.useQuery();
+  const programmesQuery = trpc.curriculum.listProgrammes.useQuery();
   const detailsQuery = trpc.curriculum.getManagementDetails.useQuery(
     { curriculumSetId: selectedSetId ?? 0 },
     { enabled: selectedSetId !== null }
@@ -99,13 +106,20 @@ export default function CurriculumManagement() {
   const saveSegments = trpc.curriculum.saveHalfChapterSegments.useMutation();
   const createScope = trpc.curriculum.createScopeTemplate.useMutation();
   const activateSet = trpc.curriculum.activateSet.useMutation();
+  const createProgramme = trpc.curriculum.createProgramme.useMutation();
+  const activateProgramme = trpc.curriculum.activateProgramme.useMutation();
 
   useEffect(() => {
     if (selectedSetId === null && setsQuery.data?.length) setSelectedSetId(setsQuery.data[0].id);
   }, [selectedSetId, setsQuery.data]);
 
+  useEffect(() => {
+    if (setProgrammeId === null && programmesQuery.data?.length) setSetProgrammeId(programmesQuery.data[0].id);
+  }, [setProgrammeId, programmesQuery.data]);
+
   const details = detailsQuery.data;
   const curriculumSets = setsQuery.data ?? [];
+  const programmes = programmesQuery.data ?? [];
   const statusCounts = {
     active: curriculumSets.filter((set) => set.status === "active").length,
     draft: curriculumSets.filter((set) => set.status === "draft").length,
@@ -119,6 +133,11 @@ export default function CurriculumManagement() {
     () => details?.paperPatternSources.find((source) => source.id === selectedPatternSourceId),
     [details?.paperPatternSources, selectedPatternSourceId]
   );
+  const selectedSetProgramme = useMemo(() => details ? programmes.find((programme) => (
+    programme.board === details.curriculumSet.board
+    && programme.grade === details.curriculumSet.grade
+    && programme.subject === details.curriculumSet.subject
+  )) : undefined, [details, programmes]);
 
   useEffect(() => {
     if (!details?.paperPatternSources.length) {
@@ -144,14 +163,16 @@ export default function CurriculumManagement() {
   const refreshManagementData = async () => {
     await Promise.all([
       utils.curriculum.listSets.invalidate(),
+      utils.curriculum.listProgrammes.invalidate(),
       selectedSetId ? utils.curriculum.getManagementDetails.invalidate({ curriculumSetId: selectedSetId }) : Promise.resolve(),
     ]);
   };
 
   const handleCreateSet = async () => {
+    if (!setProgrammeId) return toast.error("Create or select a Programme Catalogue entry first.");
     if (!setLabel.trim()) return toast.error("Enter a clear curriculum-set label first.");
     try {
-      const created = await createSet.mutateAsync({ subject: setSubject, label: setLabel.trim(), editionLabel: editionLabel.trim() || undefined });
+      const created = await createSet.mutateAsync({ programmeId: setProgrammeId, label: setLabel.trim(), editionLabel: editionLabel.trim() || undefined });
       setSelectedSetId(created.id);
       setSetLabel("");
       setEditionLabel("");
@@ -159,6 +180,38 @@ export default function CurriculumManagement() {
       toast.success("Curriculum set created. Add one source file at a time, then review its chapters.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not create the curriculum set.");
+    }
+  };
+
+  const handleCreateProgramme = async () => {
+    if (!programmeBoard.trim() || !programmeGrade.trim() || !programmeSubject.trim() || !programmeTeacherLabel.trim()) {
+      return toast.error("Enter the board, grade, subject identifier, and teacher-facing label.");
+    }
+    try {
+      const programme = await createProgramme.mutateAsync({
+        board: programmeBoard.trim(),
+        grade: programmeGrade.trim(),
+        subject: programmeSubject.trim().toLowerCase().replace(/\s+/g, "_"),
+        teacherLabel: programmeTeacherLabel.trim(),
+      });
+      setSetProgrammeId(programme.id);
+      setProgrammeGrade("");
+      setProgrammeSubject("");
+      setProgrammeTeacherLabel("");
+      await utils.curriculum.listProgrammes.invalidate();
+      toast.success("Programme created as intake-only. Add and activate a reviewed curriculum edition before making it teacher-ready.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "The programme could not be created.");
+    }
+  };
+
+  const handleActivateProgramme = async (programmeId: number) => {
+    try {
+      await activateProgramme.mutateAsync({ programmeId });
+      await utils.curriculum.listProgrammes.invalidate();
+      toast.success("Programme is ready for teachers. Only its approved curriculum sources can be selected in the builder.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "The programme cannot be activated yet.");
     }
   };
 
@@ -212,12 +265,13 @@ export default function CurriculumManagement() {
   const handlePaperPatternUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !details) return;
+    if (!selectedSetProgramme) return toast.error("Create the matching Programme Catalogue entry before adding paper-pattern sources.");
     if (!["application/pdf", "text/plain"].includes(file.type)) return toast.error("Only text-based PDF and TXT paper sources are supported.");
     if (file.size > 30 * 1024 * 1024) return toast.error("Keep each paper source under 30MB.");
     setIsUploadingPattern(true);
     try {
       const fileBuffer = await fileToBase64(file);
-      const created = await ingestPaperPatternSource.mutateAsync({ subject: details.curriculumSet.subject, sourceKind: paperPatternKind, academicYear: paperPatternYear.trim() || undefined, fileName: file.name, mimeType: file.type as "application/pdf" | "text/plain", fileBuffer });
+      const created = await ingestPaperPatternSource.mutateAsync({ programmeId: selectedSetProgramme.id, sourceKind: paperPatternKind, academicYear: paperPatternYear.trim() || undefined, fileName: file.name, mimeType: file.type as "application/pdf" | "text/plain", fileBuffer });
       setSelectedPatternSourceId(created.id);
       setPaperPatternYear("");
       await utils.curriculum.getManagementDetails.invalidate({ curriculumSetId: details.curriculumSet.id });
@@ -374,12 +428,23 @@ export default function CurriculumManagement() {
 
         {setsQuery.error && <Card className="mb-6 border-destructive/50"><CardContent className="py-4 text-sm text-destructive">Curriculum management is restricted to administrators. Sign in with the Paramount Academy administrator account, then return to this page.</CardContent></Card>}
 
+        <section className="mb-6" aria-label="Programme Catalogue">
+          <Card className="border-primary/20 bg-primary/[0.025]">
+            <CardHeader><CardTitle className="flex items-center gap-2"><BookMarked className="h-5 w-5 text-primary" />Programme Catalogue</CardTitle><CardDescription>Create future board, grade, and subject combinations as intake-only. A programme remains hidden from teachers until an active reviewed curriculum edition exists and you explicitly mark it ready.</CardDescription></CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[130px_100px_1fr_1fr_auto]"><Input aria-label="Programme board" value={programmeBoard} onChange={(event) => setProgrammeBoard(event.target.value)} placeholder="Board" /><Input aria-label="Programme grade" value={programmeGrade} onChange={(event) => setProgrammeGrade(event.target.value)} placeholder="Grade" /><Input aria-label="Programme subject identifier" value={programmeSubject} onChange={(event) => setProgrammeSubject(event.target.value)} placeholder="Subject identifier" /><Input aria-label="Programme teacher label" value={programmeTeacherLabel} onChange={(event) => setProgrammeTeacherLabel(event.target.value)} placeholder="Teacher-facing subject label" /><Button type="button" onClick={handleCreateProgramme} disabled={createProgramme.isPending}><Plus className="mr-2 h-4 w-4" />Add programme</Button></div>
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{programmes.map((programme) => { const hasActiveEdition = curriculumSets.some((set) => set.board === programme.board && set.grade === programme.grade && set.subject === programme.subject && set.status === "active"); return <div key={programme.id} className="rounded-xl border border-border/70 bg-background/75 p-4"><div className="flex items-start justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[0.12em] text-primary">{programme.board} · Grade {programme.grade}</p><p className="mt-1 font-semibold text-foreground">{programme.teacherLabel}</p><p className="mt-1 text-xs text-muted-foreground">{programme.subject}</p></div><span className={`rounded-full px-2 py-1 text-[11px] font-bold ${programme.status === "ready" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>{programme.status === "ready" ? "teacher-ready" : "intake only"}</span></div><p className="mt-3 text-xs text-muted-foreground">{hasActiveEdition ? "Reviewed active edition available" : "Requires an active reviewed edition"}</p>{programme.status === "intake_only" && <Button type="button" size="sm" variant="outline" className="mt-3" onClick={() => handleActivateProgramme(programme.id)} disabled={!hasActiveEdition || activateProgramme.isPending}>Activate programme</Button>}</div>; })}</div>
+              {!programmes.length && !programmesQuery.isLoading && <p className="rounded-lg border border-dashed border-border p-3 text-sm text-muted-foreground">No programmes exist yet. Create one above before creating its first curriculum edition.</p>}
+            </CardContent>
+          </Card>
+        </section>
+
         <section className="mb-6" aria-label="Curriculum Library overview">
           <div className="grid gap-3 sm:grid-cols-3">
             {[{ label: "Active editions", value: statusCounts.active, tone: "border-emerald-200 bg-emerald-50 text-emerald-800" }, { label: "Draft editions", value: statusCounts.draft, tone: "border-amber-200 bg-amber-50 text-amber-800" }, { label: "Archived editions", value: statusCounts.archived, tone: "border-slate-200 bg-slate-50 text-slate-700" }].map((item) => <Card key={item.label} className={item.tone}><CardContent className="p-4"><p className="text-xs font-bold uppercase tracking-[0.12em]">{item.label}</p><p className="mt-1 text-2xl font-bold">{item.value}</p></CardContent></Card>)}
           </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3" aria-label="Curriculum editions">
-            {curriculumSets.map((set) => <button key={set.id} type="button" onClick={() => setSelectedSetId(set.id)} className={`rounded-xl border p-4 text-left transition-colors ${selectedSetId === set.id ? "border-primary bg-primary/[0.055] shadow-sm" : "border-border bg-card hover:border-primary/35"}`}><div className="flex items-start justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[0.12em] text-primary">Grade {set.grade} · {subjectLabels[set.subject]}</p><p className="mt-1 font-bold text-foreground">{set.label}</p></div><span className={`rounded-full px-2 py-1 text-[11px] font-bold ${set.status === "active" ? "bg-emerald-100 text-emerald-800" : set.status === "draft" ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-700"}`}>{set.status}</span></div><p className="mt-2 text-xs text-muted-foreground">{set.editionLabel || "Edition label pending"}</p></button>)}
+            {curriculumSets.map((set) => <button key={set.id} type="button" onClick={() => setSelectedSetId(set.id)} className={`rounded-xl border p-4 text-left transition-colors ${selectedSetId === set.id ? "border-primary bg-primary/[0.055] shadow-sm" : "border-border bg-card hover:border-primary/35"}`}><div className="flex items-start justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[0.12em] text-primary">Grade {set.grade} · {formatSubjectLabel(set.subject)}</p><p className="mt-1 font-bold text-foreground">{set.label}</p></div><span className={`rounded-full px-2 py-1 text-[11px] font-bold ${set.status === "active" ? "bg-emerald-100 text-emerald-800" : set.status === "draft" ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-700"}`}>{set.status}</span></div><p className="mt-2 text-xs text-muted-foreground">{set.editionLabel || "Edition label pending"}</p></button>)}
             {!curriculumSets.length && !setsQuery.isLoading && <Card className="border-dashed sm:col-span-2 xl:col-span-3"><CardContent className="p-5 text-sm text-muted-foreground">No curriculum edition has been created yet. Create a draft edition below, then upload its official source file.</CardContent></Card>}
           </div>
         </section>
@@ -390,10 +455,10 @@ export default function CurriculumManagement() {
             <CardContent className="space-y-3">
               <Select value={selectedSetId?.toString() ?? "__none__"} onValueChange={(value) => setSelectedSetId(Number(value))}>
                 <SelectTrigger aria-label="Selected curriculum set"><SelectValue placeholder="Select a curriculum set" /></SelectTrigger>
-                <SelectContent>{setsQuery.data?.map((set) => <SelectItem key={set.id} value={set.id.toString()}>{subjectLabels[set.subject]} — {set.label} ({set.status})</SelectItem>)}</SelectContent>
+                <SelectContent>{setsQuery.data?.map((set) => <SelectItem key={set.id} value={set.id.toString()}>{formatSubjectLabel(set.subject)} — {set.label} ({set.status})</SelectItem>)}</SelectContent>
               </Select>
-              <Label htmlFor="set-subject">New set subject</Label>
-              <Select value={setSubject} onValueChange={(value) => setSetSubject(value as Subject)}><SelectTrigger id="set-subject"><SelectValue /></SelectTrigger><SelectContent>{Object.entries(subjectLabels).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select>
+              <Label htmlFor="set-programme">New set programme</Label>
+              <Select value={setProgrammeId?.toString() ?? "__none__"} onValueChange={(value) => setSetProgrammeId(Number(value))}><SelectTrigger id="set-programme"><SelectValue placeholder="Select a programme" /></SelectTrigger><SelectContent>{programmes.map((programme) => <SelectItem key={programme.id} value={programme.id.toString()}>Grade {programme.grade} · {programme.teacherLabel} ({programme.status})</SelectItem>)}</SelectContent></Select>
               <Input aria-label="Curriculum set label" value={setLabel} onChange={(event) => setSetLabel(event.target.value)} placeholder="e.g. FBISE Grade 10 Physics" />
               <Input aria-label="Edition label" value={editionLabel} onChange={(event) => setEditionLabel(event.target.value)} placeholder="e.g. 2026 edition" />
               <Button className="w-full" onClick={handleCreateSet} disabled={createSet.isPending}><Plus className="mr-2 h-4 w-4" />Create Draft Set</Button>

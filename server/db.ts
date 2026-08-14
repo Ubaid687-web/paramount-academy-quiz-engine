@@ -27,12 +27,14 @@ import {
   assessmentDrafts,
   assessmentPatternSources,
   assessmentPatternProfiles,
+  programmeCatalogues,
   InsertAssessmentDraft,
   InsertAssessmentPatternSource,
   InsertAssessmentPatternProfile,
+  InsertProgrammeCatalogue,
   AssessmentDraft,
 } from "../drizzle/schema";
-import type { FbiseSubject, ScopeCatalog } from "./curriculumScope";
+import type { FbiseSubject, ProgrammeKey, ScopeCatalog } from "./curriculumScope";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -239,13 +241,76 @@ export async function getUserGenerationJobs(userId: number) {
  * Loads only the server-approved active curriculum catalog. Callers must resolve a scope through
  * this data instead of accepting browser-supplied chapter text.
  */
-export async function getActiveCurriculumScopeCatalog(subject: FbiseSubject): Promise<ScopeCatalog | undefined> {
+export async function listProgrammeCatalogues() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.select().from(programmeCatalogues).orderBy(asc(programmeCatalogues.board), asc(programmeCatalogues.grade), asc(programmeCatalogues.subject));
+}
+
+export async function listReadyProgrammes() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.select().from(programmeCatalogues).where(eq(programmeCatalogues.status, "ready")).orderBy(asc(programmeCatalogues.board), asc(programmeCatalogues.grade), asc(programmeCatalogues.subject));
+}
+
+export async function getProgrammeCatalogue(programmeId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const rows = await db.select().from(programmeCatalogues).where(eq(programmeCatalogues.id, programmeId)).limit(1);
+  return rows[0];
+}
+
+export async function getProgrammeCatalogueByKey(programme: ProgrammeKey) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const rows = await db.select().from(programmeCatalogues).where(and(
+    eq(programmeCatalogues.board, programme.board),
+    eq(programmeCatalogues.grade, programme.grade),
+    eq(programmeCatalogues.subject, programme.subject),
+  )).limit(1);
+  return rows[0];
+}
+
+export async function createProgrammeCatalogue(values: Pick<InsertProgrammeCatalogue, "board" | "grade" | "subject" | "teacherLabel" | "createdBy">) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(programmeCatalogues).values({ ...values, status: "intake_only" });
+  return getProgrammeCatalogue(result[0].insertId as number);
+}
+
+export async function activateProgrammeCatalogue(programmeId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const programme = await getProgrammeCatalogue(programmeId);
+  if (!programme) throw new Error("Programme catalogue entry not found.");
+  const activeSets = await db.select({ id: curriculumSets.id }).from(curriculumSets).where(and(
+    eq(curriculumSets.board, programme.board),
+    eq(curriculumSets.grade, programme.grade),
+    eq(curriculumSets.subject, programme.subject),
+    eq(curriculumSets.status, "active"),
+  )).limit(1);
+  if (!activeSets.length) {
+    throw new Error("Activate a reviewed curriculum edition for this programme before making it available to teachers.");
+  }
+  await db.update(programmeCatalogues).set({ status: "ready", activatedAt: new Date() }).where(eq(programmeCatalogues.id, programmeId));
+  return getProgrammeCatalogue(programmeId);
+}
+
+/**
+ * Loads only a ready programme's active, server-approved curriculum catalog. Callers must resolve
+ * a scope through this data instead of accepting browser-supplied chapter text.
+ */
+export async function getActiveCurriculumScopeCatalog(programme: ProgrammeKey): Promise<ScopeCatalog | undefined> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
+  const readyProgramme = await getProgrammeCatalogueByKey(programme);
+  if (readyProgramme?.status !== "ready") return undefined;
+
   const sets = await db.select().from(curriculumSets).where(and(
-    eq(curriculumSets.grade, "10"),
-    eq(curriculumSets.subject, subject),
+    eq(curriculumSets.board, programme.board),
+    eq(curriculumSets.grade, programme.grade),
+    eq(curriculumSets.subject, programme.subject),
     eq(curriculumSets.status, "active"),
   )).orderBy(asc(curriculumSets.id)).limit(1);
   const curriculumSet = sets[0];
@@ -276,6 +341,7 @@ export async function getActiveCurriculumScopeCatalog(subject: FbiseSubject): Pr
   return {
     curriculumSet: {
       id: curriculumSet.id,
+      board: curriculumSet.board,
       grade: curriculumSet.grade,
       subject: curriculumSet.subject,
       label: curriculumSet.label,
@@ -426,12 +492,13 @@ export async function createReplacementCurriculumSet(currentSetId: number, value
   });
 }
 
-export async function listAssessmentPatternSources(subject: FbiseSubject) {
+export async function listAssessmentPatternSources(programme: ProgrammeKey) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   return db.select().from(assessmentPatternSources).where(and(
-    eq(assessmentPatternSources.grade, "10"),
-    eq(assessmentPatternSources.subject, subject),
+    eq(assessmentPatternSources.board, programme.board),
+    eq(assessmentPatternSources.grade, programme.grade),
+    eq(assessmentPatternSources.subject, programme.subject),
   )).orderBy(asc(assessmentPatternSources.id));
 }
 
@@ -489,24 +556,26 @@ export async function activateAssessmentPatternSource(sourceId: number) {
   return activated[0];
 }
 
-export async function listActiveAssessmentPatternSources(subject: FbiseSubject) {
+export async function listActiveAssessmentPatternSources(programme: ProgrammeKey) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   return db.select().from(assessmentPatternSources).where(and(
-    eq(assessmentPatternSources.grade, "10"),
-    eq(assessmentPatternSources.subject, subject),
+    eq(assessmentPatternSources.board, programme.board),
+    eq(assessmentPatternSources.grade, programme.grade),
+    eq(assessmentPatternSources.subject, programme.subject),
     eq(assessmentPatternSources.status, "active"),
     eq(assessmentPatternSources.extractionStatus, "extracted"),
   )).orderBy(asc(assessmentPatternSources.id));
 }
 
-export async function listAssessmentPatternSourcesByIds(subject: FbiseSubject, sourceIds: number[]) {
+export async function listAssessmentPatternSourcesByIds(programme: ProgrammeKey, sourceIds: number[]) {
   if (!sourceIds.length) return [];
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   return db.select().from(assessmentPatternSources).where(and(
-    eq(assessmentPatternSources.grade, "10"),
-    eq(assessmentPatternSources.subject, subject),
+    eq(assessmentPatternSources.board, programme.board),
+    eq(assessmentPatternSources.grade, programme.grade),
+    eq(assessmentPatternSources.subject, programme.subject),
     eq(assessmentPatternSources.status, "active"),
     eq(assessmentPatternSources.extractionStatus, "extracted"),
     inArray(assessmentPatternSources.id, sourceIds),

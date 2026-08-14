@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { ArrowLeft, Atom, Beaker, BookOpenCheck, ChevronRight, ClipboardCheck, FileQuestion, LaptopMinimal, Loader2, Sparkles, Trash2 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
@@ -8,27 +8,24 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
 
-type Grade = "9" | "10";
-type Subject = "physics" | "chemistry" | "computer_science";
+type ReadyProgramme = { id: number; board: string; grade: string; subject: string; teacherLabel: string };
 
-const gradeCards: Array<{ grade: Grade; title: string; summary: string; state: string; tone: string }> = [
-  { grade: "10", title: "Grade 10", summary: "The current MCQ preparation priority. Choose a subject to prepare a source-grounded draft.", state: "Ready to prepare", tone: "border-emerald-200 bg-emerald-50 text-emerald-700" },
-  { grade: "9", title: "Grade 9", summary: "Choose a subject to view its separate curriculum-intake status. Grade 10 rules are not reused here.", state: "Curriculum intake", tone: "border-amber-200 bg-amber-50 text-amber-700" },
-];
-
-const subjects: Array<{ id: Subject; title: string; short: string; eyebrow: string; Icon: typeof Atom; iconTone: string; cardTone: string; accentTone: string }> = [
-  { id: "physics", title: "Physics", short: "Conceptual board-style MCQ preparation", eyebrow: "Matter & motion", Icon: Atom, iconTone: "bg-sky-100 text-sky-700", cardTone: "border-sky-100 hover:border-sky-300", accentTone: "bg-sky-500" },
-  { id: "chemistry", title: "Chemistry", short: "Conceptual board-style MCQ preparation", eyebrow: "Matter & change", Icon: Beaker, iconTone: "bg-violet-100 text-violet-700", cardTone: "border-violet-100 hover:border-violet-300", accentTone: "bg-violet-500" },
-  { id: "computer_science", title: "Computer Science", short: "Conceptual board-style MCQ preparation", eyebrow: "Logic & systems", Icon: LaptopMinimal, iconTone: "bg-emerald-100 text-emerald-700", cardTone: "border-emerald-100 hover:border-emerald-300", accentTone: "bg-emerald-500" },
-];
+const subjectPresentation: Record<string, { eyebrow: string; Icon: typeof Atom; iconTone: string; cardTone: string; accentTone: string }> = {
+  physics: { eyebrow: "Matter & motion", Icon: Atom, iconTone: "bg-sky-100 text-sky-700", cardTone: "border-sky-100 hover:border-sky-300", accentTone: "bg-sky-500" },
+  chemistry: { eyebrow: "Matter & change", Icon: Beaker, iconTone: "bg-violet-100 text-violet-700", cardTone: "border-violet-100 hover:border-violet-300", accentTone: "bg-violet-500" },
+  computer_science: { eyebrow: "Logic & systems", Icon: LaptopMinimal, iconTone: "bg-emerald-100 text-emerald-700", cardTone: "border-emerald-100 hover:border-emerald-300", accentTone: "bg-emerald-500" },
+};
 
 export default function QuizList() {
   const [, navigate] = useLocation();
-  const [selectedGrade, setSelectedGrade] = useState<Grade | null>(null);
-  const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
+  const [selectedGrade, setSelectedGrade] = useState<string | null>(null);
+  const [selectedProgramme, setSelectedProgramme] = useState<ReadyProgramme | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const shouldLoadLibrary = selectedGrade !== null;
+  const readyProgrammesQuery = trpc.curriculum.listReadyProgrammes.useQuery();
+  const readyProgrammes = (readyProgrammesQuery.data ?? []).filter((programme) => programme.status === "ready");
+  const grades = useMemo(() => Array.from(new Set(readyProgrammes.map((programme) => programme.grade))).sort((left, right) => Number(right) - Number(left) || left.localeCompare(right)), [readyProgrammes]);
   const { data: quizzes, isLoading, error, refetch } = trpc.quiz.getAll.useQuery(undefined, {
     enabled: shouldLoadLibrary,
     staleTime: 5 * 60 * 1000,
@@ -36,18 +33,18 @@ export default function QuizList() {
   });
   const deleteQuizMutation = trpc.quiz.deleteQuiz.useMutation();
 
-  const selectGrade = (grade: Grade) => {
+  const selectGrade = (grade: string) => {
     setSelectedGrade(grade);
-    setSelectedSubject(null);
+    setSelectedProgramme(null);
   };
 
   const returnToGrades = () => {
     setSelectedGrade(null);
-    setSelectedSubject(null);
+    setSelectedProgramme(null);
   };
 
   const returnToSubjects = () => {
-    setSelectedSubject(null);
+    setSelectedProgramme(null);
   };
 
   const handleReturnKey = (event: React.KeyboardEvent<HTMLButtonElement>, action: () => void) => {
@@ -71,7 +68,7 @@ export default function QuizList() {
     }
   };
 
-  const selectedSubjectInfo = subjects.find((subject) => subject.id === selectedSubject);
+  const programmesForSelectedGrade = selectedGrade ? readyProgrammes.filter((programme) => programme.grade === selectedGrade) : [];
 
   return (
     <AcademyShell eyebrow="Teacher MCQ Workspace">
@@ -86,16 +83,14 @@ export default function QuizList() {
                 <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground sm:text-base">Start a new assessment.</p>
               </div>
             </div>
-            <div className="grid gap-4 md:grid-cols-2" aria-label="Choose a class">
-              {gradeCards.map((item) => <button key={item.grade} type="button" onClick={() => selectGrade(item.grade)} className="group rounded-[1.5rem] border border-border/80 bg-card p-5 text-left shadow-sm transition-[transform,box-shadow,border-color,background-color] duration-200 hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 active:translate-y-0 active:scale-[0.985] sm:p-7"><div className="flex items-start justify-between gap-4"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary"><BookOpenCheck className="h-5 w-5" /></div><span className={`rounded-full border px-2.5 py-1 text-[11px] font-extrabold ${item.tone}`}>{item.state}</span></div><h2 className="mt-6 text-xl font-extrabold tracking-[-0.035em] text-foreground sm:text-2xl">{item.title}</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">{item.summary}</p><p className="mt-5 flex items-center gap-1 text-sm font-extrabold text-primary">Choose {item.title}<ChevronRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" /></p></button>)}
-            </div>
-          </> : !selectedSubject ? <>
+            {readyProgrammesQuery.isLoading ? <Card><CardContent className="flex items-center gap-2 p-6 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Loading approved programmes…</CardContent></Card> : <div className="grid gap-4 md:grid-cols-2" aria-label="Choose a class">{grades.map((grade) => { const count = readyProgrammes.filter((programme) => programme.grade === grade).length; return <button key={grade} type="button" onClick={() => selectGrade(grade)} className="group rounded-[1.5rem] border border-border/80 bg-card p-5 text-left shadow-sm transition-[transform,box-shadow,border-color,background-color] duration-200 hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 active:translate-y-0 active:scale-[0.985] sm:p-7"><div className="flex items-start justify-between gap-4"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary"><BookOpenCheck className="h-5 w-5" /></div><span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-extrabold text-emerald-700">Ready to prepare</span></div><h2 className="mt-6 text-xl font-extrabold tracking-[-0.035em] text-foreground sm:text-2xl">Grade {grade}</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">{count} approved {count === 1 ? "subject" : "subjects"} available for source-grounded assessment drafts.</p><p className="mt-5 flex items-center gap-1 text-sm font-extrabold text-primary">Choose Grade {grade}<ChevronRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" /></p></button>; })}{!grades.length && <Card className="border-dashed md:col-span-2"><CardContent className="p-6 text-sm text-muted-foreground">No programme is ready for teachers yet. Portal Admin must review and activate a curriculum edition first.</CardContent></Card>}</div>}
+          </> : !selectedProgramme ? <>
             <Button type="button" variant="ghost" className="academy-back-button mb-5" onClick={returnToGrades} onKeyDown={(event) => handleReturnKey(event, returnToGrades)} aria-label="Return to class selection"><ArrowLeft className="h-4 w-4" />Change class</Button>
             <div className="mb-6 rounded-[1.5rem] border border-primary/10 bg-card px-5 py-6 shadow-[0_14px_42px_oklch(0.36_0.12_255_/_0.06)] sm:mb-7 sm:px-7"><p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-primary">Grade {selectedGrade}</p><h1 className="mt-2 text-[2rem] font-extrabold tracking-[-0.055em] text-foreground">Choose a subject.</h1></div>
-            <div className="grid gap-3 sm:grid-cols-3 sm:gap-4" aria-label="Choose a subject">{subjects.map((subject) => { const SubjectIcon = subject.Icon; return <button key={subject.id} type="button" onClick={() => setSelectedSubject(subject.id)} className={`group relative overflow-hidden rounded-[1.35rem] border bg-card p-5 text-left shadow-sm transition-[transform,box-shadow,border-color,background-color] duration-200 hover:-translate-y-0.5 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 active:translate-y-0 active:scale-[0.985] ${subject.cardTone}`}><span className={`absolute inset-x-0 top-0 h-1 ${subject.accentTone}`} aria-hidden="true" /><div className={`flex h-10 w-10 items-center justify-center rounded-xl ${subject.iconTone}`}><SubjectIcon className="h-5 w-5" /></div><p className="mt-5 text-[10px] font-extrabold uppercase tracking-[0.16em] text-muted-foreground">{subject.eyebrow}</p><h2 className="mt-1 text-xl font-extrabold tracking-[-0.04em] text-foreground sm:text-2xl">{subject.title}</h2><p className="mt-2 text-sm leading-5 text-muted-foreground">{selectedGrade === "10" ? subject.short : "Separate Grade 9 pattern and source confirmation"}</p><p className="mt-5 flex items-center gap-1 text-sm font-extrabold text-primary">Continue <ChevronRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" /></p></button>; })}</div>
+            <div className="grid gap-3 sm:grid-cols-3 sm:gap-4" aria-label="Choose a subject">{programmesForSelectedGrade.map((programme) => { const presentation = subjectPresentation[programme.subject] ?? { eyebrow: programme.board, Icon: BookOpenCheck, iconTone: "bg-primary/10 text-primary", cardTone: "border-primary/15 hover:border-primary/35", accentTone: "bg-primary" }; const SubjectIcon = presentation.Icon; return <button key={programme.id} type="button" onClick={() => setSelectedProgramme(programme)} className={`group relative overflow-hidden rounded-[1.35rem] border bg-card p-5 text-left shadow-sm transition-[transform,box-shadow,border-color,background-color] duration-200 hover:-translate-y-0.5 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 active:translate-y-0 active:scale-[0.985] ${presentation.cardTone}`}><span className={`absolute inset-x-0 top-0 h-1 ${presentation.accentTone}`} aria-hidden="true" /><div className={`flex h-10 w-10 items-center justify-center rounded-xl ${presentation.iconTone}`}><SubjectIcon className="h-5 w-5" /></div><p className="mt-5 text-[10px] font-extrabold uppercase tracking-[0.16em] text-muted-foreground">{presentation.eyebrow}</p><h2 className="mt-1 text-xl font-extrabold tracking-[-0.04em] text-foreground sm:text-2xl">{programme.teacherLabel}</h2><p className="mt-2 text-sm leading-5 text-muted-foreground">Approved source-grounded assessment preparation</p><p className="mt-5 flex items-center gap-1 text-sm font-extrabold text-primary">Continue <ChevronRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" /></p></button>; })}</div>
           </> : <>
             <Button type="button" variant="ghost" className="academy-back-button mb-5" onClick={returnToSubjects} onKeyDown={(event) => handleReturnKey(event, returnToSubjects)} aria-label="Return to subject selection"><ArrowLeft className="h-4 w-4" />Change subject</Button>
-            <Card className="overflow-hidden border-primary/15 bg-card shadow-[0_18px_55px_oklch(0.36_0.12_255_/_0.08)]"><CardContent className="p-6 sm:p-9"><p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-primary">{selectedGrade === "10" ? "Ready" : "Setup pending"}</p><h1 className="mt-3 text-[2rem] font-extrabold tracking-[-0.055em] text-foreground sm:text-4xl">Grade {selectedGrade} · {selectedSubjectInfo?.title}</h1>{selectedGrade === "10" ? <Link href={`/generate?grade=10&subject=${selectedSubject}`} className="mt-7 inline-flex no-underline"><Button size="lg" className="rounded-xl bg-primary px-5 font-extrabold text-primary-foreground shadow-lg shadow-primary/20 transition-transform duration-200 hover:bg-primary/90 active:scale-[0.98]"><Sparkles className="mr-2 h-4 w-4" />Open builder</Button></Link> : <div className="mt-6 inline-flex rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">Curriculum setup pending</div>}</CardContent></Card>
+            <Card className="overflow-hidden border-primary/15 bg-card shadow-[0_18px_55px_oklch(0.36_0.12_255_/_0.08)]"><CardContent className="p-6 sm:p-9"><p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-primary">Ready</p><h1 className="mt-3 text-[2rem] font-extrabold tracking-[-0.055em] text-foreground sm:text-4xl">Grade {selectedProgramme.grade} · {selectedProgramme.teacherLabel}</h1><Link href={`/generate?board=${encodeURIComponent(selectedProgramme.board)}&grade=${encodeURIComponent(selectedProgramme.grade)}&subject=${encodeURIComponent(selectedProgramme.subject)}`} className="mt-7 inline-flex no-underline"><Button size="lg" className="rounded-xl bg-primary px-5 font-extrabold text-primary-foreground shadow-lg shadow-primary/20 transition-transform duration-200 hover:bg-primary/90 active:scale-[0.98]"><Sparkles className="mr-2 h-4 w-4" />Open builder</Button></Link></CardContent></Card>
           </>}
         </section>
 

@@ -5,6 +5,12 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, publicProcedure, protectedProcedure, router } from "./_core/trpc";
 
+const programmeKeySchema = z.object({
+  board: z.string().trim().min(2).max(50).default("FBISE"),
+  grade: z.string().trim().min(1).max(20).default("10"),
+  subject: z.string().trim().min(2).max(100),
+});
+
 export const appRouter = router({
   system: systemRouter,
   auth: router({
@@ -113,6 +119,30 @@ export const appRouter = router({
   }),
 
   curriculum: router({
+    listProgrammes: adminProcedure.query(async () => {
+      const { listProgrammeCatalogues } = await import("./db");
+      return listProgrammeCatalogues();
+    }),
+
+    listReadyProgrammes: publicProcedure.query(async () => {
+      const { listReadyProgrammes } = await import("./db");
+      return listReadyProgrammes();
+    }),
+
+    createProgramme: adminProcedure
+      .input(programmeKeySchema.extend({ teacherLabel: z.string().trim().min(2).max(255) }))
+      .mutation(async ({ ctx, input }) => {
+        const { createProgrammeCatalogue } = await import("./db");
+        return createProgrammeCatalogue({ ...input, createdBy: ctx.user.id });
+      }),
+
+    activateProgramme: adminProcedure
+      .input(z.object({ programmeId: z.number().int().positive() }))
+      .mutation(async ({ input }) => {
+        const { activateProgrammeCatalogue } = await import("./db");
+        return activateProgrammeCatalogue(input.programmeId);
+      }),
+
     listSets: adminProcedure.query(async () => {
       const { listCurriculumSets } = await import("./db");
       return listCurriculumSets();
@@ -126,7 +156,7 @@ export const appRouter = router({
         if (!curriculumSet) throw new Error("Curriculum set not found");
         const chapters = await listCurriculumChapters(input.curriculumSetId);
         const sources = await listCurriculumSources(input.curriculumSetId);
-        const paperPatternSources = await listAssessmentPatternSources(curriculumSet.subject);
+        const paperPatternSources = await listAssessmentPatternSources({ board: curriculumSet.board, grade: curriculumSet.grade, subject: curriculumSet.subject });
         const paperPatternProfiles = await listAssessmentPatternProfilesBySourceIds(paperPatternSources.map((source) => source.id));
         const chapterSegments = await Promise.all(chapters.map(async (chapter) => ({
           chapterId: chapter.id,
@@ -152,16 +182,19 @@ export const appRouter = router({
 
     createSet: adminProcedure
       .input(z.object({
-        subject: z.enum(["physics", "chemistry", "computer_science"]),
+        programmeId: z.number().int().positive(),
         label: z.string().min(3).max(255),
         editionLabel: z.string().max(255).optional(),
         replacesSetId: z.number().int().positive().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        const { createCurriculumSet } = await import("./db");
+        const { createCurriculumSet, getProgrammeCatalogue } = await import("./db");
+        const programme = await getProgrammeCatalogue(input.programmeId);
+        if (!programme) throw new Error("Select a Programme Catalogue entry before creating its curriculum edition.");
         return createCurriculumSet({
-          grade: "10",
-          subject: input.subject,
+          board: programme.board,
+          grade: programme.grade,
+          subject: programme.subject,
           label: input.label,
           editionLabel: input.editionLabel || null,
           replacesSetId: input.replacesSetId,
@@ -227,7 +260,7 @@ export const appRouter = router({
 
     ingestPaperPatternSource: adminProcedure
       .input(z.object({
-        subject: z.enum(["physics", "chemistry", "computer_science"]),
+        programmeId: z.number().int().positive(),
         sourceKind: z.enum(["model_paper", "past_paper"]),
         academicYear: z.string().min(4).max(20).optional(),
         fileName: z.string().min(1).max(255),
@@ -235,17 +268,23 @@ export const appRouter = router({
         fileBuffer: z.string().min(1),
       }))
       .mutation(async ({ ctx, input }) => {
-        const { createAssessmentPatternSource } = await import("./db");
+        const { createAssessmentPatternSource, getProgrammeCatalogue } = await import("./db");
         const { extractCurriculumSourceText } = await import("./curriculumIngestion");
         const { storagePut } = await import("./storage");
         const fileBuffer = Buffer.from(input.fileBuffer, "base64");
         if (!fileBuffer.length || fileBuffer.length > 30 * 1024 * 1024) throw new Error("Paper-pattern source must be between 1 byte and 30MB.");
+        const programme = await getProgrammeCatalogue(input.programmeId);
+        if (!programme) throw new Error("Select a Programme Catalogue entry before uploading its paper-pattern source.");
         const extracted = await extractCurriculumSourceText({ fileBuffer, fileName: input.fileName, mimeType: input.mimeType });
         const extension = input.mimeType === "application/pdf" ? "pdf" : "txt";
-        const stored = await storagePut(`paper-patterns/10/${input.subject}/${randomUUID()}.${extension}`, fileBuffer, input.mimeType);
+        const safeBoard = programme.board.replace(/[^a-z0-9_-]+/gi, "-").toLowerCase();
+        const safeGrade = programme.grade.replace(/[^a-z0-9_-]+/gi, "-").toLowerCase();
+        const safeSubject = programme.subject.replace(/[^a-z0-9_-]+/gi, "-").toLowerCase();
+        const stored = await storagePut(`paper-patterns/${safeBoard}/${safeGrade}/${safeSubject}/${randomUUID()}.${extension}`, fileBuffer, input.mimeType);
         return createAssessmentPatternSource({
-          grade: "10",
-          subject: input.subject,
+          board: programme.board,
+          grade: programme.grade,
+          subject: programme.subject,
           sourceKind: input.sourceKind,
           academicYear: input.academicYear || null,
           storageKey: stored.key,
@@ -394,10 +433,10 @@ export const appRouter = router({
       }),
 
     getActiveScopeCatalog: publicProcedure
-      .input(z.object({ subject: z.enum(["physics", "chemistry", "computer_science"]) }))
+      .input(programmeKeySchema)
       .query(async ({ input }) => {
         const { getActiveCurriculumScopeCatalog } = await import("./db");
-        const catalog = await getActiveCurriculumScopeCatalog(input.subject);
+        const catalog = await getActiveCurriculumScopeCatalog(input);
         if (!catalog) return null;
 
         return {
@@ -433,12 +472,12 @@ export const appRouter = router({
 
   assessment: router({
     getAvailability: publicProcedure
-      .input(z.object({ subject: z.enum(["physics", "chemistry", "computer_science"]) }))
+      .input(programmeKeySchema)
       .query(async ({ input }) => {
         const { getActiveCurriculumScopeCatalog, listActiveAssessmentPatternSources } = await import("./db");
         const [catalog, paperSources] = await Promise.all([
-          getActiveCurriculumScopeCatalog(input.subject),
-          listActiveAssessmentPatternSources(input.subject),
+          getActiveCurriculumScopeCatalog(input),
+          listActiveAssessmentPatternSources(input),
         ]);
         const textbookReady = Boolean(catalog);
         const paperPatternReady = paperSources.length > 0;
@@ -462,9 +501,11 @@ export const appRouter = router({
 
     saveDraft: adminProcedure
       .input(z.object({
-        assessmentMode: z.enum(["mcq", "short", "long", "full_paper"]),
-        scope: z.object({
-          subject: z.enum(["physics", "chemistry", "computer_science"]),
+          assessmentMode: z.enum(["mcq", "short", "long", "full_paper"]),
+          scope: z.object({
+          board: z.string().trim().min(2).max(50).default("FBISE"),
+          grade: z.string().trim().min(1).max(20).default("10"),
+          subject: z.string().trim().min(2).max(100),
           scopeType: z.enum(["single_chapter", "half_chapter", "multiple_chapters", "half_syllabus", "block"]),
           chapterIds: z.array(z.number().int().positive()).optional(),
           segmentIds: z.array(z.number().int().positive()).optional(),
@@ -478,7 +519,8 @@ export const appRouter = router({
         const { resolveCurriculumScope } = await import("./curriculumScope");
         const { validateAssessmentDraftPayload } = await import("@shared/assessmentDraftContract");
 
-        const catalog = await getActiveCurriculumScopeCatalog(input.scope.subject);
+        const catalogueKey = { board: input.scope.board, grade: input.scope.grade, subject: input.scope.subject };
+        const catalog = await getActiveCurriculumScopeCatalog(catalogueKey);
         if (!catalog) {
           throw new Error("No active reviewed textbook source is available for the selected subject.");
         }
@@ -488,7 +530,7 @@ export const appRouter = router({
           throw new Error(`Assessment draft failed validation: ${validation.issues.join(" ")}`);
         }
 
-        const patternSources = await listAssessmentPatternSourcesByIds(input.scope.subject, input.paperPatternSourceIds);
+        const patternSources = await listAssessmentPatternSourcesByIds(catalogueKey, input.paperPatternSourceIds);
         if (input.assessmentMode === "full_paper") {
           if (!input.paperPatternSourceIds.length || patternSources.length !== input.paperPatternSourceIds.length) {
             throw new Error("A full-paper draft requires active, extracted paper-pattern sources supplied for the selected subject.");
@@ -624,9 +666,12 @@ export const appRouter = router({
           contentText: z.string().min(100, "Content must be at least 100 characters").optional(),
           numQuestions: z.number().min(5).max(100),
           difficulty: z.enum(["balanced", "easy", "medium", "hard"]).default("balanced"),
-          patternSubject: z.enum(["physics", "chemistry", "computer_science"]).optional(),
+          patternProgramme: programmeKeySchema.optional(),
+          patternSubject: z.string().trim().min(2).max(100).optional(),
           scope: z.object({
-            subject: z.enum(["physics", "chemistry", "computer_science"]),
+            board: z.string().trim().min(2).max(50).default("FBISE"),
+            grade: z.string().trim().min(1).max(20).default("10"),
+            subject: z.string().trim().min(2).max(100),
             scopeType: z.enum(["single_chapter", "half_chapter", "multiple_chapters", "half_syllabus", "block"]),
             chapterIds: z.array(z.number().int().positive()).optional(),
             segmentIds: z.array(z.number().int().positive()).optional(),
@@ -643,8 +688,8 @@ export const appRouter = router({
           const { getActiveCurriculumScopeCatalog, listActiveAssessmentPatternSources } = await import("./db");
           const { resolveCurriculumScope } = await import("./curriculumScope");
           const [catalog, paperPatternSources] = await Promise.all([
-            getActiveCurriculumScopeCatalog(input.scope.subject),
-            listActiveAssessmentPatternSources(input.scope.subject),
+            getActiveCurriculumScopeCatalog(input.scope),
+            listActiveAssessmentPatternSources(input.scope),
           ]);
           if (!catalog) {
             throw new Error("No active reviewed curriculum is available for the selected subject.");
@@ -664,13 +709,15 @@ export const appRouter = router({
             scopeSnapshot: resolvedScope.snapshot,
             paperPatternGuidance: paperPatternSources.map((source) => ({ sourceKind: source.sourceKind, academicYear: source.academicYear })),
           };
-        } else if (input.patternSubject) {
+        } else if (input.patternProgramme || input.patternSubject) {
           const { listActiveAssessmentPatternSources } = await import("./db");
-          const paperPatternSources = await listActiveAssessmentPatternSources(input.patternSubject);
+          const patternProgramme = input.patternProgramme ?? { board: "FBISE", grade: "10", subject: input.patternSubject! };
+          const paperPatternSources = await listActiveAssessmentPatternSources(patternProgramme);
           sourceContext = {
             sourceType: "raw_text" as const,
             sourceTitle: "Teacher-provided custom source",
-            subject: input.patternSubject,
+            subject: patternProgramme.subject,
+            classLevel: patternProgramme.grade,
             paperPatternGuidance: paperPatternSources.map((source) => ({ sourceKind: source.sourceKind, academicYear: source.academicYear })),
           };
         }
@@ -694,9 +741,11 @@ export const appRouter = router({
         contentText: z.string().min(100, "Content must be at least 100 characters").optional(),
         pairCount: z.number().int().min(1).max(10),
         difficulty: z.enum(["balanced", "easy", "medium", "hard"]).default("balanced"),
-        patternSubject: z.enum(["physics", "chemistry", "computer_science"]).optional(),
+        patternProgramme: programmeKeySchema.optional(),
         scope: z.object({
-          subject: z.enum(["physics", "chemistry", "computer_science"]),
+          board: z.string().trim().min(2).max(50).default("FBISE"),
+          grade: z.string().trim().min(1).max(20),
+          subject: z.string().trim().min(2).max(100),
           scopeType: z.enum(["single_chapter", "half_chapter", "multiple_chapters", "half_syllabus", "block"]),
           chapterIds: z.array(z.number().int().positive()).optional(),
           segmentIds: z.array(z.number().int().positive()).optional(),
@@ -711,8 +760,8 @@ export const appRouter = router({
           const { getActiveCurriculumScopeCatalog, listActiveAssessmentPatternSources } = await import("./db");
           const { resolveCurriculumScope } = await import("./curriculumScope");
           const [catalog, paperPatternSources] = await Promise.all([
-            getActiveCurriculumScopeCatalog(input.scope.subject),
-            listActiveAssessmentPatternSources(input.scope.subject),
+            getActiveCurriculumScopeCatalog(input.scope),
+            listActiveAssessmentPatternSources(input.scope),
           ]);
           if (!catalog) throw new Error("No active reviewed textbook source is available for the selected subject.");
           const resolvedScope = resolveCurriculumScope(catalog, input.scope);
@@ -730,13 +779,14 @@ export const appRouter = router({
             scopeSnapshot: resolvedScope.snapshot,
             paperPatternGuidance: paperPatternSources.map((source) => ({ sourceKind: source.sourceKind, academicYear: source.academicYear })),
           };
-        } else if (input.patternSubject) {
+        } else if (input.patternProgramme) {
           const { listActiveAssessmentPatternSources } = await import("./db");
-          const paperSources = await listActiveAssessmentPatternSources(input.patternSubject);
+          const paperSources = await listActiveAssessmentPatternSources(input.patternProgramme);
           sourceContext = {
             sourceType: "raw_text",
             sourceTitle: "Teacher-provided custom source",
-            subject: input.patternSubject,
+            subject: input.patternProgramme.subject,
+            classLevel: input.patternProgramme.grade,
             paperPatternGuidance: paperSources.map((source) => ({ sourceKind: source.sourceKind, academicYear: source.academicYear })),
           };
         }

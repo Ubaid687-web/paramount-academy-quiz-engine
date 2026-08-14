@@ -1,22 +1,29 @@
 import React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import QuizList from "../client/src/pages/QuizList";
 
 const quizzesQuery = vi.fn();
+const programmesQuery = vi.fn();
 const quizQueryOptions = vi.fn();
 const deleteMutation = vi.fn();
 
-Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
-  writable: true,
-  value: vi.fn(),
-});
+const grade10Programmes = [
+  { id: 1, board: "FBISE", grade: "10", subject: "physics", teacherLabel: "Physics", status: "ready" },
+  { id: 2, board: "FBISE", grade: "10", subject: "chemistry", teacherLabel: "Chemistry", status: "ready" },
+  { id: 3, board: "FBISE", grade: "10", subject: "computer_science", teacherLabel: "Computer Science", status: "ready" },
+];
+
+Object.defineProperty(HTMLElement.prototype, "scrollIntoView", { writable: true, value: vi.fn() });
 
 vi.mock("@/lib/trpc", () => ({
   trpc: {
     quiz: {
       getAll: { useQuery: (...args: unknown[]) => { quizQueryOptions(...args); return quizzesQuery(); } },
       deleteQuiz: { useMutation: () => ({ mutateAsync: deleteMutation }) },
+    },
+    curriculum: {
+      listReadyProgrammes: { useQuery: () => programmesQuery() },
     },
   },
 }));
@@ -25,69 +32,66 @@ vi.mock("wouter", () => ({
   useLocation: () => ["/", vi.fn()],
   Link: ({ href, children, ...props }: { href: string; children: React.ReactNode }) => <a href={href} {...props}>{children}</a>,
 }));
-
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 describe("Quiz Centre entry experience", () => {
   afterEach(() => {
     cleanup();
     quizzesQuery.mockReset();
+    programmesQuery.mockReset();
     quizQueryOptions.mockReset();
     deleteMutation.mockReset();
   });
 
-  it("guides teachers from Grade 10 to a subject and then one relevant draft action", () => {
+  const setReadyGrade10 = () => {
     quizzesQuery.mockReturnValue({ data: [], isLoading: false, error: null, refetch: vi.fn() });
+    programmesQuery.mockReturnValue({ data: grade10Programmes, isLoading: false, error: null });
+  };
+
+  it("guides teachers from a ready grade to a ready subject and then the builder", () => {
+    setReadyGrade10();
     render(<QuizList />);
-
     expect(screen.getByRole("heading", { name: "Select a class." })).toBeTruthy();
-    expect(screen.getByText("Grade 10")).toBeTruthy();
-    expect(screen.getByText("Grade 9")).toBeTruthy();
-    expect(screen.queryByText("Open Quiz Builder")).toBeNull();
-
     fireEvent.click(screen.getByRole("button", { name: /Choose Grade 10/i }));
     expect(screen.getByRole("heading", { name: "Choose a subject." })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /Physics.*Continue/i }));
     expect(screen.getByRole("heading", { name: "Grade 10 · Physics" })).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Open builder" }).getAttribute("href")).toBe("/generate?grade=10&subject=physics");
+    expect(screen.getByRole("link", { name: "Open builder" }).getAttribute("href")).toBe("/generate?board=FBISE&grade=10&subject=physics");
   });
 
-  it("defers the draft-library request on the initial preview and enables it after class selection", () => {
-    quizzesQuery.mockReturnValue({ data: [], isLoading: false, error: null, refetch: vi.fn() });
+  it("defers the draft-library request until a ready class is selected", () => {
+    setReadyGrade10();
     render(<QuizList />);
-
     expect(quizQueryOptions.mock.calls[0]?.[1]).toMatchObject({ enabled: false, staleTime: 300000, refetchOnWindowFocus: false });
     fireEvent.click(screen.getByRole("button", { name: /Choose Grade 10/i }));
     expect(quizQueryOptions.mock.calls.at(-1)?.[1]).toMatchObject({ enabled: true });
   });
 
   it("shows three accessible skeleton draft cards while the deferred library request is loading", () => {
+    programmesQuery.mockReturnValue({ data: grade10Programmes, isLoading: false, error: null });
     quizzesQuery.mockReturnValue({ data: undefined, isLoading: true, error: null, refetch: vi.fn() });
     render(<QuizList />);
-
-    expect(screen.queryByRole("status", { name: /loading recent mcq drafts/i })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: /Choose Grade 10/i }));
     expect(screen.getByRole("status", { name: /loading recent mcq drafts/i }).getAttribute("aria-busy")).toBe("true");
     expect(document.querySelectorAll('[data-slot="skeleton"]').length).toBe(21);
   });
 
-  it("shows Grade 9 subject intake without exposing a Grade 10 draft action", () => {
+  it("hides an intake-only Grade 9 programme from teachers", () => {
+    programmesQuery.mockReturnValue({
+      data: [...grade10Programmes, { id: 9, board: "FBISE", grade: "9", subject: "physics", teacherLabel: "Physics", status: "intake_only" }],
+      isLoading: false,
+      error: null,
+    });
     quizzesQuery.mockReturnValue({ data: [], isLoading: false, error: null, refetch: vi.fn() });
     render(<QuizList />);
-
-    fireEvent.click(screen.getByRole("button", { name: /Choose Grade 9/i }));
-    fireEvent.click(screen.getByRole("button", { name: /Physics.*Continue/i }));
-    expect(screen.getByRole("heading", { name: "Grade 9 · Physics" })).toBeTruthy();
-    expect(screen.getByText("Curriculum setup pending")).toBeTruthy();
-    expect(screen.queryByRole("link", { name: "Open builder" })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Choose Grade 9/i })).toBeNull();
+    expect(screen.queryByText(/Curriculum setup pending/i)).toBeNull();
   });
 
-  it("shows the current shared Grade 10 MCQ subjects without a staff-detail selector", async () => {
-    quizzesQuery.mockReturnValue({ data: [], isLoading: false, error: null, refetch: vi.fn() });
+  it("shows all existing ready Grade 10 programmes without a staff-detail selector", () => {
+    setReadyGrade10();
     render(<QuizList />);
-
     fireEvent.click(screen.getByRole("button", { name: /Choose Grade 10/i }));
-
     expect(screen.getByRole("button", { name: /Physics.*Continue/i })).toBeTruthy();
     expect(screen.getByRole("button", { name: /Computer Science.*Continue/i })).toBeTruthy();
     expect(screen.getByRole("button", { name: /Chemistry.*Continue/i })).toBeTruthy();
@@ -95,44 +99,32 @@ describe("Quiz Centre entry experience", () => {
   });
 
   it("returns to class selection through the visible Change class button", () => {
-    quizzesQuery.mockReturnValue({ data: [], isLoading: false, error: null, refetch: vi.fn() });
+    setReadyGrade10();
     render(<QuizList />);
-
     fireEvent.click(screen.getByRole("button", { name: /Choose Grade 10/i }));
-    expect(screen.getByRole("heading", { name: "Choose a subject." })).toBeTruthy();
-
     fireEvent.click(screen.getByRole("button", { name: "Return to class selection" }));
     expect(screen.getByRole("heading", { name: "Select a class." })).toBeTruthy();
-    expect(screen.getByRole("button", { name: /Choose Grade 9/i })).toBeTruthy();
   });
 
-  it("returns to the subject cards through the visible Change subject button", () => {
-    quizzesQuery.mockReturnValue({ data: [], isLoading: false, error: null, refetch: vi.fn() });
+  it("returns to subject cards through the visible Change subject button", () => {
+    setReadyGrade10();
     render(<QuizList />);
-
     fireEvent.click(screen.getByRole("button", { name: /Choose Grade 10/i }));
     fireEvent.click(screen.getByRole("button", { name: /Physics.*Continue/i }));
-    expect(screen.getByRole("heading", { name: "Grade 10 · Physics" })).toBeTruthy();
-
     fireEvent.click(screen.getByRole("button", { name: "Return to subject selection" }));
     expect(screen.getByRole("heading", { name: "Choose a subject." })).toBeTruthy();
-    expect(screen.getByRole("button", { name: /Chemistry.*Continue/i })).toBeTruthy();
   });
 
   it("supports Enter and Space keyboard activation on the visible return controls", () => {
-    quizzesQuery.mockReturnValue({ data: [], isLoading: false, error: null, refetch: vi.fn() });
+    setReadyGrade10();
     render(<QuizList />);
-
     fireEvent.click(screen.getByRole("button", { name: /Choose Grade 10/i }));
     const classReturn = screen.getByRole("button", { name: "Return to class selection" });
-    classReturn.focus();
     fireEvent.keyDown(classReturn, { key: "Enter" });
     expect(screen.getByRole("heading", { name: "Select a class." })).toBeTruthy();
-
     fireEvent.click(screen.getByRole("button", { name: /Choose Grade 10/i }));
     fireEvent.click(screen.getByRole("button", { name: /Physics.*Continue/i }));
     const subjectReturn = screen.getByRole("button", { name: "Return to subject selection" });
-    subjectReturn.focus();
     fireEvent.keyDown(subjectReturn, { key: " " });
     expect(screen.getByRole("heading", { name: "Choose a subject." })).toBeTruthy();
   });

@@ -1,5 +1,12 @@
 export const FBISE_SUBJECTS = ["physics", "chemistry", "computer_science"] as const;
-export type FbiseSubject = (typeof FBISE_SUBJECTS)[number];
+// These are the currently seeded programme identifiers, not a limit on future approved programmes.
+export type FbiseSubject = string;
+
+export type ProgrammeKey = {
+  board: string;
+  grade: string;
+  subject: string;
+};
 
 export const SCOPE_TYPES = [
   "single_chapter",
@@ -55,7 +62,8 @@ export type ScopeTemplateMembership = {
 export type ScopeCatalog = {
   curriculumSet: {
     id: number;
-    grade: "10";
+    board: string;
+    grade: string;
     subject: FbiseSubject;
     label: string;
     editionLabel: string | null;

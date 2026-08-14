@@ -1,0 +1,1 @@
+ALTER TABLE `assessmentPatternSources` ADD `board` varchar(50) DEFAULT 'FBISE' NOT NULL;

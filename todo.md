@@ -265,3 +265,9 @@
 - [x] Expose a clear edition readiness checklist without allowing automatic source or pattern activation.
 - [x] Build concise Portal Admin review controls for paper-profile data and source readiness.
 - [x] Add lifecycle safeguards and regression coverage, validate, checkpoint, and report Release 1.
+
+## Phase 36: Release 2 — Programme Catalogue
+- [x] Define a controlled programme record for board, grade, subject, teacher label, and intake-only/ready lifecycle status.
+- [x] Seed existing Grade 10 Physics, Chemistry, and Computer Science safely without changing their active-source behaviour.
+- [x] Build admin-only programme setup and readiness controls; expose only ready programmes to the teacher catalogue.
+- [x] Add compatibility and source-visibility regression coverage, validate, checkpoint, and report Release 2.

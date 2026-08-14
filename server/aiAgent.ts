@@ -10,7 +10,7 @@ export type GenerationSourceContext = {
   sourceType: "raw_text" | "curriculum_scope";
   sourceTitle: string;
   subject?: FbiseSubject;
-  classLevel?: "10";
+  classLevel?: string;
   curriculumSetId?: number;
   scopeTemplateId?: number | null;
   scopeType?: ScopeType;
