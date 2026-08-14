@@ -258,6 +258,28 @@ export const appRouter = router({
         });
       }),
 
+    proposeChaptersFromSource: adminProcedure
+      .input(z.object({ curriculumSetId: z.number().int().positive(), sourceId: z.number().int().positive() }))
+      .query(async ({ input }) => {
+        const { getCurriculumSet, getCurriculumSource } = await import("./db");
+        const { proposeChaptersFromExtractedText } = await import("./chapterProposal");
+        const [curriculumSet, source] = await Promise.all([
+          getCurriculumSet(input.curriculumSetId),
+          getCurriculumSource(input.sourceId),
+        ]);
+        if (!curriculumSet || !source || source.curriculumSetId !== input.curriculumSetId) {
+          throw new Error("The selected textbook source does not belong to this draft edition.");
+        }
+        if (source.extractionStatus !== "extracted" || !source.extractedText?.trim()) {
+          throw new Error("Extract the uploaded textbook PDF before proposing chapter boundaries.");
+        }
+        return {
+          sourceId: source.id,
+          originalFileName: source.originalFileName,
+          proposals: proposeChaptersFromExtractedText(source.extractedText),
+        };
+      }),
+
     ingestPaperPatternSource: adminProcedure
       .input(z.object({
         programmeId: z.number().int().positive(),

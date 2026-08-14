@@ -79,6 +79,7 @@ export default function CurriculumManagement() {
   const [selectedPatternSourceId, setSelectedPatternSourceId] = useState<number | null>(null);
   const [paperPatternProfile, setPaperPatternProfile] = useState<PaperPatternProfileForm>(emptyPaperPatternProfile);
   const [chapterSourceId, setChapterSourceId] = useState<number | null>(null);
+  const [proposalSourceId, setProposalSourceId] = useState<number | null>(null);
   const [chapterSequence, setChapterSequence] = useState("1");
   const [chapterCode, setChapterCode] = useState("");
   const [chapterTitle, setChapterTitle] = useState("");
@@ -95,6 +96,10 @@ export default function CurriculumManagement() {
   const detailsQuery = trpc.curriculum.getManagementDetails.useQuery(
     { curriculumSetId: selectedSetId ?? 0 },
     { enabled: selectedSetId !== null }
+  );
+  const chapterProposalsQuery = trpc.curriculum.proposeChaptersFromSource.useQuery(
+    { curriculumSetId: selectedSetId ?? 0, sourceId: proposalSourceId ?? 0 },
+    { enabled: selectedSetId !== null && proposalSourceId !== null }
   );
   const createSet = trpc.curriculum.createSet.useMutation();
   const replaceActiveSet = trpc.curriculum.replaceActiveSet.useMutation();
@@ -335,6 +340,16 @@ export default function CurriculumManagement() {
     setChapterText(source.extractedText);
   };
 
+  const loadProposedChapterForReview = (proposal: { sequence: number; code: string; title: string; contentText: string }) => {
+    if (!proposalSourceId) return;
+    setChapterSourceId(proposalSourceId);
+    setChapterSequence(String(proposal.sequence));
+    setChapterCode(proposal.code);
+    setChapterTitle(proposal.title);
+    setChapterText(proposal.contentText);
+    toast.success("Chapter proposal loaded for review. Confirm or amend it, then save it explicitly.");
+  };
+
   const handleCreateChapter = async () => {
     if (!selectedSetId || !chapterSourceId || !chapterTitle.trim() || chapterText.trim().length < 100) {
       toast.error("Select an extracted source, give the chapter a title, and review at least 100 characters of source text.");
@@ -487,6 +502,15 @@ export default function CurriculumManagement() {
               </Card>
 
               <Card>
+                <CardHeader><CardTitle className="flex items-center gap-2"><BookMarked className="h-5 w-5 text-accent" />2. Propose Chapters from Extracted Text</CardTitle><CardDescription>For a new textbook edition, this reads only explicit <strong>CHAPTER</strong> or <strong>UNIT</strong> headings in the supplied extracted file. It never saves or activates chapters automatically.</CardDescription></CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid gap-3 sm:grid-cols-[1fr_auto]"><Select value={proposalSourceId?.toString() ?? "__none__"} onValueChange={(value) => setProposalSourceId(Number(value))}><SelectTrigger aria-label="Textbook source for automatic chapter proposals"><SelectValue placeholder="Select an extracted textbook source" /></SelectTrigger><SelectContent>{details.sources.filter((source) => source.extractionStatus === "extracted" && source.extractedText?.trim()).map((source) => <SelectItem key={source.id} value={source.id.toString()}>{source.originalFileName}{source.pageCount ? ` · ${source.pageCount} pages` : ""}</SelectItem>)}</SelectContent></Select><Button type="button" variant="outline" onClick={() => chapterProposalsQuery.refetch()} disabled={!proposalSourceId || chapterProposalsQuery.isFetching}>{chapterProposalsQuery.isFetching ? "Parsing chapters…" : "Propose chapters"}</Button></div>
+                  {chapterProposalsQuery.error && <p className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">{chapterProposalsQuery.error.message}</p>}
+                  {chapterProposalsQuery.data && <div className="space-y-2"><p className="text-sm text-muted-foreground">{chapterProposalsQuery.data.proposals.length} proposed boundar{chapterProposalsQuery.data.proposals.length === 1 ? "y" : "ies"} from <span className="font-medium text-foreground">{chapterProposalsQuery.data.originalFileName}</span>. Load each one, review it, and save it individually below.</p>{chapterProposalsQuery.data.proposals.map((proposal) => <div key={`${proposal.sequence}-${proposal.code}`} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/60 p-3"><div><p className="text-sm font-semibold text-foreground">{proposal.code}: {proposal.title}</p><p className="mt-1 text-xs text-muted-foreground">{proposal.contentText.length.toLocaleString()} extracted characters</p></div><Button type="button" size="sm" variant="outline" onClick={() => loadProposedChapterForReview(proposal)}>Load for review</Button></div>)}</div>}
+                </CardContent>
+              </Card>
+
+              <Card>
                 <CardHeader><CardTitle className="flex items-center gap-2"><FileText className="h-5 w-5 text-accent" />Paper Pattern Sources</CardTitle><CardDescription>Upload supplied model or past papers to guide section balance and question style. They never become question-content sources.</CardDescription></CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid gap-3 sm:grid-cols-3"><Select value={paperPatternKind} onValueChange={(value) => setPaperPatternKind(value as PaperPatternKind)}><SelectTrigger aria-label="Paper pattern source kind"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="past_paper">Past paper</SelectItem><SelectItem value="model_paper">Model paper</SelectItem></SelectContent></Select><Input aria-label="Paper pattern academic year" value={paperPatternYear} onChange={(event) => setPaperPatternYear(event.target.value)} placeholder="e.g. 2026" /><Input aria-label="Paper pattern source upload" type="file" accept=".pdf,.txt" onChange={handlePaperPatternUpload} disabled={isUploadingPattern} /></div>
@@ -514,7 +538,7 @@ export default function CurriculumManagement() {
               </Card>
 
               <Card>
-                <CardHeader><CardTitle className="flex items-center gap-2"><BookMarked className="h-5 w-5 text-accent" />2. Review and Save a Chapter</CardTitle><CardDescription>Select an extracted source, confirm the chapter text and title, then save it as approved evidence.</CardDescription></CardHeader>
+                <CardHeader><CardTitle className="flex items-center gap-2"><BookMarked className="h-5 w-5 text-accent" />3. Review and Save a Chapter</CardTitle><CardDescription>Select an extracted source or load a proposal, then confirm or amend the chapter title and text before saving approved evidence.</CardDescription></CardHeader>
                 <CardContent className="space-y-3">
                   <div className="grid gap-3 sm:grid-cols-3"><Input aria-label="Chapter sequence" type="number" min="1" value={chapterSequence} onChange={(event) => setChapterSequence(event.target.value)} /><Input aria-label="Chapter code" value={chapterCode} onChange={(event) => setChapterCode(event.target.value)} placeholder="e.g. Ch. 10" /><Input aria-label="Chapter title" value={chapterTitle} onChange={(event) => setChapterTitle(event.target.value)} placeholder="Chapter title" /></div>
                   <Textarea aria-label="Reviewed chapter source text" value={chapterText} onChange={(event) => setChapterText(event.target.value)} placeholder="Select an extracted source above; review or adjust its chapter text here." className="min-h-52" />

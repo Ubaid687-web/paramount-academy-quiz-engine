@@ -271,3 +271,9 @@
 - [x] Seed existing Grade 10 Physics, Chemistry, and Computer Science safely without changing their active-source behaviour.
 - [x] Build admin-only programme setup and readiness controls; expose only ready programmes to the teacher catalogue.
 - [x] Add compatibility and source-visibility regression coverage, validate, checkpoint, and report Release 2.
+
+## Phase 37: Controlled New-Edition PDF Chapter Extraction
+- [x] Define source-safe chapter proposal rules for extracted FBISE textbook PDFs, with no automatic chapter activation.
+- [x] Add an admin-only proposal service that parses an uploaded new-edition textbook extraction into reviewable chapter boundaries.
+- [x] Add Portal Admin controls to generate, inspect, amend, and save proposed chapters for a draft replacement edition.
+- [x] Add regression coverage for PDF parsing, review gating, source-boundary preservation, validation, checkpoint, and report.

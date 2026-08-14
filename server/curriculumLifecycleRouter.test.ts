@@ -7,6 +7,9 @@ const mocks = vi.hoisted(() => ({
   saveAssessmentPatternProfile: vi.fn(),
   createProgrammeCatalogue: vi.fn(),
   activateProgrammeCatalogue: vi.fn(),
+  getCurriculumSet: vi.fn(),
+  getCurriculumSource: vi.fn(),
+  proposeChaptersFromExtractedText: vi.fn(),
 }));
 
 vi.mock("./db", () => ({
@@ -16,7 +19,11 @@ vi.mock("./db", () => ({
   saveAssessmentPatternProfile: mocks.saveAssessmentPatternProfile,
   createProgrammeCatalogue: mocks.createProgrammeCatalogue,
   activateProgrammeCatalogue: mocks.activateProgrammeCatalogue,
+  getCurriculumSet: mocks.getCurriculumSet,
+  getCurriculumSource: mocks.getCurriculumSource,
 }));
+
+vi.mock("./chapterProposal", () => ({ proposeChaptersFromExtractedText: mocks.proposeChaptersFromExtractedText }));
 
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
@@ -30,6 +37,23 @@ function createContext(role: "admin" | "user"): TrpcContext {
 }
 
 describe("curriculum lifecycle administration", () => {
+  it("proposes chapter boundaries only from the selected extracted textbook source", async () => {
+    mocks.getCurriculumSet.mockResolvedValue({ id: 901, status: "draft" });
+    mocks.getCurriculumSource.mockResolvedValue({ id: 41, curriculumSetId: 901, originalFileName: "new-edition.pdf", extractionStatus: "extracted", extractedText: "CHAPTER 1: TEST\n".padEnd(600, "source text ") });
+    mocks.proposeChaptersFromExtractedText.mockReturnValue([{ sequence: 1, code: "Ch. 1", title: "TEST", contentText: "CHAPTER 1: TEST\nReviewed source text." }]);
+    const caller = appRouter.createCaller(createContext("admin"));
+
+    await expect(caller.curriculum.proposeChaptersFromSource({ curriculumSetId: 901, sourceId: 41 })).resolves.toMatchObject({ sourceId: 41, originalFileName: "new-edition.pdf", proposals: [{ title: "TEST" }] });
+    expect(mocks.proposeChaptersFromExtractedText).toHaveBeenCalledWith(expect.stringContaining("CHAPTER 1: TEST"));
+  });
+
+  it("blocks chapter proposals from an unextracted or unrelated source", async () => {
+    mocks.getCurriculumSet.mockResolvedValue({ id: 901, status: "draft" });
+    mocks.getCurriculumSource.mockResolvedValue({ id: 42, curriculumSetId: 902, extractionStatus: "extracted", extractedText: "CHAPTER 1: OTHER\n".padEnd(600, "source text ") });
+    const caller = appRouter.createCaller(createContext("admin"));
+    await expect(caller.curriculum.proposeChaptersFromSource({ curriculumSetId: 901, sourceId: 42 })).rejects.toThrow("does not belong to this draft edition");
+  });
+
   it("creates new programme combinations as controlled intake-only records through Portal Admin", async () => {
     mocks.createProgrammeCatalogue.mockResolvedValue({ id: 71, board: "FBISE", grade: "9", subject: "physics", teacherLabel: "Physics", status: "intake_only" });
     const caller = appRouter.createCaller(createContext("admin"));
