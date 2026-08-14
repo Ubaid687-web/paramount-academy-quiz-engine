@@ -221,3 +221,8 @@
 - [x] Add Portal Admin paper-pattern PDF/TXT intake with source type, academic year, extraction status, and controlled activation.
 - [x] Display replacement lineage and active/draft/archived paper-pattern status in the Curriculum Library.
 - [x] Add lifecycle safeguards and regression coverage, validate, checkpoint, and report the intake capabilities.
+
+## Phase 28: Draft Replacement Trial
+- [x] Identify an active existing curriculum edition for a safe replacement trial.
+- [x] Create one linked replacement edition in draft status only, without uploading a source or activating it.
+- [x] Verify the original edition remains active and report the draft lineage.
