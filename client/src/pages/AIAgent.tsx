@@ -9,7 +9,6 @@ import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AcademyShell } from "@/components/AcademyShell";
 import { trpc } from "@/lib/trpc";
-import { downloadPdfFile } from "@/lib/pdfDownload";
 import { GENERATION_STEPS, getGenerationStep, getNextSimulatedProgress } from "@/lib/generation-progress";
 import { calculateQuestionRecommendation } from "@shared/questionRecommendation";
 import { useLocation } from "wouter";
@@ -47,6 +46,18 @@ const ASSESSMENT_MODE_LABELS: Record<AssessmentMode, string> = {
   long: "Long questions",
   full_paper: "Full paper",
 };
+
+async function startNativePdfDownload(request: unknown) {
+  const response = await fetch("/api/pdf-export", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "same-origin",
+    body: JSON.stringify(request),
+  });
+  const result = await response.json() as { downloadUrl?: string; message?: string };
+  if (!response.ok || !result.downloadUrl) throw new Error(result.message || "The PDF could not be prepared.");
+  window.location.assign(result.downloadUrl);
+}
 
 export default function AIAgent() {
   const [, navigate] = useLocation();
@@ -96,10 +107,6 @@ export default function AIAgent() {
   const generateMutation = trpc.aiAgent.generateMCQs.useMutation();
   const generatePrintablePaperMutation = trpc.aiAgent.generatePrintablePaper.useMutation();
   const saveMutation = trpc.aiAgent.saveGeneratedQuiz.useMutation();
-  const renderPrintablePaperMutation = trpc.printablePaper.renderPaper.useMutation();
-  const renderPrintableSolutionMutation = trpc.printablePaper.renderSolutionKey.useMutation();
-  const renderMcqPaperMutation = trpc.printablePaper.renderMcqPaper.useMutation();
-  const renderMcqSolutionMutation = trpc.printablePaper.renderMcqSolutionKey.useMutation();
   const saveAssessmentDraftMutation = trpc.assessment.saveDraft.useMutation();
   const reviseAssessmentDraftMutation = trpc.assessment.reviseDraft.useMutation();
   const pdfExtractMutation = trpc.pdfUpload.extractPdfText.useMutation();
@@ -502,11 +509,8 @@ export default function AIAgent() {
   const handlePrintableDownload = async (kind: "paper" | "solution") => {
     if (!generatedPrintablePaper) return;
     try {
-      const result = kind === "paper"
-        ? await renderPrintablePaperMutation.mutateAsync({ payload: generatedPrintablePaper })
-        : await renderPrintableSolutionMutation.mutateAsync({ payload: generatedPrintablePaper });
-      const savedFileName = downloadPdfFile(result.data, result.fileName);
-      toast.success(`${kind === "paper" ? "Printable paper" : "Solution key"} download started: ${savedFileName}`);
+      await startNativePdfDownload({ kind, payload: generatedPrintablePaper });
+      toast.success(`${kind === "paper" ? "Printable paper" : "Solution key"} is being downloaded.`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "The PDF could not be created.");
     }
@@ -515,11 +519,8 @@ export default function AIAgent() {
   const handleMcqDownload = async (kind: "paper" | "solution") => {
     if (!generatedMcqs.length) return;
     try {
-      const result = kind === "paper"
-        ? await renderMcqPaperMutation.mutateAsync({ title: quizTitle, mcqs: generatedMcqs })
-        : await renderMcqSolutionMutation.mutateAsync({ title: quizTitle, mcqs: generatedMcqs });
-      const savedFileName = downloadPdfFile(result.data, result.fileName);
-      toast.success(`${kind === "paper" ? "MCQ paper" : "MCQ solution key"} download started: ${savedFileName}`);
+      await startNativePdfDownload({ kind: kind === "paper" ? "mcq-paper" : "mcq-solution", title: quizTitle, mcqs: generatedMcqs });
+      toast.success(`${kind === "paper" ? "MCQ paper" : "MCQ solution key"} is being downloaded.`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "The MCQ PDF could not be created.");
     }
@@ -980,7 +981,7 @@ export default function AIAgent() {
                 <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm leading-6 text-muted-foreground"><strong>Draft review required.</strong> Verify source references, answer wording, formulas, and diagrams before issuing this paper.</div>
                 <div><Label htmlFor="paper-pairs" className="mb-2 block text-sm font-medium">Numbered OR pairs</Label><Input id="paper-pairs" type="number" min={1} max={10} value={paperPairCount} onChange={(event) => setPaperPairCount(Math.min(10, Math.max(1, Number(event.target.value) || 1)))} /><p className="mt-1 text-xs text-muted-foreground">Each numbered question includes an alternative of equal marks.</p></div>
                 <Button type="button" onClick={handleGeneratePrintablePaper} disabled={isGenerating || generatePrintablePaperMutation.isPending || !canAdvanceToDraft} className="w-full bg-primary text-primary-foreground font-semibold shadow-sm hover:bg-primary/90">{isGenerating || generatePrintablePaperMutation.isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating paper draft…</> : "Generate printable paper draft"}</Button>
-                {generatedPrintablePaper && <div className="space-y-3 rounded-xl border border-accent/30 bg-accent/5 p-4"><div><p className="font-semibold text-foreground">Printable draft ready</p><p className="mt-1 text-sm text-muted-foreground">{generatedPrintablePaper.items?.length || 0} prompts across {paperPairCount} OR pairs. This is not an online quiz.</p></div><div className="flex flex-col gap-2 sm:flex-row"><Button type="button" variant="outline" className="flex-1" onClick={() => handlePrintableDownload("paper")} disabled={renderPrintablePaperMutation.isPending}>Download paper PDF</Button><Button type="button" variant="outline" className="flex-1" onClick={() => handlePrintableDownload("solution")} disabled={renderPrintableSolutionMutation.isPending}>Download solution key</Button></div></div>}
+                {generatedPrintablePaper && <div className="space-y-3 rounded-xl border border-accent/30 bg-accent/5 p-4"><div><p className="font-semibold text-foreground">Printable draft ready</p><p className="mt-1 text-sm text-muted-foreground">{generatedPrintablePaper.items?.length || 0} prompts across {paperPairCount} OR pairs. This is not an online quiz.</p></div><div className="flex flex-col gap-2 sm:flex-row"><Button type="button" variant="outline" className="flex-1" onClick={() => handlePrintableDownload("paper")}>Download paper PDF</Button><Button type="button" variant="outline" className="flex-1" onClick={() => handlePrintableDownload("solution")}>Download solution key</Button></div></div>}
               </CardContent>
             </Card>}
 
@@ -1126,7 +1127,7 @@ export default function AIAgent() {
                       </p>
                     )}
                   </div>
-                  <div className="mt-4 flex flex-col gap-2 sm:flex-row"><Button type="button" variant="outline" className="flex-1" onClick={() => handleMcqDownload("paper")} disabled={renderMcqPaperMutation.isPending}>Download MCQ paper PDF</Button><Button type="button" variant="outline" className="flex-1" onClick={() => handleMcqDownload("solution")} disabled={renderMcqSolutionMutation.isPending}>Download MCQ solution key</Button></div>
+                  <div className="mt-4 flex flex-col gap-2 sm:flex-row"><Button type="button" variant="outline" className="flex-1" onClick={() => handleMcqDownload("paper")}>Download MCQ paper PDF</Button><Button type="button" variant="outline" className="flex-1" onClick={() => handleMcqDownload("solution")}>Download MCQ solution key</Button></div>
                 </CardContent>
               </Card>
             )}

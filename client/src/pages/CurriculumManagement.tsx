@@ -71,6 +71,12 @@ export default function CurriculumManagement() {
   }, [selectedSetId, setsQuery.data]);
 
   const details = detailsQuery.data;
+  const curriculumSets = setsQuery.data ?? [];
+  const statusCounts = {
+    active: curriculumSets.filter((set) => set.status === "active").length,
+    draft: curriculumSets.filter((set) => set.status === "draft").length,
+    archived: curriculumSets.filter((set) => set.status === "archived").length,
+  };
   const selectedChapter = useMemo(
     () => details?.chapters.find((chapter) => chapter.id === selectedChapterId),
     [details?.chapters, selectedChapterId]
@@ -220,14 +226,24 @@ export default function CurriculumManagement() {
           <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">Portal Admin</p>
-            <h1 className="mt-2 text-3xl font-bold text-foreground">Prepare reviewed curriculum evidence</h1>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">Upload one source file at a time, review its chapter evidence, define half-chapters or reusable groups, then activate the edition for FBISE MCQ draft generation.</p>
+            <h1 className="mt-2 text-3xl font-bold text-foreground">Curriculum Library</h1>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">Manage the approved books, editions, reviewed chapters, and reusable scopes that teachers can use for source-grounded assessment drafts.</p>
           </div>
           {details && <Button className="bg-primary text-primary-foreground hover:bg-primary/90" onClick={handleActivate} disabled={activateSet.isPending || details.curriculumSet.status === "active"}><CheckCircle2 className="mr-2 h-4 w-4" />{details.curriculumSet.status === "active" ? "Active Curriculum" : "Activate Curriculum"}</Button>}
           </div>
         </div>
 
         {setsQuery.error && <Card className="mb-6 border-destructive/50"><CardContent className="py-4 text-sm text-destructive">Curriculum management is restricted to administrators. Sign in with the Paramount Academy administrator account, then return to this page.</CardContent></Card>}
+
+        <section className="mb-6" aria-label="Curriculum Library overview">
+          <div className="grid gap-3 sm:grid-cols-3">
+            {[{ label: "Active editions", value: statusCounts.active, tone: "border-emerald-200 bg-emerald-50 text-emerald-800" }, { label: "Draft editions", value: statusCounts.draft, tone: "border-amber-200 bg-amber-50 text-amber-800" }, { label: "Archived editions", value: statusCounts.archived, tone: "border-slate-200 bg-slate-50 text-slate-700" }].map((item) => <Card key={item.label} className={item.tone}><CardContent className="p-4"><p className="text-xs font-bold uppercase tracking-[0.12em]">{item.label}</p><p className="mt-1 text-2xl font-bold">{item.value}</p></CardContent></Card>)}
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3" aria-label="Curriculum editions">
+            {curriculumSets.map((set) => <button key={set.id} type="button" onClick={() => setSelectedSetId(set.id)} className={`rounded-xl border p-4 text-left transition-colors ${selectedSetId === set.id ? "border-primary bg-primary/[0.055] shadow-sm" : "border-border bg-card hover:border-primary/35"}`}><div className="flex items-start justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[0.12em] text-primary">Grade {set.grade} · {subjectLabels[set.subject]}</p><p className="mt-1 font-bold text-foreground">{set.label}</p></div><span className={`rounded-full px-2 py-1 text-[11px] font-bold ${set.status === "active" ? "bg-emerald-100 text-emerald-800" : set.status === "draft" ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-700"}`}>{set.status}</span></div><p className="mt-2 text-xs text-muted-foreground">{set.editionLabel || "Edition label pending"}</p></button>)}
+            {!curriculumSets.length && !setsQuery.isLoading && <Card className="border-dashed sm:col-span-2 xl:col-span-3"><CardContent className="p-5 text-sm text-muted-foreground">No curriculum edition has been created yet. Create a draft edition below, then upload its official source file.</CardContent></Card>}
+          </div>
+        </section>
 
         <div className="grid gap-6 lg:grid-cols-3">
           <Card className="lg:col-span-1">
@@ -249,6 +265,7 @@ export default function CurriculumManagement() {
             {!selectedSetId && <Card><CardContent className="py-12 text-center text-muted-foreground">Create or select a curriculum set to begin.</CardContent></Card>}
             {selectedSetId && detailsQuery.isLoading && <Card><CardContent className="flex items-center gap-2 py-8 text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin" />Loading curriculum details…</CardContent></Card>}
             {details && <>
+              <Card className="border-primary/15 bg-primary/[0.025]"><CardContent className="grid gap-3 p-4 sm:grid-cols-4"><div><p className="text-xs font-bold uppercase tracking-[0.12em] text-primary">Selected edition</p><p className="mt-1 text-sm font-bold text-foreground">{details.curriculumSet.editionLabel || details.curriculumSet.label}</p></div><div><p className="text-xs font-bold uppercase tracking-[0.12em] text-primary">Source files</p><p className="mt-1 text-sm font-bold text-foreground">{details.sources.length}</p></div><div><p className="text-xs font-bold uppercase tracking-[0.12em] text-primary">Reviewed chapters</p><p className="mt-1 text-sm font-bold text-foreground">{details.chapters.length}</p></div><div><p className="text-xs font-bold uppercase tracking-[0.12em] text-primary">Reusable scopes</p><p className="mt-1 text-sm font-bold text-foreground">{details.scopeTemplates.length}</p></div></CardContent></Card>
               <Card>
                 <CardHeader><CardTitle className="flex items-center gap-2"><Upload className="h-5 w-5 text-accent" />1. Add One Source File</CardTitle><CardDescription>{details.curriculumSet.label} is currently <strong>{details.curriculumSet.status}</strong>. PDF and TXT files are stored and extracted server-side.</CardDescription></CardHeader>
                 <CardContent className="space-y-4">

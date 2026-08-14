@@ -209,3 +209,9 @@
 - [x] Design a reusable source intake, verification, versioning, chapter review, and activation lifecycle.
 - [x] Define concise Portal Admin and teacher-facing visibility for approved materials and current source status.
 - [x] Present a phased implementation recommendation before building new functionality.
+
+## Phase 26: Curriculum Library Foundation and Export Reliability
+- [x] Trace and repair the persistent printable-paper and solution-key download failure on mobile.
+- [x] Replace fragile client-side PDF delivery with a verified direct-export path where necessary.
+- [x] Build the first Portal Admin Curriculum Library dashboard showing active, draft, blocked, and archived source states.
+- [x] Validate export reliability and Curriculum Library workflows, then checkpoint and report the implementation.
