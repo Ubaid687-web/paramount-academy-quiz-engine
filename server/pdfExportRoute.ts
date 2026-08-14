@@ -65,7 +65,7 @@ export function registerPdfExportRoutes(app: Express) {
       const rendered = await renderExport(input);
       const exportId = randomUUID();
       preparedExports.set(exportId, { ownerId: user.id, fileName: rendered.fileName, pdf: rendered.pdf, expiresAt: Date.now() + EXPORT_TTL_MS });
-      res.status(201).json({ downloadUrl: `/api/pdf-export/${exportId}` });
+      res.status(201).json({ downloadUrl: `/api/pdf-export/${exportId}`, fileName: rendered.fileName });
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "The PDF could not be prepared." });
     }

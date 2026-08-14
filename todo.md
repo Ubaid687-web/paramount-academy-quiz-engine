@@ -226,3 +226,8 @@
 - [x] Identify an active existing curriculum edition for a safe replacement trial.
 - [x] Create one linked replacement edition in draft status only, without uploading a source or activating it.
 - [x] Verify the original edition remains active and report the draft lineage.
+
+## Phase 29: PDF-Only Mobile Delivery Repair
+- [x] Capture the live mobile export request outcome and identify the remaining delivery failure.
+- [x] Replace the current mobile download trigger with a reliable fallback and remove false success feedback.
+- [x] Verify PDF-only delivery behaviour, checkpoint, and report the resolution before resuming other work.
