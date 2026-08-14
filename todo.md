@@ -215,3 +215,9 @@
 - [x] Replace fragile client-side PDF delivery with a verified direct-export path where necessary.
 - [x] Build the first Portal Admin Curriculum Library dashboard showing active, draft, blocked, and archived source states.
 - [x] Validate export reliability and Curriculum Library workflows, then checkpoint and report the implementation.
+
+## Phase 27: Self-Service Book Replacement and Paper Pattern Intake
+- [x] Implement a safe “replace active edition” action that creates a linked draft curriculum set and preserves historical source snapshots.
+- [x] Add Portal Admin paper-pattern PDF/TXT intake with source type, academic year, extraction status, and controlled activation.
+- [x] Display replacement lineage and active/draft/archived paper-pattern status in the Curriculum Library.
+- [x] Add lifecycle safeguards and regression coverage, validate, checkpoint, and report the intake capabilities.

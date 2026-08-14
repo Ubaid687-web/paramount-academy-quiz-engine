@@ -121,7 +121,7 @@ export const appRouter = router({
     getManagementDetails: adminProcedure
       .input(z.object({ curriculumSetId: z.number().int().positive() }))
       .query(async ({ input }) => {
-        const { getCurriculumSet, listCurriculumSources, listCurriculumChapters, listChapterSegments, listScopeTemplates } = await import("./db");
+        const { getCurriculumSet, listCurriculumSources, listCurriculumChapters, listChapterSegments, listScopeTemplates, listAssessmentPatternSources } = await import("./db");
         const curriculumSet = await getCurriculumSet(input.curriculumSetId);
         if (!curriculumSet) throw new Error("Curriculum set not found");
         const chapters = await listCurriculumChapters(input.curriculumSetId);
@@ -132,6 +132,7 @@ export const appRouter = router({
         return {
           curriculumSet,
           sources: await listCurriculumSources(input.curriculumSetId),
+          paperPatternSources: await listAssessmentPatternSources(curriculumSet.subject),
           chapters,
           chapterSegments,
           scopeTemplates: await listScopeTemplates(input.curriculumSetId),
@@ -155,6 +156,21 @@ export const appRouter = router({
           replacesSetId: input.replacesSetId,
           createdBy: ctx.user.id,
           status: "draft",
+        });
+      }),
+
+    replaceActiveSet: adminProcedure
+      .input(z.object({
+        currentSetId: z.number().int().positive(),
+        label: z.string().min(3).max(255),
+        editionLabel: z.string().max(255).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { createReplacementCurriculumSet } = await import("./db");
+        return createReplacementCurriculumSet(input.currentSetId, {
+          label: input.label,
+          editionLabel: input.editionLabel || null,
+          createdBy: ctx.user.id,
         });
       }),
 
@@ -196,6 +212,47 @@ export const appRouter = router({
           uploadedBy: ctx.user.id,
           extractedAt: new Date(),
         });
+      }),
+
+    ingestPaperPatternSource: adminProcedure
+      .input(z.object({
+        subject: z.enum(["physics", "chemistry", "computer_science"]),
+        sourceKind: z.enum(["model_paper", "past_paper"]),
+        academicYear: z.string().min(4).max(20).optional(),
+        fileName: z.string().min(1).max(255),
+        mimeType: z.enum(["application/pdf", "text/plain"]),
+        fileBuffer: z.string().min(1),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { createAssessmentPatternSource } = await import("./db");
+        const { extractCurriculumSourceText } = await import("./curriculumIngestion");
+        const { storagePut } = await import("./storage");
+        const fileBuffer = Buffer.from(input.fileBuffer, "base64");
+        if (!fileBuffer.length || fileBuffer.length > 30 * 1024 * 1024) throw new Error("Paper-pattern source must be between 1 byte and 30MB.");
+        const extracted = await extractCurriculumSourceText({ fileBuffer, fileName: input.fileName, mimeType: input.mimeType });
+        const extension = input.mimeType === "application/pdf" ? "pdf" : "txt";
+        const stored = await storagePut(`paper-patterns/10/${input.subject}/${randomUUID()}.${extension}`, fileBuffer, input.mimeType);
+        return createAssessmentPatternSource({
+          grade: "10",
+          subject: input.subject,
+          sourceKind: input.sourceKind,
+          academicYear: input.academicYear || null,
+          storageKey: stored.key,
+          storageUrl: stored.url,
+          originalFileName: input.fileName,
+          mimeType: input.mimeType,
+          extractedText: extracted.text,
+          extractionStatus: "extracted",
+          status: "draft",
+          uploadedBy: ctx.user.id,
+        });
+      }),
+
+    activatePaperPatternSource: adminProcedure
+      .input(z.object({ sourceId: z.number().int().positive() }))
+      .mutation(async ({ input }) => {
+        const { activateAssessmentPatternSource } = await import("./db");
+        return activateAssessmentPatternSource(input.sourceId);
       }),
 
     createChapter: adminProcedure

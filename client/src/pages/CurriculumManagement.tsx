@@ -13,6 +13,7 @@ import { AcademyShell } from "@/components/AcademyShell";
 
 type Subject = "physics" | "chemistry" | "computer_science";
 type ScopeKind = "half_syllabus" | "block";
+type PaperPatternKind = "model_paper" | "past_paper";
 
 const subjectLabels: Record<Subject, string> = {
   physics: "Physics",
@@ -41,7 +42,12 @@ export default function CurriculumManagement() {
   const [setSubject, setSetSubject] = useState<Subject>("physics");
   const [setLabel, setSetLabel] = useState("");
   const [editionLabel, setEditionLabel] = useState("");
+  const [replacementLabel, setReplacementLabel] = useState("");
+  const [replacementEditionLabel, setReplacementEditionLabel] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+  const [isUploadingPattern, setIsUploadingPattern] = useState(false);
+  const [paperPatternKind, setPaperPatternKind] = useState<PaperPatternKind>("past_paper");
+  const [paperPatternYear, setPaperPatternYear] = useState("");
   const [chapterSourceId, setChapterSourceId] = useState<number | null>(null);
   const [chapterSequence, setChapterSequence] = useState("1");
   const [chapterCode, setChapterCode] = useState("");
@@ -60,7 +66,10 @@ export default function CurriculumManagement() {
     { enabled: selectedSetId !== null }
   );
   const createSet = trpc.curriculum.createSet.useMutation();
+  const replaceActiveSet = trpc.curriculum.replaceActiveSet.useMutation();
   const ingestSource = trpc.curriculum.ingestSource.useMutation();
+  const ingestPaperPatternSource = trpc.curriculum.ingestPaperPatternSource.useMutation();
+  const activatePaperPatternSource = trpc.curriculum.activatePaperPatternSource.useMutation();
   const createChapter = trpc.curriculum.createChapter.useMutation();
   const saveSegments = trpc.curriculum.saveHalfChapterSegments.useMutation();
   const createScope = trpc.curriculum.createScopeTemplate.useMutation();
@@ -132,6 +141,52 @@ export default function CurriculumManagement() {
     } finally {
       setIsUploading(false);
       event.target.value = "";
+    }
+  };
+
+  const handleCreateReplacement = async () => {
+    if (!details || details.curriculumSet.status !== "active") return;
+    if (!replacementLabel.trim()) return toast.error("Enter a clear label for the replacement edition.");
+    try {
+      const replacement = await replaceActiveSet.mutateAsync({ currentSetId: details.curriculumSet.id, label: replacementLabel.trim(), editionLabel: replacementEditionLabel.trim() || undefined });
+      setSelectedSetId(replacement.id);
+      setReplacementLabel("");
+      setReplacementEditionLabel("");
+      await utils.curriculum.listSets.invalidate();
+      toast.success("Replacement edition created as a draft. The active book remains unchanged until the replacement is reviewed and activated.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "The replacement edition could not be created.");
+    }
+  };
+
+  const handlePaperPatternUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !details) return;
+    if (!["application/pdf", "text/plain"].includes(file.type)) return toast.error("Only text-based PDF and TXT paper sources are supported.");
+    if (file.size > 30 * 1024 * 1024) return toast.error("Keep each paper source under 30MB.");
+    setIsUploadingPattern(true);
+    try {
+      const fileBuffer = await fileToBase64(file);
+      await ingestPaperPatternSource.mutateAsync({ subject: details.curriculumSet.subject, sourceKind: paperPatternKind, academicYear: paperPatternYear.trim() || undefined, fileName: file.name, mimeType: file.type as "application/pdf" | "text/plain", fileBuffer });
+      setPaperPatternYear("");
+      await utils.curriculum.getManagementDetails.invalidate({ curriculumSetId: details.curriculumSet.id });
+      toast.success("Paper-pattern source stored as a draft. Review it, then activate it only when the file and year are correct.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "The paper-pattern source could not be stored or extracted.");
+    } finally {
+      setIsUploadingPattern(false);
+      event.target.value = "";
+    }
+  };
+
+  const handleActivatePaperPattern = async (sourceId: number) => {
+    if (!details) return;
+    try {
+      await activatePaperPatternSource.mutateAsync({ sourceId });
+      await utils.curriculum.getManagementDetails.invalidate({ curriculumSetId: details.curriculumSet.id });
+      toast.success("Paper-pattern source activated. It can guide style but never supply question content.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "The paper-pattern source could not be activated.");
     }
   };
 
@@ -266,12 +321,22 @@ export default function CurriculumManagement() {
             {selectedSetId && detailsQuery.isLoading && <Card><CardContent className="flex items-center gap-2 py-8 text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin" />Loading curriculum details…</CardContent></Card>}
             {details && <>
               <Card className="border-primary/15 bg-primary/[0.025]"><CardContent className="grid gap-3 p-4 sm:grid-cols-4"><div><p className="text-xs font-bold uppercase tracking-[0.12em] text-primary">Selected edition</p><p className="mt-1 text-sm font-bold text-foreground">{details.curriculumSet.editionLabel || details.curriculumSet.label}</p></div><div><p className="text-xs font-bold uppercase tracking-[0.12em] text-primary">Source files</p><p className="mt-1 text-sm font-bold text-foreground">{details.sources.length}</p></div><div><p className="text-xs font-bold uppercase tracking-[0.12em] text-primary">Reviewed chapters</p><p className="mt-1 text-sm font-bold text-foreground">{details.chapters.length}</p></div><div><p className="text-xs font-bold uppercase tracking-[0.12em] text-primary">Reusable scopes</p><p className="mt-1 text-sm font-bold text-foreground">{details.scopeTemplates.length}</p></div></CardContent></Card>
+              {details.curriculumSet.status === "active" && <Card className="border-amber-400/35 bg-amber-50/60"><CardHeader><CardTitle className="text-base">Replace this active book safely</CardTitle><CardDescription>Creates a linked draft edition. Teachers keep using the active book until the replacement has been reviewed and deliberately activated.</CardDescription></CardHeader><CardContent className="grid gap-3 sm:grid-cols-[1fr_1fr_auto]"><Input aria-label="Replacement curriculum label" value={replacementLabel} onChange={(event) => setReplacementLabel(event.target.value)} placeholder="Replacement book title" /><Input aria-label="Replacement edition label" value={replacementEditionLabel} onChange={(event) => setReplacementEditionLabel(event.target.value)} placeholder="e.g. 2027 edition" /><Button type="button" variant="outline" onClick={handleCreateReplacement} disabled={replaceActiveSet.isPending}>Create replacement draft</Button></CardContent></Card>}
               <Card>
                 <CardHeader><CardTitle className="flex items-center gap-2"><Upload className="h-5 w-5 text-accent" />1. Add One Source File</CardTitle><CardDescription>{details.curriculumSet.label} is currently <strong>{details.curriculumSet.status}</strong>. PDF and TXT files are stored and extracted server-side.</CardDescription></CardHeader>
                 <CardContent className="space-y-4">
                   <Input aria-label="Curriculum source upload" type="file" accept=".pdf,.txt" onChange={handleSourceUpload} disabled={isUploading} />
                   {isUploading && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Storing and extracting source text…</p>}
                   <div className="space-y-2">{details.sources.map((source) => <button key={source.id} onClick={() => loadSourceForReview(source.id)} className="flex w-full items-center justify-between rounded-lg border border-border/60 p-3 text-left hover:border-accent/50"><span className="flex min-w-0 items-center gap-2"><FileText className="h-4 w-4 shrink-0 text-accent" /><span className="truncate text-sm">{source.originalFileName}</span></span><span className="text-xs text-muted-foreground">{source.extractionStatus}{source.pageCount ? ` • ${source.pageCount} pages` : ""}</span></button>)}</div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader><CardTitle className="flex items-center gap-2"><FileText className="h-5 w-5 text-accent" />Paper Pattern Sources</CardTitle><CardDescription>Upload supplied model or past papers to guide section balance and question style. They never become question-content sources.</CardDescription></CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid gap-3 sm:grid-cols-3"><Select value={paperPatternKind} onValueChange={(value) => setPaperPatternKind(value as PaperPatternKind)}><SelectTrigger aria-label="Paper pattern source kind"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="past_paper">Past paper</SelectItem><SelectItem value="model_paper">Model paper</SelectItem></SelectContent></Select><Input aria-label="Paper pattern academic year" value={paperPatternYear} onChange={(event) => setPaperPatternYear(event.target.value)} placeholder="e.g. 2026" /><Input aria-label="Paper pattern source upload" type="file" accept=".pdf,.txt" onChange={handlePaperPatternUpload} disabled={isUploadingPattern} /></div>
+                  {isUploadingPattern && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Storing and extracting paper text…</p>}
+                  <div className="space-y-2">{details.paperPatternSources.length ? details.paperPatternSources.map((source) => <div key={source.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/60 p-3"><div className="min-w-0"><p className="truncate text-sm font-semibold text-foreground">{source.originalFileName}</p><p className="mt-1 text-xs text-muted-foreground">{source.sourceKind === "model_paper" ? "Model paper" : "Past paper"}{source.academicYear ? ` · ${source.academicYear}` : ""} · extraction: {source.extractionStatus}</p></div><div className="flex items-center gap-2"><span className={`rounded-full px-2 py-1 text-xs font-bold ${source.status === "active" ? "bg-emerald-100 text-emerald-800" : source.status === "draft" ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-700"}`}>{source.status}</span>{source.status === "draft" && source.extractionStatus === "extracted" && <Button type="button" size="sm" variant="outline" onClick={() => handleActivatePaperPattern(source.id)} disabled={activatePaperPatternSource.isPending}>Activate</Button>}</div></div>) : <p className="rounded-lg border border-dashed border-border p-3 text-sm text-muted-foreground">No paper-pattern source is attached to this subject yet.</p>}</div>
                 </CardContent>
               </Card>
 
