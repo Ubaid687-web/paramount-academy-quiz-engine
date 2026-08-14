@@ -283,3 +283,9 @@
 - [x] Review the stored Grade 10 Computer Science textbook and supplied model/2024/2025 paper-pattern records for verified wording and cognitive-balance guidance.
 - [x] Apply controlled Computer Science guidance to assessment generation and textbook-faithful, memorisation-oriented solution-key output.
 - [x] Add source-boundary and solution-presentation regression coverage, validate, checkpoint, and report.
+
+## Phase 39: Computer Science 2024 and 2025 Paper Pattern Profiles
+- [x] Inspect the supplied 2024 and 2025 Computer Science papers and record only verifiable structural evidence.
+- [x] Analyse each paper’s sections, marks, time allocation, command wording, choice rules, and cognitive-demand signals.
+- [x] Save separate, evidence-noted reviewed profiles without treating past-paper questions as factual source content.
+- [x] Verify profile persistence and source-boundary safeguards, validate, checkpoint, and report.
