@@ -30,6 +30,10 @@ function safeFileName(value: string, suffix: string) {
   return `${clean}-${suffix}.pdf`;
 }
 
+export function getPdfContentDisposition(fileName: string, isInAppPreview: boolean) {
+  return `${isInAppPreview ? "inline" : "attachment"}; filename="${fileName}"`;
+}
+
 export async function renderExport(input: z.infer<typeof exportRequestSchema>) {
   if (input.kind === "mcq-paper") return { fileName: safeFileName(input.title, "mcq-paper"), pdf: await renderMcqPaperPdf(input.title, input.mcqs) };
   if (input.kind === "mcq-solution") return { fileName: safeFileName(input.title, "mcq-solution-key"), pdf: await renderMcqSolutionPdf(input.title, input.mcqs) };
@@ -66,14 +70,18 @@ export function registerPdfExportRoutes(app: Express) {
   app.post("/api/pdf-export/download", async (req, res) => {
     const user = await requireAdmin(req, res);
     if (!user) return;
+    console.info(`[pdf-export] native request received user=${user.id} destination=${req.get("sec-fetch-dest") || "unknown"} origin=${req.get("origin") || "none"}`);
     try {
       const rendered = await renderExport(parseNativeFormExport(req.body));
+      const isInAppPreview = req.get("sec-fetch-dest") === "iframe" && Boolean(req.get("origin")?.includes(".manus.computer"));
       res.setHeader("Content-Type", "application/pdf");
-      res.setHeader("Content-Disposition", `attachment; filename="${rendered.fileName}"`);
+      res.setHeader("Content-Disposition", getPdfContentDisposition(rendered.fileName, isInAppPreview));
       res.setHeader("Content-Length", String(rendered.pdf.length));
       res.setHeader("Cache-Control", "private, no-store, max-age=0");
+      console.info(`[pdf-export] native response sent file=${rendered.fileName} bytes=${rendered.pdf.length} disposition=${isInAppPreview ? "inline" : "attachment"}`);
       res.status(200).send(rendered.pdf);
     } catch (error) {
+      console.warn(`[pdf-export] native request failed reason=${error instanceof Error ? error.message : "unknown"}`);
       res.status(400).json({ message: error instanceof Error ? error.message : "The PDF could not be prepared." });
     }
   });

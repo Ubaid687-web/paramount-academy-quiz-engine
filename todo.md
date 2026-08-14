@@ -243,3 +243,13 @@
 - [x] Reproduce the observed sequence and inspect export token, session, proxy, and attachment headers.
 - [x] Implement only the verified root-cause fix with a targeted regression test.
 - [x] Validate the complete delivery sequence and report evidence-backed results.
+
+## Phase 32: Current Development Build Verification
+- [x] Restart and confirm the active development preview contains the latest PDF delivery implementation.
+- [x] Provide one precise current-build PDF test path without publishing the project.
+- [x] Wait for and assess the current-build result before changing PDF delivery again.
+
+## Phase 33: In-App Preview PDF Compatibility
+- [x] Identify the in-app preview response/download constraint from the current live failure path.
+- [x] Test a preview-inline fallback while preserving normal attachment delivery for published use.
+- [ ] Validate the same attachment delivery route on a published build, because the in-app iframe does not support file delivery.

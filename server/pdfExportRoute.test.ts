@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { renderExport } from "./pdfExportRoute";
+import { getPdfContentDisposition, renderExport } from "./pdfExportRoute";
 
 const shortPayload = {
   mode: "short" as const,
@@ -21,5 +21,10 @@ describe("direct PDF export rendering", () => {
     const rendered = await renderExport({ kind: "mcq-solution", title: "Physics quiz", mcqs: [{ question: "Which option is correct?", options: { A: "Correct", B: "Other", C: "Third", D: "Fourth" }, answer: "A", explanation: "The source supports A.", sourceReference: "Verified chapter", learningObjective: "Apply the verified concept." }] });
     expect(rendered.fileName).toContain("physics-quiz-mcq-solution-key.pdf");
     expect(rendered.pdf.subarray(0, 5).toString()).toBe("%PDF-");
+  });
+
+  it("shows the PDF inline only inside the in-app preview while keeping normal downloads as attachments", () => {
+    expect(getPdfContentDisposition("paper.pdf", true)).toBe('inline; filename="paper.pdf"');
+    expect(getPdfContentDisposition("paper.pdf", false)).toBe('attachment; filename="paper.pdf"');
   });
 });
