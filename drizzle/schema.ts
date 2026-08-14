@@ -162,6 +162,35 @@ export const assessmentPatternSources = mysqlTable("assessmentPatternSources", {
 export type AssessmentPatternSource = typeof assessmentPatternSources.$inferSelect;
 export type InsertAssessmentPatternSource = typeof assessmentPatternSources.$inferInsert;
 
+// A reviewed profile records only the structure that an administrator confirmed from one exact
+// user-supplied pattern-paper file. It is intentionally separate from the paper's extracted text:
+// the profile guides assessment shape, while textbook sources remain the only question-content evidence.
+export const assessmentPatternProfiles = mysqlTable("assessmentPatternProfiles", {
+  id: int("id").autoincrement().primaryKey(),
+  patternSourceId: int("patternSourceId").notNull().unique(),
+  sectionAInstruction: text("sectionAInstruction"),
+  sectionBInstruction: text("sectionBInstruction"),
+  sectionCInstruction: text("sectionCInstruction"),
+  mcqCount: int("mcqCount"),
+  mcqMarksEach: int("mcqMarksEach"),
+  shortOrPairCount: int("shortOrPairCount"),
+  shortMarksEach: int("shortMarksEach"),
+  longOrPairCount: int("longOrPairCount"),
+  longMarksEach: int("longMarksEach"),
+  totalMarks: int("totalMarks"),
+  durationMinutes: int("durationMinutes"),
+  orRule: text("orRule"),
+  profileEvidenceNotes: longtext("profileEvidenceNotes"),
+  reviewStatus: mysqlEnum("reviewStatus", ["draft", "reviewed", "needs_revision"]).default("draft").notNull(),
+  reviewedBy: int("reviewedBy"),
+  reviewedAt: timestamp("reviewedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type AssessmentPatternProfile = typeof assessmentPatternProfiles.$inferSelect;
+export type InsertAssessmentPatternProfile = typeof assessmentPatternProfiles.$inferInsert;
+
 // Versioned FBISE curriculum material. A replacement textbook is represented by a new set;
 // historical quiz drafts retain their curriculum and source snapshots.
 export const curriculumSets = mysqlTable("curriculumSets", {

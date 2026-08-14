@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import React from "react";
 import { BookMarked, CheckCircle2, FileText, FolderPlus, Loader2, Plus, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,27 @@ import { AcademyShell } from "@/components/AcademyShell";
 type Subject = "physics" | "chemistry" | "computer_science";
 type ScopeKind = "half_syllabus" | "block";
 type PaperPatternKind = "model_paper" | "past_paper";
+type PatternReviewStatus = "draft" | "reviewed" | "needs_revision";
+type PaperPatternProfileForm = {
+  sectionAInstruction: string;
+  sectionBInstruction: string;
+  sectionCInstruction: string;
+  mcqCount: string;
+  mcqMarksEach: string;
+  shortOrPairCount: string;
+  shortMarksEach: string;
+  longOrPairCount: string;
+  longMarksEach: string;
+  totalMarks: string;
+  durationMinutes: string;
+  orRule: string;
+  profileEvidenceNotes: string;
+  reviewStatus: PatternReviewStatus;
+};
+
+const emptyPaperPatternProfile: PaperPatternProfileForm = {
+  sectionAInstruction: "", sectionBInstruction: "", sectionCInstruction: "", mcqCount: "", mcqMarksEach: "", shortOrPairCount: "", shortMarksEach: "", longOrPairCount: "", longMarksEach: "", totalMarks: "", durationMinutes: "", orRule: "", profileEvidenceNotes: "", reviewStatus: "draft",
+};
 
 const subjectLabels: Record<Subject, string> = {
   physics: "Physics",
@@ -48,6 +70,8 @@ export default function CurriculumManagement() {
   const [isUploadingPattern, setIsUploadingPattern] = useState(false);
   const [paperPatternKind, setPaperPatternKind] = useState<PaperPatternKind>("past_paper");
   const [paperPatternYear, setPaperPatternYear] = useState("");
+  const [selectedPatternSourceId, setSelectedPatternSourceId] = useState<number | null>(null);
+  const [paperPatternProfile, setPaperPatternProfile] = useState<PaperPatternProfileForm>(emptyPaperPatternProfile);
   const [chapterSourceId, setChapterSourceId] = useState<number | null>(null);
   const [chapterSequence, setChapterSequence] = useState("1");
   const [chapterCode, setChapterCode] = useState("");
@@ -70,6 +94,7 @@ export default function CurriculumManagement() {
   const ingestSource = trpc.curriculum.ingestSource.useMutation();
   const ingestPaperPatternSource = trpc.curriculum.ingestPaperPatternSource.useMutation();
   const activatePaperPatternSource = trpc.curriculum.activatePaperPatternSource.useMutation();
+  const savePaperPatternProfile = trpc.curriculum.savePaperPatternProfile.useMutation();
   const createChapter = trpc.curriculum.createChapter.useMutation();
   const saveSegments = trpc.curriculum.saveHalfChapterSegments.useMutation();
   const createScope = trpc.curriculum.createScopeTemplate.useMutation();
@@ -90,6 +115,31 @@ export default function CurriculumManagement() {
     () => details?.chapters.find((chapter) => chapter.id === selectedChapterId),
     [details?.chapters, selectedChapterId]
   );
+  const selectedPatternSource = useMemo(
+    () => details?.paperPatternSources.find((source) => source.id === selectedPatternSourceId),
+    [details?.paperPatternSources, selectedPatternSourceId]
+  );
+
+  useEffect(() => {
+    if (!details?.paperPatternSources.length) {
+      setSelectedPatternSourceId(null);
+      return;
+    }
+    if (!selectedPatternSourceId || !details.paperPatternSources.some((source) => source.id === selectedPatternSourceId)) {
+      setSelectedPatternSourceId(details.paperPatternSources[0].id);
+    }
+  }, [details?.paperPatternSources, selectedPatternSourceId]);
+
+  useEffect(() => {
+    if (!selectedPatternSourceId) {
+      setPaperPatternProfile(emptyPaperPatternProfile);
+      return;
+    }
+    const profile = details?.paperPatternProfiles.find((item) => item.patternSourceId === selectedPatternSourceId);
+    setPaperPatternProfile(profile ? {
+      sectionAInstruction: profile.sectionAInstruction ?? "", sectionBInstruction: profile.sectionBInstruction ?? "", sectionCInstruction: profile.sectionCInstruction ?? "", mcqCount: profile.mcqCount?.toString() ?? "", mcqMarksEach: profile.mcqMarksEach?.toString() ?? "", shortOrPairCount: profile.shortOrPairCount?.toString() ?? "", shortMarksEach: profile.shortMarksEach?.toString() ?? "", longOrPairCount: profile.longOrPairCount?.toString() ?? "", longMarksEach: profile.longMarksEach?.toString() ?? "", totalMarks: profile.totalMarks?.toString() ?? "", durationMinutes: profile.durationMinutes?.toString() ?? "", orRule: profile.orRule ?? "", profileEvidenceNotes: profile.profileEvidenceNotes ?? "", reviewStatus: profile.reviewStatus,
+    } : emptyPaperPatternProfile);
+  }, [details?.paperPatternProfiles, selectedPatternSourceId]);
 
   const refreshManagementData = async () => {
     await Promise.all([
@@ -167,7 +217,8 @@ export default function CurriculumManagement() {
     setIsUploadingPattern(true);
     try {
       const fileBuffer = await fileToBase64(file);
-      await ingestPaperPatternSource.mutateAsync({ subject: details.curriculumSet.subject, sourceKind: paperPatternKind, academicYear: paperPatternYear.trim() || undefined, fileName: file.name, mimeType: file.type as "application/pdf" | "text/plain", fileBuffer });
+      const created = await ingestPaperPatternSource.mutateAsync({ subject: details.curriculumSet.subject, sourceKind: paperPatternKind, academicYear: paperPatternYear.trim() || undefined, fileName: file.name, mimeType: file.type as "application/pdf" | "text/plain", fileBuffer });
+      setSelectedPatternSourceId(created.id);
       setPaperPatternYear("");
       await utils.curriculum.getManagementDetails.invalidate({ curriculumSetId: details.curriculumSet.id });
       toast.success("Paper-pattern source stored as a draft. Review it, then activate it only when the file and year are correct.");
@@ -187,6 +238,39 @@ export default function CurriculumManagement() {
       toast.success("Paper-pattern source activated. It can guide style but never supply question content.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "The paper-pattern source could not be activated.");
+    }
+  };
+
+  const updatePaperPatternProfile = <K extends keyof PaperPatternProfileForm>(key: K, value: PaperPatternProfileForm[K]) => {
+    setPaperPatternProfile((current) => ({ ...current, [key]: value }));
+  };
+
+  const toOptionalNumber = (value: string) => value.trim() ? Number(value) : undefined;
+
+  const handleSavePaperPatternProfile = async () => {
+    if (!selectedPatternSourceId) return toast.error("Select an extracted paper-pattern source first.");
+    try {
+      await savePaperPatternProfile.mutateAsync({
+        patternSourceId: selectedPatternSourceId,
+        sectionAInstruction: paperPatternProfile.sectionAInstruction.trim() || undefined,
+        sectionBInstruction: paperPatternProfile.sectionBInstruction.trim() || undefined,
+        sectionCInstruction: paperPatternProfile.sectionCInstruction.trim() || undefined,
+        mcqCount: toOptionalNumber(paperPatternProfile.mcqCount),
+        mcqMarksEach: toOptionalNumber(paperPatternProfile.mcqMarksEach),
+        shortOrPairCount: toOptionalNumber(paperPatternProfile.shortOrPairCount),
+        shortMarksEach: toOptionalNumber(paperPatternProfile.shortMarksEach),
+        longOrPairCount: toOptionalNumber(paperPatternProfile.longOrPairCount),
+        longMarksEach: toOptionalNumber(paperPatternProfile.longMarksEach),
+        totalMarks: toOptionalNumber(paperPatternProfile.totalMarks),
+        durationMinutes: toOptionalNumber(paperPatternProfile.durationMinutes),
+        orRule: paperPatternProfile.orRule.trim() || undefined,
+        profileEvidenceNotes: paperPatternProfile.profileEvidenceNotes.trim(),
+        reviewStatus: paperPatternProfile.reviewStatus,
+      });
+      await utils.curriculum.getManagementDetails.invalidate({ curriculumSetId: selectedSetId! });
+      toast.success(paperPatternProfile.reviewStatus === "reviewed" ? "Pattern profile reviewed. This paper can now be activated as style guidance." : "Pattern profile saved for further review.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "The paper-pattern profile could not be saved.");
     }
   };
 
@@ -304,7 +388,7 @@ export default function CurriculumManagement() {
           <Card className="lg:col-span-1">
             <CardHeader><CardTitle className="flex items-center gap-2"><FolderPlus className="h-5 w-5 text-accent" />Curriculum Sets</CardTitle><CardDescription>One versioned set per subject and textbook edition.</CardDescription></CardHeader>
             <CardContent className="space-y-3">
-              <Select value={selectedSetId?.toString() ?? undefined} onValueChange={(value) => setSelectedSetId(Number(value))}>
+              <Select value={selectedSetId?.toString() ?? "__none__"} onValueChange={(value) => setSelectedSetId(Number(value))}>
                 <SelectTrigger aria-label="Selected curriculum set"><SelectValue placeholder="Select a curriculum set" /></SelectTrigger>
                 <SelectContent>{setsQuery.data?.map((set) => <SelectItem key={set.id} value={set.id.toString()}>{subjectLabels[set.subject]} — {set.label} ({set.status})</SelectItem>)}</SelectContent>
               </Select>
@@ -321,6 +405,12 @@ export default function CurriculumManagement() {
             {selectedSetId && detailsQuery.isLoading && <Card><CardContent className="flex items-center gap-2 py-8 text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin" />Loading curriculum details…</CardContent></Card>}
             {details && <>
               <Card className="border-primary/15 bg-primary/[0.025]"><CardContent className="grid gap-3 p-4 sm:grid-cols-4"><div><p className="text-xs font-bold uppercase tracking-[0.12em] text-primary">Selected edition</p><p className="mt-1 text-sm font-bold text-foreground">{details.curriculumSet.editionLabel || details.curriculumSet.label}</p></div><div><p className="text-xs font-bold uppercase tracking-[0.12em] text-primary">Source files</p><p className="mt-1 text-sm font-bold text-foreground">{details.sources.length}</p></div><div><p className="text-xs font-bold uppercase tracking-[0.12em] text-primary">Reviewed chapters</p><p className="mt-1 text-sm font-bold text-foreground">{details.chapters.length}</p></div><div><p className="text-xs font-bold uppercase tracking-[0.12em] text-primary">Reusable scopes</p><p className="mt-1 text-sm font-bold text-foreground">{details.scopeTemplates.length}</p></div></CardContent></Card>
+              <Card className={details.readiness.sourceExtracted && details.readiness.reviewedActiveChapters > 0 ? "border-emerald-300/70 bg-emerald-50/50" : "border-amber-300/70 bg-amber-50/50"}>
+                <CardHeader><CardTitle className="text-base">Edition readiness checklist</CardTitle><CardDescription>Activation remains a deliberate admin action. This list only shows what has been verified for the selected book.</CardDescription></CardHeader>
+                <CardContent className="grid gap-2 text-sm sm:grid-cols-2">
+                  {[{ label: "Textbook source stored", done: details.readiness.sourceStored }, { label: "Textbook extraction completed", done: details.readiness.sourceExtracted }, { label: "At least one reviewed active chapter", done: details.readiness.reviewedActiveChapters > 0 }, { label: "Pattern profile reviewed (optional for book activation)", done: details.readiness.patternProfilesReviewed > 0 }].map((item) => <div key={item.label} className="flex items-center gap-2 rounded-lg border border-border/60 bg-background/70 px-3 py-2"><CheckCircle2 className={`h-4 w-4 shrink-0 ${item.done ? "text-emerald-600" : "text-muted-foreground"}`} /><span className={item.done ? "text-foreground" : "text-muted-foreground"}>{item.label}</span></div>)}
+                </CardContent>
+              </Card>
               {details.curriculumSet.status === "active" && <Card className="border-amber-400/35 bg-amber-50/60"><CardHeader><CardTitle className="text-base">Replace this active book safely</CardTitle><CardDescription>Creates a linked draft edition. Teachers keep using the active book until the replacement has been reviewed and deliberately activated.</CardDescription></CardHeader><CardContent className="grid gap-3 sm:grid-cols-[1fr_1fr_auto]"><Input aria-label="Replacement curriculum label" value={replacementLabel} onChange={(event) => setReplacementLabel(event.target.value)} placeholder="Replacement book title" /><Input aria-label="Replacement edition label" value={replacementEditionLabel} onChange={(event) => setReplacementEditionLabel(event.target.value)} placeholder="e.g. 2027 edition" /><Button type="button" variant="outline" onClick={handleCreateReplacement} disabled={replaceActiveSet.isPending}>Create replacement draft</Button></CardContent></Card>}
               <Card>
                 <CardHeader><CardTitle className="flex items-center gap-2"><Upload className="h-5 w-5 text-accent" />1. Add One Source File</CardTitle><CardDescription>{details.curriculumSet.label} is currently <strong>{details.curriculumSet.status}</strong>. PDF and TXT files are stored and extracted server-side.</CardDescription></CardHeader>
@@ -337,6 +427,24 @@ export default function CurriculumManagement() {
                   <div className="grid gap-3 sm:grid-cols-3"><Select value={paperPatternKind} onValueChange={(value) => setPaperPatternKind(value as PaperPatternKind)}><SelectTrigger aria-label="Paper pattern source kind"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="past_paper">Past paper</SelectItem><SelectItem value="model_paper">Model paper</SelectItem></SelectContent></Select><Input aria-label="Paper pattern academic year" value={paperPatternYear} onChange={(event) => setPaperPatternYear(event.target.value)} placeholder="e.g. 2026" /><Input aria-label="Paper pattern source upload" type="file" accept=".pdf,.txt" onChange={handlePaperPatternUpload} disabled={isUploadingPattern} /></div>
                   {isUploadingPattern && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Storing and extracting paper text…</p>}
                   <div className="space-y-2">{details.paperPatternSources.length ? details.paperPatternSources.map((source) => <div key={source.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/60 p-3"><div className="min-w-0"><p className="truncate text-sm font-semibold text-foreground">{source.originalFileName}</p><p className="mt-1 text-xs text-muted-foreground">{source.sourceKind === "model_paper" ? "Model paper" : "Past paper"}{source.academicYear ? ` · ${source.academicYear}` : ""} · extraction: {source.extractionStatus}</p></div><div className="flex items-center gap-2"><span className={`rounded-full px-2 py-1 text-xs font-bold ${source.status === "active" ? "bg-emerald-100 text-emerald-800" : source.status === "draft" ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-700"}`}>{source.status}</span>{source.status === "draft" && source.extractionStatus === "extracted" && <Button type="button" size="sm" variant="outline" onClick={() => handleActivatePaperPattern(source.id)} disabled={activatePaperPatternSource.isPending}>Activate</Button>}</div></div>) : <p className="rounded-lg border border-dashed border-border p-3 text-sm text-muted-foreground">No paper-pattern source is attached to this subject yet.</p>}</div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader><CardTitle className="flex items-center gap-2"><FileText className="h-5 w-5 text-accent" />Review Paper-Pattern Profile</CardTitle><CardDescription>Record only structure verified in this supplied paper. These values guide exam format; they never become question-content evidence.</CardDescription></CardHeader>
+                <CardContent className="space-y-4">
+                  {!details.paperPatternSources.length && <p className="rounded-lg border border-dashed border-border p-3 text-sm text-muted-foreground">Upload and extract a supplied model or past paper before creating its profile.</p>}
+                  {details.paperPatternSources.length > 0 && <>
+                    <Select value={selectedPatternSourceId?.toString() ?? "__none__"} onValueChange={(value) => setSelectedPatternSourceId(Number(value))}><SelectTrigger aria-label="Paper pattern source for profile review"><SelectValue placeholder="Select a paper-pattern source" /></SelectTrigger><SelectContent>{details.paperPatternSources.map((source) => <SelectItem key={source.id} value={source.id.toString()}>{source.originalFileName} ({source.status})</SelectItem>)}</SelectContent></Select>
+                    {selectedPatternSource && <><div className="rounded-lg border border-border/70 bg-muted/20 p-3 text-sm"><p className="font-semibold text-foreground">{selectedPatternSource.originalFileName}</p><p className="mt-1 text-muted-foreground">{selectedPatternSource.sourceKind === "model_paper" ? "Model paper" : "Past paper"}{selectedPatternSource.academicYear ? ` · ${selectedPatternSource.academicYear}` : ""} · extraction: {selectedPatternSource.extractionStatus}</p></div>
+                    {selectedPatternSource.extractionStatus !== "extracted" ? <p className="text-sm text-amber-700">Profile review is blocked until this supplied paper has been extracted successfully.</p> : <><div className="grid gap-3 sm:grid-cols-3"><Input aria-label="MCQ count" type="number" min="0" value={paperPatternProfile.mcqCount} onChange={(event) => updatePaperPatternProfile("mcqCount", event.target.value)} placeholder="MCQ count" /><Input aria-label="MCQ marks each" type="number" min="0" value={paperPatternProfile.mcqMarksEach} onChange={(event) => updatePaperPatternProfile("mcqMarksEach", event.target.value)} placeholder="MCQ marks each" /><Input aria-label="Total paper marks" type="number" min="1" value={paperPatternProfile.totalMarks} onChange={(event) => updatePaperPatternProfile("totalMarks", event.target.value)} placeholder="Total marks" /></div>
+                    <div className="grid gap-3 sm:grid-cols-3"><Input aria-label="Short OR pair count" type="number" min="0" value={paperPatternProfile.shortOrPairCount} onChange={(event) => updatePaperPatternProfile("shortOrPairCount", event.target.value)} placeholder="Short OR pairs" /><Input aria-label="Short marks each" type="number" min="0" value={paperPatternProfile.shortMarksEach} onChange={(event) => updatePaperPatternProfile("shortMarksEach", event.target.value)} placeholder="Short marks each" /><Input aria-label="Duration minutes" type="number" min="1" value={paperPatternProfile.durationMinutes} onChange={(event) => updatePaperPatternProfile("durationMinutes", event.target.value)} placeholder="Duration (minutes)" /></div>
+                    <div className="grid gap-3 sm:grid-cols-2"><Input aria-label="Long OR pair count" type="number" min="0" value={paperPatternProfile.longOrPairCount} onChange={(event) => updatePaperPatternProfile("longOrPairCount", event.target.value)} placeholder="Long OR pairs" /><Input aria-label="Long marks each" type="number" min="0" value={paperPatternProfile.longMarksEach} onChange={(event) => updatePaperPatternProfile("longMarksEach", event.target.value)} placeholder="Long marks each" /></div>
+                    <Textarea aria-label="Section A instruction" value={paperPatternProfile.sectionAInstruction} onChange={(event) => updatePaperPatternProfile("sectionAInstruction", event.target.value)} placeholder="Section A instruction recorded from the supplied paper" className="min-h-20" /><Textarea aria-label="Section B instruction" value={paperPatternProfile.sectionBInstruction} onChange={(event) => updatePaperPatternProfile("sectionBInstruction", event.target.value)} placeholder="Section B instruction recorded from the supplied paper" className="min-h-20" /><Textarea aria-label="Section C instruction" value={paperPatternProfile.sectionCInstruction} onChange={(event) => updatePaperPatternProfile("sectionCInstruction", event.target.value)} placeholder="Section C instruction recorded from the supplied paper" className="min-h-20" /><Textarea aria-label="OR rule" value={paperPatternProfile.orRule} onChange={(event) => updatePaperPatternProfile("orRule", event.target.value)} placeholder="Describe the OR/choice rule exactly as verified in this paper" className="min-h-20" />
+                    <div className="grid gap-3 sm:grid-cols-[200px_1fr]"><Select value={paperPatternProfile.reviewStatus} onValueChange={(value) => updatePaperPatternProfile("reviewStatus", value as PatternReviewStatus)}><SelectTrigger aria-label="Paper pattern profile review status"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="draft">Draft profile</SelectItem><SelectItem value="needs_revision">Needs revision</SelectItem><SelectItem value="reviewed">Reviewed and confirmed</SelectItem></SelectContent></Select><Textarea aria-label="Pattern profile evidence notes" value={paperPatternProfile.profileEvidenceNotes} onChange={(event) => updatePaperPatternProfile("profileEvidenceNotes", event.target.value)} placeholder="Required: cite the relevant page/section in this supplied paper and explain what you confirmed." className="min-h-20" /></div>
+                    <Button type="button" onClick={handleSavePaperPatternProfile} disabled={savePaperPatternProfile.isPending}>{savePaperPatternProfile.isPending ? "Saving profile…" : paperPatternProfile.reviewStatus === "reviewed" ? "Save reviewed profile" : "Save profile draft"}</Button></>}
+                    </>}
+                  </>}
                 </CardContent>
               </Card>
 

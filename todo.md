@@ -259,3 +259,9 @@
 - [x] Audit existing subject, textbook, curriculum, replacement, and pattern-paper intake capabilities.
 - [x] Design a reusable Portal Admin workflow with explicit source-governance and exam-pattern safeguards.
 - [x] Present a staged implementation plan for approval before building the next capability.
+
+## Phase 35: Release 1 — Readiness Checklist and Pattern Profile
+- [x] Define and persist a source-linked, admin-reviewed paper-pattern profile for Grade 10 model and past papers.
+- [x] Expose a clear edition readiness checklist without allowing automatic source or pattern activation.
+- [x] Build concise Portal Admin review controls for paper-profile data and source readiness.
+- [x] Add lifecycle safeguards and regression coverage, validate, checkpoint, and report Release 1.

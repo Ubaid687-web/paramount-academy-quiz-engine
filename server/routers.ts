@@ -121,21 +121,32 @@ export const appRouter = router({
     getManagementDetails: adminProcedure
       .input(z.object({ curriculumSetId: z.number().int().positive() }))
       .query(async ({ input }) => {
-        const { getCurriculumSet, listCurriculumSources, listCurriculumChapters, listChapterSegments, listScopeTemplates, listAssessmentPatternSources } = await import("./db");
+        const { getCurriculumSet, listCurriculumSources, listCurriculumChapters, listChapterSegments, listScopeTemplates, listAssessmentPatternSources, listAssessmentPatternProfilesBySourceIds } = await import("./db");
         const curriculumSet = await getCurriculumSet(input.curriculumSetId);
         if (!curriculumSet) throw new Error("Curriculum set not found");
         const chapters = await listCurriculumChapters(input.curriculumSetId);
+        const sources = await listCurriculumSources(input.curriculumSetId);
+        const paperPatternSources = await listAssessmentPatternSources(curriculumSet.subject);
+        const paperPatternProfiles = await listAssessmentPatternProfilesBySourceIds(paperPatternSources.map((source) => source.id));
         const chapterSegments = await Promise.all(chapters.map(async (chapter) => ({
           chapterId: chapter.id,
           segments: await listChapterSegments(chapter.id),
         })));
         return {
           curriculumSet,
-          sources: await listCurriculumSources(input.curriculumSetId),
-          paperPatternSources: await listAssessmentPatternSources(curriculumSet.subject),
+          sources,
+          paperPatternSources,
+          paperPatternProfiles,
           chapters,
           chapterSegments,
           scopeTemplates: await listScopeTemplates(input.curriculumSetId),
+          readiness: {
+            sourceStored: sources.length > 0,
+            sourceExtracted: sources.some((source) => source.extractionStatus === "extracted" && Boolean(source.extractedText?.trim())),
+            reviewedActiveChapters: chapters.filter((chapter) => chapter.isActive === 1).length,
+            patternSourcesExtracted: paperPatternSources.filter((source) => source.extractionStatus === "extracted").length,
+            patternProfilesReviewed: paperPatternProfiles.filter((profile) => profile.reviewStatus === "reviewed").length,
+          },
         };
       }),
 
@@ -253,6 +264,50 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const { activateAssessmentPatternSource } = await import("./db");
         return activateAssessmentPatternSource(input.sourceId);
+      }),
+
+    savePaperPatternProfile: adminProcedure
+      .input(z.object({
+        patternSourceId: z.number().int().positive(),
+        sectionAInstruction: z.string().max(2000).optional(),
+        sectionBInstruction: z.string().max(2000).optional(),
+        sectionCInstruction: z.string().max(2000).optional(),
+        mcqCount: z.number().int().min(0).max(100).optional(),
+        mcqMarksEach: z.number().int().min(0).max(100).optional(),
+        shortOrPairCount: z.number().int().min(0).max(100).optional(),
+        shortMarksEach: z.number().int().min(0).max(100).optional(),
+        longOrPairCount: z.number().int().min(0).max(100).optional(),
+        longMarksEach: z.number().int().min(0).max(100).optional(),
+        totalMarks: z.number().int().min(1).max(1000).optional(),
+        durationMinutes: z.number().int().min(1).max(600).optional(),
+        orRule: z.string().max(2000).optional(),
+        profileEvidenceNotes: z.string().min(20).max(8000),
+        reviewStatus: z.enum(["draft", "reviewed", "needs_revision"]),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { getAssessmentPatternSource, saveAssessmentPatternProfile } = await import("./db");
+        const source = await getAssessmentPatternSource(input.patternSourceId);
+        if (!source) throw new Error("Paper-pattern source not found.");
+        if (source.extractionStatus !== "extracted" || !source.extractedText?.trim()) {
+          throw new Error("Extract the supplied paper before saving its pattern profile.");
+        }
+        return saveAssessmentPatternProfile({
+          ...input,
+          sectionAInstruction: input.sectionAInstruction || null,
+          sectionBInstruction: input.sectionBInstruction || null,
+          sectionCInstruction: input.sectionCInstruction || null,
+          mcqCount: input.mcqCount ?? null,
+          mcqMarksEach: input.mcqMarksEach ?? null,
+          shortOrPairCount: input.shortOrPairCount ?? null,
+          shortMarksEach: input.shortMarksEach ?? null,
+          longOrPairCount: input.longOrPairCount ?? null,
+          longMarksEach: input.longMarksEach ?? null,
+          totalMarks: input.totalMarks ?? null,
+          durationMinutes: input.durationMinutes ?? null,
+          orRule: input.orRule || null,
+          reviewedBy: input.reviewStatus === "reviewed" ? ctx.user.id : null,
+          reviewedAt: input.reviewStatus === "reviewed" ? new Date() : null,
+        });
       }),
 
     createChapter: adminProcedure

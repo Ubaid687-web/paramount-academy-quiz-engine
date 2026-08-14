@@ -26,8 +26,10 @@ import {
   InsertCurriculumScopeTemplate,
   assessmentDrafts,
   assessmentPatternSources,
+  assessmentPatternProfiles,
   InsertAssessmentDraft,
   InsertAssessmentPatternSource,
+  InsertAssessmentPatternProfile,
   AssessmentDraft,
 } from "../drizzle/schema";
 import type { FbiseSubject, ScopeCatalog } from "./curriculumScope";
@@ -441,6 +443,34 @@ export async function createAssessmentPatternSource(values: InsertAssessmentPatt
   return rows[0];
 }
 
+export async function getAssessmentPatternSource(sourceId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const rows = await db.select().from(assessmentPatternSources).where(eq(assessmentPatternSources.id, sourceId)).limit(1);
+  return rows[0];
+}
+
+export async function listAssessmentPatternProfilesBySourceIds(patternSourceIds: number[]) {
+  if (!patternSourceIds.length) return [];
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.select().from(assessmentPatternProfiles).where(inArray(assessmentPatternProfiles.patternSourceId, patternSourceIds));
+}
+
+export async function saveAssessmentPatternProfile(values: Omit<InsertAssessmentPatternProfile, "id" | "createdAt" | "updatedAt">) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const existing = await db.select().from(assessmentPatternProfiles).where(eq(assessmentPatternProfiles.patternSourceId, values.patternSourceId)).limit(1);
+  if (existing[0]) {
+    await db.update(assessmentPatternProfiles).set(values).where(eq(assessmentPatternProfiles.patternSourceId, values.patternSourceId));
+    const updated = await db.select().from(assessmentPatternProfiles).where(eq(assessmentPatternProfiles.patternSourceId, values.patternSourceId)).limit(1);
+    return updated[0];
+  }
+  const result = await db.insert(assessmentPatternProfiles).values(values);
+  const created = await db.select().from(assessmentPatternProfiles).where(eq(assessmentPatternProfiles.id, result[0].insertId as number)).limit(1);
+  return created[0];
+}
+
 export async function activateAssessmentPatternSource(sourceId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
@@ -449,6 +479,10 @@ export async function activateAssessmentPatternSource(sourceId: number) {
   if (!source) throw new Error("Paper-pattern source not found.");
   if (source.extractionStatus !== "extracted" || !source.extractedText?.trim()) {
     throw new Error("Only successfully extracted paper-pattern sources can be activated.");
+  }
+  const profiles = await db.select().from(assessmentPatternProfiles).where(eq(assessmentPatternProfiles.patternSourceId, sourceId)).limit(1);
+  if (profiles[0]?.reviewStatus !== "reviewed") {
+    throw new Error("Review and confirm the paper-pattern profile before activating this source.");
   }
   await db.update(assessmentPatternSources).set({ status: "active", activatedAt: new Date() }).where(eq(assessmentPatternSources.id, sourceId));
   const activated = await db.select().from(assessmentPatternSources).where(eq(assessmentPatternSources.id, sourceId)).limit(1);

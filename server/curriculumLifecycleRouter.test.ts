@@ -3,11 +3,15 @@ import { describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   createReplacementCurriculumSet: vi.fn(),
   activateAssessmentPatternSource: vi.fn(),
+  getAssessmentPatternSource: vi.fn(),
+  saveAssessmentPatternProfile: vi.fn(),
 }));
 
 vi.mock("./db", () => ({
   createReplacementCurriculumSet: mocks.createReplacementCurriculumSet,
   activateAssessmentPatternSource: mocks.activateAssessmentPatternSource,
+  getAssessmentPatternSource: mocks.getAssessmentPatternSource,
+  saveAssessmentPatternProfile: mocks.saveAssessmentPatternProfile,
 }));
 
 import { appRouter } from "./routers";
@@ -34,5 +38,20 @@ describe("curriculum lifecycle administration", () => {
     const caller = appRouter.createCaller(createContext("user"));
     await expect(caller.curriculum.activatePaperPatternSource({ sourceId: 41 })).rejects.toMatchObject({ code: "FORBIDDEN" });
     expect(mocks.activateAssessmentPatternSource).not.toHaveBeenCalled();
+  });
+
+  it("records a reviewed profile only for an extracted supplied paper and stamps the admin reviewer", async () => {
+    mocks.getAssessmentPatternSource.mockResolvedValue({ id: 41, extractionStatus: "extracted", extractedText: "Verified supplied paper text" });
+    mocks.saveAssessmentPatternProfile.mockResolvedValue({ id: 12, patternSourceId: 41, reviewStatus: "reviewed" });
+    const caller = appRouter.createCaller(createContext("admin"));
+
+    await expect(caller.curriculum.savePaperPatternProfile({
+      patternSourceId: 41, mcqCount: 12, mcqMarksEach: 1, totalMarks: 60, durationMinutes: 180,
+      profileEvidenceNotes: "Page 1 confirms the Section A MCQ count and marks.", reviewStatus: "reviewed",
+    })).resolves.toMatchObject({ id: 12, reviewStatus: "reviewed" });
+
+    expect(mocks.saveAssessmentPatternProfile).toHaveBeenCalledWith(expect.objectContaining({
+      patternSourceId: 41, reviewStatus: "reviewed", reviewedBy: 77, reviewedAt: expect.any(Date), mcqCount: 12,
+    }));
   });
 });
