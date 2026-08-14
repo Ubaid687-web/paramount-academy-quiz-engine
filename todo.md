@@ -203,3 +203,9 @@
 - [x] Repair mobile-safe PDF delivery for MCQ, short-paper, long-paper, and solution-key exports.
 - [x] Audit adjacent generation, PDF export, and preview paths for hidden user-visible failures.
 - [x] Add regression coverage, validate, checkpoint, and report the reliability repair.
+
+## Phase 25: Reusable Curriculum Lifecycle Architecture
+- [x] Audit the present book, paper, curriculum, and custom-source workflow for self-service gaps.
+- [x] Design a reusable source intake, verification, versioning, chapter review, and activation lifecycle.
+- [x] Define concise Portal Admin and teacher-facing visibility for approved materials and current source status.
+- [x] Present a phased implementation recommendation before building new functionality.
