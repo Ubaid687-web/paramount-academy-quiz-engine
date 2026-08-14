@@ -406,8 +406,8 @@ describe("AI quiz generation feedback", () => {
 
     expect(await screen.findByText(/does not create an online student quiz/i)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /generate printable paper draft/i }));
-    expect(await screen.findByRole("button", { name: /prepare paper pdf/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /prepare solution key/i })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /download paper pdf/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /download solution key/i })).toBeInTheDocument();
     expect(generatePrintablePaperMutation).toHaveBeenCalledWith(expect.objectContaining({ paperType: "short" }));
   });
 

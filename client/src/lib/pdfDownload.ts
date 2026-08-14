@@ -1,6 +1,26 @@
 const PDF_MIME_TYPE = "application/pdf";
 const CLEANUP_DELAY_MS = 60_000;
 
+export function submitNativePdfExport(request: unknown) {
+  const form = document.createElement("form");
+  form.method = "post";
+  form.action = "/api/pdf-export/download";
+  form.style.display = "none";
+
+  const payload = document.createElement("input");
+  payload.type = "hidden";
+  payload.name = "exportRequest";
+  payload.value = JSON.stringify(request);
+  form.appendChild(payload);
+  document.body.appendChild(form);
+
+  // This synchronous browser navigation remains inside the teacher's real tap,
+  // so mobile browsers receive the attachment response rather than a detached
+  // fetch result followed by a separate navigation.
+  form.submit();
+  window.setTimeout(() => form.remove(), CLEANUP_DELAY_MS);
+}
+
 function decodeBase64Pdf(data: string) {
   if (!data.trim()) throw new Error("The generated PDF was empty.");
   const bytes = Uint8Array.from(window.atob(data), (character) => character.charCodeAt(0));

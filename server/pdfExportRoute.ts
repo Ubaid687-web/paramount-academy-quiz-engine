@@ -42,6 +42,12 @@ export async function renderExport(input: z.infer<typeof exportRequestSchema>) {
     : { fileName: safeFileName(validation.payload.title, "solution-key"), pdf: await renderPrintableSolutionPdf(validation.payload) };
 }
 
+function parseNativeFormExport(body: unknown) {
+  const raw = body && typeof body === "object" ? (body as Record<string, unknown>).exportRequest : null;
+  if (typeof raw !== "string") throw new Error("The PDF download request was missing its assessment data.");
+  return exportRequestSchema.parse(JSON.parse(raw));
+}
+
 async function requireAdmin(req: Request, res: Response) {
   try {
     const user = await sdk.authenticateRequest(req);
@@ -57,6 +63,21 @@ async function requireAdmin(req: Request, res: Response) {
 }
 
 export function registerPdfExportRoutes(app: Express) {
+  app.post("/api/pdf-export/download", async (req, res) => {
+    const user = await requireAdmin(req, res);
+    if (!user) return;
+    try {
+      const rendered = await renderExport(parseNativeFormExport(req.body));
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="${rendered.fileName}"`);
+      res.setHeader("Content-Length", String(rendered.pdf.length));
+      res.setHeader("Cache-Control", "private, no-store, max-age=0");
+      res.status(200).send(rendered.pdf);
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "The PDF could not be prepared." });
+    }
+  });
+
   app.post("/api/pdf-export", async (req, res) => {
     const user = await requireAdmin(req, res);
     if (!user) return;

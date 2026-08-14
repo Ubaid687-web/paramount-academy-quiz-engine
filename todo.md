@@ -237,3 +237,9 @@
 - [x] Ensure only valid printable drafts expose a PDF preparation control, with no internal validator details shown to users.
 - [x] Identify and reduce the slow first-open preview path while keeping the loaded application responsive.
 - [x] Add regression coverage, validate, checkpoint, and report both focused repairs.
+
+## Phase 31: Evidence-Led Mobile PDF Root-Cause Investigation
+- [x] Correlate the current mobile PDF preparation request with the attachment retrieval request and final response.
+- [x] Reproduce the observed sequence and inspect export token, session, proxy, and attachment headers.
+- [x] Implement only the verified root-cause fix with a targeted regression test.
+- [x] Validate the complete delivery sequence and report evidence-backed results.

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { downloadPdfFile } from "../client/src/lib/pdfDownload";
+import { downloadPdfFile, submitNativePdfExport } from "../client/src/lib/pdfDownload";
 
 describe("PDF download delivery", () => {
   afterEach(() => {
@@ -28,5 +28,21 @@ describe("PDF download delivery", () => {
     vi.advanceTimersByTime(60_000);
     expect(document.querySelector('a[download="physics-paper.pdf"]')).toBeNull();
     expect(revokeObjectUrl).toHaveBeenCalledWith("blob:quiz-paper");
+  });
+
+  it("submits the PDF payload through one native same-origin form post", () => {
+    vi.useFakeTimers();
+    const submit = vi.spyOn(HTMLFormElement.prototype, "submit").mockImplementation(() => undefined);
+
+    submitNativePdfExport({ kind: "paper", payload: { mode: "short", title: "Physics revision" } });
+
+    const form = document.querySelector('form[action="/api/pdf-export/download"]') as HTMLFormElement | null;
+    const payload = form?.querySelector('input[name="exportRequest"]') as HTMLInputElement | null;
+    expect(form?.method.toLowerCase()).toBe("post");
+    expect(payload?.value).toContain('"kind":"paper"');
+    expect(submit).toHaveBeenCalledOnce();
+
+    vi.advanceTimersByTime(60_000);
+    expect(document.querySelector('form[action="/api/pdf-export/download"]')).toBeNull();
   });
 });
