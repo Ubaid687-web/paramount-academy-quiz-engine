@@ -10,6 +10,8 @@ const mocks = vi.hoisted(() => ({
   getCurriculumSet: vi.fn(),
   getCurriculumSource: vi.fn(),
   proposeChaptersFromExtractedText: vi.fn(),
+  getProgrammeEvidenceRecord: vi.fn(),
+  updateProgrammeEvidenceRecordStatus: vi.fn(),
 }));
 
 vi.mock("./db", () => ({
@@ -21,6 +23,8 @@ vi.mock("./db", () => ({
   activateProgrammeCatalogue: mocks.activateProgrammeCatalogue,
   getCurriculumSet: mocks.getCurriculumSet,
   getCurriculumSource: mocks.getCurriculumSource,
+  getProgrammeEvidenceRecord: mocks.getProgrammeEvidenceRecord,
+  updateProgrammeEvidenceRecordStatus: mocks.updateProgrammeEvidenceRecordStatus,
 }));
 
 vi.mock("./chapterProposal", () => ({ proposeChaptersFromExtractedText: mocks.proposeChaptersFromExtractedText }));
@@ -101,5 +105,15 @@ describe("curriculum lifecycle administration", () => {
     expect(mocks.saveAssessmentPatternProfile).toHaveBeenCalledWith(expect.objectContaining({
       patternSourceId: 41, reviewStatus: "reviewed", reviewedBy: 77, reviewedAt: expect.any(Date), mcqCount: 12,
     }));
+  });
+
+  it("keeps analysis and practical reference evidence inside its selected programme", async () => {
+    mocks.getProgrammeEvidenceRecord.mockResolvedValue({ id: 81, programmeId: 11, evidenceKind: "analysis_reference", status: "draft" });
+    mocks.updateProgrammeEvidenceRecordStatus.mockResolvedValue({ id: 81, programmeId: 11, status: "reviewed" });
+    const caller = appRouter.createCaller(createContext("admin"));
+
+    await expect(caller.curriculum.reviewProgrammeEvidence({ programmeId: 12, recordId: 81, status: "reviewed" })).rejects.toThrow("does not belong to the selected programme");
+    await expect(caller.curriculum.reviewProgrammeEvidence({ programmeId: 11, recordId: 81, status: "reviewed" })).resolves.toMatchObject({ id: 81, status: "reviewed" });
+    expect(mocks.updateProgrammeEvidenceRecordStatus).toHaveBeenCalledWith(81, "reviewed", 77);
   });
 });

@@ -15,6 +15,7 @@ import { AcademyShell } from "@/components/AcademyShell";
 type Subject = string;
 type ScopeKind = "half_syllabus" | "block";
 type PaperPatternKind = "model_paper" | "past_paper";
+type ProgrammeEvidenceKind = "analysis_reference" | "practical_assessment";
 type PatternReviewStatus = "draft" | "reviewed" | "needs_revision";
 type PaperPatternProfileForm = {
   sectionAInstruction: string;
@@ -74,8 +75,12 @@ export default function CurriculumManagement() {
   const [replacementEditionLabel, setReplacementEditionLabel] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [isUploadingPattern, setIsUploadingPattern] = useState(false);
+  const [isUploadingEvidence, setIsUploadingEvidence] = useState(false);
   const [paperPatternKind, setPaperPatternKind] = useState<PaperPatternKind>("past_paper");
   const [paperPatternYear, setPaperPatternYear] = useState("");
+  const [programmeEvidenceKind, setProgrammeEvidenceKind] = useState<ProgrammeEvidenceKind>("analysis_reference");
+  const [programmeEvidenceYear, setProgrammeEvidenceYear] = useState("");
+  const [programmeEvidenceNotes, setProgrammeEvidenceNotes] = useState("");
   const [selectedPatternSourceId, setSelectedPatternSourceId] = useState<number | null>(null);
   const [paperPatternProfile, setPaperPatternProfile] = useState<PaperPatternProfileForm>(emptyPaperPatternProfile);
   const [chapterSourceId, setChapterSourceId] = useState<number | null>(null);
@@ -105,6 +110,8 @@ export default function CurriculumManagement() {
   const replaceActiveSet = trpc.curriculum.replaceActiveSet.useMutation();
   const ingestSource = trpc.curriculum.ingestSource.useMutation();
   const ingestPaperPatternSource = trpc.curriculum.ingestPaperPatternSource.useMutation();
+  const ingestProgrammeEvidence = trpc.curriculum.ingestProgrammeEvidence.useMutation();
+  const reviewProgrammeEvidence = trpc.curriculum.reviewProgrammeEvidence.useMutation();
   const activatePaperPatternSource = trpc.curriculum.activatePaperPatternSource.useMutation();
   const savePaperPatternProfile = trpc.curriculum.savePaperPatternProfile.useMutation();
   const createChapter = trpc.curriculum.createChapter.useMutation();
@@ -300,6 +307,46 @@ export default function CurriculumManagement() {
     }
   };
 
+  const handleProgrammeEvidenceUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !details || !selectedSetProgramme) return;
+    if (!["application/pdf", "text/plain"].includes(file.type)) return toast.error("Only PDF and TXT reference files are supported.");
+    if (file.size > 30 * 1024 * 1024) return toast.error("Keep each reference file under 30MB.");
+    setIsUploadingEvidence(true);
+    try {
+      const fileBuffer = await fileToBase64(file);
+      await ingestProgrammeEvidence.mutateAsync({
+        programmeId: selectedSetProgramme.id,
+        evidenceKind: programmeEvidenceKind,
+        academicYear: programmeEvidenceYear.trim() || undefined,
+        evidenceNotes: programmeEvidenceNotes.trim() || undefined,
+        fileName: file.name,
+        mimeType: file.type as "application/pdf" | "text/plain",
+        fileBuffer,
+      });
+      setProgrammeEvidenceYear("");
+      setProgrammeEvidenceNotes("");
+      await utils.curriculum.getManagementDetails.invalidate({ curriculumSetId: details.curriculumSet.id });
+      toast.success("Reference evidence stored as a draft. It is isolated to this programme and cannot be used for question content.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "The reference evidence could not be stored.");
+    } finally {
+      setIsUploadingEvidence(false);
+      event.target.value = "";
+    }
+  };
+
+  const handleReviewProgrammeEvidence = async (recordId: number) => {
+    if (!details || !selectedSetProgramme) return;
+    try {
+      await reviewProgrammeEvidence.mutateAsync({ programmeId: selectedSetProgramme.id, recordId, status: "reviewed" });
+      await utils.curriculum.getManagementDetails.invalidate({ curriculumSetId: details.curriculumSet.id });
+      toast.success("Reference record marked reviewed. It remains excluded from automatic generation evidence.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "The reference record could not be reviewed.");
+    }
+  };
+
   const updatePaperPatternProfile = <K extends keyof PaperPatternProfileForm>(key: K, value: PaperPatternProfileForm[K]) => {
     setPaperPatternProfile((current) => ({ ...current, [key]: value }));
   };
@@ -491,6 +538,12 @@ export default function CurriculumManagement() {
                   {[{ label: "Textbook source stored", done: details.readiness.sourceStored }, { label: "Textbook extraction completed", done: details.readiness.sourceExtracted }, { label: "At least one reviewed active chapter", done: details.readiness.reviewedActiveChapters > 0 }, { label: "Pattern profile reviewed (optional for book activation)", done: details.readiness.patternProfilesReviewed > 0 }].map((item) => <div key={item.label} className="flex items-center gap-2 rounded-lg border border-border/60 bg-background/70 px-3 py-2"><CheckCircle2 className={`h-4 w-4 shrink-0 ${item.done ? "text-emerald-600" : "text-muted-foreground"}`} /><span className={item.done ? "text-foreground" : "text-muted-foreground"}>{item.label}</span></div>)}
                 </CardContent>
               </Card>
+              <Card className="border-primary/20 bg-primary/[0.025]">
+                <CardHeader><CardTitle className="text-base">{selectedSetProgramme?.teacherLabel ?? formatSubjectLabel(details.curriculumSet.subject)} evidence workspace</CardTitle><CardDescription>All files below belong only to this board, grade, and subject. Books ground answers; model and past papers guide structure; analysis and practical references remain review-only.</CardDescription></CardHeader>
+                <CardContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                  {[{ label: "Book edition", value: details.sources.length, detail: `${details.chapters.length} reviewed chapters` }, { label: "Model papers", value: details.paperPatternSources.filter((source) => source.sourceKind === "model_paper").length, detail: "format guidance only" }, { label: "Past papers", value: details.paperPatternSources.filter((source) => source.sourceKind === "past_paper").length, detail: "format guidance only" }, { label: "Analysis / practical", value: details.programmeEvidenceRecords.length, detail: "never generation evidence" }].map((item) => <div key={item.label} className="rounded-xl border border-border/70 bg-background/75 p-3"><p className="text-xs font-bold uppercase tracking-[0.11em] text-primary">{item.label}</p><p className="mt-1 text-2xl font-bold text-foreground">{item.value}</p><p className="mt-1 text-xs text-muted-foreground">{item.detail}</p></div>)}
+                </CardContent>
+              </Card>
               {details.curriculumSet.status === "active" && <Card className="border-amber-400/35 bg-amber-50/60"><CardHeader><CardTitle className="text-base">Replace this active book safely</CardTitle><CardDescription>Creates a linked draft edition. Teachers keep using the active book until the replacement has been reviewed and deliberately activated.</CardDescription></CardHeader><CardContent className="grid gap-3 sm:grid-cols-[1fr_1fr_auto]"><Input aria-label="Replacement curriculum label" value={replacementLabel} onChange={(event) => setReplacementLabel(event.target.value)} placeholder="Replacement book title" /><Input aria-label="Replacement edition label" value={replacementEditionLabel} onChange={(event) => setReplacementEditionLabel(event.target.value)} placeholder="e.g. 2027 edition" /><Button type="button" variant="outline" onClick={handleCreateReplacement} disabled={replaceActiveSet.isPending}>Create replacement draft</Button></CardContent></Card>}
               <Card>
                 <CardHeader><CardTitle className="flex items-center gap-2"><Upload className="h-5 w-5 text-accent" />1. Add One Source File</CardTitle><CardDescription>{details.curriculumSet.label} is currently <strong>{details.curriculumSet.status}</strong>. PDF and TXT files are stored and extracted server-side.</CardDescription></CardHeader>
@@ -534,6 +587,16 @@ export default function CurriculumManagement() {
                     <Button type="button" onClick={handleSavePaperPatternProfile} disabled={savePaperPatternProfile.isPending}>{savePaperPatternProfile.isPending ? "Saving profile…" : paperPatternProfile.reviewStatus === "reviewed" ? "Save reviewed profile" : "Save profile draft"}</Button></>}
                     </>}
                   </>}
+                </CardContent>
+              </Card>
+
+              <Card className="border-violet-200/80 bg-violet-50/30">
+                <CardHeader><CardTitle className="flex items-center gap-2"><FileText className="h-5 w-5 text-violet-700" />Analysis and Practical References</CardTitle><CardDescription>Store analysis notes or practical-assessment material for this programme only. These records support administrator review and are permanently excluded from textbook grounding and automatic paper-pattern guidance.</CardDescription></CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><Select value={programmeEvidenceKind} onValueChange={(value) => setProgrammeEvidenceKind(value as ProgrammeEvidenceKind)}><SelectTrigger aria-label="Programme reference kind"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="analysis_reference">Analysis reference</SelectItem><SelectItem value="practical_assessment">Practical assessment</SelectItem></SelectContent></Select><Input aria-label="Programme reference academic year" value={programmeEvidenceYear} onChange={(event) => setProgrammeEvidenceYear(event.target.value)} placeholder="e.g. 2026" /><Input aria-label="Programme reference upload" type="file" accept=".pdf,.txt" onChange={handleProgrammeEvidenceUpload} disabled={isUploadingEvidence || !selectedSetProgramme} /><Button type="button" variant="outline" disabled><FileText className="mr-2 h-4 w-4" />Review only</Button></div>
+                  <Textarea aria-label="Programme reference evidence notes" value={programmeEvidenceNotes} onChange={(event) => setProgrammeEvidenceNotes(event.target.value)} placeholder="Optional: explain why this file is useful, such as application-gap analysis or PBA reference. This note cannot supply answer facts." className="min-h-20" />
+                  {isUploadingEvidence && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Storing and extracting reference text…</p>}
+                  <div className="space-y-2">{details.programmeEvidenceRecords.length ? details.programmeEvidenceRecords.map((record) => <div key={record.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-violet-200/70 bg-background/80 p-3"><div className="min-w-0"><p className="truncate text-sm font-semibold text-foreground">{record.originalFileName}</p><p className="mt-1 text-xs text-muted-foreground">{record.evidenceKind === "analysis_reference" ? "Analysis reference" : "Practical assessment"}{record.academicYear ? ` · ${record.academicYear}` : ""} · extraction: {record.extractionStatus}</p>{record.evidenceNotes && <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{record.evidenceNotes}</p>}</div><div className="flex items-center gap-2"><span className={`rounded-full px-2 py-1 text-xs font-bold ${record.status === "reviewed" ? "bg-emerald-100 text-emerald-800" : record.status === "draft" ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-700"}`}>{record.status}</span>{record.status === "draft" && <Button type="button" size="sm" variant="outline" onClick={() => handleReviewProgrammeEvidence(record.id)} disabled={reviewProgrammeEvidence.isPending}>Mark reviewed</Button>}</div></div>) : <p className="rounded-lg border border-dashed border-violet-200 p-3 text-sm text-muted-foreground">No analysis or practical reference is attached to this programme yet.</p>}</div>
                 </CardContent>
               </Card>
 

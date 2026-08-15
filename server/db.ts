@@ -27,10 +27,12 @@ import {
   assessmentDrafts,
   assessmentPatternSources,
   assessmentPatternProfiles,
+  programmeEvidenceRecords,
   programmeCatalogues,
   InsertAssessmentDraft,
   InsertAssessmentPatternSource,
   InsertAssessmentPatternProfile,
+  InsertProgrammeEvidenceRecord,
   InsertProgrammeCatalogue,
   AssessmentDraft,
 } from "../drizzle/schema";
@@ -396,6 +398,16 @@ export async function createCurriculumSource(values: InsertCurriculumSource) {
   return rows[0];
 }
 
+export async function findCurriculumSourceByContentHash(curriculumSetId: number, contentHash: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const rows = await db.select().from(curriculumSources).where(and(
+    eq(curriculumSources.curriculumSetId, curriculumSetId),
+    eq(curriculumSources.contentHash, contentHash),
+  )).limit(1);
+  return rows[0];
+}
+
 export async function listCurriculumChapters(curriculumSetId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
@@ -507,6 +519,61 @@ export async function createAssessmentPatternSource(values: InsertAssessmentPatt
   if (!db) throw new Error("Database not available");
   const result = await db.insert(assessmentPatternSources).values(values);
   const rows = await db.select().from(assessmentPatternSources).where(eq(assessmentPatternSources.id, result[0].insertId as number)).limit(1);
+  return rows[0];
+}
+
+export async function findAssessmentPatternSourceByContentHash(programme: ProgrammeKey, contentHash: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const rows = await db.select().from(assessmentPatternSources).where(and(
+    eq(assessmentPatternSources.board, programme.board),
+    eq(assessmentPatternSources.grade, programme.grade),
+    eq(assessmentPatternSources.subject, programme.subject),
+    eq(assessmentPatternSources.contentHash, contentHash),
+  )).limit(1);
+  return rows[0];
+}
+
+export async function listProgrammeEvidenceRecords(programmeId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.select().from(programmeEvidenceRecords).where(eq(programmeEvidenceRecords.programmeId, programmeId)).orderBy(asc(programmeEvidenceRecords.id));
+}
+
+export async function getProgrammeEvidenceRecord(recordId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const rows = await db.select().from(programmeEvidenceRecords).where(eq(programmeEvidenceRecords.id, recordId)).limit(1);
+  return rows[0];
+}
+
+export async function findProgrammeEvidenceRecordByContentHash(programmeId: number, contentHash: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const rows = await db.select().from(programmeEvidenceRecords).where(and(
+    eq(programmeEvidenceRecords.programmeId, programmeId),
+    eq(programmeEvidenceRecords.contentHash, contentHash),
+  )).limit(1);
+  return rows[0];
+}
+
+export async function createProgrammeEvidenceRecord(values: InsertProgrammeEvidenceRecord) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(programmeEvidenceRecords).values(values);
+  const rows = await db.select().from(programmeEvidenceRecords).where(eq(programmeEvidenceRecords.id, result[0].insertId as number)).limit(1);
+  return rows[0];
+}
+
+export async function updateProgrammeEvidenceRecordStatus(recordId: number, status: "draft" | "reviewed" | "archived", reviewerId?: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(programmeEvidenceRecords).set({
+    status,
+    reviewedBy: status === "reviewed" ? reviewerId ?? null : null,
+    reviewedAt: status === "reviewed" ? new Date() : null,
+  }).where(eq(programmeEvidenceRecords.id, recordId));
+  const rows = await db.select().from(programmeEvidenceRecords).where(eq(programmeEvidenceRecords.id, recordId)).limit(1);
   return rows[0];
 }
 

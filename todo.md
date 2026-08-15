@@ -295,3 +295,30 @@
 - [x] Save a separate, evidence-noted reviewed model-paper profile without using it as factual answer content.
 - [x] Compare the model paper against reviewed 2024 and 2025 profiles to identify stable format guidance and variation.
 - [x] Verify profile persistence and source boundaries, validate, checkpoint, and report.
+
+## Phase 41: Grade 10 Computer Science Exam-Readiness Analysis
+- [ ] Define a textbook-first Grade 10 analysis framework that separates factual evidence, exercises, paper-pattern evidence, and non-evidence analysis notes.
+- [ ] Map Grade 10 Computer Science textbook units and exercises against supplied model/2024/2025 paper demands, with special focus on application gaps.
+- [ ] Incorporate the re-uploaded analysis document and 2026 annual paper as pattern evidence only when supplied.
+- [ ] Produce controlled Grade 10 memorisation and applied-knowledge readiness guidance; preserve strict separation from Grade 9 and defer front-end work.
+
+## Phase 42: Newly Supplied Scan Inventory
+- [ ] Inspect the CamScanner PDF and separate Grade 10 written-paper evidence from practical-based assessment material.
+- [ ] Register written-paper content as pattern evidence only when its year, subject, and extraction quality are confirmed.
+- [ ] Keep practical assessment quarantined from current written-exam readiness guidance unless separately approved.
+
+## Phase 43: Cross-Subject Analysis Method Reference
+- [x] Extract only transferable textbook-to-paper analysis methods from the uploaded SSC-I Physics PDF.
+- [x] Exclude all Physics facts, marks, and paper-format rules from Grade 10 Computer Science analysis.
+- [ ] Apply the verified method only after cross-checking every Grade 10 Computer Science conclusion against its own textbook and paper evidence.
+
+## Phase 44: Grade 10 Curriculum Alignment Audit
+- [ ] Distinguish active 2022–23 Grade 10 Computer Science textbook coverage from older or incomplete paper evidence.
+- [ ] Mark each observed paper demand as aligned, unconfirmed, or outside the active textbook before using it for 2027 preparation.
+- [ ] Use only confirmed curriculum-aligned textbook-to-paper mappings in the Grade 10 readiness guidance.
+
+## Phase 45: Subject-Isolated Curriculum Evidence Workspace
+- [x] Record the supplied Grade 10 Physics 2026 evening paper as Physics-only pattern evidence, separate from Computer Science and Chemistry.
+- [x] Audit the Programme Catalogue and Curriculum Library for reusable subject-isolated book/model/past-paper management components.
+- [x] Build a structured Portal Admin evidence workspace showing Book, Model Paper, Past Papers, and Analysis records within the selected programme only.
+- [x] Enforce programme-level isolation, source-role labels, draft/review/active safeguards, duplicate prevention, and regression coverage.

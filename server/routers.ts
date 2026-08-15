@@ -151,12 +151,17 @@ export const appRouter = router({
     getManagementDetails: adminProcedure
       .input(z.object({ curriculumSetId: z.number().int().positive() }))
       .query(async ({ input }) => {
-        const { getCurriculumSet, listCurriculumSources, listCurriculumChapters, listChapterSegments, listScopeTemplates, listAssessmentPatternSources, listAssessmentPatternProfilesBySourceIds } = await import("./db");
+        const { getCurriculumSet, listCurriculumSources, listCurriculumChapters, listChapterSegments, listScopeTemplates, listAssessmentPatternSources, listAssessmentPatternProfilesBySourceIds, getProgrammeCatalogueByKey, listProgrammeEvidenceRecords } = await import("./db");
         const curriculumSet = await getCurriculumSet(input.curriculumSetId);
         if (!curriculumSet) throw new Error("Curriculum set not found");
         const chapters = await listCurriculumChapters(input.curriculumSetId);
         const sources = await listCurriculumSources(input.curriculumSetId);
-        const paperPatternSources = await listAssessmentPatternSources({ board: curriculumSet.board, grade: curriculumSet.grade, subject: curriculumSet.subject });
+        const programmeKey = { board: curriculumSet.board, grade: curriculumSet.grade, subject: curriculumSet.subject };
+        const [paperPatternSources, programme] = await Promise.all([
+          listAssessmentPatternSources(programmeKey),
+          getProgrammeCatalogueByKey(programmeKey),
+        ]);
+        const programmeEvidenceRecords = programme ? await listProgrammeEvidenceRecords(programme.id) : [];
         const paperPatternProfiles = await listAssessmentPatternProfilesBySourceIds(paperPatternSources.map((source) => source.id));
         const chapterSegments = await Promise.all(chapters.map(async (chapter) => ({
           chapterId: chapter.id,
@@ -167,6 +172,7 @@ export const appRouter = router({
           sources,
           paperPatternSources,
           paperPatternProfiles,
+          programmeEvidenceRecords,
           chapters,
           chapterSegments,
           scopeTemplates: await listScopeTemplates(input.curriculumSetId),
@@ -176,6 +182,7 @@ export const appRouter = router({
             reviewedActiveChapters: chapters.filter((chapter) => chapter.isActive === 1).length,
             patternSourcesExtracted: paperPatternSources.filter((source) => source.extractionStatus === "extracted").length,
             patternProfilesReviewed: paperPatternProfiles.filter((profile) => profile.reviewStatus === "reviewed").length,
+            referenceEvidenceReviewed: programmeEvidenceRecords.filter((record) => record.status === "reviewed").length,
           },
         };
       }),
@@ -226,7 +233,7 @@ export const appRouter = router({
         fileBuffer: z.string().min(1),
       }))
       .mutation(async ({ ctx, input }) => {
-        const { getCurriculumSet, createCurriculumSource } = await import("./db");
+        const { getCurriculumSet, createCurriculumSource, findCurriculumSourceByContentHash } = await import("./db");
         const { extractCurriculumSourceText } = await import("./curriculumIngestion");
         const { storagePut } = await import("./storage");
         const curriculumSet = await getCurriculumSet(input.curriculumSetId);
@@ -236,6 +243,9 @@ export const appRouter = router({
         if (!fileBuffer.length || fileBuffer.length > 30 * 1024 * 1024) {
           throw new Error("Curriculum source must be between 1 byte and 30MB.");
         }
+        const contentHash = createHash("sha256").update(fileBuffer).digest("hex");
+        const duplicate = await findCurriculumSourceByContentHash(input.curriculumSetId, contentHash);
+        if (duplicate) throw new Error(`This textbook file is already stored in the selected edition as “${duplicate.originalFileName}”.`);
         const extracted = await extractCurriculumSourceText({ fileBuffer, fileName: input.fileName, mimeType: input.mimeType });
         const extension = input.mimeType === "application/pdf" ? "pdf" : "txt";
         const stored = await storagePut(
@@ -249,7 +259,7 @@ export const appRouter = router({
           storageUrl: stored.url,
           originalFileName: input.fileName,
           mimeType: input.mimeType,
-          contentHash: createHash("sha256").update(fileBuffer).digest("hex"),
+          contentHash,
           extractionStatus: "extracted",
           pageCount: extracted.pageCount,
           extractedText: extracted.text,
@@ -290,13 +300,16 @@ export const appRouter = router({
         fileBuffer: z.string().min(1),
       }))
       .mutation(async ({ ctx, input }) => {
-        const { createAssessmentPatternSource, getProgrammeCatalogue } = await import("./db");
+        const { createAssessmentPatternSource, getProgrammeCatalogue, findAssessmentPatternSourceByContentHash } = await import("./db");
         const { extractCurriculumSourceText } = await import("./curriculumIngestion");
         const { storagePut } = await import("./storage");
         const fileBuffer = Buffer.from(input.fileBuffer, "base64");
         if (!fileBuffer.length || fileBuffer.length > 30 * 1024 * 1024) throw new Error("Paper-pattern source must be between 1 byte and 30MB.");
         const programme = await getProgrammeCatalogue(input.programmeId);
         if (!programme) throw new Error("Select a Programme Catalogue entry before uploading its paper-pattern source.");
+        const contentHash = createHash("sha256").update(fileBuffer).digest("hex");
+        const duplicate = await findAssessmentPatternSourceByContentHash(programme, contentHash);
+        if (duplicate) throw new Error(`This paper is already stored for ${programme.teacherLabel} as “${duplicate.originalFileName}”.`);
         const extracted = await extractCurriculumSourceText({ fileBuffer, fileName: input.fileName, mimeType: input.mimeType });
         const extension = input.mimeType === "application/pdf" ? "pdf" : "txt";
         const safeBoard = programme.board.replace(/[^a-z0-9_-]+/gi, "-").toLowerCase();
@@ -313,6 +326,7 @@ export const appRouter = router({
           storageUrl: stored.url,
           originalFileName: input.fileName,
           mimeType: input.mimeType,
+          contentHash,
           extractedText: extracted.text,
           extractionStatus: "extracted",
           status: "draft",
@@ -325,6 +339,61 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const { activateAssessmentPatternSource } = await import("./db");
         return activateAssessmentPatternSource(input.sourceId);
+      }),
+
+    ingestProgrammeEvidence: adminProcedure
+      .input(z.object({
+        programmeId: z.number().int().positive(),
+        evidenceKind: z.enum(["analysis_reference", "practical_assessment"]),
+        academicYear: z.string().min(4).max(20).optional(),
+        evidenceNotes: z.string().max(8000).optional(),
+        fileName: z.string().min(1).max(255),
+        mimeType: z.enum(["application/pdf", "text/plain"]),
+        fileBuffer: z.string().min(1),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { createProgrammeEvidenceRecord, findProgrammeEvidenceRecordByContentHash, getProgrammeCatalogue } = await import("./db");
+        const { extractCurriculumSourceText } = await import("./curriculumIngestion");
+        const { storagePut } = await import("./storage");
+        const programme = await getProgrammeCatalogue(input.programmeId);
+        if (!programme) throw new Error("Select a Programme Catalogue entry before uploading reference evidence.");
+        const fileBuffer = Buffer.from(input.fileBuffer, "base64");
+        if (!fileBuffer.length || fileBuffer.length > 30 * 1024 * 1024) throw new Error("Reference evidence must be between 1 byte and 30MB.");
+        const contentHash = createHash("sha256").update(fileBuffer).digest("hex");
+        const duplicate = await findProgrammeEvidenceRecordByContentHash(programme.id, contentHash);
+        if (duplicate) throw new Error(`This reference file is already stored for ${programme.teacherLabel} as “${duplicate.originalFileName}”.`);
+        const extracted = await extractCurriculumSourceText({ fileBuffer, fileName: input.fileName, mimeType: input.mimeType });
+        const safeBoard = programme.board.replace(/[^a-z0-9_-]+/gi, "-").toLowerCase();
+        const safeGrade = programme.grade.replace(/[^a-z0-9_-]+/gi, "-").toLowerCase();
+        const safeSubject = programme.subject.replace(/[^a-z0-9_-]+/gi, "-").toLowerCase();
+        const extension = input.mimeType === "application/pdf" ? "pdf" : "txt";
+        const stored = await storagePut(`programme-evidence/${safeBoard}/${safeGrade}/${safeSubject}/${randomUUID()}.${extension}`, fileBuffer, input.mimeType);
+        return createProgrammeEvidenceRecord({
+          programmeId: programme.id,
+          evidenceKind: input.evidenceKind,
+          academicYear: input.academicYear || null,
+          evidenceNotes: input.evidenceNotes?.trim() || null,
+          storageKey: stored.key,
+          storageUrl: stored.url,
+          originalFileName: input.fileName,
+          mimeType: input.mimeType,
+          contentHash,
+          extractedText: extracted.text,
+          extractionStatus: "extracted",
+          status: "draft",
+          uploadedBy: ctx.user.id,
+          reviewedBy: null,
+          reviewedAt: null,
+        });
+      }),
+
+    reviewProgrammeEvidence: adminProcedure
+      .input(z.object({ programmeId: z.number().int().positive(), recordId: z.number().int().positive(), status: z.enum(["draft", "reviewed", "archived"]) }))
+      .mutation(async ({ ctx, input }) => {
+        const { getProgrammeEvidenceRecord, updateProgrammeEvidenceRecordStatus } = await import("./db");
+        const record = await getProgrammeEvidenceRecord(input.recordId);
+        if (!record || record.programmeId !== input.programmeId) throw new Error("This reference record does not belong to the selected programme.");
+        return updateProgrammeEvidenceRecordStatus(record.id, input.status, ctx.user.id);
       }),
 
     savePaperPatternProfile: adminProcedure
