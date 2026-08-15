@@ -3,6 +3,7 @@ import { validateAssessmentDraftPayload, type ModeDraftPayload } from "@shared/a
 import type { GenerationSourceContext } from "./aiAgent";
 import { chunkContent } from "./contentAnalyzer";
 import { buildVerifiedPaperPatternSummary, getVerifiedMarkRule } from "./paperPatternGuidance";
+import { buildComputerScienceChronologyGuidance } from "./computerScienceChronologyGuidance";
 
 export type PrintablePaperType = "short" | "long";
 export type NormalizedPrintablePaperPayload = {
@@ -278,7 +279,7 @@ export async function generatePrintablePaperFromContent(params: {
       try {
         const response = await invokeLLM({
           messages: [
-            { role: "system", content: PRINTABLE_PAPER_PROMPT },
+            { role: "system", content: PRINTABLE_PAPER_PROMPT + buildComputerScienceChronologyGuidance(sourceContext.subject) },
             { role: "user", content: `This is batch ${batchIndex + 1} of ${batchPlan.length}. Create exactly ${batchPairs} numbered OR pairs (${batchPairs * 2} printed prompts) for a ${paperType}-question paper. Difficulty preference: ${difficulty}. ${marksRule}\n\nPaper title: ${title}\nSource title: ${sourceContext.sourceTitle}\n${paperPatternInstruction}\n\nAlready used topic labels in earlier batches: ${Array.from(usedTopicLabels).join(", ") || "none"}. Choose new verified textbook topics for this batch.\n\nAssigned coverage slots for this batch (use every slot exactly once): ${batchCoverageSlots.map((slot) => `${slot.slot}: ${slot.topic}`).join(" | ")}\n\n${safeSections}` },
           ],
           response_format: {

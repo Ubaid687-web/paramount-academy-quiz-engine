@@ -376,3 +376,9 @@
 - [x] Replace the fixed pair-count limit with a content- and scope-scaled recommendation that still permits a teacher to choose the requested size.
 - [x] Build a selected-textbook-topic plan that requires coverage of distinct concepts, including operating-system functions and management topics when present, before any topic family may recur.
 - [x] Implement the visible two-column OR-row PDF layout and source-coverage controls, add regression coverage, validate, checkpoint, and report the rebuild.
+
+## Phase 55: Chronological Computer Science Examination-Preparation Analysis
+- [x] Inventory and neutrally label the supplied model, two 2024 variants, two 2025 variants, and 2026 morning/evening Computer Science papers in chronological order; no supply/improvement status was inferred where it was not legible.
+- [x] Map only literal paper command forms, cognitive demands, and recurring textbook-concept areas against the active Grade 10 Computer Science textbook.
+- [x] Distinguish preparation priorities, non-repeatable past questions, and unsupported predictions; define wording and answer-practice guidance that helps students express textbook concepts in accessible exam English.
+- [x] Apply source-safe generation controls, add regression coverage, validate, checkpoint, and report the chronological preparation calibration.

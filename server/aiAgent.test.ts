@@ -18,7 +18,7 @@ vi.mock("./db", () => ({
   getGenerationJob: mocks.getGenerationJob,
 }));
 
-import { generateMCQsFromContent, saveGeneratedQuizToDatabase } from "./aiAgent";
+import { buildMcqGenerationSystemPrompt, generateMCQsFromContent, saveGeneratedQuizToDatabase } from "./aiAgent";
 
 const validContent = "Kinematics studies motion using displacement, velocity, and acceleration. ".repeat(12);
 
@@ -52,6 +52,13 @@ describe("AI Agent - MCQ Generation", () => {
     mocks.invokeLLM.mockResolvedValue({
       choices: [{ message: { content: JSON.stringify({ mcqs: createValidMcqs(10) }) } }],
     });
+  });
+
+  it("adds chronological preparation guidance only to Computer Science while preserving the textbook-only boundary", () => {
+    expect(buildMcqGenerationSystemPrompt("balanced", "physics")).not.toContain("two neutral 2025 PDF variants");
+    const computerSciencePrompt = buildMcqGenerationSystemPrompt("balanced", "computer_science");
+    expect(computerSciencePrompt).toContain("two neutral 2025 PDF variants");
+    expect(computerSciencePrompt).toContain("only factual authority");
   });
 
   it("returns a validated, source-grounded draft without relying on a live model call", async () => {

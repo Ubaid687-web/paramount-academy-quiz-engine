@@ -7,6 +7,7 @@ import type { InsertGenerationJob } from "../drizzle/schema";
 import type { FbiseSubject, ScopeType } from "./curriculumScope";
 import type { VerifiedPaperPatternGuidance } from "./paperPatternGuidance";
 import { buildVerifiedPaperPatternSummary } from "./paperPatternGuidance";
+import { buildComputerScienceChronologyGuidance } from "./computerScienceChronologyGuidance";
 
 export type GenerationSourceContext = {
   sourceType: "raw_text" | "curriculum_scope";
@@ -100,6 +101,18 @@ Return ONLY valid JSON:
   ]
 }`;
 
+export function buildMcqGenerationSystemPrompt(difficulty: "balanced" | "easy" | "medium" | "hard", subject?: FbiseSubject) {
+  let difficultyInstruction = "";
+  if (difficulty === "easy") {
+    difficultyInstruction = "\nFocus on EASY questions (70% easy, 20% medium, 10% hard).";
+  } else if (difficulty === "medium") {
+    difficultyInstruction = "\nFocus on MEDIUM questions (20% easy, 60% medium, 20% hard).";
+  } else if (difficulty === "hard") {
+    difficultyInstruction = "\nFocus on HARD questions (10% easy, 20% medium, 70% hard).";
+  }
+  return MCQ_GENERATION_PROMPT + difficultyInstruction + buildComputerScienceChronologyGuidance(subject);
+}
+
 export async function generateMCQsFromContent(
   userId: number,
   contentText: string,
@@ -134,17 +147,7 @@ export async function generateMCQsFromContent(
     // Update progress
     await updateGenerationJob(job.id, { progress: 20 });
 
-    // Build the prompt with difficulty instructions
-    let difficultyInstruction = "";
-    if (difficulty === "easy") {
-      difficultyInstruction = "\nFocus on EASY questions (70% easy, 20% medium, 10% hard).";
-    } else if (difficulty === "medium") {
-      difficultyInstruction = "\nFocus on MEDIUM questions (20% easy, 60% medium, 20% hard).";
-    } else if (difficulty === "hard") {
-      difficultyInstruction = "\nFocus on HARD questions (10% easy, 20% medium, 70% hard).";
-    }
-
-    const systemPrompt = MCQ_GENERATION_PROMPT + difficultyInstruction;
+    const systemPrompt = buildMcqGenerationSystemPrompt(difficulty, sourceContext.subject);
 
     const paperPatternInstruction = sourceContext.paperPatternGuidance?.length
       ? `

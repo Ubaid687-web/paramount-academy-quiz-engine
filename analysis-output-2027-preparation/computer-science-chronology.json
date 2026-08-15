@@ -1,0 +1,864 @@
+{
+  "governance": {
+    "textbookAuthority": "Only the active user-supplied Grade 10 Computer Science textbook may supply factual answer content.",
+    "paperRole": "Supplied model and annual papers provide chronological evidence of format, command wording, task form, and cognitive demand only.",
+    "predictionBoundary": "This analysis identifies preparation priorities, not future-paper probabilities or repeat predictions."
+  },
+  "activeTextbook": [
+    {
+      "sequence": 1,
+      "code": "Unit 1",
+      "title": "Computer Systems"
+    },
+    {
+      "sequence": 2,
+      "code": "Unit 2",
+      "title": "Computational Thinking & Algorithms"
+    },
+    {
+      "sequence": 3,
+      "code": "Unit 3",
+      "title": "Programming Fundamentals"
+    },
+    {
+      "sequence": 4,
+      "code": "Unit 4",
+      "title": "Data and Analysis"
+    },
+    {
+      "sequence": 5,
+      "code": "Unit 5",
+      "title": "Applications of Computer Science"
+    },
+    {
+      "sequence": 6,
+      "code": "Unit 6",
+      "title": "Impacts of Computing"
+    },
+    {
+      "sequence": 7,
+      "code": "Unit 7",
+      "title": "Digital Literacy"
+    },
+    {
+      "sequence": 8,
+      "code": "Unit 8",
+      "title": "Entrepreneurship in Digital Age"
+    }
+  ],
+  "chronology": [
+    {
+      "corpusId": "30003",
+      "sourceId": 30003,
+      "academicYear": "2022-2023",
+      "sourceKind": "model_paper",
+      "originalFileName": "class10computersciencemodelquestionpapernewsyllabus.pdf",
+      "variantLabel": "single supplied record",
+      "status": "active",
+      "reviewedStructure": {
+        "mcqCount": 13,
+        "shortOrPairCount": 0,
+        "shortMarksEach": 2,
+        "longOrPairCount": 0,
+        "longMarksEach": 5,
+        "totalMarks": 55,
+        "sectionAInstruction": "Section A is compulsory: answer 13 one-mark MCQs on the supplied answer sheet; the model paper states 20 minutes.",
+        "sectionBInstruction": "Section B carries 22 marks. The model paper instruction states that all parts of Section B are to be answered on the E-sheet.",
+        "sectionCInstruction": "Section C carries 20 marks. The model paper states that all Section C questions are to be attempted on the E-sheet (4 × 5 = 20)."
+      },
+      "extractionConfidence": "medium",
+      "limitations": [
+        "Source text contains OCR/artifact noise (garbled characters and spacing) in several lines; I report literal quotes without inferring missing words.",
+        "Some Section B/C material appears in adjacent columns without clear OR markers (transcript note warns the original PDF should be visually checked before interpreting columns as alternatives).",
+        "I used only the supplied transcript and did not infer or correct unclear tokens (examples: '(25)a9 to (2)2', 'TO xeon', 'Convert (2F08)i6')."
+      ],
+      "observations": [
+        {
+          "cognitiveDemand": "knowledge",
+          "commandPhrase": "Define a concurrency problem and give an example.",
+          "conceptPhrase": "deadlock",
+          "paperQuote": "Define deadlock with an example.",
+          "section": "B",
+          "taskForm": "definition_or_purpose",
+          "textbookTermVerified": true
+        },
+        {
+          "cognitiveDemand": "application",
+          "commandPhrase": "Convert a given value to octal and binary.",
+          "conceptPhrase": "Octal; Binary",
+          "paperQuote": "Convert (2F08)i6 to Octal and Binary.",
+          "section": "B",
+          "taskForm": "calculation_or_conversion",
+          "textbookTermVerified": false
+        }
+      ],
+      "rejectedObservationCount": 8
+    },
+    {
+      "corpusId": "1-variant-1",
+      "sourceId": 1,
+      "academicYear": "2024",
+      "sourceKind": "past_paper",
+      "originalFileName": "class-10-computer-science-past-paper-2024.pdf",
+      "variantLabel": "supplied PDF pages 1-3 (variant label not stated in the source)",
+      "status": "active",
+      "reviewedStructure": {
+        "mcqCount": 13,
+        "shortOrPairCount": 11,
+        "shortMarksEach": 2,
+        "longOrPairCount": 4,
+        "longMarksEach": 5,
+        "totalMarks": 55,
+        "sectionAInstruction": "Section A is compulsory: answer all 13 MCQs on the supplied answer sheet within 15 minutes.",
+        "sectionBInstruction": "Section B: answer 11 brief parts for 22 marks (2 marks per part).",
+        "sectionCInstruction": "Section C: attempt 4 long questions for 20 marks (5 marks per question)."
+      },
+      "extractionConfidence": "medium",
+      "limitations": [
+        "Source PDF transcript contains OCR artifacts, garbled characters and inconsistent spacing; quotes are copied literally from the supplied transcript without inferring missing words.",
+        "Some lines are partially unreadable or contain typographical noise (e.g. 'fo', 'ay', extra punctuation); I did not correct or expand those fragments."
+      ],
+      "observations": [
+        {
+          "cognitiveDemand": "knowledge",
+          "commandPhrase": "Identify the flowchart shape for input/output",
+          "conceptPhrase": "flowchart",
+          "paperQuote": "Which shape represents input or output! ! i i i 1, operations in a flowchart?",
+          "section": "A",
+          "taskForm": "diagram_or_representation",
+          "textbookTermVerified": true
+        },
+        {
+          "cognitiveDemand": "knowledge",
+          "commandPhrase": "Choose the step-by-step problem solving method",
+          "conceptPhrase": "Algorithm",
+          "paperQuote": "Which one of the following is a step by step! i i ! 3, problem solving method? i Flowchart ' Planning iAnalysis ‘Algorithm",
+          "section": "A",
+          "taskForm": "direct_term",
+          "textbookTermVerified": true
+        },
+        {
+          "cognitiveDemand": "application",
+          "commandPhrase": "Correct four errors in given code",
+          "conceptPhrase": "code",
+          "paperQuote": "Correct any four errors in the given code:",
+          "section": "B",
+          "taskForm": "code_or_trace",
+          "textbookTermVerified": true
+        },
+        {
+          "cognitiveDemand": "application",
+          "commandPhrase": "Rewrite a for loop using a while loop",
+          "conceptPhrase": "whileloop",
+          "paperQuote": "Rewrite the following for loop by using whileloop.",
+          "section": "B",
+          "taskForm": "process_or_steps",
+          "textbookTermVerified": false
+        }
+      ],
+      "rejectedObservationCount": 6
+    },
+    {
+      "corpusId": "1-variant-2",
+      "sourceId": 1,
+      "academicYear": "2024",
+      "sourceKind": "past_paper",
+      "originalFileName": "class-10-computer-science-past-paper-2024.pdf",
+      "variantLabel": "supplied PDF pages 4-6 (variant label not stated in the source)",
+      "status": "active",
+      "reviewedStructure": {
+        "mcqCount": 13,
+        "shortOrPairCount": 11,
+        "shortMarksEach": 2,
+        "longOrPairCount": 4,
+        "longMarksEach": 5,
+        "totalMarks": 55,
+        "sectionAInstruction": "Section A is compulsory: answer all 13 MCQs on the supplied answer sheet within 15 minutes.",
+        "sectionBInstruction": "Section B: answer 11 brief parts for 22 marks (2 marks per part).",
+        "sectionCInstruction": "Section C: attempt 4 long questions for 20 marks (5 marks per question)."
+      },
+      "extractionConfidence": "medium",
+      "limitations": [
+        "Source PDF transcript contains OCR artifacts (extra symbols, broken words) on pages 4–6; some lines (e.g. questions about scanf/scant, 'b=tta', and a logic-function notation) are ambiguous in the transcript. I did not correct or infer missing words—quotes are taken as they appear or as the nearest readable phrase.",
+        "Several multiple-choice lines include formatting noise (brackets/options on same line); this limited exactness of option text but not the task phrasing."
+      ],
+      "observations": [
+        {
+          "cognitiveDemand": "knowledge",
+          "commandPhrase": "Give HTML paragraph tag",
+          "conceptPhrase": "HTML",
+          "paperQuote": "Which tag is used for paragraph in HTML?",
+          "section": "A",
+          "taskForm": "direct_term",
+          "textbookTermVerified": true
+        },
+        {
+          "cognitiveDemand": "application",
+          "commandPhrase": "Correct code errors (four)",
+          "conceptPhrase": "errors in the given code",
+          "paperQuote": "Correct any four errors in the given code.",
+          "section": "B",
+          "taskForm": "other",
+          "textbookTermVerified": false
+        },
+        {
+          "cognitiveDemand": "understanding",
+          "commandPhrase": "State the purpose of the continue statement in loops",
+          "conceptPhrase": "continue statement",
+          "paperQuote": "Write the purpose of continue statement in loops.",
+          "section": "B",
+          "taskForm": "definition_or_purpose",
+          "textbookTermVerified": false
+        }
+      ],
+      "rejectedObservationCount": 7
+    },
+    {
+      "corpusId": "2-variant-1",
+      "sourceId": 2,
+      "academicYear": "2025",
+      "sourceKind": "past_paper",
+      "originalFileName": "class10computersciencefbisepastpaper2025.pdf",
+      "variantLabel": "supplied PDF pages 1-3 (variant label not stated in the source)",
+      "status": "active",
+      "reviewedStructure": {
+        "mcqCount": 13,
+        "shortOrPairCount": 11,
+        "shortMarksEach": 2,
+        "longOrPairCount": 4,
+        "longMarksEach": 5,
+        "totalMarks": 55,
+        "sectionAInstruction": "Section A is compulsory: answer all 13 MCQs on the supplied answer sheet within 15 minutes.",
+        "sectionBInstruction": "Section B: answer 11 brief parts for 22 marks (2 marks per part).",
+        "sectionCInstruction": "Section C: attempt 4 long questions for 20 marks (5 marks per question)."
+      },
+      "extractionConfidence": "medium",
+      "limitations": [
+        "Source transcript contains OCR artifacts, garbled characters and truncated fragments; quoted text is taken literally and may include noise.",
+        "Some question lines are corrupted or partially unreadable (punctuation/spacing errors); I did not infer or correct missing wording."
+      ],
+      "observations": [
+        {
+          "cognitiveDemand": "knowledge",
+          "commandPhrase": "Which preprocessor directive includes: ; H ' standard libraries in the program?",
+          "conceptPhrase": "preprocessor directive",
+          "paperQuote": "Which preprocessor directive includes: ; H ' standard libraries in the program? '#define i#include ‘#void #conio - O O O O",
+          "section": "A",
+          "taskForm": "direct_term",
+          "textbookTermVerified": false
+        },
+        {
+          "cognitiveDemand": "knowledge",
+          "commandPhrase": "Which format specifier is used for “long int’?",
+          "conceptPhrase": "long int",
+          "paperQuote": "Which format specifier is used for “long int’?! io ; ty to / 3. '%d '%i %ld ‘%dl i",
+          "section": "A",
+          "taskForm": "direct_term",
+          "textbookTermVerified": false
+        },
+        {
+          "cognitiveDemand": "application",
+          "commandPhrase": "Determine the value ofb=at+ + ++a; if a=5",
+          "conceptPhrase": "",
+          "paperQuote": "Determine the value ofb=at+ + ++a; if | ; ‘ ‘ | a=5 110 11 12 ‘Error",
+          "section": "A",
+          "taskForm": "code_or_trace",
+          "textbookTermVerified": false
+        },
+        {
+          "cognitiveDemand": "knowledge",
+          "commandPhrase": "Which flatement is used to exit from the body of switch statement?",
+          "conceptPhrase": "switch statement",
+          "paperQuote": "Which flatement is used to exit from the: ' ' ' ' ody of switch statement? ‘Default.  !Continue Exit Break",
+          "section": "A",
+          "taskForm": "direct_term",
+          "textbookTermVerified": false
+        },
+        {
+          "cognitiveDemand": "application",
+          "commandPhrase": "Write HTML code for following:",
+          "conceptPhrase": "HTML",
+          "paperQuote": "Write HTML code for following:",
+          "section": "C",
+          "taskForm": "code_or_trace",
+          "textbookTermVerified": true
+        }
+      ],
+      "rejectedObservationCount": 5
+    },
+    {
+      "corpusId": "2-variant-2",
+      "sourceId": 2,
+      "academicYear": "2025",
+      "sourceKind": "past_paper",
+      "originalFileName": "class10computersciencefbisepastpaper2025.pdf",
+      "variantLabel": "supplied PDF pages 4-6 (variant label not stated in the source)",
+      "status": "active",
+      "reviewedStructure": {
+        "mcqCount": 13,
+        "shortOrPairCount": 11,
+        "shortMarksEach": 2,
+        "longOrPairCount": 4,
+        "longMarksEach": 5,
+        "totalMarks": 55,
+        "sectionAInstruction": "Section A is compulsory: answer all 13 MCQs on the supplied answer sheet within 15 minutes.",
+        "sectionBInstruction": "Section B: answer 11 brief parts for 22 marks (2 marks per part).",
+        "sectionCInstruction": "Section C: attempt 4 long questions for 20 marks (5 marks per question)."
+      },
+      "extractionConfidence": "medium",
+      "limitations": [
+        "Source PDF text contains OCR artifacts and line-break noise (pages 4–6); some lines are garbled or contain stray characters.",
+        "I used only literal text from the supplied transcript and did not infer or repair unclear words; where text is visibly corrupted I flagged overall confidence as medium.",
+        "Variant label not stated in source; only pages 4–6 of the supplied file were used."
+      ],
+      "observations": [
+        {
+          "cognitiveDemand": "knowledge",
+          "commandPhrase": "Picture representation of algorithm is:",
+          "conceptPhrase": "algorithm",
+          "paperQuote": "Picture representation of algorithm is: iTable iK-Map ‘Flowchart Class map",
+          "section": "A",
+          "taskForm": "direct_term",
+          "textbookTermVerified": true
+        },
+        {
+          "cognitiveDemand": "knowledge",
+          "commandPhrase": "Which preprocessor directive includes; standard libraries in the program?",
+          "conceptPhrase": "preprocessor directive",
+          "paperQuote": "Which preprocessor directive includes; i i i. standard libraries in the program?",
+          "section": "A",
+          "taskForm": "direct_term",
+          "textbookTermVerified": false
+        },
+        {
+          "cognitiveDemand": "knowledge",
+          "commandPhrase": "Which format specifier is used for ‘Character’?",
+          "conceptPhrase": "format specifier",
+          "paperQuote": "Which format specifier is used for ‘Character’?",
+          "section": "A",
+          "taskForm": "direct_term",
+          "textbookTermVerified": false
+        },
+        {
+          "cognitiveDemand": "knowledge",
+          "commandPhrase": "Which one of the following is NOT a conditional statement?",
+          "conceptPhrase": "conditional statement",
+          "paperQuote": "Which one of the following is NOT a: : : : i 5, conditional statement? HF iIF-ELSE i SWITCH ‘WHILE",
+          "section": "A",
+          "taskForm": "direct_term",
+          "textbookTermVerified": false
+        },
+        {
+          "cognitiveDemand": "knowledge",
+          "commandPhrase": "In Do-WHILE loop, if the condition is FALSE, then loop will execute:",
+          "conceptPhrase": "Do-WHILE loop",
+          "paperQuote": "In Do-WHILE loop, if the conditionis FALSE,:More than i i ! 9, _ then loop will execute: ;once ‘Atleast once Infinite time Not at all",
+          "section": "A",
+          "taskForm": "direct_term",
+          "textbookTermVerified": false
+        },
+        {
+          "cognitiveDemand": "knowledge",
+          "commandPhrase": "Enlist the criteria for measuring efficiency of an algorithm. (Any two)",
+          "conceptPhrase": "efficiency of an algorithm",
+          "paperQuote": "(i) | Enlist the criteria for measuring efficiency of an; —=—=|=S=*S«(WWrite a program that checks whether a number) | | algorithm. (Any two)",
+          "section": "B",
+          "taskForm": "definition_or_purpose",
+          "textbookTermVerified": false
+        },
+        {
+          "cognitiveDemand": "understanding",
+          "commandPhrase": "Identify the errors in the code.",
+          "conceptPhrase": "errors in the code",
+          "paperQuote": "(iv) | Identify the errors inthe code. =~ ~~~ ~~~, Evaluate the following expressions) =—=—=S=*=<“‘“‘~*~*~S*~*S",
+          "section": "B",
+          "taskForm": "comparison",
+          "textbookTermVerified": false
+        }
+      ],
+      "rejectedObservationCount": 3
+    },
+    {
+      "corpusId": "120001",
+      "sourceId": 120001,
+      "academicYear": "2026",
+      "sourceKind": "past_paper",
+      "originalFileName": "class10_computer_science_2026.md",
+      "variantLabel": "single supplied record",
+      "status": "draft",
+      "reviewedStructure": {
+        "mcqCount": 13,
+        "shortOrPairCount": 11,
+        "shortMarksEach": 2,
+        "longOrPairCount": 4,
+        "longMarksEach": null,
+        "totalMarks": 53,
+        "sectionAInstruction": "Section A: 13 one-mark MCQs. The supplied evening-paper transcript directs candidates to choose one correct option for each question.",
+        "sectionBInstruction": "Section B: Answer all 11 brief parts for 22 marks (2 marks per part), with an OR alternative for each listed part.",
+        "sectionCInstruction": "Section C: The supplied transcript lists four questions with OR alternatives and labels the section as 18 marks, but it does not assign marks to each individual question."
+      },
+      "extractionConfidence": "high",
+      "limitations": [
+        "Only the supplied transcript file class10_computer_science_2026.md was used; no external sources or inferences were made.",
+        "Observations are literal quotes and do not attempt to answer or expand the tasks.",
+        "Transcript text appeared clear and was copied verbatim; no OCR uncertainty detected."
+      ],
+      "observations": [
+        {
+          "cognitiveDemand": "knowledge",
+          "commandPhrase": "Choose the correct option for each question.",
+          "conceptPhrase": "",
+          "paperQuote": "Instructions: Choose the correct option for each question.",
+          "section": "A",
+          "taskForm": "other",
+          "textbookTermVerified": false
+        },
+        {
+          "cognitiveDemand": "understanding",
+          "commandPhrase": "What is binary system? Why is it used by computers?",
+          "conceptPhrase": "binary system",
+          "paperQuote": "(i) What is binary system? Why is it used by computers?",
+          "section": "B",
+          "taskForm": "definition_or_purpose",
+          "textbookTermVerified": true
+        },
+        {
+          "cognitiveDemand": "understanding",
+          "commandPhrase": "What is a searching algorithm? Give one example.",
+          "conceptPhrase": "searching algorithm",
+          "paperQuote": "(iii) What is a searching algorithm? Give one example.",
+          "section": "B",
+          "taskForm": "definition_or_purpose",
+          "textbookTermVerified": true
+        },
+        {
+          "cognitiveDemand": "application",
+          "commandPhrase": "Make trace table to sort the given data: `[3, 1, 4, 1, 5, 9, 2, 6]`",
+          "conceptPhrase": "trace table",
+          "paperQuote": "Q.4 Make trace table to sort the given data: `[3, 1, 4, 1, 5, 9, 2, 6]`",
+          "section": "C",
+          "taskForm": "code_or_trace",
+          "textbookTermVerified": true
+        },
+        {
+          "cognitiveDemand": "understanding",
+          "commandPhrase": "What is meant by system software?",
+          "conceptPhrase": "system software",
+          "paperQuote": "(v) What is meant by system software?",
+          "section": "B",
+          "taskForm": "definition_or_purpose",
+          "textbookTermVerified": true
+        },
+        {
+          "cognitiveDemand": "understanding",
+          "commandPhrase": "How IoT works? Describe the role of sensors, connectivity, and data processing.",
+          "conceptPhrase": "IoT",
+          "paperQuote": "Q.5 How IoT works? Describe the role of sensors, connectivity, and data processing.",
+          "section": "C",
+          "taskForm": "process_or_steps",
+          "textbookTermVerified": true
+        },
+        {
+          "cognitiveDemand": "understanding",
+          "commandPhrase": "Define digital communication. List any four digital tools that can be used to communicate data to different audiences.",
+          "conceptPhrase": "digital communication",
+          "paperQuote": "Q.6 Define digital communication. List any four digital tools that can be used to communicate data to different audiences.",
+          "section": "C",
+          "taskForm": "definition_or_purpose",
+          "textbookTermVerified": true
+        },
+        {
+          "cognitiveDemand": "understanding",
+          "commandPhrase": "Why is debugging important in program development? (Two reasons)",
+          "conceptPhrase": "debugging",
+          "paperQuote": "(viii) Why is debugging important in program development? (Two reasons)",
+          "section": "B",
+          "taskForm": "definition_or_purpose",
+          "textbookTermVerified": true
+        }
+      ],
+      "rejectedObservationCount": 1
+    },
+    {
+      "corpusId": "150001",
+      "sourceId": 150001,
+      "academicYear": "2026",
+      "sourceKind": "past_paper",
+      "originalFileName": "class10_computer_science_2026_morning_reconstructed.md",
+      "variantLabel": "single supplied record",
+      "status": "draft",
+      "reviewedStructure": {
+        "mcqCount": 13,
+        "shortOrPairCount": 11,
+        "shortMarksEach": 2,
+        "longOrPairCount": 4,
+        "longMarksEach": 5,
+        "totalMarks": 55,
+        "sectionAInstruction": "Fill the relevant bubble against each question according to curriculum.",
+        "sectionBInstruction": "Section B is visibly structured as 11 brief two-mark parts, each with an OR alternative (11 × 2 = 22).",
+        "sectionCInstruction": "Section C is visibly structured as four five-mark long questions, each with an OR alternative (4 × 5 = 20)."
+      },
+      "extractionConfidence": "medium",
+      "limitations": [
+        "Sections B and C are recorded from a single dense scanned page with bilingual content; only structure (marks, OR-alternatives) was clearly visible — full question text for B/C was not supplied.",
+        "This record is a controlled reconstruction: no missing wording was inferred or added; observations are literal quotes from the supplied transcript only.",
+        "Because the B/C source is an isolated scan page, observed structure should not be treated as a comprehensive question bank or as factual answer evidence."
+      ],
+      "observations": [
+        {
+          "cognitiveDemand": "application",
+          "commandPhrase": "Instructions: Fill the relevant bubble against each question according to curriculum.",
+          "conceptPhrase": "",
+          "paperQuote": "Instructions: Fill the relevant bubble against each question according to curriculum.",
+          "section": "A",
+          "taskForm": "process_or_steps",
+          "textbookTermVerified": false
+        },
+        {
+          "cognitiveDemand": "knowledge",
+          "commandPhrase": "Which solution can help reduce the digital divide?",
+          "conceptPhrase": "digital divide",
+          "paperQuote": "Which solution can help reduce the digital divide?",
+          "section": "A",
+          "taskForm": "direct_term",
+          "textbookTermVerified": true
+        },
+        {
+          "cognitiveDemand": "knowledge",
+          "commandPhrase": "Which strategy helps create a safer online environment?",
+          "conceptPhrase": "online",
+          "paperQuote": "Which strategy helps create a safer online environment?",
+          "section": "A",
+          "taskForm": "direct_term",
+          "textbookTermVerified": true
+        },
+        {
+          "cognitiveDemand": "understanding",
+          "commandPhrase": "What term is used for two variables that change simultaneously but do not influence each other?",
+          "conceptPhrase": "statistical correlation",
+          "paperQuote": "What term is used for two variables that change simultaneously but do not influence each other?",
+          "section": "A",
+          "taskForm": "definition_or_purpose",
+          "textbookTermVerified": false
+        },
+        {
+          "cognitiveDemand": "knowledge",
+          "commandPhrase": "Which algorithm divides a list into smaller parts to sort efficiently?",
+          "conceptPhrase": "Quick sort",
+          "paperQuote": "Which algorithm divides a list into smaller parts to sort efficiently?",
+          "section": "A",
+          "taskForm": "direct_term",
+          "textbookTermVerified": true
+        },
+        {
+          "cognitiveDemand": "understanding",
+          "commandPhrase": "Which machine learning method groups similar data without prior labels?",
+          "conceptPhrase": "Unsupervised learning",
+          "paperQuote": "Which machine learning method groups similar data without prior labels?",
+          "section": "A",
+          "taskForm": "definition_or_purpose",
+          "textbookTermVerified": true
+        },
+        {
+          "cognitiveDemand": "understanding",
+          "commandPhrase": "Which feature makes Blockchain data difficult to alter?",
+          "conceptPhrase": "Blockchain",
+          "paperQuote": "Which feature makes Blockchain data difficult to alter?",
+          "section": "A",
+          "taskForm": "definition_or_purpose",
+          "textbookTermVerified": true
+        },
+        {
+          "cognitiveDemand": "application",
+          "commandPhrase": "Which of the following is a real-world application of NLP?",
+          "conceptPhrase": "NLP",
+          "paperQuote": "Which of the following is a real-world application of NLP?",
+          "section": "A",
+          "taskForm": "scenario_or_application",
+          "textbookTermVerified": true
+        },
+        {
+          "cognitiveDemand": "knowledge",
+          "commandPhrase": "Q.2 contains eleven brief parts, each showing an `OR` alternative.",
+          "conceptPhrase": "",
+          "paperQuote": "Q.2 contains eleven brief parts, each showing an `OR` alternative.",
+          "section": "B",
+          "taskForm": "other",
+          "textbookTermVerified": false
+        },
+        {
+          "cognitiveDemand": "knowledge",
+          "commandPhrase": "Q.3–Q.6 are long-question choices, each showing an `OR` alternative.",
+          "conceptPhrase": "",
+          "paperQuote": "Q.3–Q.6 are long-question choices, each showing an `OR` alternative.",
+          "section": "C",
+          "taskForm": "other",
+          "textbookTermVerified": false
+        }
+      ],
+      "rejectedObservationCount": 0
+    }
+  ],
+  "confirmedTextbookObservations": [
+    {
+      "corpusId": "30003",
+      "sourceId": 30003,
+      "academicYear": "2022-2023",
+      "variantLabel": "single supplied record",
+      "cognitiveDemand": "knowledge",
+      "commandPhrase": "Define a concurrency problem and give an example.",
+      "conceptPhrase": "deadlock",
+      "paperQuote": "Define deadlock with an example.",
+      "section": "B",
+      "taskForm": "definition_or_purpose",
+      "textbookTermVerified": true
+    },
+    {
+      "corpusId": "1-variant-1",
+      "sourceId": 1,
+      "academicYear": "2024",
+      "variantLabel": "supplied PDF pages 1-3 (variant label not stated in the source)",
+      "cognitiveDemand": "knowledge",
+      "commandPhrase": "Identify the flowchart shape for input/output",
+      "conceptPhrase": "flowchart",
+      "paperQuote": "Which shape represents input or output! ! i i i 1, operations in a flowchart?",
+      "section": "A",
+      "taskForm": "diagram_or_representation",
+      "textbookTermVerified": true
+    },
+    {
+      "corpusId": "1-variant-1",
+      "sourceId": 1,
+      "academicYear": "2024",
+      "variantLabel": "supplied PDF pages 1-3 (variant label not stated in the source)",
+      "cognitiveDemand": "knowledge",
+      "commandPhrase": "Choose the step-by-step problem solving method",
+      "conceptPhrase": "Algorithm",
+      "paperQuote": "Which one of the following is a step by step! i i ! 3, problem solving method? i Flowchart ' Planning iAnalysis ‘Algorithm",
+      "section": "A",
+      "taskForm": "direct_term",
+      "textbookTermVerified": true
+    },
+    {
+      "corpusId": "1-variant-1",
+      "sourceId": 1,
+      "academicYear": "2024",
+      "variantLabel": "supplied PDF pages 1-3 (variant label not stated in the source)",
+      "cognitiveDemand": "application",
+      "commandPhrase": "Correct four errors in given code",
+      "conceptPhrase": "code",
+      "paperQuote": "Correct any four errors in the given code:",
+      "section": "B",
+      "taskForm": "code_or_trace",
+      "textbookTermVerified": true
+    },
+    {
+      "corpusId": "1-variant-2",
+      "sourceId": 1,
+      "academicYear": "2024",
+      "variantLabel": "supplied PDF pages 4-6 (variant label not stated in the source)",
+      "cognitiveDemand": "knowledge",
+      "commandPhrase": "Give HTML paragraph tag",
+      "conceptPhrase": "HTML",
+      "paperQuote": "Which tag is used for paragraph in HTML?",
+      "section": "A",
+      "taskForm": "direct_term",
+      "textbookTermVerified": true
+    },
+    {
+      "corpusId": "2-variant-1",
+      "sourceId": 2,
+      "academicYear": "2025",
+      "variantLabel": "supplied PDF pages 1-3 (variant label not stated in the source)",
+      "cognitiveDemand": "application",
+      "commandPhrase": "Write HTML code for following:",
+      "conceptPhrase": "HTML",
+      "paperQuote": "Write HTML code for following:",
+      "section": "C",
+      "taskForm": "code_or_trace",
+      "textbookTermVerified": true
+    },
+    {
+      "corpusId": "2-variant-2",
+      "sourceId": 2,
+      "academicYear": "2025",
+      "variantLabel": "supplied PDF pages 4-6 (variant label not stated in the source)",
+      "cognitiveDemand": "knowledge",
+      "commandPhrase": "Picture representation of algorithm is:",
+      "conceptPhrase": "algorithm",
+      "paperQuote": "Picture representation of algorithm is: iTable iK-Map ‘Flowchart Class map",
+      "section": "A",
+      "taskForm": "direct_term",
+      "textbookTermVerified": true
+    },
+    {
+      "corpusId": "120001",
+      "sourceId": 120001,
+      "academicYear": "2026",
+      "variantLabel": "single supplied record",
+      "cognitiveDemand": "understanding",
+      "commandPhrase": "What is binary system? Why is it used by computers?",
+      "conceptPhrase": "binary system",
+      "paperQuote": "(i) What is binary system? Why is it used by computers?",
+      "section": "B",
+      "taskForm": "definition_or_purpose",
+      "textbookTermVerified": true
+    },
+    {
+      "corpusId": "120001",
+      "sourceId": 120001,
+      "academicYear": "2026",
+      "variantLabel": "single supplied record",
+      "cognitiveDemand": "understanding",
+      "commandPhrase": "What is a searching algorithm? Give one example.",
+      "conceptPhrase": "searching algorithm",
+      "paperQuote": "(iii) What is a searching algorithm? Give one example.",
+      "section": "B",
+      "taskForm": "definition_or_purpose",
+      "textbookTermVerified": true
+    },
+    {
+      "corpusId": "120001",
+      "sourceId": 120001,
+      "academicYear": "2026",
+      "variantLabel": "single supplied record",
+      "cognitiveDemand": "application",
+      "commandPhrase": "Make trace table to sort the given data: `[3, 1, 4, 1, 5, 9, 2, 6]`",
+      "conceptPhrase": "trace table",
+      "paperQuote": "Q.4 Make trace table to sort the given data: `[3, 1, 4, 1, 5, 9, 2, 6]`",
+      "section": "C",
+      "taskForm": "code_or_trace",
+      "textbookTermVerified": true
+    },
+    {
+      "corpusId": "120001",
+      "sourceId": 120001,
+      "academicYear": "2026",
+      "variantLabel": "single supplied record",
+      "cognitiveDemand": "understanding",
+      "commandPhrase": "What is meant by system software?",
+      "conceptPhrase": "system software",
+      "paperQuote": "(v) What is meant by system software?",
+      "section": "B",
+      "taskForm": "definition_or_purpose",
+      "textbookTermVerified": true
+    },
+    {
+      "corpusId": "120001",
+      "sourceId": 120001,
+      "academicYear": "2026",
+      "variantLabel": "single supplied record",
+      "cognitiveDemand": "understanding",
+      "commandPhrase": "How IoT works? Describe the role of sensors, connectivity, and data processing.",
+      "conceptPhrase": "IoT",
+      "paperQuote": "Q.5 How IoT works? Describe the role of sensors, connectivity, and data processing.",
+      "section": "C",
+      "taskForm": "process_or_steps",
+      "textbookTermVerified": true
+    },
+    {
+      "corpusId": "120001",
+      "sourceId": 120001,
+      "academicYear": "2026",
+      "variantLabel": "single supplied record",
+      "cognitiveDemand": "understanding",
+      "commandPhrase": "Define digital communication. List any four digital tools that can be used to communicate data to different audiences.",
+      "conceptPhrase": "digital communication",
+      "paperQuote": "Q.6 Define digital communication. List any four digital tools that can be used to communicate data to different audiences.",
+      "section": "C",
+      "taskForm": "definition_or_purpose",
+      "textbookTermVerified": true
+    },
+    {
+      "corpusId": "120001",
+      "sourceId": 120001,
+      "academicYear": "2026",
+      "variantLabel": "single supplied record",
+      "cognitiveDemand": "understanding",
+      "commandPhrase": "Why is debugging important in program development? (Two reasons)",
+      "conceptPhrase": "debugging",
+      "paperQuote": "(viii) Why is debugging important in program development? (Two reasons)",
+      "section": "B",
+      "taskForm": "definition_or_purpose",
+      "textbookTermVerified": true
+    },
+    {
+      "corpusId": "150001",
+      "sourceId": 150001,
+      "academicYear": "2026",
+      "variantLabel": "single supplied record",
+      "cognitiveDemand": "knowledge",
+      "commandPhrase": "Which solution can help reduce the digital divide?",
+      "conceptPhrase": "digital divide",
+      "paperQuote": "Which solution can help reduce the digital divide?",
+      "section": "A",
+      "taskForm": "direct_term",
+      "textbookTermVerified": true
+    },
+    {
+      "corpusId": "150001",
+      "sourceId": 150001,
+      "academicYear": "2026",
+      "variantLabel": "single supplied record",
+      "cognitiveDemand": "knowledge",
+      "commandPhrase": "Which strategy helps create a safer online environment?",
+      "conceptPhrase": "online",
+      "paperQuote": "Which strategy helps create a safer online environment?",
+      "section": "A",
+      "taskForm": "direct_term",
+      "textbookTermVerified": true
+    },
+    {
+      "corpusId": "150001",
+      "sourceId": 150001,
+      "academicYear": "2026",
+      "variantLabel": "single supplied record",
+      "cognitiveDemand": "knowledge",
+      "commandPhrase": "Which algorithm divides a list into smaller parts to sort efficiently?",
+      "conceptPhrase": "Quick sort",
+      "paperQuote": "Which algorithm divides a list into smaller parts to sort efficiently?",
+      "section": "A",
+      "taskForm": "direct_term",
+      "textbookTermVerified": true
+    },
+    {
+      "corpusId": "150001",
+      "sourceId": 150001,
+      "academicYear": "2026",
+      "variantLabel": "single supplied record",
+      "cognitiveDemand": "understanding",
+      "commandPhrase": "Which machine learning method groups similar data without prior labels?",
+      "conceptPhrase": "Unsupervised learning",
+      "paperQuote": "Which machine learning method groups similar data without prior labels?",
+      "section": "A",
+      "taskForm": "definition_or_purpose",
+      "textbookTermVerified": true
+    },
+    {
+      "corpusId": "150001",
+      "sourceId": 150001,
+      "academicYear": "2026",
+      "variantLabel": "single supplied record",
+      "cognitiveDemand": "understanding",
+      "commandPhrase": "Which feature makes Blockchain data difficult to alter?",
+      "conceptPhrase": "Blockchain",
+      "paperQuote": "Which feature makes Blockchain data difficult to alter?",
+      "section": "A",
+      "taskForm": "definition_or_purpose",
+      "textbookTermVerified": true
+    },
+    {
+      "corpusId": "150001",
+      "sourceId": 150001,
+      "academicYear": "2026",
+      "variantLabel": "single supplied record",
+      "cognitiveDemand": "application",
+      "commandPhrase": "Which of the following is a real-world application of NLP?",
+      "conceptPhrase": "NLP",
+      "paperQuote": "Which of the following is a real-world application of NLP?",
+      "section": "A",
+      "taskForm": "scenario_or_application",
+      "textbookTermVerified": true
+    }
+  ]
+}
