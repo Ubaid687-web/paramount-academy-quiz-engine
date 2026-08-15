@@ -119,6 +119,17 @@ describe("AI Agent - MCQ Generation", () => {
     expect(prompt).toContain("concise FBISE-style wording");
   });
 
+  it("instructs compact printed-paper MCQ forms and textbook-supported transfer instead of copied exercise wording", async () => {
+    await generateMCQsFromContent(1, validContent, 5, "balanced");
+
+    const systemPrompt = mocks.invokeLLM.mock.calls[0][0].messages[0].content as string;
+    expect(systemPrompt).toContain("USE COMPACT PRINTED-PAPER FORMS");
+    expect(systemPrompt).toContain("one direct stem");
+    expect(systemPrompt).toContain("Do not turn options into explanatory paragraphs");
+    expect(systemPrompt).toContain("TRANSFER BEYOND MEMORISED EXERCISES");
+    expect(systemPrompt).toContain("Do not copy or lightly reword them");
+  });
+
   it("returns a structured failure contract when a model response omits required source fields", async () => {
     mocks.invokeLLM.mockResolvedValue({
       choices: [{ message: { content: JSON.stringify({

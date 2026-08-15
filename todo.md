@@ -351,3 +351,9 @@
 - [x] Write a source-isolated format matrix that distinguishes stable structure, subject/shift variation, and unknowns without predicting future papers.
 - [x] Apply only verified format rules to the printable and MCQ generation guidance while preserving textbook-only factual-answer authority.
 - [x] Add regression coverage, validate, checkpoint, and report the calibrated assessment-structure policy.
+
+## Phase 51: Evidence-Backed Grade 10 MCQ Compactness Calibration
+- [x] Measure stems and option forms in the supplied model/annual papers, and compare them with the active textbook end-of-chapter MCQ exercises.
+- [x] Document source-backed compactness, vocabulary, numerical, distractor, and exercise-to-transfer guidance without setting an arbitrary global word cap.
+- [x] Refine MCQ prompting and validate generated drafts for compact physical-paper readability while keeping the textbook as the sole factual authority.
+- [x] Add regression coverage, validate, checkpoint, and report the calibrated MCQ policy.
