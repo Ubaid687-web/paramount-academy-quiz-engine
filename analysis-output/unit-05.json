@@ -1,0 +1,62 @@
+{
+  "unitTitle": "Applications of Computer Science",
+  "curriculumAlignmentSummary": "Unit 5 covers applications of computer science including IoT, blockchain, cloud computing, speech/voice recognition, NLP, and robotics, along with AI ethics. Model and annual papers for Grade 10 Computer Science focus primarily on C programming, logic gates, HTML, and flowcharts, leaving most Unit 5 applied technology concepts unrepresented or outside active textbook scope for past papers.",
+  "mappings": [
+    {
+      "textbookConcept": "Internet of Things (IoT) definition and applications",
+      "textbookExerciseCue": "Q1.2, Q2.1, Q3.1",
+      "observedPaperForm": "no direct observed form",
+      "alignment": "unconfirmed",
+      "cognitiveDemand": "knowledge",
+      "controlledTransformation": "Direct concept recall to multiple choice or short description",
+      "studentPreparationFocus": "Memorize definition and application sectors like healthcare, traffic monitoring, and smart farming.",
+      "textbookEvidenceQuote": "The aim of loT is to provide automation in various areas such as home automation, automation in manufacturing industry, healthcare, traffic monitoring, hospitality, etc.",
+      "paperEvidenceQuote": "none",
+      "caution": "Past papers examined contain no direct questions on IoT from Unit 5."
+    },
+    {
+      "textbookConcept": "Cloud Computing and SaaS/PaaS/IaaS classification",
+      "textbookExerciseCue": "Q1.3, Q3.3, Activity-1",
+      "observedPaperForm": "Model Paper 2022-23 Section-A Q1(viii)",
+      "alignment": "outside_active_textbook",
+      "cognitiveDemand": "knowledge",
+      "controlledTransformation": "Mapping cloud services to SaaS/PaaS/IaaS definitions",
+      "studentPreparationFocus": "Distinguish between SaaS, PaaS, and IaaS cloud models.",
+      "textbookEvidenceQuote": "Cloud computing is the delivery of computing services such as servers, storage, database, networking and application software over the cloud (Internet).",
+      "paperEvidenceQuote": "Which of the following service models provides virtualized computing resources over the internet? (SaaS, PaaS, IaaS, BaaS)",
+      "caution": "The textbook defines cloud computing benefits and uses (SaaS examples like Shopify) but does not explicitly detail the technical categories of SaaS, PaaS, and IaaS as tested in the model paper."
+    },
+    {
+      "textbookConcept": "Artificial Intelligence Natural Language Processing (NLP)",
+      "textbookExerciseCue": "Q1.4, Q2.6, Q3.5",
+      "observedPaperForm": "Model Paper 2022-23 Section-A Q1(ix)",
+      "alignment": "confirmed",
+      "cognitiveDemand": "knowledge",
+      "controlledTransformation": "Identify NLP as the technology used in AI and voice assistants",
+      "studentPreparationFocus": "Recognize NLP as a branch of AI enabling text and speech understanding.",
+      "textbookEvidenceQuote": "Natural Language Processing (NLP) is a branch of Artificial Intelligence. It gives computers the ability to understand text and spoken words the same way humans do.",
+      "paperEvidenceQuote": "Which technology is used in both robotics and AI personal assistants? (Natural Language Processing)",
+      "caution": "Directly supported by the textbook section on NLP and AI assistants."
+    },
+    {
+      "textbookConcept": "AI Bias and Unethical Use",
+      "textbookExerciseCue": "Q2.5, Activity-4",
+      "observedPaperForm": "Model Paper 2022-23 Section-A Q1(xiii)",
+      "alignment": "confirmed",
+      "cognitiveDemand": "understanding",
+      "controlledTransformation": "Explain or identify the effect of algorithmic bias on study or system findings",
+      "studentPreparationFocus": "Understand how biased data leads to discrimination and misleading results.",
+      "textbookEvidenceQuote": "If the data used in training an AI system is incorrect, impartial, incomplete or biased in any way then the resulting AI system can cause injustice, hurt people and cause harm.",
+      "paperEvidenceQuote": "How does bias affect the validity of research findings? Leads to misleading results",
+      "caution": "Aligns with the text discussion on biased training data."
+    }
+  ],
+  "unsupportedPastPaperForms": [
+    "SaaS, PaaS, IaaS technical service models classification",
+    "Research validity impacts from bias"
+  ],
+  "analysisLimits": [
+    "Analysis is strictly restricted to Unit 5 of the Grade 10 Computer Science textbook and the provided model and annual papers from 2022 to 2025.",
+    "Most questions in the supplied papers pertain to earlier programming units (C language, HTML, logic gates, flowcharts) rather than Unit 5 applications."
+  ]
+}

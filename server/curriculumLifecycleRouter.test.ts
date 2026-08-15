@@ -12,6 +12,9 @@ const mocks = vi.hoisted(() => ({
   proposeChaptersFromExtractedText: vi.fn(),
   getProgrammeEvidenceRecord: vi.fn(),
   updateProgrammeEvidenceRecordStatus: vi.fn(),
+  getProgrammeCatalogue: vi.fn(),
+  findAssessmentPatternSourceByContentHash: vi.fn(),
+  createAssessmentPatternSource: vi.fn(),
 }));
 
 vi.mock("./db", () => ({
@@ -25,6 +28,9 @@ vi.mock("./db", () => ({
   getCurriculumSource: mocks.getCurriculumSource,
   getProgrammeEvidenceRecord: mocks.getProgrammeEvidenceRecord,
   updateProgrammeEvidenceRecordStatus: mocks.updateProgrammeEvidenceRecordStatus,
+  getProgrammeCatalogue: mocks.getProgrammeCatalogue,
+  findAssessmentPatternSourceByContentHash: mocks.findAssessmentPatternSourceByContentHash,
+  createAssessmentPatternSource: mocks.createAssessmentPatternSource,
 }));
 
 vi.mock("./chapterProposal", () => ({ proposeChaptersFromExtractedText: mocks.proposeChaptersFromExtractedText }));
@@ -115,5 +121,15 @@ describe("curriculum lifecycle administration", () => {
     await expect(caller.curriculum.reviewProgrammeEvidence({ programmeId: 12, recordId: 81, status: "reviewed" })).rejects.toThrow("does not belong to the selected programme");
     await expect(caller.curriculum.reviewProgrammeEvidence({ programmeId: 11, recordId: 81, status: "reviewed" })).resolves.toMatchObject({ id: 81, status: "reviewed" });
     expect(mocks.updateProgrammeEvidenceRecordStatus).toHaveBeenCalledWith(81, "reviewed", 77);
+  });
+
+  it("blocks an identical paper-pattern upload inside the selected programme", async () => {
+    mocks.getProgrammeCatalogue.mockResolvedValue({ id: 11, board: "FBISE", grade: "10", subject: "physics", teacherLabel: "Physics" });
+    mocks.findAssessmentPatternSourceByContentHash.mockResolvedValue({ id: 90, originalFileName: "physics-2026.pdf" });
+    const caller = appRouter.createCaller(createContext("admin"));
+
+    await expect(caller.curriculum.ingestPaperPatternSource({
+      programmeId: 11, sourceKind: "past_paper", academicYear: "2026", fileName: "duplicate.pdf", mimeType: "text/plain", fileBuffer: Buffer.from("same paper").toString("base64"),
+    })).rejects.toThrow("already stored for Physics as “physics-2026.pdf”");
   });
 });

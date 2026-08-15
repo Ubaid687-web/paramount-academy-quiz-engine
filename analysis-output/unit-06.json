@@ -1,0 +1,87 @@
+{
+  "unitTitle": "Unit 6: Impacts of Computing",
+  "curriculumAlignmentSummary": "The unit covers technology addiction, internet uses and malicious purposes, threats to individual privacy and security (spam, spyware, cookies), cloud computing (public and private clouds, security basics like encryption and access control), hardware and software protection methods (biometric authentication, firewalls, antivirus, VPN, backup), cybersecurity, cybercrime laws, reporting cybercrimes, social media safety, cyberbullying, environmental and cultural/human impacts of computing, and the digital divide. Model and annual papers for Grade 10 primarily focus on Units 1-5 (Programming in C, HTML, Logic Gates, Flowcharts, Problem Solving), leaving Unit 6 concepts largely unobserved or requiring mapping where corresponding computing/security/digital divide themes appear.",
+  "mappings": [
+    {
+      "textbookConcept": "Digital Divide and access to critical information/technology",
+      "textbookExerciseCue": "Ex. ERQ 5: Examine the effects of the digital divide on access to information. How does this divide affect education, employment, healthcare?",
+      "observedPaperForm": "Model Paper Section-A Q1(x): How can students help bridge the digital divide? (Options: Promoting digital literacy, Using technology personally, Restricting internet access, Ignoring the issue)",
+      "alignment": "confirmed",
+      "cognitiveDemand": "application",
+      "controlledTransformation": "Translates descriptive text on the usage and access divide into a multiple-choice application question assessing student roles in mitigating the divide.",
+      "studentPreparationFocus": "Students must understand practical actions to address the digital divide, such as promoting digital literacy.",
+      "textbookEvidenceQuote": "Bridging the digital divide can improve equity, giving everyone a fair chance to connect, learn, and grow.",
+      "paperEvidenceQuote": "How can students help bridge the digital divide?",
+      "caution": "Ensure alignment is restricted to the specific multiple-choice format present in the model paper."
+    },
+    {
+      "textbookConcept": "Data Backup",
+      "textbookExerciseCue": "Textbook section 6.5.2 describes Data Backup as regularly backing up important data to restore information in case of loss.",
+      "observedPaperForm": "Model Paper Section-A Q1(xi): What is the primary purpose of a data backup?",
+      "alignment": "confirmed",
+      "cognitiveDemand": "knowledge",
+      "controlledTransformation": "Transforms the definition and purpose of data backups into a direct knowledge-based multiple-choice item.",
+      "studentPreparationFocus": "Students should recognize the core objective of maintaining data backups against data loss or failure.",
+      "textbookEvidenceQuote": "Regularly back up your important data to an external device or cloud storage service.",
+      "paperEvidenceQuote": "What is the primary purpose of a data backup?",
+      "caution": "Keep definitions literal to the textbook explanation."
+    },
+    {
+      "textbookConcept": "Cloud Computing and SaaS (Software as a Service)",
+      "textbookExerciseCue": "Textbook section 6.4 introduces cloud computing infrastructure and software services rented over the internet.",
+      "observedPaperForm": "Model Paper Section-A Q1(viii) / Section-C Q4: SaaS startup financial growth case study / virtualized computing resources over the internet.",
+      "alignment": "confirmed",
+      "cognitiveDemand": "application",
+      "controlledTransformation": "Expands cloud computing service models (like SaaS) into scenario-based application questions involving startup projections.",
+      "studentPreparationFocus": "Students should understand cloud service categories and definitions of cloud computing models.",
+      "textbookEvidenceQuote": "Instead of having to buy and manage all the hardware yourself, you can rent it from companies that offer cloud services.",
+      "paperEvidenceQuote": "Which service provides virtualized computing resources over the internet?",
+      "caution": "Only analyze elements explicitly supported by the textbook's coverage of cloud computing."
+    },
+    {
+      "textbookConcept": "Cybersecurity and Network Monitoring / Threat Prevention",
+      "textbookExerciseCue": "Textbook section 6.3/6.5/6.6 discusses network security, monitoring tools, and protecting systems from unauthorized access.",
+      "observedPaperForm": "Model Paper Section-B Q2(ix): How does network monitoring help prevent cyber threats? Give any TWO justifications.",
+      "alignment": "confirmed",
+      "cognitiveDemand": "understanding",
+      "controlledTransformation": "Converts descriptive text on network security and monitoring tools into a short response justification task.",
+      "studentPreparationFocus": "Students must articulate how network monitoring detects and responds to suspicious activity.",
+      "textbookEvidenceQuote": "Set up tools to watch for any strange or suspicious actions in your cloud system.",
+      "paperEvidenceQuote": "How does network monitoring help prevent cyber threats? Give any TWO justifications.",
+      "caution": "Rely strictly on textbook mentions of monitoring and network security."
+    },
+    {
+      "textbookConcept": "Phishing definition and user impact",
+      "textbookExerciseCue": "Textbook section 6.2.2 defines phishing as a scam tricking people into giving away personal information.",
+      "observedPaperForm": "Model Paper Section-B Q2(xi): What is phishing, and how does it affect users?",
+      "alignment": "confirmed",
+      "cognitiveDemand": "knowledge",
+      "controlledTransformation": "Shifts direct definitional text into a two-part short response question asking for definition and user impact.",
+      "studentPreparationFocus": "Students should memorize the definition of phishing and its consequences on personal data.",
+      "textbookEvidenceQuote": "Phishing is a scam that tricks people into giving away personal information, like passwords, by pretending to be someone trustworthy",
+      "paperEvidenceQuote": "What is phishing, and how does it affect users?",
+      "caution": "Do not introduce external definitions of phishing outside the textbook text."
+    },
+    {
+      "textbookConcept": "Social Media Responsibility and Privacy",
+      "textbookExerciseCue": "Textbook section 6.7 outlines privacy protection and safe social media use settings.",
+      "observedPaperForm": "Model Paper Section-B Q2(vi): What are two ways students can responsibly use social media when sharing information?",
+      "alignment": "confirmed",
+      "cognitiveDemand": "application",
+      "controlledTransformation": "Transforms privacy protection guidelines into actionable steps for student social media usage.",
+      "studentPreparationFocus": "Students should learn safe posting habits and privacy settings adjustments.",
+      "textbookEvidenceQuote": "Users can protect their privacy by adjusting privacy settings. They should be cautious about sharing sensitive information.",
+      "paperEvidenceQuote": "What are two ways students can responsibly use social media when sharing information?",
+      "caution": "Keep responses bounded by the textbook's text on social media safety."
+    }
+  ],
+  "unsupportedPastPaperForms": [
+    "Detailed coding questions involving C language syntax (found extensively in papers but belonging to Units 1-4)",
+    "HTML tagging and structure implementation exercises (belonging to Unit 5)",
+    "Karnaugh map simplification and logic gate circuits (belonging to earlier hardware/logic units)"
+  ],
+  "analysisLimits": [
+    "Past papers from 2022 to 2025 heavily prioritize programming (C language), HTML, logic gates, and flowchart design from the earlier curriculum units, leaving Unit 6 concepts selectively represented mainly via conceptual, cloud, and digital divide items in model papers.",
+    "No explicit questions concerning spyware, cookies, or specific hardware methods like Secure Boot appeared outside of general cybersecurity contexts in the provided paper set."
+  ]
+}
