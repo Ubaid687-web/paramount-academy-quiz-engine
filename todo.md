@@ -299,7 +299,7 @@
 ## Phase 41: Grade 10 Computer Science Exam-Readiness Analysis
 - [x] Define a textbook-first Grade 10 analysis framework that separates factual evidence, exercises, paper-pattern evidence, and non-evidence analysis notes.
 - [x] Map Grade 10 Computer Science textbook units and exercises against supplied model/2024/2025 paper demands, with special focus on application gaps.
-- [ ] Incorporate the re-uploaded analysis document and 2026 annual paper as pattern evidence only when supplied.
+- [x] Incorporate the supplied 2026 morning and evening written papers as pattern evidence only; no separate analysis document was supplied or required.
 - [x] Produce controlled Grade 10 memorisation and applied-knowledge readiness guidance; preserve strict separation from Grade 9 and defer front-end work.
 
 ## Phase 42: Newly Supplied Scan Inventory
@@ -345,3 +345,9 @@
 - [x] Correct any duplicate, misleading, or incomplete Physics evidence record without activating a source or mixing it with other subjects.
 - [x] Add a mandatory pre-intake provenance and duplicate-comparison safeguard, with regression coverage, for future paper uploads.
 - [x] Validate, checkpoint, and report the source-integrity correction and the new intake discipline.
+
+## Phase 50: Controlled Grade 10 Paper-Structure Calibration
+- [x] Audit the existing reviewed model and annual-paper profiles for Section A MCQ, Section B short-question, Section C long-question, marks, timing, and OR structure by subject and shift.
+- [x] Write a source-isolated format matrix that distinguishes stable structure, subject/shift variation, and unknowns without predicting future papers.
+- [x] Apply only verified format rules to the printable and MCQ generation guidance while preserving textbook-only factual-answer authority.
+- [x] Add regression coverage, validate, checkpoint, and report the calibrated assessment-structure policy.

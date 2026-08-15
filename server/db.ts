@@ -635,6 +635,35 @@ export async function listActiveAssessmentPatternSources(programme: ProgrammeKey
   )).orderBy(asc(assessmentPatternSources.id));
 }
 
+export async function listActiveReviewedPatternGuidance(programme: ProgrammeKey) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.select({
+    sourceId: assessmentPatternSources.id,
+    sourceKind: assessmentPatternSources.sourceKind,
+    academicYear: assessmentPatternSources.academicYear,
+    mcqCount: assessmentPatternProfiles.mcqCount,
+    mcqMarksEach: assessmentPatternProfiles.mcqMarksEach,
+    shortOrPairCount: assessmentPatternProfiles.shortOrPairCount,
+    shortMarksEach: assessmentPatternProfiles.shortMarksEach,
+    longOrPairCount: assessmentPatternProfiles.longOrPairCount,
+    longMarksEach: assessmentPatternProfiles.longMarksEach,
+    totalMarks: assessmentPatternProfiles.totalMarks,
+    durationMinutes: assessmentPatternProfiles.durationMinutes,
+    orRule: assessmentPatternProfiles.orRule,
+  }).from(assessmentPatternSources).innerJoin(
+    assessmentPatternProfiles,
+    eq(assessmentPatternProfiles.patternSourceId, assessmentPatternSources.id),
+  ).where(and(
+    eq(assessmentPatternSources.board, programme.board),
+    eq(assessmentPatternSources.grade, programme.grade),
+    eq(assessmentPatternSources.subject, programme.subject),
+    eq(assessmentPatternSources.status, "active"),
+    eq(assessmentPatternSources.extractionStatus, "extracted"),
+    eq(assessmentPatternProfiles.reviewStatus, "reviewed"),
+  )).orderBy(asc(assessmentPatternSources.id));
+}
+
 export async function listAssessmentPatternSourcesByIds(programme: ProgrammeKey, sourceIds: number[]) {
   if (!sourceIds.length) return [];
   const db = await getDb();

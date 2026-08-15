@@ -16,11 +16,12 @@ describe("printable paper payload normalization", () => {
     const instruction = buildPrintablePaperPatternInstruction({
       sourceType: "curriculum_scope",
       sourceTitle: "Computer Science Unit 3",
-      paperPatternGuidance: [{ sourceKind: "past_paper", academicYear: "2025" }],
+      paperPatternGuidance: [{ sourceKind: "past_paper", academicYear: "2025", mcqCount: 13, mcqMarksEach: 1, shortOrPairCount: 11, shortMarksEach: 2, longOrPairCount: 4, longMarksEach: 5, orRule: "OR verified" }],
     });
     expect(instruction).toContain("past paper 2025");
-    expect(instruction).toContain("K/U/A balance only");
-    expect(instruction).toContain("use them as answer evidence");
+    expect(instruction).toContain("11 brief parts of 2 marks each");
+    expect(instruction).toContain("OR alternatives are verified");
+    expect(instruction).toContain("Do not copy paper questions or use them as answer evidence");
   });
 
   it("adds the required short-item type before contract validation", () => {

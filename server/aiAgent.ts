@@ -5,6 +5,8 @@ import { analyzeContent, chunkContent } from "./contentAnalyzer";
 import { buildDraftQualityChecks, validateGeneratedMcqs, type GeneratedMcq } from "./quizDraftValidator";
 import type { InsertGenerationJob } from "../drizzle/schema";
 import type { FbiseSubject, ScopeType } from "./curriculumScope";
+import type { VerifiedPaperPatternGuidance } from "./paperPatternGuidance";
+import { buildVerifiedPaperPatternSummary } from "./paperPatternGuidance";
 
 export type GenerationSourceContext = {
   sourceType: "raw_text" | "curriculum_scope";
@@ -17,10 +19,7 @@ export type GenerationSourceContext = {
   selectedChapterIds?: number[];
   selectedSegmentIds?: number[];
   scopeSnapshot?: unknown;
-  paperPatternGuidance?: Array<{
-    sourceKind: "model_paper" | "past_paper";
-    academicYear: string | null;
-  }>;
+  paperPatternGuidance?: VerifiedPaperPatternGuidance[];
 };
 
 const MCQ_GENERATION_PROMPT = `You are a careful FBISE-style assessment designer. Generate new, textbook-grounded multiple-choice questions for secondary students. The supplied textbook material is the only factual authority.
@@ -145,8 +144,8 @@ export async function generateMCQsFromContent(
       ? `
 
 VERIFIED BOARD-PATTERN GUIDANCE (NOT CONTENT EVIDENCE):
-- Active supplied pattern evidence: ${sourceContext.paperPatternGuidance.map((source) => `${source.sourceKind.replace("_", " ")}${source.academicYear ? ` ${source.academicYear}` : ""}`).join(", ")}.
-- Use this evidence only for concise FBISE-style wording, familiar command phrasing, and the K/U/A balance above.
+- ${buildVerifiedPaperPatternSummary(sourceContext.paperPatternGuidance)}
+- Use this evidence only for concise FBISE-style wording, familiar command phrasing, one-mark MCQ presentation, and the K/U/A balance above. The requested MCQ count still controls the size of this teacher draft.
 - Do not copy, paraphrase, or treat paper questions as source content. Do not use any analysis note as factual evidence. The supplied textbook material below remains the only examinable content boundary.`
       : "";
 

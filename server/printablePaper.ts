@@ -2,6 +2,7 @@ import { invokeLLM } from "./_core/llm";
 import { validateAssessmentDraftPayload, type ModeDraftPayload } from "@shared/assessmentDraftContract";
 import type { GenerationSourceContext } from "./aiAgent";
 import { chunkContent } from "./contentAnalyzer";
+import { buildVerifiedPaperPatternSummary, getVerifiedMarkRule } from "./paperPatternGuidance";
 
 export type PrintablePaperType = "short" | "long";
 export type NormalizedPrintablePaperPayload = {
@@ -130,7 +131,7 @@ export function buildPrintablePairBatches(pairCount: number, maximumPairsPerBatc
 
 export function buildPrintablePaperPatternInstruction(sourceContext: GenerationSourceContext) {
   return sourceContext.paperPatternGuidance?.length
-    ? `Supplied board-pattern records (${sourceContext.paperPatternGuidance.map((source) => `${source.sourceKind.replace("_", " ")}${source.academicYear ? ` ${source.academicYear}` : ""}`).join(", ")}) may guide concise FBISE-style wording, marks presentation, and K/U/A balance only. Do not copy their questions or use them as answer evidence.`
+    ? `${buildVerifiedPaperPatternSummary(sourceContext.paperPatternGuidance)} Use this only for concise FBISE-style wording, marks presentation, and OR layout. Do not copy paper questions or use them as answer evidence.`
     : "No reviewed board-pattern record is attached. Use the source material alone for all content and keep the language plain.";
 }
 
@@ -144,9 +145,12 @@ export async function generatePrintablePaperFromContent(params: {
 }): Promise<ModeDraftPayload> {
   const { paperType, title, contentText, pairCount, difficulty, sourceContext } = params;
   const safeSections = chunkContent(contentText, Math.min(6, Math.max(2, pairCount))).map((section, index) => `SOURCE SECTION ${index + 1}:\n${section.slice(0, 1500)}`).join("\n\n");
-  const marksRule = paperType === "short"
-    ? "Each short question is normally 3 marks unless the selected source requires another value."
-    : "Each long question must be 5–8 marks; its rubric total must exactly match its marks.";
+  const verifiedMarks = getVerifiedMarkRule(paperType, sourceContext.paperPatternGuidance);
+  const marksRule = verifiedMarks !== null
+    ? `Each ${paperType} question must carry exactly ${verifiedMarks} marks because every attached reviewed active profile agrees on that value.${paperType === "long" ? " Its rubric total must exactly match its marks." : ""}`
+    : paperType === "short"
+      ? "No active reviewed source agrees on a short-question mark value. Keep marks within the validated draft contract and label the paper as a draft for Portal Admin review."
+      : "No active reviewed source agrees on a long-question mark value. Keep marks within the validated draft contract and make each rubric total exactly match its marks.";
   const batchPlan = buildPrintablePairBatches(pairCount);
   const paperPatternInstruction = buildPrintablePaperPatternInstruction(sourceContext);
   const items: Array<Record<string, unknown> & { kind: PrintablePaperType; marks: number }> = [];

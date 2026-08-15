@@ -4,6 +4,7 @@ import type { TrpcContext } from "./_core/context";
 const mocks = vi.hoisted(() => ({
   getActiveCurriculumScopeCatalog: vi.fn(),
   listActiveAssessmentPatternSources: vi.fn(),
+  listActiveReviewedPatternGuidance: vi.fn(),
   listAssessmentPatternSourcesByIds: vi.fn(),
   createAssessmentDraft: vi.fn(),
   getAssessmentDraft: vi.fn(),
@@ -14,6 +15,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("./db", () => ({
   getActiveCurriculumScopeCatalog: mocks.getActiveCurriculumScopeCatalog,
   listActiveAssessmentPatternSources: mocks.listActiveAssessmentPatternSources,
+  listActiveReviewedPatternGuidance: mocks.listActiveReviewedPatternGuidance,
   listAssessmentPatternSourcesByIds: mocks.listAssessmentPatternSourcesByIds,
   createAssessmentDraft: mocks.createAssessmentDraft,
   getAssessmentDraft: mocks.getAssessmentDraft,
@@ -61,6 +63,7 @@ const physicsScope = {
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.listActiveAssessmentPatternSources.mockResolvedValue([]);
+  mocks.listActiveReviewedPatternGuidance.mockResolvedValue([]);
   mocks.listAssessmentPatternSourcesByIds.mockResolvedValue([]);
   mocks.resolveCurriculumScope.mockReturnValue({
     snapshot: { curriculumSetId: 1, chapterIds: [10] },

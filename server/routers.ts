@@ -785,11 +785,11 @@ export const appRouter = router({
         let sourceContext;
 
         if (input.scope) {
-          const { getActiveCurriculumScopeCatalog, listActiveAssessmentPatternSources } = await import("./db");
+          const { getActiveCurriculumScopeCatalog, listActiveReviewedPatternGuidance } = await import("./db");
           const { resolveCurriculumScope } = await import("./curriculumScope");
-          const [catalog, paperPatternSources] = await Promise.all([
+          const [catalog, paperPatternGuidance] = await Promise.all([
             getActiveCurriculumScopeCatalog(input.scope),
-            listActiveAssessmentPatternSources(input.scope),
+            listActiveReviewedPatternGuidance(input.scope),
           ]);
           if (!catalog) {
             throw new Error("No active reviewed curriculum is available for the selected subject.");
@@ -807,18 +807,18 @@ export const appRouter = router({
             selectedChapterIds: resolvedScope.chapterIds,
             selectedSegmentIds: resolvedScope.segmentIds,
             scopeSnapshot: resolvedScope.snapshot,
-            paperPatternGuidance: paperPatternSources.map((source) => ({ sourceKind: source.sourceKind, academicYear: source.academicYear })),
+            paperPatternGuidance,
           };
         } else if (input.patternProgramme || input.patternSubject) {
-          const { listActiveAssessmentPatternSources } = await import("./db");
+          const { listActiveReviewedPatternGuidance } = await import("./db");
           const patternProgramme = input.patternProgramme ?? { board: "FBISE", grade: "10", subject: input.patternSubject! };
-          const paperPatternSources = await listActiveAssessmentPatternSources(patternProgramme);
+          const paperPatternGuidance = await listActiveReviewedPatternGuidance(patternProgramme);
           sourceContext = {
             sourceType: "raw_text" as const,
             sourceTitle: "Teacher-provided custom source",
             subject: patternProgramme.subject,
             classLevel: patternProgramme.grade,
-            paperPatternGuidance: paperPatternSources.map((source) => ({ sourceKind: source.sourceKind, academicYear: source.academicYear })),
+            paperPatternGuidance,
           };
         }
 
@@ -857,11 +857,11 @@ export const appRouter = router({
         let contentText = input.contentText;
         let sourceContext: import("./aiAgent").GenerationSourceContext | undefined;
         if (input.scope) {
-          const { getActiveCurriculumScopeCatalog, listActiveAssessmentPatternSources } = await import("./db");
+          const { getActiveCurriculumScopeCatalog, listActiveReviewedPatternGuidance } = await import("./db");
           const { resolveCurriculumScope } = await import("./curriculumScope");
-          const [catalog, paperPatternSources] = await Promise.all([
+          const [catalog, paperPatternGuidance] = await Promise.all([
             getActiveCurriculumScopeCatalog(input.scope),
-            listActiveAssessmentPatternSources(input.scope),
+            listActiveReviewedPatternGuidance(input.scope),
           ]);
           if (!catalog) throw new Error("No active reviewed textbook source is available for the selected subject.");
           const resolvedScope = resolveCurriculumScope(catalog, input.scope);
@@ -877,17 +877,17 @@ export const appRouter = router({
             selectedChapterIds: resolvedScope.chapterIds,
             selectedSegmentIds: resolvedScope.segmentIds,
             scopeSnapshot: resolvedScope.snapshot,
-            paperPatternGuidance: paperPatternSources.map((source) => ({ sourceKind: source.sourceKind, academicYear: source.academicYear })),
+            paperPatternGuidance,
           };
         } else if (input.patternProgramme) {
-          const { listActiveAssessmentPatternSources } = await import("./db");
-          const paperSources = await listActiveAssessmentPatternSources(input.patternProgramme);
+          const { listActiveReviewedPatternGuidance } = await import("./db");
+          const paperPatternGuidance = await listActiveReviewedPatternGuidance(input.patternProgramme);
           sourceContext = {
             sourceType: "raw_text",
             sourceTitle: "Teacher-provided custom source",
             subject: input.patternProgramme.subject,
             classLevel: input.patternProgramme.grade,
-            paperPatternGuidance: paperSources.map((source) => ({ sourceKind: source.sourceKind, academicYear: source.academicYear })),
+            paperPatternGuidance,
           };
         }
         if (!contentText || !sourceContext) throw new Error("Upload or paste at least 100 characters of material, or choose a reviewed curriculum scope.");
