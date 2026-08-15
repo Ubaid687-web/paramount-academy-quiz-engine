@@ -322,3 +322,8 @@
 - [x] Audit the Programme Catalogue and Curriculum Library for reusable subject-isolated book/model/past-paper management components.
 - [x] Build a structured Portal Admin evidence workspace showing Book, Model Paper, Past Papers, and Analysis records within the selected programme only.
 - [x] Enforce programme-level isolation, source-role labels, draft/review/active safeguards, duplicate prevention, and regression coverage.
+
+## Phase 46: Grade 10 Chemistry 2026 Evening-Paper Intake
+- [x] Verify the supplied complete Chemistry evening paper as Grade 10 Chemistry-only 2026 pattern evidence.
+- [x] Store the paper in the Chemistry programme with a reviewed structural profile while keeping the pattern source draft-only.
+- [x] Verify Physics/Computer Science separation and retain the pending complete 2026 Computer Science paper requirement.
