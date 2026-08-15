@@ -252,6 +252,11 @@ export default function AIAgent() {
     ? Boolean(contentText.trim())
     : hasValidStoredScope);
   const assessmentAvailability = assessmentAvailabilityQuery.data;
+  const reviewedPrintablePairDefault = assessmentMode === "short"
+    ? assessmentAvailability?.printablePairDefaults?.short
+    : assessmentMode === "long"
+      ? assessmentAvailability?.printablePairDefaults?.long
+      : null;
   const isSelectedModeAvailable = assessmentAvailability
     ? assessmentAvailability.supportedModes[assessmentMode]
     : assessmentMode !== "full_paper";
@@ -744,7 +749,7 @@ export default function AIAgent() {
                     { mode: "mcq" as const, title: "MCQ quiz", detail: "Online practice and printable PDF." },
                     { mode: "short" as const, title: "Short question paper", detail: "Printable paper and solution key only." },
                     { mode: "long" as const, title: "Long question paper", detail: "Printable paper and solution key only." },
-                  ].map((option) => <button key={option.mode} type="button" aria-pressed={assessmentMode === option.mode} disabled={!isProgrammeReady || (assessmentAvailability ? !assessmentAvailability.supportedModes[option.mode] : false)} onClick={() => { setAssessmentMode(option.mode); setGeneratedPrintablePaper(null); setActiveStep(2); }} className={`rounded-xl border p-4 text-left transition-[transform,background-color,border-color,box-shadow] duration-200 ease-out active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-55 ${assessmentMode === option.mode ? "border-primary bg-primary/[0.055] shadow-sm" : "border-border bg-muted/30 hover:border-primary/40"}`}><span className="block text-sm font-bold text-foreground">{option.title}</span><span className="mt-1 block text-xs leading-5 text-muted-foreground">{option.detail}</span></button>)}
+                  ].map((option) => <button key={option.mode} type="button" aria-pressed={assessmentMode === option.mode} disabled={!isProgrammeReady || (assessmentAvailability ? !assessmentAvailability.supportedModes[option.mode] : false)} onClick={() => { setAssessmentMode(option.mode); const verifiedCount = option.mode === "short" ? assessmentAvailability?.printablePairDefaults?.short : option.mode === "long" ? assessmentAvailability?.printablePairDefaults?.long : null; if (verifiedCount) setPaperPairCount(verifiedCount); setGeneratedPrintablePaper(null); setActiveStep(2); }} className={`rounded-xl border p-4 text-left transition-[transform,background-color,border-color,box-shadow] duration-200 ease-out active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-55 ${assessmentMode === option.mode ? "border-primary bg-primary/[0.055] shadow-sm" : "border-border bg-muted/30 hover:border-primary/40"}`}><span className="block text-sm font-bold text-foreground">{option.title}</span><span className="mt-1 block text-xs leading-5 text-muted-foreground">{option.detail}</span></button>)}
                 </div>
               </CardContent>
             </Card>}
@@ -975,7 +980,7 @@ export default function AIAgent() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm leading-6 text-muted-foreground"><strong>Draft review required.</strong> Verify source references, answer wording, formulas, and diagrams before issuing this paper.</div>
-                <div><Label htmlFor="paper-pairs" className="mb-2 block text-sm font-medium">Numbered OR pairs</Label><Input id="paper-pairs" type="number" min={1} max={10} value={paperPairCount} onChange={(event) => setPaperPairCount(Math.min(10, Math.max(1, Number(event.target.value) || 1)))} /><p className="mt-1 text-xs text-muted-foreground">Each numbered question includes an alternative of equal marks.</p></div>
+                <div><Label htmlFor="paper-pairs" className="mb-2 block text-sm font-medium">Numbered OR pairs</Label><Input id="paper-pairs" type="number" min={1} max={11} value={paperPairCount} onChange={(event) => setPaperPairCount(Math.min(11, Math.max(1, Number(event.target.value) || 1)))} /><p className="mt-1 text-xs text-muted-foreground">Each numbered question includes an alternative of equal marks.{reviewedPrintablePairDefault ? ` The active reviewed paper records support ${reviewedPrintablePairDefault} ${assessmentMode === "short" ? "Section B" : "Section C"} pairs.` : " No active reviewed source agrees on a section count, so this remains a practice-set size."}</p></div>
                 <Button type="button" onClick={handleGeneratePrintablePaper} disabled={isGenerating || generatePrintablePaperMutation.isPending || !canAdvanceToDraft} className="w-full bg-primary text-primary-foreground font-semibold shadow-sm hover:bg-primary/90">{isGenerating || generatePrintablePaperMutation.isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating paper draft…</> : "Generate printable paper draft"}</Button>
                 {generatedPrintablePaper && <div className="space-y-3 rounded-xl border border-accent/30 bg-accent/5 p-4"><div><p className="font-semibold text-foreground">Printable draft ready</p><p className="mt-1 text-sm text-muted-foreground">{generatedPrintablePaper.items?.length || 0} prompts across {paperPairCount} OR pairs. This is not an online quiz.</p></div><div className="flex flex-col gap-2 sm:flex-row"><Button type="button" variant="outline" className="flex-1" onClick={() => handlePrintableDownload("paper")}>Download paper PDF</Button><Button type="button" variant="outline" className="flex-1" onClick={() => handlePrintableDownload("solution")}>Download solution key</Button></div><p className="text-xs text-muted-foreground">Your browser will receive the PDF directly from this tap. If the paper needs regeneration, the browser will show a clear message.</p></div>}
               </CardContent>

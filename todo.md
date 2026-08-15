@@ -357,3 +357,16 @@
 - [x] Document source-backed compactness, vocabulary, numerical, distractor, and exercise-to-transfer guidance without setting an arbitrary global word cap.
 - [x] Refine MCQ prompting and validate generated drafts for compact physical-paper readability while keeping the textbook as the sole factual authority.
 - [x] Add regression coverage, validate, checkpoint, and report the calibrated MCQ policy.
+
+## Phase 52: Physics and Chemistry MCQ Compactness Calibration
+- [x] Inventory the active Physics textbook’s end-of-chapter MCQ exercises and the supplied Physics-only Section A paper evidence.
+- [x] Write the Physics compactness and exercise-transfer findings without importing Computer Science, PBA, or unsupported paper facts.
+- [ ] Obtain an exact active Grade 10 Chemistry textbook source before analysing Chemistry exercises; the retained 2020 Chemistry source is archived and cannot supply factual or exercise evidence.
+- [ ] Apply Chemistry exercise-to-paper guidance only after that textbook source is verified, while preserving textbook-only factual authority.
+- [ ] Add regression coverage, validate, checkpoint, and report the cross-subject calibration.
+
+## Phase 53: Computer Science Printable Paper Balance and Latest-Format Repair
+- [x] Audit the reported conversion-heavy printable draft against the supplied 2024/2025/2026 Computer Science papers, active textbook scope, and reviewed profile records.
+- [x] Define topic-coverage, learning-objective uniqueness, exercise-to-transfer, accessible English, and latest shift-structure rules for Computer Science printable papers.
+- [x] Update the short/long/full-paper generation and PDF layout guidance to prevent repeated objectives and obsolete structure while retaining textbook-only factual answers.
+- [x] Add targeted regression coverage, validate, checkpoint, and report the repaired print-paper workflow.

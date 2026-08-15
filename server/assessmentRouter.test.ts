@@ -89,6 +89,20 @@ describe("assessment router", () => {
     });
   });
 
+  it("exposes only active reviewed section counts that agree across profiles as printable defaults", async () => {
+    mocks.getActiveCurriculumScopeCatalog.mockResolvedValue(physicsCatalog);
+    mocks.listActiveAssessmentPatternSources.mockResolvedValue([{ id: 1, sourceKind: "past_paper", academicYear: "2025", originalFileName: "paper.pdf" }]);
+    mocks.listActiveReviewedPatternGuidance.mockResolvedValue([
+      { sourceKind: "past_paper", academicYear: "2024", shortOrPairCount: 11, longOrPairCount: 4 },
+      { sourceKind: "past_paper", academicYear: "2025", shortOrPairCount: 11, longOrPairCount: 4 },
+    ]);
+    const caller = appRouter.createCaller(createAdminContext());
+
+    await expect(caller.assessment.getAvailability({ subject: "physics" })).resolves.toMatchObject({
+      printablePairDefaults: { short: 11, long: 4 },
+    });
+  });
+
   it("saves a validated short-question draft only with an approved textbook scope", async () => {
     mocks.getActiveCurriculumScopeCatalog.mockResolvedValue(physicsCatalog);
     mocks.createAssessmentDraft.mockResolvedValue({ id: 801 });

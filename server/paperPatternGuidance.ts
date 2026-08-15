@@ -25,6 +25,20 @@ export function getVerifiedMarkRule(paperType: "short" | "long", sources: Verifi
   return singleVerifiedValue((sources ?? []).map((source) => source[field]));
 }
 
+/**
+ * Returns a shared observed OR-pair count when every reviewed source that
+ * explicitly records a positive pair count agrees. A zero or null value is
+ * deliberately ignored here: it can mean the paper extraction did not verify
+ * an OR layout, not that the section has zero questions.
+ */
+export function getVerifiedOrPairCount(paperType: "short" | "long", sources: VerifiedPaperPatternGuidance[] | undefined) {
+  const field = paperType === "short" ? "shortOrPairCount" : "longOrPairCount";
+  const observedCounts = (sources ?? [])
+    .map((source) => source[field])
+    .filter((value): value is number => typeof value === "number" && value > 0);
+  return singleVerifiedValue(observedCounts);
+}
+
 export function buildVerifiedPaperPatternSummary(sources: VerifiedPaperPatternGuidance[] | undefined) {
   if (!sources?.length) return "No active reviewed paper-profile record is attached; do not claim a board-paper structure beyond the draft contract.";
 

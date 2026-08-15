@@ -574,10 +574,12 @@ export const appRouter = router({
     getAvailability: publicProcedure
       .input(programmeKeySchema)
       .query(async ({ input }) => {
-        const { getActiveCurriculumScopeCatalog, listActiveAssessmentPatternSources } = await import("./db");
-        const [catalog, paperSources] = await Promise.all([
+        const { getActiveCurriculumScopeCatalog, listActiveAssessmentPatternSources, listActiveReviewedPatternGuidance } = await import("./db");
+        const { getVerifiedOrPairCount } = await import("./paperPatternGuidance");
+        const [catalog, paperSources, paperPatternGuidance] = await Promise.all([
           getActiveCurriculumScopeCatalog(input),
           listActiveAssessmentPatternSources(input),
+          listActiveReviewedPatternGuidance(input),
         ]);
         const textbookReady = Boolean(catalog);
         const paperPatternReady = paperSources.length > 0;
@@ -589,6 +591,10 @@ export const appRouter = router({
             short: textbookReady,
             long: textbookReady,
             full_paper: textbookReady && paperPatternReady,
+          },
+          printablePairDefaults: {
+            short: getVerifiedOrPairCount("short", paperPatternGuidance),
+            long: getVerifiedOrPairCount("long", paperPatternGuidance),
           },
           paperSources: paperSources.map((source) => ({
             id: source.id,
@@ -839,7 +845,7 @@ export const appRouter = router({
         paperType: z.enum(["short", "long"]),
         title: z.string().trim().min(3).max(160),
         contentText: z.string().min(100, "Content must be at least 100 characters").optional(),
-        pairCount: z.number().int().min(1).max(10),
+        pairCount: z.number().int().min(1).max(11),
         difficulty: z.enum(["balanced", "easy", "medium", "hard"]).default("balanced"),
         patternProgramme: programmeKeySchema.optional(),
         scope: z.object({

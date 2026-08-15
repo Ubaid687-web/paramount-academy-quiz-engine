@@ -22,8 +22,10 @@ export function classifySolutionKeyPoint(point: string): SolutionKeyPointPresent
   return { kind: "bullet", text: point };
 }
 
-function printableTotalMarks(payload: PrintablePayload) {
-  return payload.items.reduce((total, item) => total + item.marks, 0);
+export function printableTotalMarks(payload: PrintablePayload) {
+  // Each printed OR pair offers two alternatives for the same marks. Count the
+  // attemptable first alternative, never both prompts, in the paper total.
+  return pairItems(payload.items).reduce((total, group) => total + (group[0]?.marks || 0), 0);
 }
 
 function pdfBuffer(build: (doc: PDFKit.PDFDocument) => void) {
@@ -102,10 +104,35 @@ function pairItems(items: PrintableItem[]) {
   return [...Array.from(paired.entries()).sort(([a], [b]) => a - b).map(([, group]) => group), ...standalone.map((item) => [item])];
 }
 
-function questionText(doc: PDFKit.PDFDocument, index: number, group: PrintableItem[]) {
+export function printableSectionInstruction(mode: PrintablePayload["mode"], groups: PrintableItem[][]) {
+  const marksEach = groups[0]?.[0]?.marks || 0;
+  if (mode === "short" && groups.length === 11 && marksEach === 2) {
+    return "Q.2 Answer any ELEVEN parts briefly. (11 × 2 = 22) Attempt one alternative from each part.";
+  }
+  if (mode === "long" && groups.length === 4 && marksEach === 5) {
+    return "Attempt all the following questions. Attempt one alternative from each numbered pair.";
+  }
+  return "Practice-set draft: attempt one alternative from each numbered pair. Write clear, relevant answers. Use a labelled sketch where it improves your explanation.";
+}
+
+function toRoman(index: number) {
+  const values: Array<[number, string]> = [[10, "x"], [9, "ix"], [5, "v"], [4, "iv"], [1, "i"]];
+  let remaining = index;
+  let result = "";
+  for (const [value, symbol] of values) {
+    while (remaining >= value) {
+      result += symbol;
+      remaining -= value;
+    }
+  }
+  return result;
+}
+
+function questionText(doc: PDFKit.PDFDocument, index: number, group: PrintableItem[], mode: PrintablePayload["mode"]) {
   const marks = group[0]?.marks || 0;
   ensureSpace(doc, 74);
-  doc.fillColor("#173F62").font("Helvetica-Bold").fontSize(10).text(`Q${index}.`, 52, doc.y, { continued: true });
+  const label = mode === "short" ? `(${toRoman(index)})` : `Q${index + 2}.`;
+  doc.fillColor("#173F62").font("Helvetica-Bold").fontSize(10).text(label, 52, doc.y, { continued: true });
   doc.fillColor("#111827").font("Helvetica").text(` ${group[0].question}`, 76, doc.y - 11, { width: 415 });
   doc.fillColor("#173F62").font("Helvetica-Bold").fontSize(9).text(`[${marks} marks]`, 485, doc.y - 10, { width: 56, align: "right" });
   if (group[1]) {
@@ -130,11 +157,14 @@ function footer(doc: PDFKit.PDFDocument) {
 export async function renderPrintablePaperPdf(payload: PrintablePayload) {
   return pdfBuffer((doc) => {
     const paperName = payload.mode === "short" ? "Short Question Paper" : "Long Question Paper";
-    pageHeader(doc, payload.title, `${paperName} · Total marks: ${printableTotalMarks(payload)} · Suggested time: ${payload.estimatedDurationMinutes || "—"} minutes`);
+    const duration = payload.estimatedDurationMinutes ? ` · Suggested time: ${payload.estimatedDurationMinutes} minutes` : "";
+    pageHeader(doc, payload.title, `${paperName} · Attemptable marks: ${printableTotalMarks(payload)}${duration} · Draft for Portal Admin review`);
     doc.fillColor("#173F62").font("Helvetica-Bold").fontSize(11).text(payload.mode === "short" ? "SECTION B — SHORT QUESTIONS" : "SECTION C — LONG QUESTIONS");
-    doc.fillColor("#374151").font("Helvetica").fontSize(9).text("Attempt one alternative from each numbered pair. Write clear, relevant answers. Use a labelled sketch where it improves your explanation.");
+    const groups = pairItems(payload.items);
+    const sectionInstruction = printableSectionInstruction(payload.mode, groups);
+    doc.fillColor("#374151").font("Helvetica").fontSize(9).text(sectionInstruction);
     doc.moveDown(1);
-    pairItems(payload.items).forEach((group, index) => questionText(doc, index + 1, group));
+    groups.forEach((group, index) => questionText(doc, index + 1, group, payload.mode));
     footer(doc);
   });
 }
