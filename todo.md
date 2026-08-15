@@ -370,3 +370,9 @@
 - [x] Define topic-coverage, learning-objective uniqueness, exercise-to-transfer, accessible English, and latest shift-structure rules for Computer Science printable papers.
 - [x] Update the short/long/full-paper generation and PDF layout guidance to prevent repeated objectives and obsolete structure while retaining textbook-only factual answers.
 - [x] Add targeted regression coverage, validate, checkpoint, and report the repaired print-paper workflow.
+
+## Phase 54: Authentic OR-Row Layout and Scope-Scaled Computer Science Coverage
+- [x] Re-audit the supplied Computer Science written-paper rows and the screenshot-reported output gap, including left/right alternatives with a central OR divider.
+- [x] Replace the fixed pair-count limit with a content- and scope-scaled recommendation that still permits a teacher to choose the requested size.
+- [x] Build a selected-textbook-topic plan that requires coverage of distinct concepts, including operating-system functions and management topics when present, before any topic family may recur.
+- [x] Implement the visible two-column OR-row PDF layout and source-coverage controls, add regression coverage, validate, checkpoint, and report the rebuild.

@@ -128,22 +128,53 @@ function toRoman(index: number) {
   return result;
 }
 
+export function printableOrRowLayout() {
+  return {
+    x: 52,
+    width: 491,
+    leftQuestionWidth: 202,
+    leftMarksWidth: 28,
+    orWidth: 31,
+    rightQuestionWidth: 202,
+    rightMarksWidth: 28,
+  } as const;
+}
+
 function questionText(doc: PDFKit.PDFDocument, index: number, group: PrintableItem[], mode: PrintablePayload["mode"]) {
-  const marks = group[0]?.marks || 0;
-  ensureSpace(doc, 74);
+  const left = group[0];
+  const right = group[1];
+  if (!left) return;
+  const layout = printableOrRowLayout();
   const label = mode === "short" ? `(${toRoman(index)})` : `Q${index + 2}.`;
-  doc.fillColor("#173F62").font("Helvetica-Bold").fontSize(10).text(label, 52, doc.y, { continued: true });
-  doc.fillColor("#111827").font("Helvetica").text(` ${group[0].question}`, 76, doc.y - 11, { width: 415 });
-  doc.fillColor("#173F62").font("Helvetica-Bold").fontSize(9).text(`[${marks} marks]`, 485, doc.y - 10, { width: 56, align: "right" });
-  if (group[1]) {
+
+  if (!right) {
+    ensureSpace(doc, 52);
+    doc.fillColor("#173F62").font("Helvetica-Bold").fontSize(9).text(label, layout.x, doc.y, { continued: true });
+    doc.fillColor("#111827").font("Helvetica").text(` ${left.question}`, { width: layout.width - 40 });
     doc.moveDown(0.5);
-    doc.fillColor("#8C551A").font("Helvetica-Bold").fontSize(8.5).text("OR", { align: "center" });
-    doc.fillColor("#111827").font("Helvetica").fontSize(10).text(group[1].question, 76, doc.y + 2, { width: 415 });
-    doc.fillColor("#173F62").font("Helvetica-Bold").fontSize(9).text(`[${marks} marks]`, 485, doc.y - 10, { width: 56, align: "right" });
+    return;
   }
-  doc.moveDown(1.2);
-  doc.strokeColor("#D6DFE7").moveTo(52, doc.y).lineTo(543, doc.y).stroke();
-  doc.moveDown(0.6);
+
+  doc.font("Helvetica").fontSize(8.3);
+  const leftQuestion = `${label} ${left.question}`;
+  const leftTextHeight = doc.heightOfString(leftQuestion, { width: layout.leftQuestionWidth - 10 });
+  const rightTextHeight = doc.heightOfString(right.question, { width: layout.rightQuestionWidth - 10 });
+  const rowHeight = Math.max(34, Math.ceil(Math.max(leftTextHeight, rightTextHeight)) + 16);
+  ensureSpace(doc, rowHeight + 10);
+
+  const y = doc.y;
+  const leftMarksX = layout.x + layout.leftQuestionWidth;
+  const orX = leftMarksX + layout.leftMarksWidth;
+  const rightQuestionX = orX + layout.orWidth;
+  const rightMarksX = rightQuestionX + layout.rightQuestionWidth;
+  doc.strokeColor("#8F99A5").lineWidth(0.6).rect(layout.x, y, layout.width, rowHeight).stroke();
+  [leftMarksX, orX, rightQuestionX, rightMarksX].forEach((dividerX) => doc.moveTo(dividerX, y).lineTo(dividerX, y + rowHeight).stroke());
+  doc.fillColor("#111827").font("Helvetica").fontSize(8.3).text(leftQuestion, layout.x + 5, y + 7, { width: layout.leftQuestionWidth - 10, height: rowHeight - 12 });
+  doc.fillColor("#173F62").font("Helvetica-Bold").fontSize(8).text(`${left.marks}`, leftMarksX + 2, y + Math.max(7, (rowHeight - 10) / 2), { width: layout.leftMarksWidth - 4, align: "center" });
+  doc.fillColor("#8C551A").font("Helvetica-Bold").fontSize(8).text("OR", orX + 1, y + Math.max(7, (rowHeight - 10) / 2), { width: layout.orWidth - 2, align: "center" });
+  doc.fillColor("#111827").font("Helvetica").fontSize(8.3).text(right.question, rightQuestionX + 5, y + 7, { width: layout.rightQuestionWidth - 10, height: rowHeight - 12 });
+  doc.fillColor("#173F62").font("Helvetica-Bold").fontSize(8).text(`${right.marks}`, rightMarksX + 2, y + Math.max(7, (rowHeight - 10) / 2), { width: layout.rightMarksWidth - 4, align: "center" });
+  doc.y = y + rowHeight + 8;
 }
 
 function footer(doc: PDFKit.PDFDocument) {

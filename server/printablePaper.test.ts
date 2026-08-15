@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { assertDistinctPrintableBatchTopics, buildPrintablePairBatches, buildPrintablePaperPatternInstruction, normalizePrintablePaperPayload } from "./printablePaper";
+import { assertDistinctPrintableBatchTopics, buildPrintableCoverageSlots, buildPrintablePairBatches, buildPrintablePaperPatternInstruction, getPrintablePairCapacity, normalizePrintablePaperPayload } from "./printablePaper";
 
 const shortGenerated = {
   estimatedDurationMinutes: 30,
@@ -43,16 +43,29 @@ describe("printable paper payload normalization", () => {
 
   it("rejects repeated printable-paper topics and mismatched OR-pair objectives before a draft can be returned", () => {
     const conversionPair = [
-      { topicLabel: "octal conversion", learningObjective: "Convert an octal number to binary.", sourceReference: "Unit 1: Octal number system" },
-      { topicLabel: "octal conversion", learningObjective: "Convert an octal number to binary.", sourceReference: "Unit 1: Octal number system" },
+      { topicLabel: "octal conversion", coverageSlot: 1, learningObjective: "Convert an octal number to binary.", sourceReference: "Unit 1: Octal number system" },
+      { topicLabel: "octal conversion", coverageSlot: 1, learningObjective: "Convert an octal number to binary.", sourceReference: "Unit 1: Octal number system" },
     ];
     const usedTopics = new Set<string>();
-    expect(assertDistinctPrintableBatchTopics(conversionPair, usedTopics)).toEqual(new Set(["octal conversion"]));
+    const expectedCoverage = [{ slot: 1, topic: "Unit 1: Octal number system" }];
+    expect(assertDistinctPrintableBatchTopics(conversionPair, usedTopics, expectedCoverage)).toEqual(new Set(["octal conversion"]));
     usedTopics.add("octal conversion");
-    expect(() => assertDistinctPrintableBatchTopics(conversionPair, usedTopics)).toThrow(/repeated/i);
+    expect(() => assertDistinctPrintableBatchTopics(conversionPair, usedTopics, expectedCoverage)).toThrow(/repeated/i);
     expect(() => assertDistinctPrintableBatchTopics([
-      { topicLabel: "system software", learningObjective: "Explain the role of system software.", sourceReference: "Unit 1: System software" },
-      { topicLabel: "system software", learningObjective: "Describe device-driver communication.", sourceReference: "Unit 1: System software" },
-    ], new Set())).toThrow(/matching learning objective/i);
+      { topicLabel: "system software", coverageSlot: 1, learningObjective: "Explain the role of system software.", sourceReference: "Unit 1: System software" },
+      { topicLabel: "system software", coverageSlot: 1, learningObjective: "Describe device-driver communication.", sourceReference: "Unit 1: System software" },
+    ], new Set(), [{ slot: 1, topic: "Unit 1: System software" }])).toThrow(/matching learning objective/i);
+  });
+
+  it("builds coverage slots from visible selected-textbook headings instead of defaulting every pair to the first topic", () => {
+    const source = "UNIT 1 COMPUTER SYSTEMS\n1.1 Operating System\n1.2 Process Management\n1.3 Device Management";
+    const slots = buildPrintableCoverageSlots(source, 4);
+    expect(slots).toEqual([
+      { slot: 1, topic: "UNIT 1 COMPUTER SYSTEMS" },
+      { slot: 2, topic: "1.1 Operating System" },
+      { slot: 3, topic: "1.2 Process Management" },
+      { slot: 4, topic: "1.3 Device Management" },
+    ]);
+    expect(getPrintablePairCapacity(source)).toBe(4);
   });
 });
