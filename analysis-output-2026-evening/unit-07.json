@@ -1,0 +1,62 @@
+{
+  "unitTitle": "Unit 7: Digital Literacy",
+  "curriculumAlignmentSummary": "Unit 7 covers digital literacy, information collection sources (books, web sources, surveys, Google forms), components of digital literacy (search literacy, technical skills, communication, collaboration, content creation, ethics), key ideas extraction, poster and billboard designing, and social media platforms (YouTube, Facebook, Instagram, Podcast, X/Twitter). The past papers map to digital literacy definitions, digital divide, social media communication tools, cybersecurity/ethics concepts, and digital tools for business research.",
+  "mappings": [
+    {
+      "textbookConcept": "Digital Literacy definition and importance",
+      "textbookExerciseCue": "Q1.1: Which term is used for the ability to effectively use digital technologies to access information, evaluate it and convert it into meaningful and appealing format?",
+      "observedPaperForm": "no direct observed form",
+      "alignment": "unconfirmed",
+      "cognitiveDemand": "knowledge",
+      "controlledTransformation": "Recall textbook definition of digital literacy.",
+      "studentPreparationFocus": "Memorize core definitions of digital literacy and components.",
+      "textbookEvidenceQuote": "Digital literacy is the ability to use create information in a digital environment.",
+      "paperEvidenceQuote": "none",
+      "caution": "The exact MCQ from textbook exercise is not explicitly present in the provided model/past papers for Unit 7."
+    },
+    {
+      "textbookConcept": "Digital Divide and Digital Literacy",
+      "textbookExerciseCue": "Q2.1: Differentiate between basic literacy and digital literacy.",
+      "observedPaperForm": "How can students help bridge the digital divide?",
+      "alignment": "confirmed",
+      "cognitiveDemand": "application",
+      "controlledTransformation": "Transform conceptual understanding of digital access into actionable steps for bridging the digital divide.",
+      "studentPreparationFocus": "Prepare methods to overcome digital inequality and promote digital literacy.",
+      "textbookEvidenceQuote": "It is nearly impossible to be digitally illiterate.",
+      "paperEvidenceQuote": "Promoting digital literacy",
+      "caution": "Ensure alignment with textbook context on digital literacy barriers."
+    },
+    {
+      "textbookConcept": "Social Media as a Communication Tool and Platforms (YouTube, Facebook)",
+      "textbookExerciseCue": "Q2.8: Define social media and describe the significance of YouTube and Facebook.",
+      "observedPaperForm": "Define digital communication. List any four digital tools that can be used to communicate data to different audiences.",
+      "alignment": "confirmed",
+      "cognitiveDemand": "understanding",
+      "controlledTransformation": "Extend social media communication definitions into broader digital communication tool lists.",
+      "studentPreparationFocus": "Learn features and utilities of YouTube, Facebook, and messaging tools.",
+      "textbookEvidenceQuote": "Currently, social media is one of the most effective tools of communication.",
+      "paperEvidenceQuote": "Define digital communication. List any four digital tools",
+      "caution": "Keep tool examples literal to textbook content like YouTube, Facebook, WhatsApp."
+    },
+    {
+      "textbookConcept": "Digital Tools for Market Research and Entrepreneurship",
+      "textbookExerciseCue": "Entrepreneurship in Digital Learning Outcomes: digital tools to conduct research to collect market insights for an entrepreneurial solution.",
+      "observedPaperForm": "What is the main purpose of using digital tools in market research?",
+      "alignment": "confirmed",
+      "cognitiveDemand": "knowledge",
+      "controlledTransformation": "Translate learning outcomes regarding market insights into specific research objectives.",
+      "studentPreparationFocus": "Understand how digital tools gather market data for solutions.",
+      "textbookEvidenceQuote": "digital tools to conduct research to collect market insights for an entrepreneurial solution.",
+      "paperEvidenceQuote": "To collect and analyze customer information",
+      "caution": "Ensure direct linkage to digital tools and market insights."
+    }
+  ],
+  "unsupportedPastPaperForms": [
+    "Trace table sorting algorithms (belonging to programming/algorithms units)",
+    "C programming syntax and error corrections (belonging to programming units)"
+  ],
+  "analysisLimits": [
+    "Only explicit text and exercises from Unit 7 were evaluated.",
+    "Model papers and past papers contain numerous programming and hardware questions from other units which are outside Unit 7's scope."
+  ]
+}

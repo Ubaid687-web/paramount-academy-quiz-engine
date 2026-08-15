@@ -1,0 +1,63 @@
+{
+  "unitTitle": "Unit 6: Impacts of Computing",
+  "curriculumAlignmentSummary": "Unit 6 covers internet safety, technology addiction, the internet and its beneficial/malicious purposes, individual privacy threats (spam, spyware, cookies), cloud computing (public and private clouds, security basics), hardware and software methods to protect devices, cybersecurity, cybercrime laws, social media safety, cyberbullying, environmental/cultural/human impacts of technology, and the digital divide. Past papers and model papers evaluate these concepts through multiple-choice questions, short response questions, and extended response questions focusing on cyberbullying, device protection, cybersecurity, and the digital divide.",
+  "mappings": [
+    {
+      "textbookConcept": "Technology Addiction",
+      "textbookExerciseCue": "Technology addiction is well described by excessive use of digital devices",
+      "observedPaperForm": "no direct observed form",
+      "alignment": "unconfirmed",
+      "cognitiveDemand": "knowledge",
+      "controlledTransformation": "Direct matching from textbook definition to test item options.",
+      "studentPreparationFocus": "Memorize the definition and signs of technology addiction.",
+      "textbookEvidenceQuote": "Technology addiction, also known as digital or internet addiction, refers to the excessive and compulsive use of devices like smartphones, computers, video games, and social media.",
+      "paperEvidenceQuote": "no direct paper quote",
+      "caution": "The topic of technology addiction appears in the textbook chapter and exercises but lacks an explicit question in the provided sample papers."
+    },
+    {
+      "textbookConcept": "Cyberbullying",
+      "textbookExerciseCue": "What would you do if your friend faced cyberbullying?",
+      "observedPaperForm": "Multiple-choice question and short response questions regarding negative impacts and examples of cyberbullying.",
+      "alignment": "confirmed",
+      "cognitiveDemand": "application",
+      "controlledTransformation": "Transforming theoretical definitions of cyberbullying into behavioral application scenarios and impact assessments.",
+      "studentPreparationFocus": "Understand the psychological, academic, and social impacts of cyberbullying and preventative strategies.",
+      "textbookEvidenceQuote": "Cyberbullying is when someone uses the internet or digital devices to hurt, harass, or intimidate others.",
+      "paperEvidenceQuote": "Which of the following is an example of cyberbullying? ... Posting hurtful comments online",
+      "caution": "Ensure alignment is strictly derived from the text definitions and exercise prompts."
+    },
+    {
+      "textbookConcept": "Software Methods to Protect Devices",
+      "textbookExerciseCue": "Which method is a hardware method to protect devices? / Software methods to protect devices",
+      "observedPaperForm": "Extended response option requesting description of software methods to protect devices.",
+      "alignment": "confirmed",
+      "cognitiveDemand": "understanding",
+      "controlledTransformation": "Listing and describing distinct software safeguards like antivirus, updates, firewalls, password management, VPN, and data backups.",
+      "studentPreparationFocus": "Distinguish between hardware and software methods for device security.",
+      "textbookEvidenceQuote": "Software methods are different; they involve installing programs on your device to stop viruses and other bad stuff.",
+      "paperEvidenceQuote": "Describe any five software methods to protect devices.",
+      "caution": "Strictly separate hardware methods (biometric, secure boot, firewalls) from software methods (antivirus, OS updates, VPN, backups)."
+    },
+    {
+      "textbookConcept": "Digital Divide",
+      "textbookExerciseCue": "Role of students which can minimizing the digital divide?",
+      "observedPaperForm": "Multiple-choice question on factors contributing to the digital divide.",
+      "alignment": "confirmed",
+      "cognitiveDemand": "understanding",
+      "controlledTransformation": "Translating access barriers (infrastructure, affordability, digital literacy) into causative factors.",
+      "studentPreparationFocus": "Identify causes of the digital divide and ways to bridge it.",
+      "textbookEvidenceQuote": "The digital divide means some people or groups have less access to technology, like the internet, compared to others.",
+      "paperEvidenceQuote": "Which factor mainly contributes to the digital divide? ... Limited access to internet and devices",
+      "caution": "Maintain focus on access and usage divides as outlined in the textbook."
+    }
+  ],
+  "unsupportedPastPaperForms": [
+    "Programming tasks involving C language syntax, loops, and arrays (Units 1-4 content present in papers but absent from Unit 6 text)",
+    "HTML coding questions for lists, tables, and formatting (Unit 7/Web content present in papers)",
+    "Boolean algebra simplification and Karnaugh maps (Unit 5 content)"
+  ],
+  "analysisLimits": [
+    "Analysis is strictly limited to Grade 10 Computer Science Unit 6 and the provided model and annual papers from 2022 to 2026.",
+    "No external curriculum frameworks or assumptions beyond the supplied texts have been utilized."
+  ]
+}

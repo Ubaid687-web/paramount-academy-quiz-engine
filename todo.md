@@ -327,3 +327,9 @@
 - [x] Verify the supplied complete Chemistry evening paper as Grade 10 Chemistry-only 2026 pattern evidence.
 - [x] Store the paper in the Chemistry programme with a reviewed structural profile while keeping the pattern source draft-only.
 - [x] Verify Physics/Computer Science separation and retain the pending complete 2026 Computer Science paper requirement.
+
+## Phase 47: Grade 10 Computer Science 2026 Evening-Paper Intake
+- [x] Verify the supplied complete Computer Science evening paper as 2026 written-paper pattern evidence.
+- [x] Store the evening paper in the Computer Science programme with a reviewed structural profile while keeping the source draft-only.
+- [x] Update the Grade 10 textbook-to-paper mapping using the confirmed 2026 evening evidence only.
+- [x] Verify morning/evening/practical separation, validate, checkpoint, and report the updated readiness position.

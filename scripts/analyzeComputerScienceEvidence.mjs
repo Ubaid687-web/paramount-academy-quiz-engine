@@ -14,13 +14,13 @@ const [papers] = await connection.query(`
   SELECT sourceKind, academicYear, originalFileName, extractedText
   FROM assessmentPatternSources
   WHERE board = 'FBISE' AND grade = '10' AND subject = 'computer_science'
-    AND extractionStatus = 'extracted' AND academicYear IN ('2024', '2025', '2022-2023')
+    AND extractionStatus = 'extracted' AND academicYear IN ('2024', '2025', '2026', '2022-2023')
   ORDER BY sourceKind, academicYear, id
 `);
 await connection.end();
 
 const paperEvidence = papers.map((paper) => `SOURCE: ${paper.sourceKind} ${paper.academicYear ?? 'undated'} — ${paper.originalFileName}\n${paper.extractedText}`).join("\n\n===== NEXT SUPPLIED PAPER =====\n\n");
-const outputDir = "/home/ubuntu/ai-quiz-platform/analysis-output";
+const outputDir = "/home/ubuntu/ai-quiz-platform/analysis-output-2026-evening";
 await mkdir(outputDir, { recursive: true });
 
 const responseFormat = {

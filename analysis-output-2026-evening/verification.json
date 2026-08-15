@@ -1,0 +1,741 @@
+{
+  "total": 32,
+  "verified": 11,
+  "rejected": [
+    {
+      "fileName": "unit-01.json",
+      "unitTitle": "Unit 1: Computer Systems",
+      "textbookConcept": "Programming Software (IDEs)",
+      "textbookEvidenceQuote": "Integrated Development Environments (IDEs) are comprehensive tools that combine a text editor, debugger, and compiler in one interface.",
+      "textbookVerified": false,
+      "paperEvidenceQuote": "Which tool provides coding, debugging, and compiling in one place? A) Translator B) Text Editor C) IDE D) Repository",
+      "paperVerified": true,
+      "matchingPapers": [
+        {
+          "id": 120001,
+          "academicYear": "2026",
+          "originalFileName": "class10_computer_science_2026.md"
+        }
+      ],
+      "verified": false
+    },
+    {
+      "fileName": "unit-01.json",
+      "unitTitle": "Unit 1: Computer Systems",
+      "textbookConcept": "Driver Software",
+      "textbookEvidenceQuote": "Driver Software: Acts as a bridge between the operating system and hardware devices. Ensures proper communication and functionality between the system and external devices.",
+      "textbookVerified": false,
+      "paperEvidenceQuote": "Which component of system software controls input and output operations? A) Word processor B) Device driver C) Spreadsheet D) Web browser",
+      "paperVerified": true,
+      "matchingPapers": [
+        {
+          "id": 120001,
+          "academicYear": "2026",
+          "originalFileName": "class10_computer_science_2026.md"
+        }
+      ],
+      "verified": false
+    },
+    {
+      "fileName": "unit-01.json",
+      "unitTitle": "Unit 1: Computer Systems",
+      "textbookConcept": "Programming Software Components (Translators, IDEs, Code Repository, Debuggers, Language Editor)",
+      "textbookEvidenceQuote": "Compilers take the code written by programmers and translate it into executable machine code... IDEs come with integrated debuggers that allow programmers to run their code step-by-step... Text editors are basic tools that allow programmers to write and edit code.",
+      "textbookVerified": false,
+      "paperEvidenceQuote": "Describe the basic role of following in software development with one example each: a) Translators b) Integrated development environment (IDE) c) Code Repository d) Debuggers e) language editor",
+      "paperVerified": true,
+      "matchingPapers": [
+        {
+          "id": 120001,
+          "academicYear": "2026",
+          "originalFileName": "class10_computer_science_2026.md"
+        }
+      ],
+      "verified": false
+    },
+    {
+      "fileName": "unit-03.json",
+      "unitTitle": "Unit 3: Programming Fundamentals",
+      "textbookConcept": "JavaScript array methods like push()",
+      "textbookEvidenceQuote": "You may use 'push()' to add more items to the end",
+      "textbookVerified": true,
+      "paperEvidenceQuote": "In JavaScript, which method would you use to add a new item to the end of a list?",
+      "paperVerified": false,
+      "matchingPapers": [],
+      "verified": false
+    },
+    {
+      "fileName": "unit-03.json",
+      "unitTitle": "Unit 3: Programming Fundamentals",
+      "textbookConcept": "HTML Forms and input types",
+      "textbookEvidenceQuote": "To take input on an online form, one very useful element for establishing several types of input fields is the <input> element.",
+      "textbookVerified": false,
+      "paperEvidenceQuote": "Which of the following HTML attributes is required in the <input> element for email?",
+      "paperVerified": false,
+      "matchingPapers": [],
+      "verified": false
+    },
+    {
+      "fileName": "unit-03.json",
+      "unitTitle": "Unit 3: Programming Fundamentals",
+      "textbookConcept": "CSS Animations and keyframes",
+      "textbookEvidenceQuote": "An element's style during animation is specified by the '@keyframes'.",
+      "textbookVerified": true,
+      "paperEvidenceQuote": "Write code for: A colored text which repeatedly vanishes for a second...",
+      "paperVerified": false,
+      "matchingPapers": [],
+      "verified": false
+    },
+    {
+      "fileName": "unit-04.json",
+      "unitTitle": "Unit 4: Data and Analysis",
+      "textbookConcept": "Machine Learning Models (Supervised, Unsupervised, Reinforcement)",
+      "textbookEvidenceQuote": "In unsupervised learning model, unlabeled data is provided to the machine/computer.",
+      "textbookVerified": true,
+      "paperEvidenceQuote": "Which machine learning method is used for training without labeled data?",
+      "paperVerified": false,
+      "matchingPapers": [],
+      "verified": false
+    },
+    {
+      "fileName": "unit-04.json",
+      "unitTitle": "Unit 4: Data and Analysis",
+      "textbookConcept": "Methods of Data Visualization (Histogram)",
+      "textbookEvidenceQuote": "Histogram: It is used to show the distribution of a single numerical value.",
+      "textbookVerified": true,
+      "paperEvidenceQuote": "Which of the following best explains the purpose of a Histogram?",
+      "paperVerified": false,
+      "matchingPapers": [],
+      "verified": false
+    },
+    {
+      "fileName": "unit-05.json",
+      "unitTitle": "Unit 5: Applications of Computer Science",
+      "textbookConcept": "Foundational Components of IoT",
+      "textbookEvidenceQuote": "There are five foundational components of IoT that make it work... Sensors/Devices, User Interface, Cloud, Connectivity, Data Processing.",
+      "textbookVerified": false,
+      "paperEvidenceQuote": "How IoT works? Describe the role of sensors, connectivity, and data processing.",
+      "paperVerified": true,
+      "matchingPapers": [
+        {
+          "id": 120001,
+          "academicYear": "2026",
+          "originalFileName": "class10_computer_science_2026.md"
+        }
+      ],
+      "verified": false
+    },
+    {
+      "fileName": "unit-05.json",
+      "unitTitle": "Unit 5: Applications of Computer Science",
+      "textbookConcept": "Blockchain Technology and Record Keeping",
+      "textbookEvidenceQuote": "A Blockchain is a digital ledger or database of transactions that continuously grows. It is created, maintained and shared by network users.",
+      "textbookVerified": false,
+      "paperEvidenceQuote": "What does Blockchain mainly provide? ... Secure and distributed record keeping",
+      "paperVerified": false,
+      "matchingPapers": [],
+      "verified": false
+    },
+    {
+      "fileName": "unit-05.json",
+      "unitTitle": "Unit 5: Applications of Computer Science",
+      "textbookConcept": "Natural Language Processing (NLP)",
+      "textbookEvidenceQuote": "Natural Language Processing (NLP) is a branch of Artificial Intelligence. It gives computers the ability to understand text and spoken words the same way humans do.",
+      "textbookVerified": true,
+      "paperEvidenceQuote": "Which AI application enables computers to understand human language? ... Natural Language Processing",
+      "paperVerified": false,
+      "matchingPapers": [],
+      "verified": false
+    },
+    {
+      "fileName": "unit-06.json",
+      "unitTitle": "Unit 6: Impacts of Computing",
+      "textbookConcept": "Technology Addiction",
+      "textbookEvidenceQuote": "Technology addiction, also known as digital or internet addiction, refers to the excessive and compulsive use of devices like smartphones, computers, video games, and social media.",
+      "textbookVerified": false,
+      "paperEvidenceQuote": "no direct paper quote",
+      "paperVerified": false,
+      "matchingPapers": [],
+      "verified": false
+    },
+    {
+      "fileName": "unit-06.json",
+      "unitTitle": "Unit 6: Impacts of Computing",
+      "textbookConcept": "Cyberbullying",
+      "textbookEvidenceQuote": "Cyberbullying is when someone uses the internet or digital devices to hurt, harass, or intimidate others.",
+      "textbookVerified": false,
+      "paperEvidenceQuote": "Which of the following is an example of cyberbullying? ... Posting hurtful comments online",
+      "paperVerified": false,
+      "matchingPapers": [],
+      "verified": false
+    },
+    {
+      "fileName": "unit-06.json",
+      "unitTitle": "Unit 6: Impacts of Computing",
+      "textbookConcept": "Digital Divide",
+      "textbookEvidenceQuote": "The digital divide means some people or groups have less access to technology, like the internet, compared to others.",
+      "textbookVerified": false,
+      "paperEvidenceQuote": "Which factor mainly contributes to the digital divide? ... Limited access to internet and devices",
+      "paperVerified": false,
+      "matchingPapers": [],
+      "verified": false
+    },
+    {
+      "fileName": "unit-07.json",
+      "unitTitle": "Unit 7: Digital Literacy",
+      "textbookConcept": "Digital Literacy definition and importance",
+      "textbookEvidenceQuote": "Digital literacy is the ability to use create information in a digital environment.",
+      "textbookVerified": false,
+      "paperEvidenceQuote": "none",
+      "paperVerified": false,
+      "matchingPapers": [],
+      "verified": false
+    },
+    {
+      "fileName": "unit-07.json",
+      "unitTitle": "Unit 7: Digital Literacy",
+      "textbookConcept": "Digital Divide and Digital Literacy",
+      "textbookEvidenceQuote": "It is nearly impossible to be digitally illiterate.",
+      "textbookVerified": true,
+      "paperEvidenceQuote": "Promoting digital literacy",
+      "paperVerified": false,
+      "matchingPapers": [],
+      "verified": false
+    },
+    {
+      "fileName": "unit-07.json",
+      "unitTitle": "Unit 7: Digital Literacy",
+      "textbookConcept": "Social Media as a Communication Tool and Platforms (YouTube, Facebook)",
+      "textbookEvidenceQuote": "Currently, social media is one of the most effective tools of communication.",
+      "textbookVerified": false,
+      "paperEvidenceQuote": "Define digital communication. List any four digital tools",
+      "paperVerified": true,
+      "matchingPapers": [
+        {
+          "id": 120001,
+          "academicYear": "2026",
+          "originalFileName": "class10_computer_science_2026.md"
+        }
+      ],
+      "verified": false
+    },
+    {
+      "fileName": "unit-07.json",
+      "unitTitle": "Unit 7: Digital Literacy",
+      "textbookConcept": "Digital Tools for Market Research and Entrepreneurship",
+      "textbookEvidenceQuote": "digital tools to conduct research to collect market insights for an entrepreneurial solution.",
+      "textbookVerified": false,
+      "paperEvidenceQuote": "To collect and analyze customer information",
+      "paperVerified": true,
+      "matchingPapers": [
+        {
+          "id": 120001,
+          "academicYear": "2026",
+          "originalFileName": "class10_computer_science_2026.md"
+        }
+      ],
+      "verified": false
+    },
+    {
+      "fileName": "unit-08.json",
+      "unitTitle": "Unit 8: Entrepreneurship in Digital Age",
+      "textbookConcept": "Quantitative vs. Qualitative Research",
+      "textbookEvidenceQuote": "quantitative research deals with numbers and statistics, while qualitative research deals with words and meanings.",
+      "textbookVerified": true,
+      "paperEvidenceQuote": "Gathering of numerical data and statistics is a part of: Quantitative research",
+      "paperVerified": false,
+      "matchingPapers": [],
+      "verified": false
+    },
+    {
+      "fileName": "unit-08.json",
+      "unitTitle": "Unit 8: Entrepreneurship in Digital Age",
+      "textbookConcept": "Market Validation Steps",
+      "textbookEvidenceQuote": "Market validation is the process of determining if there’s a need for your product in your target market.",
+      "textbookVerified": true,
+      "paperEvidenceQuote": "What is market validation. Discuss how market validation is determined.",
+      "paperVerified": false,
+      "matchingPapers": [],
+      "verified": false
+    },
+    {
+      "fileName": "unit-08.json",
+      "unitTitle": "Unit 8: Entrepreneurship in Digital Age",
+      "textbookConcept": "Business Pitching and Problem-Solution",
+      "textbookEvidenceQuote": "A successful business pitch conveys the value of your idea clearly and concisely...",
+      "textbookVerified": false,
+      "paperEvidenceQuote": "A team wants to start an online tutoring service. Prepare a short business pitch, highlighting the problem, solution, and target customers.",
+      "paperVerified": true,
+      "matchingPapers": [
+        {
+          "id": 120001,
+          "academicYear": "2026",
+          "originalFileName": "class10_computer_science_2026.md"
+        }
+      ],
+      "verified": false
+    }
+  ],
+  "results": [
+    {
+      "fileName": "unit-01.json",
+      "unitTitle": "Unit 1: Computer Systems",
+      "textbookConcept": "Number Systems (Octal Number System)",
+      "textbookEvidenceQuote": "The Octal number system has a base of 8, meaning it has eight possible digits; 0, 1, 2, 3, 4, 5, 6, and 7.",
+      "textbookVerified": true,
+      "paperEvidenceQuote": "Which number system uses digits from 0 to 7? A) Binary B) Octal C) Decimal D) Hexadecimal",
+      "paperVerified": true,
+      "matchingPapers": [
+        {
+          "id": 120001,
+          "academicYear": "2026",
+          "originalFileName": "class10_computer_science_2026.md"
+        }
+      ],
+      "verified": true
+    },
+    {
+      "fileName": "unit-01.json",
+      "unitTitle": "Unit 1: Computer Systems",
+      "textbookConcept": "Programming Software (IDEs)",
+      "textbookEvidenceQuote": "Integrated Development Environments (IDEs) are comprehensive tools that combine a text editor, debugger, and compiler in one interface.",
+      "textbookVerified": false,
+      "paperEvidenceQuote": "Which tool provides coding, debugging, and compiling in one place? A) Translator B) Text Editor C) IDE D) Repository",
+      "paperVerified": true,
+      "matchingPapers": [
+        {
+          "id": 120001,
+          "academicYear": "2026",
+          "originalFileName": "class10_computer_science_2026.md"
+        }
+      ],
+      "verified": false
+    },
+    {
+      "fileName": "unit-01.json",
+      "unitTitle": "Unit 1: Computer Systems",
+      "textbookConcept": "Driver Software",
+      "textbookEvidenceQuote": "Driver Software: Acts as a bridge between the operating system and hardware devices. Ensures proper communication and functionality between the system and external devices.",
+      "textbookVerified": false,
+      "paperEvidenceQuote": "Which component of system software controls input and output operations? A) Word processor B) Device driver C) Spreadsheet D) Web browser",
+      "paperVerified": true,
+      "matchingPapers": [
+        {
+          "id": 120001,
+          "academicYear": "2026",
+          "originalFileName": "class10_computer_science_2026.md"
+        }
+      ],
+      "verified": false
+    },
+    {
+      "fileName": "unit-01.json",
+      "unitTitle": "Unit 1: Computer Systems",
+      "textbookConcept": "Signed and Unsigned Numbers Representation",
+      "textbookEvidenceQuote": "Unsigned binary numbers do not have sign bit, whereas signed binary numbers uses signed bit as well or these can be distinguishable between positive and negative numbers.",
+      "textbookVerified": true,
+      "paperEvidenceQuote": "What is meant by signed and unsigned numbers?",
+      "paperVerified": true,
+      "matchingPapers": [
+        {
+          "id": 120001,
+          "academicYear": "2026",
+          "originalFileName": "class10_computer_science_2026.md"
+        }
+      ],
+      "verified": true
+    },
+    {
+      "fileName": "unit-01.json",
+      "unitTitle": "Unit 1: Computer Systems",
+      "textbookConcept": "Programming Software Components (Translators, IDEs, Code Repository, Debuggers, Language Editor)",
+      "textbookEvidenceQuote": "Compilers take the code written by programmers and translate it into executable machine code... IDEs come with integrated debuggers that allow programmers to run their code step-by-step... Text editors are basic tools that allow programmers to write and edit code.",
+      "textbookVerified": false,
+      "paperEvidenceQuote": "Describe the basic role of following in software development with one example each: a) Translators b) Integrated development environment (IDE) c) Code Repository d) Debuggers e) language editor",
+      "paperVerified": true,
+      "matchingPapers": [
+        {
+          "id": 120001,
+          "academicYear": "2026",
+          "originalFileName": "class10_computer_science_2026.md"
+        }
+      ],
+      "verified": false
+    },
+    {
+      "fileName": "unit-02.json",
+      "unitTitle": "Unit 2: Computational Thinking & Algorithms",
+      "textbookConcept": "Sorting Algorithms",
+      "textbookEvidenceQuote": "These algorithms are used to arrange data in a specific order (ascending or descending)",
+      "textbookVerified": true,
+      "paperEvidenceQuote": "The algorithm is commonly used to arrange data in ascending or descending order",
+      "paperVerified": true,
+      "matchingPapers": [
+        {
+          "id": 120001,
+          "academicYear": "2026",
+          "originalFileName": "class10_computer_science_2026.md"
+        }
+      ],
+      "verified": true
+    },
+    {
+      "fileName": "unit-02.json",
+      "unitTitle": "Unit 2: Computational Thinking & Algorithms",
+      "textbookConcept": "Abstraction",
+      "textbookEvidenceQuote": "Focusing on the important information only and ignoring irrelevant details.",
+      "textbookVerified": true,
+      "paperEvidenceQuote": "Hiding unnecessary details",
+      "paperVerified": true,
+      "matchingPapers": [
+        {
+          "id": 120001,
+          "academicYear": "2026",
+          "originalFileName": "class10_computer_science_2026.md"
+        }
+      ],
+      "verified": true
+    },
+    {
+      "fileName": "unit-03.json",
+      "unitTitle": "Unit 3: Programming Fundamentals",
+      "textbookConcept": "Front-end and back-end development distinction",
+      "textbookEvidenceQuote": "website development & maintenance is easier when the front-end and back-end are kept apart",
+      "textbookVerified": true,
+      "paperEvidenceQuote": "Why both front-end and back-end development are essential for a dynamic website?",
+      "paperVerified": true,
+      "matchingPapers": [
+        {
+          "id": 120001,
+          "academicYear": "2026",
+          "originalFileName": "class10_computer_science_2026.md"
+        }
+      ],
+      "verified": true
+    },
+    {
+      "fileName": "unit-03.json",
+      "unitTitle": "Unit 3: Programming Fundamentals",
+      "textbookConcept": "JavaScript array methods like push()",
+      "textbookEvidenceQuote": "You may use 'push()' to add more items to the end",
+      "textbookVerified": true,
+      "paperEvidenceQuote": "In JavaScript, which method would you use to add a new item to the end of a list?",
+      "paperVerified": false,
+      "matchingPapers": [],
+      "verified": false
+    },
+    {
+      "fileName": "unit-03.json",
+      "unitTitle": "Unit 3: Programming Fundamentals",
+      "textbookConcept": "Debugging techniques using breakpoints and watchpoints",
+      "textbookEvidenceQuote": "The application pauses at breakpoints and allows you to examine the code",
+      "textbookVerified": true,
+      "paperEvidenceQuote": "Why is debugging important in program development? (Two reasons)",
+      "paperVerified": true,
+      "matchingPapers": [
+        {
+          "id": 120001,
+          "academicYear": "2026",
+          "originalFileName": "class10_computer_science_2026.md"
+        }
+      ],
+      "verified": true
+    },
+    {
+      "fileName": "unit-03.json",
+      "unitTitle": "Unit 3: Programming Fundamentals",
+      "textbookConcept": "HTML Forms and input types",
+      "textbookEvidenceQuote": "To take input on an online form, one very useful element for establishing several types of input fields is the <input> element.",
+      "textbookVerified": false,
+      "paperEvidenceQuote": "Which of the following HTML attributes is required in the <input> element for email?",
+      "paperVerified": false,
+      "matchingPapers": [],
+      "verified": false
+    },
+    {
+      "fileName": "unit-03.json",
+      "unitTitle": "Unit 3: Programming Fundamentals",
+      "textbookConcept": "CSS Animations and keyframes",
+      "textbookEvidenceQuote": "An element's style during animation is specified by the '@keyframes'.",
+      "textbookVerified": true,
+      "paperEvidenceQuote": "Write code for: A colored text which repeatedly vanishes for a second...",
+      "paperVerified": false,
+      "matchingPapers": [],
+      "verified": false
+    },
+    {
+      "fileName": "unit-04.json",
+      "unitTitle": "Unit 4: Data and Analysis",
+      "textbookConcept": "Data Science and its scope",
+      "textbookEvidenceQuote": "Data Science has wide scope in many disciplines of life and it is continuously expanding.",
+      "textbookVerified": true,
+      "paperEvidenceQuote": "Write any two applications of data science.",
+      "paperVerified": true,
+      "matchingPapers": [
+        {
+          "id": 120001,
+          "academicYear": "2026",
+          "originalFileName": "class10_computer_science_2026.md"
+        }
+      ],
+      "verified": true
+    },
+    {
+      "fileName": "unit-04.json",
+      "unitTitle": "Unit 4: Data and Analysis",
+      "textbookConcept": "Machine Learning Models (Supervised, Unsupervised, Reinforcement)",
+      "textbookEvidenceQuote": "In unsupervised learning model, unlabeled data is provided to the machine/computer.",
+      "textbookVerified": true,
+      "paperEvidenceQuote": "Which machine learning method is used for training without labeled data?",
+      "paperVerified": false,
+      "matchingPapers": [],
+      "verified": false
+    },
+    {
+      "fileName": "unit-04.json",
+      "unitTitle": "Unit 4: Data and Analysis",
+      "textbookConcept": "Methods of Data Visualization (Histogram)",
+      "textbookEvidenceQuote": "Histogram: It is used to show the distribution of a single numerical value.",
+      "textbookVerified": true,
+      "paperEvidenceQuote": "Which of the following best explains the purpose of a Histogram?",
+      "paperVerified": false,
+      "matchingPapers": [],
+      "verified": false
+    },
+    {
+      "fileName": "unit-04.json",
+      "unitTitle": "Unit 4: Data and Analysis",
+      "textbookConcept": "Stages of the Data Science Life Cycle (Problem Definition)",
+      "textbookEvidenceQuote": "At this stage the business problem or research question is defined with clear objectives and outcomes.",
+      "textbookVerified": true,
+      "paperEvidenceQuote": "Why is understanding a real-world business problem important in data science?",
+      "paperVerified": true,
+      "matchingPapers": [
+        {
+          "id": 120001,
+          "academicYear": "2026",
+          "originalFileName": "class10_computer_science_2026.md"
+        }
+      ],
+      "verified": true
+    },
+    {
+      "fileName": "unit-05.json",
+      "unitTitle": "Unit 5: Applications of Computer Science",
+      "textbookConcept": "Internet of Things (IoT) Definition and Core Concepts",
+      "textbookEvidenceQuote": "IoT is an infrastructure that consists of network of servers that provides connectivity between multiple devices and facilitates man to machine and machine to machine interaction.",
+      "textbookVerified": true,
+      "paperEvidenceQuote": "What is meant by Internet of Things (IoT)?",
+      "paperVerified": true,
+      "matchingPapers": [
+        {
+          "id": 120001,
+          "academicYear": "2026",
+          "originalFileName": "class10_computer_science_2026.md"
+        }
+      ],
+      "verified": true
+    },
+    {
+      "fileName": "unit-05.json",
+      "unitTitle": "Unit 5: Applications of Computer Science",
+      "textbookConcept": "Foundational Components of IoT",
+      "textbookEvidenceQuote": "There are five foundational components of IoT that make it work... Sensors/Devices, User Interface, Cloud, Connectivity, Data Processing.",
+      "textbookVerified": false,
+      "paperEvidenceQuote": "How IoT works? Describe the role of sensors, connectivity, and data processing.",
+      "paperVerified": true,
+      "matchingPapers": [
+        {
+          "id": 120001,
+          "academicYear": "2026",
+          "originalFileName": "class10_computer_science_2026.md"
+        }
+      ],
+      "verified": false
+    },
+    {
+      "fileName": "unit-05.json",
+      "unitTitle": "Unit 5: Applications of Computer Science",
+      "textbookConcept": "Blockchain Technology and Record Keeping",
+      "textbookEvidenceQuote": "A Blockchain is a digital ledger or database of transactions that continuously grows. It is created, maintained and shared by network users.",
+      "textbookVerified": false,
+      "paperEvidenceQuote": "What does Blockchain mainly provide? ... Secure and distributed record keeping",
+      "paperVerified": false,
+      "matchingPapers": [],
+      "verified": false
+    },
+    {
+      "fileName": "unit-05.json",
+      "unitTitle": "Unit 5: Applications of Computer Science",
+      "textbookConcept": "Natural Language Processing (NLP)",
+      "textbookEvidenceQuote": "Natural Language Processing (NLP) is a branch of Artificial Intelligence. It gives computers the ability to understand text and spoken words the same way humans do.",
+      "textbookVerified": true,
+      "paperEvidenceQuote": "Which AI application enables computers to understand human language? ... Natural Language Processing",
+      "paperVerified": false,
+      "matchingPapers": [],
+      "verified": false
+    },
+    {
+      "fileName": "unit-06.json",
+      "unitTitle": "Unit 6: Impacts of Computing",
+      "textbookConcept": "Technology Addiction",
+      "textbookEvidenceQuote": "Technology addiction, also known as digital or internet addiction, refers to the excessive and compulsive use of devices like smartphones, computers, video games, and social media.",
+      "textbookVerified": false,
+      "paperEvidenceQuote": "no direct paper quote",
+      "paperVerified": false,
+      "matchingPapers": [],
+      "verified": false
+    },
+    {
+      "fileName": "unit-06.json",
+      "unitTitle": "Unit 6: Impacts of Computing",
+      "textbookConcept": "Cyberbullying",
+      "textbookEvidenceQuote": "Cyberbullying is when someone uses the internet or digital devices to hurt, harass, or intimidate others.",
+      "textbookVerified": false,
+      "paperEvidenceQuote": "Which of the following is an example of cyberbullying? ... Posting hurtful comments online",
+      "paperVerified": false,
+      "matchingPapers": [],
+      "verified": false
+    },
+    {
+      "fileName": "unit-06.json",
+      "unitTitle": "Unit 6: Impacts of Computing",
+      "textbookConcept": "Software Methods to Protect Devices",
+      "textbookEvidenceQuote": "Software methods are different; they involve installing programs on your device to stop viruses and other bad stuff.",
+      "textbookVerified": true,
+      "paperEvidenceQuote": "Describe any five software methods to protect devices.",
+      "paperVerified": true,
+      "matchingPapers": [
+        {
+          "id": 120001,
+          "academicYear": "2026",
+          "originalFileName": "class10_computer_science_2026.md"
+        }
+      ],
+      "verified": true
+    },
+    {
+      "fileName": "unit-06.json",
+      "unitTitle": "Unit 6: Impacts of Computing",
+      "textbookConcept": "Digital Divide",
+      "textbookEvidenceQuote": "The digital divide means some people or groups have less access to technology, like the internet, compared to others.",
+      "textbookVerified": false,
+      "paperEvidenceQuote": "Which factor mainly contributes to the digital divide? ... Limited access to internet and devices",
+      "paperVerified": false,
+      "matchingPapers": [],
+      "verified": false
+    },
+    {
+      "fileName": "unit-07.json",
+      "unitTitle": "Unit 7: Digital Literacy",
+      "textbookConcept": "Digital Literacy definition and importance",
+      "textbookEvidenceQuote": "Digital literacy is the ability to use create information in a digital environment.",
+      "textbookVerified": false,
+      "paperEvidenceQuote": "none",
+      "paperVerified": false,
+      "matchingPapers": [],
+      "verified": false
+    },
+    {
+      "fileName": "unit-07.json",
+      "unitTitle": "Unit 7: Digital Literacy",
+      "textbookConcept": "Digital Divide and Digital Literacy",
+      "textbookEvidenceQuote": "It is nearly impossible to be digitally illiterate.",
+      "textbookVerified": true,
+      "paperEvidenceQuote": "Promoting digital literacy",
+      "paperVerified": false,
+      "matchingPapers": [],
+      "verified": false
+    },
+    {
+      "fileName": "unit-07.json",
+      "unitTitle": "Unit 7: Digital Literacy",
+      "textbookConcept": "Social Media as a Communication Tool and Platforms (YouTube, Facebook)",
+      "textbookEvidenceQuote": "Currently, social media is one of the most effective tools of communication.",
+      "textbookVerified": false,
+      "paperEvidenceQuote": "Define digital communication. List any four digital tools",
+      "paperVerified": true,
+      "matchingPapers": [
+        {
+          "id": 120001,
+          "academicYear": "2026",
+          "originalFileName": "class10_computer_science_2026.md"
+        }
+      ],
+      "verified": false
+    },
+    {
+      "fileName": "unit-07.json",
+      "unitTitle": "Unit 7: Digital Literacy",
+      "textbookConcept": "Digital Tools for Market Research and Entrepreneurship",
+      "textbookEvidenceQuote": "digital tools to conduct research to collect market insights for an entrepreneurial solution.",
+      "textbookVerified": false,
+      "paperEvidenceQuote": "To collect and analyze customer information",
+      "paperVerified": true,
+      "matchingPapers": [
+        {
+          "id": 120001,
+          "academicYear": "2026",
+          "originalFileName": "class10_computer_science_2026.md"
+        }
+      ],
+      "verified": false
+    },
+    {
+      "fileName": "unit-08.json",
+      "unitTitle": "Unit 8: Entrepreneurship in Digital Age",
+      "textbookConcept": "Quantitative vs. Qualitative Research",
+      "textbookEvidenceQuote": "quantitative research deals with numbers and statistics, while qualitative research deals with words and meanings.",
+      "textbookVerified": true,
+      "paperEvidenceQuote": "Gathering of numerical data and statistics is a part of: Quantitative research",
+      "paperVerified": false,
+      "matchingPapers": [],
+      "verified": false
+    },
+    {
+      "fileName": "unit-08.json",
+      "unitTitle": "Unit 8: Entrepreneurship in Digital Age",
+      "textbookConcept": "Market Validation Steps",
+      "textbookEvidenceQuote": "Market validation is the process of determining if there’s a need for your product in your target market.",
+      "textbookVerified": true,
+      "paperEvidenceQuote": "What is market validation. Discuss how market validation is determined.",
+      "paperVerified": false,
+      "matchingPapers": [],
+      "verified": false
+    },
+    {
+      "fileName": "unit-08.json",
+      "unitTitle": "Unit 8: Entrepreneurship in Digital Age",
+      "textbookConcept": "Customer Profiling and Digital Research",
+      "textbookEvidenceQuote": "Defining your ideal customer entails gathering and analyzing data about your customers’ characteristics, behaviors, attributes, and needs.",
+      "textbookVerified": true,
+      "paperEvidenceQuote": "Why is digital research important for a business leader? (Two reasons)",
+      "paperVerified": true,
+      "matchingPapers": [
+        {
+          "id": 120001,
+          "academicYear": "2026",
+          "originalFileName": "class10_computer_science_2026.md"
+        }
+      ],
+      "verified": true
+    },
+    {
+      "fileName": "unit-08.json",
+      "unitTitle": "Unit 8: Entrepreneurship in Digital Age",
+      "textbookConcept": "Business Pitching and Problem-Solution",
+      "textbookEvidenceQuote": "A successful business pitch conveys the value of your idea clearly and concisely...",
+      "textbookVerified": false,
+      "paperEvidenceQuote": "A team wants to start an online tutoring service. Prepare a short business pitch, highlighting the problem, solution, and target customers.",
+      "paperVerified": true,
+      "matchingPapers": [
+        {
+          "id": 120001,
+          "academicYear": "2026",
+          "originalFileName": "class10_computer_science_2026.md"
+        }
+      ],
+      "verified": false
+    }
+  ]
+}
