@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   updateProgrammeEvidenceRecordStatus: vi.fn(),
   getProgrammeCatalogue: vi.fn(),
   findAssessmentPatternSourceByContentHash: vi.fn(),
+  listAssessmentPatternSources: vi.fn(),
   createAssessmentPatternSource: vi.fn(),
 }));
 
@@ -30,6 +31,7 @@ vi.mock("./db", () => ({
   updateProgrammeEvidenceRecordStatus: mocks.updateProgrammeEvidenceRecordStatus,
   getProgrammeCatalogue: mocks.getProgrammeCatalogue,
   findAssessmentPatternSourceByContentHash: mocks.findAssessmentPatternSourceByContentHash,
+  listAssessmentPatternSources: mocks.listAssessmentPatternSources,
   createAssessmentPatternSource: mocks.createAssessmentPatternSource,
 }));
 
@@ -131,5 +133,18 @@ describe("curriculum lifecycle administration", () => {
     await expect(caller.curriculum.ingestPaperPatternSource({
       programmeId: 11, sourceKind: "past_paper", academicYear: "2026", fileName: "duplicate.pdf", mimeType: "text/plain", fileBuffer: Buffer.from("same paper").toString("base64"),
     })).rejects.toThrow("already stored for Physics as “physics-2026.pdf”");
+  });
+
+  it("blocks a substantially overlapping transcript pending duplicate and shift review", async () => {
+    const sharedPaperText = "SECTION B marks 33 answer the following parts briefly alpha particle scatter experiment electric field transverse wave calculate electricity bill state lenz law".repeat(4);
+    mocks.getProgrammeCatalogue.mockResolvedValue({ id: 11, board: "FBISE", grade: "10", subject: "physics", teacherLabel: "Physics" });
+    mocks.findAssessmentPatternSourceByContentHash.mockResolvedValue(undefined);
+    mocks.listAssessmentPatternSources.mockResolvedValue([{ id: 60001, academicYear: "2026", originalFileName: "physics-2026-evening.txt", extractedText: `Complete paper ${sharedPaperText} Section C marks 20` }]);
+    const caller = appRouter.createCaller(createContext("admin"));
+
+    await expect(caller.curriculum.ingestPaperPatternSource({
+      programmeId: 11, sourceKind: "past_paper", academicYear: "2026", fileName: "physics-sections-b-c.txt", mimeType: "text/plain", fileBuffer: Buffer.from(sharedPaperText).toString("base64"),
+    })).rejects.toThrow("Potential duplicate paper");
+    expect(mocks.createAssessmentPatternSource).not.toHaveBeenCalled();
   });
 });

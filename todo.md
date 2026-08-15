@@ -339,3 +339,9 @@
 - [x] Reconstruct and store the complete morning written paper as a separate Computer Science-only draft pattern source, without PBA content.
 - [x] Save a reviewed structural profile and revise readiness evidence only after literal textbook-and-paper verification.
 - [x] Validate, checkpoint, and report the completed morning-paper intake while preserving evening/morning/PBA separation.
+
+## Phase 49: Physics 2026 Duplicate-Source Integrity Audit
+- [x] Compare the supplied Physics 2026 PDF, its `.md` transcript, and the registered Physics pattern-source record for exact duplication or material mismatch.
+- [x] Correct any duplicate, misleading, or incomplete Physics evidence record without activating a source or mixing it with other subjects.
+- [x] Add a mandatory pre-intake provenance and duplicate-comparison safeguard, with regression coverage, for future paper uploads.
+- [x] Validate, checkpoint, and report the source-integrity correction and the new intake discipline.

@@ -300,7 +300,7 @@ export const appRouter = router({
         fileBuffer: z.string().min(1),
       }))
       .mutation(async ({ ctx, input }) => {
-        const { createAssessmentPatternSource, getProgrammeCatalogue, findAssessmentPatternSourceByContentHash } = await import("./db");
+        const { createAssessmentPatternSource, getProgrammeCatalogue, findAssessmentPatternSourceByContentHash, listAssessmentPatternSources } = await import("./db");
         const { extractCurriculumSourceText } = await import("./curriculumIngestion");
         const { storagePut } = await import("./storage");
         const fileBuffer = Buffer.from(input.fileBuffer, "base64");
@@ -311,6 +311,15 @@ export const appRouter = router({
         const duplicate = await findAssessmentPatternSourceByContentHash(programme, contentHash);
         if (duplicate) throw new Error(`This paper is already stored for ${programme.teacherLabel} as “${duplicate.originalFileName}”.`);
         const extracted = await extractCurriculumSourceText({ fileBuffer, fileName: input.fileName, mimeType: input.mimeType });
+        const { findSubstantiallyOverlappingPaperSource } = await import("./paperSourceIntegrity");
+        const overlappingSource = findSubstantiallyOverlappingPaperSource({
+          extractedText: extracted.text,
+          academicYear: input.academicYear,
+          candidates: await listAssessmentPatternSources(programme),
+        });
+        if (overlappingSource) {
+          throw new Error(`Potential duplicate paper: the extracted text substantially overlaps the existing “${overlappingSource.originalFileName}”. Confirm whether this is a different shift or a missing-page component before registering it as a separate paper.`);
+        }
         const extension = input.mimeType === "application/pdf" ? "pdf" : "txt";
         const safeBoard = programme.board.replace(/[^a-z0-9_-]+/gi, "-").toLowerCase();
         const safeGrade = programme.grade.replace(/[^a-z0-9_-]+/gi, "-").toLowerCase();
