@@ -304,7 +304,7 @@
 
 ## Phase 42: Newly Supplied Scan Inventory
 - [x] Inspect the CamScanner PDF and separate Grade 10 written-paper evidence from practical-based assessment material.
-- [ ] Register written-paper content as pattern evidence only when its year, subject, and extraction quality are confirmed.
+- [x] Register written-paper content as pattern evidence only when its year, subject, and extraction quality are confirmed.
 - [x] Keep practical assessment quarantined from current written-exam readiness guidance unless separately approved.
 
 ## Phase 43: Cross-Subject Analysis Method Reference
@@ -333,3 +333,9 @@
 - [x] Store the evening paper in the Computer Science programme with a reviewed structural profile while keeping the source draft-only.
 - [x] Update the Grade 10 textbook-to-paper mapping using the confirmed 2026 evening evidence only.
 - [x] Verify morning/evening/practical separation, validate, checkpoint, and report the updated readiness position.
+
+## Phase 48: Grade 10 Computer Science 2026 Morning-Paper Completion
+- [x] Verify that the newly supplied 2026 morning Section A completes the previously quarantined Computer Science Sections B/C fragment.
+- [x] Reconstruct and store the complete morning written paper as a separate Computer Science-only draft pattern source, without PBA content.
+- [x] Save a reviewed structural profile and revise readiness evidence only after literal textbook-and-paper verification.
+- [x] Validate, checkpoint, and report the completed morning-paper intake while preserving evening/morning/PBA separation.

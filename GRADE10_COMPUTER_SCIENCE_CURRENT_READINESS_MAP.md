@@ -2,11 +2,11 @@
 
 ## Status, Scope, and Evidence Rule
 
-This **reviewed, evidence-bound Grade 10 map** uses only the active NCP 2022–23 Computer Science textbook and the user-supplied Grade 10 Computer Science written-paper records. The complete **2026 evening-shift paper** has now been incorporated as Computer Science pattern source **120001**. It remains a draft pattern source and is used here only to understand assessment form; it is not a factual-answer source and has not been activated.
+This **reviewed, evidence-bound Grade 10 map** uses only the active NCP 2022–23 Computer Science textbook and the user-supplied Grade 10 Computer Science written-paper records. The complete **2026 evening-shift paper** is recorded as Computer Science pattern source **120001**. The now-complete **2026 morning-shift paper** is separately reconstructed from its user-supplied Section A and isolated Sections B/C page as source **150001**. Both sources remain draft-only: they may guide assessment form, but never factual answers, and neither has been activated.
 
 > **Dual-source rule:** A readiness conclusion is retained only when a literal textbook passage and a literal form from a supplied written paper both support it. The textbook remains the sole authority for facts, answers, examples, explanations, and solution keys. A paper may guide only wording, structure, command style, marks, and cognitive demand.
 
-The verification reviewed **32 proposed unit-to-paper mappings** across the eight active units. **Eleven mappings** have literal support in both the textbook and the 2026 evening written paper. The other **21 mappings** are deliberately excluded from the confirmed list; they remain textbook coverage where relevant, but are not described as a verified paper-preparation priority.
+The verification reviewed **32 proposed unit-to-paper mappings** across the eight active units against the active textbook and the complete supplied written-paper corpus, including the separate 2026 morning and evening records. **Eleven mappings** have literal support in both the textbook and a supplied written paper. The other **21 mappings** are deliberately excluded from the confirmed list; they remain textbook coverage where relevant, but are not described as a verified paper-preparation priority. Adding the completed morning paper did not automatically promote any excluded mapping: every promotion still requires a literal textbook passage and literal comparable paper form.
 
 | Status | Meaning for teaching and generation |
 |---|---|
@@ -63,7 +63,9 @@ The following restrictions remain in force. They protect Grade 10 preparation fr
 
 ## Morning-Shift and Grade-Separation Boundary
 
-The CamScanner **morning-shift Computer Science written-paper fragment remains pending**. It is incomplete and is missing its first page / Section A; therefore it has not been used in this map, in paper-pattern analysis, or in generation guidance. A complete morning-shift written paper may be registered and reviewed later as a separate Computer Science source.
+The missing morning-shift Section A has now been supplied and has been joined, under controlled provenance, with the isolated Computer Science Sections B/C scan page. The reconstructed **2026 morning-shift written paper** is saved as separate draft source **150001** with a reviewed 55-mark profile. It is distinct from evening source 120001 and contributes only to the written-paper verification corpus. The morning Section A must not be confused with the practical material that appears elsewhere in the original CamScanner PDF.
+
+All PBA pages remain quarantined. They do not inform this map, paper-pattern activation, generated question content, or written-paper readiness claims. Grade 9 remains fully separate from this Grade 10 programme, its textbook, its written-paper sources, and this readiness map.
 
 Grade 9 remains fully separate from this Grade 10 programme, its textbook, its written-paper sources, and this readiness map.
 
@@ -77,3 +79,4 @@ Grade 9 remains fully separate from this Grade 10 programme, its textbook, its w
 [6]: Active NCP 2022–23 Grade 10 Computer Science textbook, Unit 6: Impacts of Computing.
 [8]: Active NCP 2022–23 Grade 10 Computer Science textbook, Unit 8: Entrepreneurship in Digital Age.
 [9]: User-supplied FBISE Grade 10 Computer Science 2026 evening written paper, assessment pattern source **120001**, extracted from `class10_computer_science_2026.md`; draft status, used for format / wording / structure only.
+[10]: User-supplied FBISE Grade 10 Computer Science 2026 morning written paper, reconstructed from `computer_science_section_a.md` and the isolated Computer Science Sections B/C scan page; assessment pattern source **150001**, draft status, used for format / wording / structure only.
