@@ -383,6 +383,11 @@
 - [x] Add UI regression coverage for the warning banner and verify test suite passes.
 - [x] Save checkpoint and report deliverables.
 
+## Phase 66: Upstream Quota and Billing Error Classification
+- [x] Diagnose reported 412 quota exhaustion error and separate it from textbook readability warnings.
+- [x] Implement accurate `quota_exhaustion` error type and professional teacher retry advice.
+- [x] Add unit test coverage, validate full test suite, checkpoint, and report.
+
 ## Phase 65: Source-Aware Question Capacity Guidance
 - [x] Add deterministic estimated topic counts to approved chapters and half-chapter segments in the catalog response.
 - [x] Show a non-blocking warning near the MCQ question-count input when requested coverage exceeds the selected source estimate.

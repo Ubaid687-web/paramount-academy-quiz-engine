@@ -227,3 +227,14 @@ describe("AI Agent - MCQ Generation", () => {
     expect(mocks.updateGenerationJob).toHaveBeenCalledWith(501, { generatedQuizId: 900 });
   });
 });
+
+  it("classifies upstream quota and billing exhaustion errors with clear recovery advice", async () => {
+    mocks.invokeLLM.mockRejectedValue(new Error("LLM invoke failed: 412 Precondition Failed – {\"code\":9,\"message\":\"your account has hit a usage exhausted\"}"));
+
+    const result = await generateMCQsFromContent(1, validContent, 5, "balanced");
+
+    expect(result.draft.status).toBe("error");
+    expect(result.draft.errorType).toBe("quota_exhaustion");
+    expect(result.draft.safeRetryAdvice).toContain("usage quota limit or billing pause");
+    expect(result.draft.safeRetryAdvice).not.toContain("Check the source text for readability");
+  });

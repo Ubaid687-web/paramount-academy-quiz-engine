@@ -333,15 +333,22 @@ REQUIREMENTS:
       errorMessage,
     });
 
-    const errorType = errorMessage.includes("validation") || errorMessage.includes("duplicate")
-      ? "validation"
-      : errorMessage.includes("source") || errorMessage.includes("content")
-        ? "source_quality"
-        : errorMessage.includes("JSON") || errorMessage.includes("schema")
-          ? "schema"
-          : errorMessage.includes("timeout")
-            ? "timeout"
-            : "generation";
+    const isQuotaError = errorMessage.includes("412") || errorMessage.includes("exhausted") || errorMessage.includes("billing") || errorMessage.includes("quota") || errorMessage.includes("limit");
+    const errorType = isQuotaError
+      ? "quota_exhaustion"
+      : errorMessage.includes("validation") || errorMessage.includes("duplicate")
+        ? "validation"
+        : errorMessage.includes("source") || errorMessage.includes("content")
+          ? "source_quality"
+          : errorMessage.includes("JSON") || errorMessage.includes("schema")
+            ? "schema"
+            : errorMessage.includes("timeout")
+              ? "timeout"
+              : "generation";
+
+    const safeRetryAdvice = isQuotaError
+      ? "The connected AI generation service has hit a usage quota limit or billing pause. Please check account credits or try again later when usage resets. No quiz draft was saved."
+      : "Check the source text for readability, reduce the requested question count if necessary, and try again. No quiz draft was saved.";
 
     return {
       jobId: job.id,
@@ -357,7 +364,7 @@ REQUIREMENTS:
         status: "error",
         errorType,
         message: errorMessage,
-        safeRetryAdvice: "Check the source text for readability, reduce the requested question count if necessary, and try again. No quiz draft was saved.",
+        safeRetryAdvice,
       },
     };
   }
