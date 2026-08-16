@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({ invokeLLM: vi.fn() }));
 vi.mock("./_core/llm", () => ({ invokeLLM: mocks.invokeLLM }));
 
-import { buildPrintablePairBatches, buildPrintablePaperPatternInstruction, generatePrintablePaperFromContent, normalizePrintablePaperPayload } from "./printablePaper";
+import { buildPrintablePairBatches, buildPrintablePaperPatternInstruction, buildPrintableUpstreamFailure, generatePrintablePaperFromContent, normalizePrintablePaperPayload } from "./printablePaper";
 
 const shortGenerated = {
   estimatedDurationMinutes: 30,
@@ -43,6 +43,12 @@ describe("printable paper payload normalization", () => {
   it("splits a large paper into small complete OR-pair batches", () => {
     expect(buildPrintablePairBatches(10)).toEqual([2, 2, 2, 2, 2]);
     expect(buildPrintablePairBatches(5)).toEqual([2, 2, 1]);
+  });
+
+  it("classifies an upstream quota or billing failure without blaming the selected source", () => {
+    const failure = buildPrintableUpstreamFailure(new Error('LLM invoke failed: 412 Precondition Failed – {"code":9,"message":"your account has hit a usage exhausted"}'));
+    expect(failure?.message).toMatch(/usage quota limit or billing pause/i);
+    expect(failure?.message).not.toMatch(/source|narrower scope/i);
   });
 
   it("keeps one shared concept inside an OR pair while presenting two different assessment angles", async () => {

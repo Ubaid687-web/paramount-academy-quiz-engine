@@ -147,6 +147,18 @@ export function buildPrintablePaperPatternInstruction(sourceContext: GenerationS
     : "No reviewed board-pattern record is attached. Use the source material alone for all content and keep the language plain.";
 }
 
+export function buildPrintableUpstreamFailure(error: unknown): Error | null {
+  const message = error instanceof Error ? error.message : String(error);
+  const normalized = message.toLowerCase();
+  if (message.includes("412") || normalized.includes("exhausted") || normalized.includes("billing") || normalized.includes("quota")) {
+    return new Error("The connected AI generation service has hit a usage quota limit or billing pause. Please check account credits or try again later when usage resets. No printable paper draft was saved.");
+  }
+  if (message.includes("429") || normalized.includes("rate limit") || normalized.includes("too many requests")) {
+    return new Error("The AI generation service is temporarily rate-limited. The system retried automatically; please wait a moment and try again. No printable paper draft was saved.");
+  }
+  return null;
+}
+
 export async function generatePrintablePaperFromContent(params: {
   paperType: PrintablePaperType;
   title: string;
@@ -202,7 +214,9 @@ export async function generatePrintablePaperFromContent(params: {
           throw new Error(diversity.issues.join(" "));
         }
         batchPayload = { ...candidate, items: candidateItems };
-      } catch {
+      } catch (error) {
+        const upstreamFailure = buildPrintableUpstreamFailure(error);
+        if (upstreamFailure) throw upstreamFailure;
         // Retry once with the same small batch; no partial output is exposed to the teacher.
       }
     }

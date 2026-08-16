@@ -403,6 +403,11 @@
 - [x] Add structured textbook citation fields to generated and persisted questions, without fabricating citations for custom material.
 - [x] Surface citations for Portal Admin review, add source-integrity regressions, validate, checkpoint, and report.
 
+## Phase 71: Printable Generation Failure Clarity
+- [x] Verify 412 quota/billing failures across printable-paper generation and identify any misleading source-related recovery advice.
+- [x] Correct any printable failure-message gap without retrying permanent quota or billing errors.
+- [x] Add regression coverage, validate, and report the external-service root cause and safe recovery path.
+
 ## Phase 67: Transient Rate-Limit Retry Resilience
 - [x] Define bounded retry eligibility for transient LLM rate-limit and service failures without retrying quota exhaustion, billing, invalid requests, or source errors.
 - [x] Implement exponential backoff with jitter in the shared LLM transport and preserve final error context.
