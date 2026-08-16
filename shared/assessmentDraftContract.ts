@@ -9,6 +9,7 @@ export type AssessmentDraftStatus = z.infer<typeof assessmentDraftStatusSchema>;
 const sourceGroundingSchema = z.object({
   sourceReference: z.string().trim().min(1, "A source reference is required."),
   learningObjective: z.string().trim().min(1, "A learning objective is required."),
+  conceptKey: z.string().trim().min(2, "A source-derived concept key is required.").optional(),
   cognitiveLevel: z.enum(["K", "U", "A"]).default("U"),
   orGroup: z.number().int().positive().nullable().default(null),
   marks: z.number().int().positive("Marks must be a positive whole number."),

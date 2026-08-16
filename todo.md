@@ -351,3 +351,10 @@
 - [x] Redesign Step 2 (Source) into a decision-first card view with default/recommended tags and dedicated sub-views (approved textbook chapters vs custom lesson material with Upload / Paste tabs and delayed title entry).
 - [x] Apply one-decision-at-a-time layouts to Quiz type, Quiz settings, and Review steps so standard phone screens fit each step without scrolling clutter.
 - [x] Run full test suite regressions and browser walkthrough confirming zero stacked choices and correct Back state restoration.
+
+## Phase 61: Diversity, Paper-Style, and Question-Count Reliability
+- [x] Inspect the supplied duplicate paper and trace current concept coverage, prompt construction, saved-draft history, and question-count input behavior.
+- [x] Enforce concept-level uniqueness within generated papers, including both sides of OR pairs, and give a clear insufficient-coverage result instead of reworded duplication.
+- [x] Apply only verified user-supplied model/past-paper wording and structural guidance, and exclude previous saved-paper concepts or near-duplicates for the same subject and source scope.
+- [x] Repair number entry so users can clear and type a valid custom count, with range validation deferred to blur or generation.
+- [x] Add regression coverage, validate the complete suite, checkpoint, and report the evidence-backed repair.

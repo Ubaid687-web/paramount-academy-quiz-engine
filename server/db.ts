@@ -38,6 +38,7 @@ import {
 import type { FbiseSubject, ProgrammeKey, ScopeCatalog } from "./curriculumScope";
 import { assertNoUnresolvedOcrPages } from "./ocrQuality";
 import { ENV } from './_core/env';
+import type { PriorQuestionHistory } from "./generationDiversity";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -159,6 +160,64 @@ export async function getQuestionsByQuizId(quizId: number, shuffle: boolean = fa
   }
   
   return results;
+}
+
+export async function listPriorGeneratedQuestionHistory(params: {
+  userId: number;
+  curriculumSetId?: number;
+  scopeSnapshot?: unknown;
+  contentText?: string;
+}): Promise<PriorQuestionHistory[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  const exactScope = params.scopeSnapshot ? JSON.stringify(params.scopeSnapshot) : undefined;
+  const scopedQuizRows = params.curriculumSetId && exactScope
+    ? await db.select().from(quizzes).where(and(
+      eq(quizzes.isAiGenerated, 1),
+      eq(quizzes.createdBy, params.userId),
+      eq(quizzes.curriculumSetId, params.curriculumSetId),
+      eq(quizzes.scopeSnapshot, exactScope),
+    ))
+    : params.contentText
+      ? await db.select().from(quizzes).where(and(
+        eq(quizzes.isAiGenerated, 1),
+        eq(quizzes.createdBy, params.userId),
+        eq(quizzes.sourceContent, params.contentText),
+      ))
+      : [];
+
+  const history: PriorQuestionHistory[] = [];
+  for (const quiz of scopedQuizRows) {
+    try {
+      const metadata = quiz.generationMetadata ? JSON.parse(quiz.generationMetadata) as { conceptHistory?: PriorQuestionHistory[] } : undefined;
+      if (Array.isArray(metadata?.conceptHistory)) history.push(...metadata.conceptHistory);
+    } catch {
+      // Older records may not contain valid JSON metadata. Their question text remains usable below.
+    }
+    const questionRows = await getQuestionsByQuizId(quiz.id);
+    history.push(...questionRows.map((question) => ({ question: question.questionText, assessmentMode: "mcq" as const })));
+  }
+
+  const scopedDraftRows = params.curriculumSetId && exactScope
+    ? await db.select().from(assessmentDrafts).where(and(
+      eq(assessmentDrafts.createdBy, params.userId),
+      eq(assessmentDrafts.curriculumSetId, params.curriculumSetId),
+      eq(assessmentDrafts.scopeSnapshot, exactScope),
+    ))
+    : [];
+  for (const draft of scopedDraftRows) {
+    try {
+      const payload = JSON.parse(draft.draftPayload) as { mode?: "short" | "long"; items?: PriorQuestionHistory[] };
+      if ((payload.mode === "short" || payload.mode === "long") && Array.isArray(payload.items)) {
+        history.push(...payload.items.map((item) => ({ ...item, assessmentMode: payload.mode! })));
+      }
+    } catch {
+      // A malformed historical draft must not block new source-grounded generation.
+    }
+  }
+
+  return history;
 }
 
 export async function createQuizAttempt(attempt: InsertQuizAttempt): Promise<number> {
@@ -617,6 +676,30 @@ export async function listActiveAssessmentPatternSources(programme: ProgrammeKey
     eq(assessmentPatternSources.subject, programme.subject),
     eq(assessmentPatternSources.status, "active"),
     eq(assessmentPatternSources.extractionStatus, "extracted"),
+  )).orderBy(asc(assessmentPatternSources.id));
+}
+
+export async function listReviewedAssessmentPatternGuidance(programme: ProgrammeKey) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.select({
+    sourceKind: assessmentPatternSources.sourceKind,
+    academicYear: assessmentPatternSources.academicYear,
+    sectionAInstruction: assessmentPatternProfiles.sectionAInstruction,
+    sectionBInstruction: assessmentPatternProfiles.sectionBInstruction,
+    sectionCInstruction: assessmentPatternProfiles.sectionCInstruction,
+    orRule: assessmentPatternProfiles.orRule,
+    profileEvidenceNotes: assessmentPatternProfiles.profileEvidenceNotes,
+  }).from(assessmentPatternSources).innerJoin(
+    assessmentPatternProfiles,
+    eq(assessmentPatternProfiles.patternSourceId, assessmentPatternSources.id),
+  ).where(and(
+    eq(assessmentPatternSources.board, programme.board),
+    eq(assessmentPatternSources.grade, programme.grade),
+    eq(assessmentPatternSources.subject, programme.subject),
+    eq(assessmentPatternSources.status, "active"),
+    eq(assessmentPatternSources.extractionStatus, "extracted"),
+    eq(assessmentPatternProfiles.reviewStatus, "reviewed"),
   )).orderBy(asc(assessmentPatternSources.id));
 }
 

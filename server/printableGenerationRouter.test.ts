@@ -1,0 +1,67 @@
+import { describe, expect, it, vi } from "vitest";
+import type { TrpcContext } from "./_core/context";
+
+const mocks = vi.hoisted(() => ({
+  getActiveCurriculumScopeCatalog: vi.fn(),
+  listActiveAssessmentPatternSources: vi.fn(),
+  listReviewedAssessmentPatternGuidance: vi.fn(),
+  listPriorGeneratedQuestionHistory: vi.fn(),
+  createAssessmentDraft: vi.fn(),
+  generatePrintablePaperFromContent: vi.fn(),
+}));
+
+vi.mock("./db", () => ({
+  getActiveCurriculumScopeCatalog: mocks.getActiveCurriculumScopeCatalog,
+  listActiveAssessmentPatternSources: mocks.listActiveAssessmentPatternSources,
+  listReviewedAssessmentPatternGuidance: mocks.listReviewedAssessmentPatternGuidance,
+  listPriorGeneratedQuestionHistory: mocks.listPriorGeneratedQuestionHistory,
+  createAssessmentDraft: mocks.createAssessmentDraft,
+}));
+vi.mock("./printablePaper", () => ({ generatePrintablePaperFromContent: mocks.generatePrintablePaperFromContent }));
+
+import { appRouter } from "./routers";
+
+function createAdminContext(): TrpcContext {
+  return {
+    user: { id: 7, openId: "admin-printable-history", email: "admin@example.com", name: "Admin", loginMethod: "manus", role: "admin", createdAt: new Date(), updatedAt: new Date(), lastSignedIn: new Date() },
+    req: { protocol: "https", headers: {} } as TrpcContext["req"],
+    res: {} as TrpcContext["res"],
+  };
+}
+
+describe("printable paper history persistence", () => {
+  it("stores an approved-scope generated paper with its concept keys for future exclusion", async () => {
+    mocks.getActiveCurriculumScopeCatalog.mockResolvedValue({
+      curriculumSet: { id: 77, grade: "10", subject: "physics", label: "FBISE Grade 10 Physics", editionLabel: "2026" },
+      chapters: [{ id: 10, curriculumSetId: 77, sequence: 1, code: "Ch. 10", title: "Kinematics", blockKey: null, partKey: null, startPage: 1, endPage: 20, contentText: "Kinematics explains displacement, velocity, acceleration, and their relationships. ".repeat(4), isActive: 1 }],
+      segments: [], templates: [], templateMemberships: [],
+    });
+    mocks.listActiveAssessmentPatternSources.mockResolvedValue([{ sourceKind: "past_paper", academicYear: "2025" }]);
+    mocks.listReviewedAssessmentPatternGuidance.mockResolvedValue([]);
+    mocks.listPriorGeneratedQuestionHistory.mockResolvedValue([{ conceptKey: "velocity", question: "Define velocity." }]);
+    mocks.generatePrintablePaperFromContent.mockResolvedValue({
+      mode: "long", title: "Kinematics revision", estimatedDurationMinutes: 10,
+      items: [
+        { kind: "long", question: "Explain displacement.", conceptKey: "displacement", sourceReference: "Kinematics — displacement", learningObjective: "Explain displacement.", cognitiveLevel: "U", orGroup: 1, marks: 5, difficulty: "medium", expectedKeyPoints: ["A verified point."], markingRubric: [{ criterion: "Explains displacement.", marks: 5 }] },
+        { kind: "long", question: "Explain acceleration.", conceptKey: "acceleration", sourceReference: "Kinematics — acceleration", learningObjective: "Explain acceleration.", cognitiveLevel: "U", orGroup: 1, marks: 5, difficulty: "medium", expectedKeyPoints: ["A verified point."], markingRubric: [{ criterion: "Explains acceleration.", marks: 5 }] },
+      ],
+    });
+    mocks.createAssessmentDraft.mockResolvedValue({ id: 901 });
+
+    const caller = appRouter.createCaller(createAdminContext());
+    const result = await caller.aiAgent.generatePrintablePaper({
+      paperType: "long", title: "Kinematics revision", pairCount: 1, difficulty: "balanced",
+      scope: { grade: "10", subject: "physics", scopeType: "single_chapter", chapterIds: [10] },
+    });
+
+    expect(result.assessmentDraftId).toBe(901);
+    expect(mocks.generatePrintablePaperFromContent).toHaveBeenCalledWith(expect.objectContaining({
+      sourceContext: expect.objectContaining({ priorQuestionHistory: [expect.objectContaining({ conceptKey: "velocity" })] }),
+    }));
+    expect(mocks.createAssessmentDraft).toHaveBeenCalledWith(expect.objectContaining({
+      curriculumSetId: 77,
+      totalMarks: 5,
+      draftPayload: expect.stringContaining("acceleration"),
+    }));
+  });
+});

@@ -23,8 +23,9 @@ import { generateMCQsFromContent, saveGeneratedQuizToDatabase } from "./aiAgent"
 const validContent = "Kinematics studies motion using displacement, velocity, and acceleration. ".repeat(12);
 
 function createValidMcqs(count: number) {
+  const concepts = ["displacement", "velocity", "acceleration", "distance", "time", "speed", "momentum", "force", "mass", "inertia"];
   return Array.from({ length: count }, (_, index) => ({
-    question: `Question ${index + 1}: Which quantity describes this motion concept?`,
+    question: `Question ${index + 1}: Which statement best describes ${concepts[index]} in motion?`,
     options: {
       A: `Correct option ${index + 1}`,
       B: `Distractor B ${index + 1}`,
@@ -32,10 +33,11 @@ function createValidMcqs(count: number) {
       D: `Distractor D ${index + 1}`,
     },
     answer: "A",
-    explanation: `Explanation ${index + 1} applies the kinematics concept.`,
+    explanation: `Explanation ${index + 1} applies the textbook meaning of ${concepts[index]}.`,
     difficulty: (index % 3 === 0 ? "easy" : index % 3 === 1 ? "medium" : "hard") as "easy" | "medium" | "hard",
-    sourceReference: `Kinematics section ${index + 1}`,
-    learningObjective: `Apply kinematics concept ${index + 1}.`,
+    conceptKey: concepts[index],
+    sourceReference: `Kinematics — ${concepts[index]}`,
+    learningObjective: `Explain the textbook meaning of ${concepts[index]}.`,
   }));
 }
 
@@ -66,8 +68,9 @@ describe("AI Agent - MCQ Generation", () => {
       difficultyProfile: "balanced",
     });
     expect(result.mcqs[0]).toMatchObject({
-      sourceReference: "Kinematics section 1",
-      learningObjective: "Apply kinematics concept 1.",
+      conceptKey: "displacement",
+      sourceReference: "Kinematics — displacement",
+      learningObjective: "Explain the textbook meaning of displacement.",
     });
   });
 
@@ -122,6 +125,41 @@ describe("AI Agent - MCQ Generation", () => {
     expect(systemPrompt).toContain("answer-shaped");
     expect(systemPrompt).toContain("four narrow option columns");
     expect(prompt).toContain("Do not write answer options as sentences of explanation");
+    expect(prompt).toContain("conceptKey");
+    expect(prompt).toContain("VERIFIED STYLE AND STRUCTURE EVIDENCE");
+  });
+
+  it("rejects a draft that rewords the same underlying concept within one paper", async () => {
+    const repeated = createValidMcqs(2);
+    repeated[1] = {
+      ...repeated[1],
+      conceptKey: "displacement",
+      sourceReference: "Kinematics — displacement",
+      learningObjective: "Explain the textbook meaning of displacement.",
+    };
+    mocks.invokeLLM.mockResolvedValue({ choices: [{ message: { content: JSON.stringify({ mcqs: repeated }) } }] });
+
+    const result = await generateMCQsFromContent(1, validContent, 2, "balanced");
+
+    expect(result.draft).toMatchObject({ status: "error", errorType: "validation" });
+    expect(result.draft.message).toMatch(/repeats an underlying concept/i);
+  });
+
+  it("rejects a new draft that collides with a concept saved for the same source scope", async () => {
+    const result = await generateMCQsFromContent(1, validContent, 1, "balanced", {
+      sourceType: "curriculum_scope",
+      sourceTitle: "Kinematics",
+      priorQuestionHistory: [{
+        conceptKey: "displacement",
+        question: "Which quantity describes this motion concept?",
+        sourceReference: "Kinematics — displacement",
+        learningObjective: "Explain the textbook meaning of displacement.",
+        assessmentMode: "mcq",
+      }],
+    });
+
+    expect(result.draft).toMatchObject({ status: "error", errorType: "validation" });
+    expect(result.draft.message).toMatch(/earlier saved paper/i);
   });
 
   it("returns a structured failure contract when a model response omits required source fields", async () => {

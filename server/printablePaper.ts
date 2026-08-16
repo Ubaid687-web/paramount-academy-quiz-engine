@@ -2,13 +2,14 @@ import { invokeLLM } from "./_core/llm";
 import { validateAssessmentDraftPayload, type ModeDraftPayload } from "@shared/assessmentDraftContract";
 import type { GenerationSourceContext } from "./aiAgent";
 import { chunkContent } from "./contentAnalyzer";
+import { buildPriorHistoryExclusion, validateDistinctQuestionCoverage, type QuestionCoverageRecord } from "./generationDiversity";
 
 export type PrintablePaperType = "short" | "long";
 export type NormalizedPrintablePaperPayload = {
   mode: PrintablePaperType;
   title: string;
   estimatedDurationMinutes: number | null;
-  items: Array<Record<string, unknown> & { kind: PrintablePaperType; marks: number }>;
+  items: Array<Record<string, unknown> & QuestionCoverageRecord & { kind: PrintablePaperType; marks: number }>;
 };
 
 export const PRINTABLE_PAPER_PROMPT = `You are a careful FBISE-style assessment designer. Create a PRINTABLE paper draft grounded strictly and exclusively in the supplied source material.
@@ -24,7 +25,9 @@ QUALITY:
 - Use concise, familiar FBISE-style wording and textbook terminology. Avoid idioms, unnecessary long scenarios, and unfamiliar English.
 - Create a new scenario only when it assesses a verified source concept. Do not copy or paraphrase past-paper questions.
 - Balance cognitive levels across the whole paper: approximately 30% K (knowledge), 50% U (understanding), and 20% A (application), adjusting minimally where item count makes exact ratios impossible.
-- Supply each question as an OR pair. Both alternatives in a pair must assess the same learning objective, have the same marks, and be distinct valid ways to assess it.
+- Supply each question as an OR pair. Both alternatives must have the same marks and comparable demand, but each must use a different source-derived conceptKey. Never reuse the same concept across any numbered question or OR alternative in one paper.
+- Return a concise conceptKey for every prompt using the exact or near-exact textbook heading or term that identifies its underlying concept.
+- If the source cannot support the requested number of distinct concepts, return fewer prompts rather than rewording a concept.
 - Never claim that this is an official current-year paper. This is a draft for Portal Admin review.
 
 ANSWER MATERIAL:
@@ -39,6 +42,7 @@ function buildSchema(type: PrintablePaperType) {
     question: { type: "string" },
     sourceReference: { type: "string" },
     learningObjective: { type: "string" },
+    conceptKey: { type: "string" },
     cognitiveLevel: { type: "string", enum: ["K", "U", "A"] },
     orGroup: { type: "integer", minimum: 1 },
     marks: { type: "integer", minimum: type === "short" ? 1 : 5, maximum: type === "short" ? 4 : 8 },
@@ -59,7 +63,7 @@ function buildSchema(type: PrintablePaperType) {
               expectedAnswer: { type: "string" },
               markingGuide: { type: "array", items: { type: "string" }, minItems: 1 },
             },
-            required: ["question", "sourceReference", "learningObjective", "cognitiveLevel", "orGroup", "marks", "difficulty", "expectedAnswer", "markingGuide"],
+            required: ["question", "sourceReference", "learningObjective", "conceptKey", "cognitiveLevel", "orGroup", "marks", "difficulty", "expectedAnswer", "markingGuide"],
             additionalProperties: false,
           },
         },
@@ -91,7 +95,7 @@ function buildSchema(type: PrintablePaperType) {
               minItems: 1,
             },
           },
-          required: ["question", "sourceReference", "learningObjective", "cognitiveLevel", "orGroup", "marks", "difficulty", "expectedKeyPoints", "markingRubric"],
+          required: ["question", "sourceReference", "learningObjective", "conceptKey", "cognitiveLevel", "orGroup", "marks", "difficulty", "expectedKeyPoints", "markingRubric"],
           additionalProperties: false,
         },
       },
@@ -130,7 +134,13 @@ export function buildPrintablePairBatches(pairCount: number, maximumPairsPerBatc
 
 export function buildPrintablePaperPatternInstruction(sourceContext: GenerationSourceContext) {
   return sourceContext.paperPatternGuidance?.length
-    ? `Supplied board-pattern records (${sourceContext.paperPatternGuidance.map((source) => `${source.sourceKind.replace("_", " ")}${source.academicYear ? ` ${source.academicYear}` : ""}`).join(", ")}) may guide concise FBISE-style wording, marks presentation, and K/U/A balance only. Do not copy their questions or use them as answer evidence.`
+    ? `Supplied board-pattern records (${sourceContext.paperPatternGuidance.map((source) => `${source.sourceKind.replace("_", " ")}${source.academicYear ? ` ${source.academicYear}` : ""}`).join(", ")}) may guide concise FBISE wording, verified command forms, marks presentation, and K/U/A balance only. Do not copy their questions or use them as answer evidence.\n${sourceContext.paperPatternGuidance.map((source) => {
+      const evidence = [source.sectionBInstruction, source.sectionCInstruction, source.orRule, source.profileEvidenceNotes]
+        .filter((value): value is string => Boolean(value?.trim()))
+        .join(" ")
+        .slice(0, 900);
+      return `- ${source.sourceKind.replace("_", " ")}${source.academicYear ? ` ${source.academicYear}` : ""}: ${evidence}`;
+    }).join("\n")}`
     : "No reviewed board-pattern record is attached. Use the source material alone for all content and keep the language plain.";
 }
 
@@ -149,18 +159,23 @@ export async function generatePrintablePaperFromContent(params: {
     : "Each long question must be 5–8 marks; its rubric total must exactly match its marks.";
   const batchPlan = buildPrintablePairBatches(pairCount);
   const paperPatternInstruction = buildPrintablePaperPatternInstruction(sourceContext);
-  const items: Array<Record<string, unknown> & { kind: PrintablePaperType; marks: number }> = [];
+  const items: Array<Record<string, unknown> & QuestionCoverageRecord & { kind: PrintablePaperType; marks: number }> = [];
   let completedGroups = 0;
+  let diversityShortfall = false;
 
   for (let batchIndex = 0; batchIndex < batchPlan.length; batchIndex += 1) {
     const batchPairs = batchPlan[batchIndex]!;
     let batchPayload: NormalizedPrintablePaperPayload | null = null;
     for (let attempt = 0; attempt < 2 && !batchPayload; attempt += 1) {
       try {
+        const existingCoverage = buildPriorHistoryExclusion([
+          ...(sourceContext.priorQuestionHistory ?? []),
+          ...items,
+        ]);
         const response = await invokeLLM({
           messages: [
             { role: "system", content: PRINTABLE_PAPER_PROMPT },
-            { role: "user", content: `This is batch ${batchIndex + 1} of ${batchPlan.length}. Create exactly ${batchPairs} numbered OR pairs (${batchPairs * 2} printed prompts) for a ${paperType}-question paper. Difficulty preference: ${difficulty}. ${marksRule}\n\nPaper title: ${title}\nSource title: ${sourceContext.sourceTitle}\n${paperPatternInstruction}\n\n${safeSections}` },
+            { role: "user", content: `This is batch ${batchIndex + 1} of ${batchPlan.length}. Create exactly ${batchPairs} numbered OR pairs (${batchPairs * 2} printed prompts) for a ${paperType}-question paper. Difficulty preference: ${difficulty}. ${marksRule}\n\nPaper title: ${title}\nSource title: ${sourceContext.sourceTitle}\n${paperPatternInstruction}\n\n${existingCoverage}\n\nUse the full source breadth. Every printed prompt, including each OR alternative, must have a different conceptKey.\n\n${safeSections}` },
           ],
           response_format: {
             type: "json_schema",
@@ -170,15 +185,36 @@ export async function generatePrintablePaperFromContent(params: {
         const responseContent = response.choices[0]?.message?.content;
         if (typeof responseContent !== "string") throw new Error("No structured batch output.");
         const candidate = normalizePrintablePaperPayload(paperType, title, JSON.parse(responseContent || "{}"));
-        if (candidate.items.length !== batchPairs * 2) throw new Error("Incomplete OR-pair batch.");
+        if (candidate.items.length !== batchPairs * 2) {
+          diversityShortfall = true;
+          throw new Error("Insufficient distinct concept coverage for the requested OR-pair batch.");
+        }
+        const diversity = validateDistinctQuestionCoverage(candidate.items, [
+          ...(sourceContext.priorQuestionHistory ?? []),
+          ...items,
+        ]);
+        if (!diversity.valid) {
+          diversityShortfall = true;
+          throw new Error(diversity.issues.join(" "));
+        }
         batchPayload = candidate;
       } catch {
         // Retry once with the same small batch; no partial output is exposed to the teacher.
       }
     }
-    if (!batchPayload) throw new Error("The printable paper could not be completed from the approved material. Please try again with fewer OR pairs or a narrower scope.");
+    if (!batchPayload) {
+      if (diversityShortfall) {
+        throw new Error(`The selected source does not provide ${pairCount * 2} distinct examinable concepts for this paper without repeating a topic. Reduce the requested OR pairs or select a wider approved scope.`);
+      }
+      throw new Error("The printable paper could not be completed from the approved material. Please try again with fewer OR pairs or a narrower scope.");
+    }
     items.push(...batchPayload.items.map((item, index) => ({ ...item, orGroup: completedGroups + Math.floor(index / 2) + 1 })));
     completedGroups += batchPairs;
+  }
+
+  const finalDiversity = validateDistinctQuestionCoverage(items, sourceContext.priorQuestionHistory ?? []);
+  if (!finalDiversity.valid) {
+    throw new Error(`The selected source does not provide enough distinct examinable concepts without repetition. ${finalDiversity.issues[0] ?? ""}`);
   }
 
   return {

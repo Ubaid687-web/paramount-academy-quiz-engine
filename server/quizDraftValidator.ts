@@ -1,4 +1,5 @@
 import { collectMcqLayoutWarnings, diagnoseMcqLayout } from "./mcqLayout";
+import { validateDistinctQuestionCoverage, type PriorQuestionHistory } from "./generationDiversity";
 
 export type GeneratedMcq = {
   question: string;
@@ -6,6 +7,7 @@ export type GeneratedMcq = {
   answer: "A" | "B" | "C" | "D";
   explanation: string;
   difficulty: "easy" | "medium" | "hard";
+  conceptKey?: string;
   sourceReference?: string;
   learningObjective?: string;
 };
@@ -22,7 +24,7 @@ function normalise(value: string) {
   return value.toLowerCase().replace(/\s+/g, " ").replace(/[^a-z0-9 ]/g, "").trim();
 }
 
-export function validateGeneratedMcqs(mcqs: unknown[], expectedCount: number) {
+export function validateGeneratedMcqs(mcqs: unknown[], expectedCount: number, priorHistory: PriorQuestionHistory[] = []) {
   const issues: string[] = [];
 
   if (mcqs.length !== expectedCount) {
@@ -52,6 +54,9 @@ export function validateGeneratedMcqs(mcqs: unknown[], expectedCount: number) {
     layout.warnings.filter((warning) => /unusually long stem|paragraph-like option|multi-sentence option/i.test(warning)).forEach((warning) => issues.push(warning));
   });
 
+  const coverage = validateDistinctQuestionCoverage(mcqs as GeneratedMcq[], priorHistory);
+  issues.push(...coverage.issues);
+
   return { valid: issues.length === 0, issues };
 }
 
@@ -59,11 +64,12 @@ export function buildDraftQualityChecks(mcqs: GeneratedMcq[], requestedCount: nu
   return {
     duplicateQuestionRisk: "low",
     hallucinationRisk: "medium",
-    coverageNotes: `${mcqs.length} of ${requestedCount} requested source-grounded MCQs passed structural validation.`,
+    coverageNotes: `${mcqs.length} of ${requestedCount} requested source-grounded MCQs passed structural and concept-diversity validation.`,
     layoutWarnings: collectMcqLayoutWarnings(mcqs),
     reviewWarnings: [
       "Draft only: faculty review is required before assignment or publication.",
       "Verify each source reference against the uploaded material before approving the draft.",
+      "Verify that every concept key is unique and that no earlier saved-paper concept has been reused before approval.",
       "Review the printable Section A table preview for any wrapped row that exceeds the supplied paper geometry.",
     ],
   };

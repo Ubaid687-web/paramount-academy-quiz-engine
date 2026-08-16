@@ -727,16 +727,22 @@ export const appRouter = router({
         let sourceContext;
 
         if (input.scope) {
-          const { getActiveCurriculumScopeCatalog, listActiveAssessmentPatternSources } = await import("./db");
+          const { getActiveCurriculumScopeCatalog, listActiveAssessmentPatternSources, listReviewedAssessmentPatternGuidance, listPriorGeneratedQuestionHistory } = await import("./db");
           const { resolveCurriculumScope } = await import("./curriculumScope");
-          const [catalog, paperPatternSources] = await Promise.all([
+          const [catalog, paperPatternSources, paperPatternGuidance] = await Promise.all([
             getActiveCurriculumScopeCatalog(input.scope),
             listActiveAssessmentPatternSources(input.scope),
+            listReviewedAssessmentPatternGuidance(input.scope),
           ]);
           if (!catalog) {
             throw new Error("No active reviewed curriculum is available for the selected subject.");
           }
           const resolvedScope = resolveCurriculumScope(catalog, input.scope);
+          const priorQuestionHistory = await listPriorGeneratedQuestionHistory({
+            userId: ctx.user.id,
+            curriculumSetId: catalog.curriculumSet.id,
+            scopeSnapshot: resolvedScope.snapshot,
+          });
           contentText = resolvedScope.sourceText;
           sourceContext = {
             sourceType: "curriculum_scope" as const,
@@ -749,18 +755,24 @@ export const appRouter = router({
             selectedChapterIds: resolvedScope.chapterIds,
             selectedSegmentIds: resolvedScope.segmentIds,
             scopeSnapshot: resolvedScope.snapshot,
-            paperPatternGuidance: paperPatternSources.map((source) => ({ sourceKind: source.sourceKind, academicYear: source.academicYear })),
+            paperPatternGuidance: paperPatternGuidance.length ? paperPatternGuidance : paperPatternSources.map((source) => ({ sourceKind: source.sourceKind, academicYear: source.academicYear })),
+            priorQuestionHistory,
           };
         } else if (input.patternProgramme || input.patternSubject) {
-          const { listActiveAssessmentPatternSources } = await import("./db");
+          const { listActiveAssessmentPatternSources, listReviewedAssessmentPatternGuidance, listPriorGeneratedQuestionHistory } = await import("./db");
           const patternProgramme = input.patternProgramme ?? { board: "FBISE", grade: "10", subject: input.patternSubject! };
-          const paperPatternSources = await listActiveAssessmentPatternSources(patternProgramme);
+          const [paperPatternSources, paperPatternGuidance, priorQuestionHistory] = await Promise.all([
+            listActiveAssessmentPatternSources(patternProgramme),
+            listReviewedAssessmentPatternGuidance(patternProgramme),
+            listPriorGeneratedQuestionHistory({ userId: ctx.user.id, contentText: input.contentText }),
+          ]);
           sourceContext = {
             sourceType: "raw_text" as const,
             sourceTitle: "Teacher-provided custom source",
             subject: patternProgramme.subject,
             classLevel: patternProgramme.grade,
-            paperPatternGuidance: paperPatternSources.map((source) => ({ sourceKind: source.sourceKind, academicYear: source.academicYear })),
+            paperPatternGuidance: paperPatternGuidance.length ? paperPatternGuidance : paperPatternSources.map((source) => ({ sourceKind: source.sourceKind, academicYear: source.academicYear })),
+            priorQuestionHistory,
           };
         }
 
@@ -794,19 +806,25 @@ export const appRouter = router({
           scopeTemplateId: z.number().int().positive().optional(),
         }).optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ ctx, input }) => {
         const { generatePrintablePaperFromContent } = await import("./printablePaper");
         let contentText = input.contentText;
         let sourceContext: import("./aiAgent").GenerationSourceContext | undefined;
         if (input.scope) {
-          const { getActiveCurriculumScopeCatalog, listActiveAssessmentPatternSources } = await import("./db");
+          const { getActiveCurriculumScopeCatalog, listActiveAssessmentPatternSources, listReviewedAssessmentPatternGuidance, listPriorGeneratedQuestionHistory } = await import("./db");
           const { resolveCurriculumScope } = await import("./curriculumScope");
-          const [catalog, paperPatternSources] = await Promise.all([
+          const [catalog, paperPatternSources, paperPatternGuidance] = await Promise.all([
             getActiveCurriculumScopeCatalog(input.scope),
             listActiveAssessmentPatternSources(input.scope),
+            listReviewedAssessmentPatternGuidance(input.scope),
           ]);
           if (!catalog) throw new Error("No active reviewed textbook source is available for the selected subject.");
           const resolvedScope = resolveCurriculumScope(catalog, input.scope);
+          const priorQuestionHistory = await listPriorGeneratedQuestionHistory({
+            userId: ctx.user.id,
+            curriculumSetId: catalog.curriculumSet.id,
+            scopeSnapshot: resolvedScope.snapshot,
+          });
           contentText = resolvedScope.sourceText;
           sourceContext = {
             sourceType: "curriculum_scope",
@@ -819,17 +837,23 @@ export const appRouter = router({
             selectedChapterIds: resolvedScope.chapterIds,
             selectedSegmentIds: resolvedScope.segmentIds,
             scopeSnapshot: resolvedScope.snapshot,
-            paperPatternGuidance: paperPatternSources.map((source) => ({ sourceKind: source.sourceKind, academicYear: source.academicYear })),
+            paperPatternGuidance: paperPatternGuidance.length ? paperPatternGuidance : paperPatternSources.map((source) => ({ sourceKind: source.sourceKind, academicYear: source.academicYear })),
+            priorQuestionHistory,
           };
         } else if (input.patternProgramme) {
-          const { listActiveAssessmentPatternSources } = await import("./db");
-          const paperSources = await listActiveAssessmentPatternSources(input.patternProgramme);
+          const { listActiveAssessmentPatternSources, listReviewedAssessmentPatternGuidance, listPriorGeneratedQuestionHistory } = await import("./db");
+          const [paperSources, paperPatternGuidance, priorQuestionHistory] = await Promise.all([
+            listActiveAssessmentPatternSources(input.patternProgramme),
+            listReviewedAssessmentPatternGuidance(input.patternProgramme),
+            listPriorGeneratedQuestionHistory({ userId: ctx.user.id, contentText: input.contentText }),
+          ]);
           sourceContext = {
             sourceType: "raw_text",
             sourceTitle: "Teacher-provided custom source",
             subject: input.patternProgramme.subject,
             classLevel: input.patternProgramme.grade,
-            paperPatternGuidance: paperSources.map((source) => ({ sourceKind: source.sourceKind, academicYear: source.academicYear })),
+            paperPatternGuidance: paperPatternGuidance.length ? paperPatternGuidance : paperSources.map((source) => ({ sourceKind: source.sourceKind, academicYear: source.academicYear })),
+            priorQuestionHistory,
           };
         }
         if (!contentText || !sourceContext) throw new Error("Upload or paste at least 100 characters of material, or choose a reviewed curriculum scope.");
@@ -841,7 +865,34 @@ export const appRouter = router({
           difficulty: input.difficulty,
           sourceContext,
         });
-        return { payload, reviewWarning: "Draft only: Portal Admin review and source verification are required before issuing this paper." };
+        let assessmentDraftId: number | undefined;
+        if ((payload.mode === "short" || payload.mode === "long") && sourceContext.sourceType === "curriculum_scope" && sourceContext.curriculumSetId && sourceContext.scopeSnapshot) {
+          const { createAssessmentDraft } = await import("./db");
+          const attemptedMarks = new Map<number, number>();
+          payload.items.forEach((item) => {
+            const group = Number(item.orGroup ?? 0);
+            if (group > 0 && !attemptedMarks.has(group)) attemptedMarks.set(group, item.marks);
+          });
+          const draft = await createAssessmentDraft({
+            title: payload.title,
+            assessmentMode: payload.mode,
+            sourceState: "ready",
+            curriculumSetId: sourceContext.curriculumSetId,
+            scopeSnapshot: JSON.stringify(sourceContext.scopeSnapshot),
+            paperPatternReferences: sourceContext.paperPatternGuidance?.length ? JSON.stringify(sourceContext.paperPatternGuidance) : undefined,
+            draftPayload: JSON.stringify(payload),
+            totalMarks: Array.from(attemptedMarks.values()).reduce((total, marks) => total + marks, 0),
+            estimatedDurationMinutes: payload.estimatedDurationMinutes,
+            status: "draft",
+            reviewWarnings: JSON.stringify([
+              "Generated draft: review is required before publication or issue.",
+              "Concept keys are retained to prevent later papers from repeating this scope's underlying topics.",
+            ]),
+            createdBy: ctx.user.id,
+          });
+          assessmentDraftId = draft.id;
+        }
+        return { payload, assessmentDraftId, reviewWarning: "Draft only: Portal Admin review and source verification are required before issuing this paper." };
       }),
 
     saveGeneratedQuiz: adminProcedure
@@ -860,6 +911,7 @@ export const appRouter = router({
             answer: z.string(),
             explanation: z.string(),
             difficulty: z.string(),
+            conceptKey: z.string().min(2),
             sourceReference: z.string().min(1),
             learningObjective: z.string().min(1),
           })),

@@ -5,6 +5,7 @@ import { analyzeContent, chunkContent } from "./contentAnalyzer";
 import { buildDraftQualityChecks, validateGeneratedMcqs, type GeneratedMcq } from "./quizDraftValidator";
 import type { InsertGenerationJob } from "../drizzle/schema";
 import type { FbiseSubject, ScopeType } from "./curriculumScope";
+import { buildPriorHistoryExclusion, type PriorQuestionHistory } from "./generationDiversity";
 
 export type GenerationSourceContext = {
   sourceType: "raw_text" | "curriculum_scope";
@@ -20,7 +21,13 @@ export type GenerationSourceContext = {
   paperPatternGuidance?: Array<{
     sourceKind: "model_paper" | "past_paper";
     academicYear: string | null;
+    sectionAInstruction?: string | null;
+    sectionBInstruction?: string | null;
+    sectionCInstruction?: string | null;
+    orRule?: string | null;
+    profileEvidenceNotes?: string | null;
   }>;
+  priorQuestionHistory?: PriorQuestionHistory[];
 };
 
 const MCQ_GENERATION_PROMPT = `You are a careful FBISE-style assessment designer. Generate new, textbook-grounded multiple-choice questions for secondary students. The supplied textbook material is the only factual authority.
@@ -64,6 +71,12 @@ const MCQ_GENERATION_PROMPT = `You are a careful FBISE-style assessment designer
    - Include a concise sourceReference naming the source topic or heading that supports the question.
    - Include a learningObjective describing the knowledge or skill assessed.
 
+7. CONCEPT DIVERSITY:
+   - Build a breadth-first inventory of distinct examinable concepts from the entire supplied source before writing items.
+   - Return a short conceptKey for every item using its exact or near-exact source heading or term.
+   - Never reuse a conceptKey, source reference, learning objective, or underlying idea in the same draft, even with different wording.
+   - If the supplied source has fewer distinct examinable concepts than requested, return fewer items rather than inventing or rewording duplicates.
+
 === DIFFICULTY DISTRIBUTION ===
 - 30% Easy: clear textbook knowledge or straightforward understanding
 - 50% Medium: conceptual understanding, comparison, or familiar application
@@ -92,6 +105,7 @@ Return ONLY valid JSON:
       "answer": "A",
       "explanation": "...",
       "difficulty": "easy|medium|hard",
+      "conceptKey": "short source-derived heading or term",
       "sourceReference": "...",
       "learningObjective": "..."
     }
@@ -152,6 +166,16 @@ VERIFIED BOARD-PATTERN GUIDANCE (NOT CONTENT EVIDENCE):
 - Use this evidence only for concise FBISE-style wording, familiar command phrasing, and the K/U/A balance above.
 - Do not copy, paraphrase, or treat paper questions as source content. Do not use any analysis note as factual evidence. The supplied textbook material below remains the only examinable content boundary.`
       : "";
+    const styleEvidenceInstruction = sourceContext.paperPatternGuidance?.length
+      ? `\n\nVERIFIED STYLE AND STRUCTURE EVIDENCE (FORMAT ONLY):\n${sourceContext.paperPatternGuidance.map((source) => {
+        const evidence = [source.sectionAInstruction, source.sectionBInstruction, source.sectionCInstruction, source.orRule, source.profileEvidenceNotes]
+          .filter((value): value is string => Boolean(value?.trim()))
+          .join(" ")
+          .slice(0, 900);
+        return `- ${source.sourceKind.replace("_", " ")}${source.academicYear ? ` ${source.academicYear}` : ""}: ${evidence}`;
+      }).join("\n")}\nUse this observed direct command register and structure only. Do not copy a historical question or treat it as answer evidence.`
+      : "";
+    const priorHistoryInstruction = buildPriorHistoryExclusion(sourceContext.priorQuestionHistory ?? []);
 
     const userPrompt = `Generate exactly ${finalNumQuestions} high-quality MCQs based on this content. Analyze the ENTIRE content thoroughly to extract key concepts and principles.
 
@@ -172,11 +196,13 @@ REQUIREMENTS:
 - Do not write answer options as sentences of explanation, mini-paragraphs, or multiple ideas joined together.
 - Do not add decorative scenario wording. Use a direct textbook-style stem; include only the minimum context required for a supported application.
 - Cover different parts and aspects of the content without repeating concepts or exercise wording.
+- Give every item a distinct source-derived conceptKey. It must identify one specific concept, not a generic unit name.
+- ${priorHistoryInstruction}
 - Use the required K/U/A balance; include direct knowledge, conceptual understanding, and familiar application only where supported.
 - Keep explanations and source references as metadata for teacher review; they are not part of the printed MCQ row.
 - Explain the correct option in one short, easy-to-memorise textbook-faithful sentence.
 - Generate questions that span the entire content, not just the beginning.
-- The printed paper will render each question in the supplied FBISE four-option table geometry; generate a direct row-fit item rather than relying on a later truncation step.${paperPatternInstruction}`;
+- The printed paper will render each question in the supplied FBISE four-option table geometry; generate a direct row-fit item rather than relying on a later truncation step.${paperPatternInstruction}${styleEvidenceInstruction}`;
 
     // Call LLM to generate MCQs
     // Chunk content for better analysis
@@ -220,10 +246,11 @@ REQUIREMENTS:
                     answer: { type: "string", enum: ["A", "B", "C", "D"] },
                     explanation: { type: "string" },
                     difficulty: { type: "string", enum: ["easy", "medium", "hard"] },
+                    conceptKey: { type: "string" },
                     sourceReference: { type: "string" },
                     learningObjective: { type: "string" },
                   },
-                  required: ["question", "options", "answer", "explanation", "difficulty", "sourceReference", "learningObjective"],
+                  required: ["question", "options", "answer", "explanation", "difficulty", "conceptKey", "sourceReference", "learningObjective"],
                 },
               },
             },
@@ -251,7 +278,7 @@ REQUIREMENTS:
 
     // Ensure we have the right number of questions
     const finalMcqs = mcqs.slice(0, finalNumQuestions);
-    const validation = validateGeneratedMcqs(finalMcqs, finalNumQuestions);
+    const validation = validateGeneratedMcqs(finalMcqs, finalNumQuestions, sourceContext.priorQuestionHistory ?? []);
     if (!validation.valid) {
       throw new Error(`Generated draft failed validation: ${validation.issues.join(" ")}`);
     }
@@ -364,6 +391,13 @@ export async function saveGeneratedQuizToDatabase(
         curriculumSetId: job.curriculumSetId,
         selectedChapterIds: job.selectedChapterIds,
         selectedSegmentIds: job.selectedSegmentIds,
+        conceptHistory: mcqs.map((mcq) => ({
+          conceptKey: mcq.conceptKey,
+          question: mcq.question,
+          sourceReference: mcq.sourceReference,
+          learningObjective: mcq.learningObjective,
+          assessmentMode: "mcq",
+        })),
       }),
     });
 

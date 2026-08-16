@@ -119,6 +119,29 @@ describe("AI quiz generation feedback", () => {
     assessmentAvailabilityQuery.mockReturnValue({ data: undefined, isLoading: false });
   });
 
+  it("allows a teacher to clear and retype a custom question count before range validation on blur", async () => {
+    render(<AIAgent />);
+    chooseMcqOutput();
+    chooseCustomPasteSource();
+    fireEvent.change(screen.getByLabelText("Paste source text"), {
+      target: { value: "This is sufficient study content for a custom count generation test. ".repeat(4) },
+    });
+    fireEvent.change(screen.getByLabelText("Quiz title"), { target: { value: "Custom count test" } });
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+
+    const countInput = screen.getByRole("spinbutton");
+    fireEvent.change(countInput, { target: { value: "" } });
+    expect(countInput).toHaveValue(null);
+    fireEvent.change(countInput, { target: { value: "27" } });
+    expect(countInput).toHaveValue(27);
+    fireEvent.blur(countInput);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+
+    fireEvent.change(countInput, { target: { value: "101" } });
+    fireEvent.blur(countInput);
+    expect(screen.getByRole("alert")).toHaveTextContent("whole number from 5 to 100");
+  });
+
   it("shows an accessible staged loading panel while the quiz request is in progress", async () => {
     generateMutation.mockImplementation(() => new Promise(() => undefined));
     render(<AIAgent />);

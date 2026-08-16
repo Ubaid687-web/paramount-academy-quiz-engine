@@ -63,6 +63,8 @@ export default function AIAgent() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isProcessingFile, setIsProcessingFile] = useState(false);
   const [numQuestions, setNumQuestions] = useState<number | null>(null);
+  const [questionCountInput, setQuestionCountInput] = useState("");
+  const [questionCountError, setQuestionCountError] = useState<string | null>(null);
   const [isQuestionCountManual, setIsQuestionCountManual] = useState(false);
   const [difficulty, setDifficulty] = useState<"balanced" | "easy" | "medium" | "hard">("balanced");
   const [quizTitle, setQuizTitle] = useState("");
@@ -194,6 +196,8 @@ export default function AIAgent() {
     if (!trimmedContent) {
       setContentAnalysis(null);
       setNumQuestions(null);
+      setQuestionCountInput("");
+      setQuestionCountError(null);
       setIsQuestionCountManual(false);
       return;
     }
@@ -213,10 +217,11 @@ export default function AIAgent() {
       });
 
       setContentAnalysis({ wordCount, complexity, recommended });
-      setNumQuestions((currentCount) => {
-        if (!isQuestionCountManual || !currentCount) return recommended.optimal;
-        return Math.min(recommended.maximum, Math.max(recommended.minimum, currentCount));
-      });
+      if (!isQuestionCountManual) {
+        setNumQuestions(recommended.optimal);
+        setQuestionCountInput(String(recommended.optimal));
+        setQuestionCountError(null);
+      }
     }, 300);
 
     return () => window.clearTimeout(analysisTimer);
@@ -234,7 +239,10 @@ export default function AIAgent() {
 
   useEffect(() => {
     if (scopeType !== "uploaded_content" && !isQuestionCountManual) {
-      setNumQuestions(subject === "computer_science" ? 13 : 12);
+      const defaultCount = subject === "computer_science" ? 13 : 12;
+      setNumQuestions(defaultCount);
+      setQuestionCountInput(String(defaultCount));
+      setQuestionCountError(null);
     }
   }, [subject, scopeType, isQuestionCountManual]);
 
@@ -422,10 +430,14 @@ export default function AIAgent() {
       return;
     }
 
-    if (!numQuestions || numQuestions < 5) {
-      toast.error("Please select at least 5 questions");
+    const requestedQuestionCount = Number.parseInt(questionCountInput, 10);
+    if (!/^\d+$/.test(questionCountInput) || !Number.isInteger(requestedQuestionCount) || requestedQuestionCount < 5 || requestedQuestionCount > 100) {
+      setQuestionCountError("Enter a whole number from 5 to 100 before generating.");
+      toast.error("Enter a whole number from 5 to 100 before generating.");
       return;
     }
+    setNumQuestions(requestedQuestionCount);
+    setQuestionCountError(null);
 
     setIsGenerating(true);
     setActiveStep(4);
@@ -435,7 +447,7 @@ export default function AIAgent() {
 
     try {
       const result = await generateMutation.mutateAsync({
-        numQuestions: numQuestions || 10,
+        numQuestions: requestedQuestionCount,
         difficulty,
         patternProgramme: { board: "FBISE", grade: gradeLevel, subject },
         ...(usesStoredScope
@@ -971,37 +983,58 @@ export default function AIAgent() {
                 {/* Number of Questions */}
                 {settingsView === "count" && <div>
                   <Label className="text-sm font-medium mb-2 block">
-                    Number of Questions: <span className="text-accent font-bold">{numQuestions || "Auto"}</span>
+                    Number of Questions: <span className="text-accent font-bold">{questionCountInput || "Auto"}</span>
                   </Label>
                   <Input
                     type="number"
-                    min={contentAnalysis?.recommended?.minimum || contentAnalysis?.recommended?.min || 5}
-                    max={contentAnalysis?.recommended?.maximum || contentAnalysis?.recommended?.max || 100}
-                    value={numQuestions || ""}
+                    inputMode="numeric"
+                    value={questionCountInput}
                     onChange={(e) => {
-                      const nextValue = Number.parseInt(e.target.value, 10);
-                      setIsQuestionCountManual(Boolean(e.target.value));
-                      setNumQuestions(Number.isFinite(nextValue) ? nextValue : null);
+                      const rawValue = e.target.value;
+                      setQuestionCountInput(rawValue);
+                      setIsQuestionCountManual(Boolean(rawValue));
+                      setQuestionCountError(null);
+                      if (rawValue === "") {
+                        setNumQuestions(null);
+                        return;
+                      }
+                      if (/^\d+$/.test(rawValue)) setNumQuestions(Number.parseInt(rawValue, 10));
+                    }}
+                    onBlur={() => {
+                      if (questionCountInput === "") {
+                        setNumQuestions(null);
+                        return;
+                      }
+                      const parsedValue = Number.parseInt(questionCountInput, 10);
+                      if (!/^\d+$/.test(questionCountInput) || !Number.isInteger(parsedValue) || parsedValue < 5 || parsedValue > 100) {
+                        setQuestionCountError("Enter a whole number from 5 to 100.");
+                        return;
+                      }
+                      setNumQuestions(parsedValue);
+                      setQuestionCountError(null);
                     }}
                     placeholder="10"
                   />
+                  {questionCountError && <p className="mt-2 text-xs text-destructive" role="alert">{questionCountError}</p>}
                   {contentAnalysis && numQuestions && (
                     <div className="mt-3 space-y-2">
                       <Slider
                         value={[numQuestions]}
-                        min={contentAnalysis.recommended?.minimum || contentAnalysis.recommended?.min || 5}
-                        max={contentAnalysis.recommended?.maximum || contentAnalysis.recommended?.max || 100}
+                        min={5}
+                        max={100}
                         step={1}
                         onValueChange={([value]) => {
                           setIsQuestionCountManual(true);
                           setNumQuestions(value);
+                          setQuestionCountInput(String(value));
+                          setQuestionCountError(null);
                         }}
                         aria-label="Number of questions"
                       />
                       <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>Min {contentAnalysis.recommended?.minimum || contentAnalysis.recommended?.min}</span>
+                        <span>Min 5</span>
                         <span>Recommended {contentAnalysis.recommended?.optimal}</span>
-                        <span>Max {contentAnalysis.recommended?.maximum || contentAnalysis.recommended?.max}</span>
+                        <span>Max 100</span>
                       </div>
                     </div>
                   )}
