@@ -45,12 +45,51 @@ describe("printable paper payload normalization", () => {
     expect(buildPrintablePairBatches(5)).toEqual([2, 2, 1]);
   });
 
-  it("rejects repeated concepts across the two alternatives of an OR pair instead of saving a reworded duplicate", async () => {
-    const duplicateLongItems = [
+  it("keeps one shared concept inside an OR pair while presenting two different assessment angles", async () => {
+    const sameConceptPair = [
       { ...longGenerated.items[0], question: "Describe the Daniel cell.", conceptKey: "daniel cell", sourceReference: "Daniel cell", learningObjective: "Explain the Daniel cell." },
       { ...longGenerated.items[0], question: "Explain the working of a galvanic Daniel cell.", conceptKey: "daniel cell", sourceReference: "Daniel cell", learningObjective: "Explain the Daniel cell." },
     ];
-    mocks.invokeLLM.mockResolvedValue({ choices: [{ message: { content: JSON.stringify({ estimatedDurationMinutes: 20, items: duplicateLongItems }) } }] });
+    mocks.invokeLLM.mockResolvedValue({ choices: [{ message: { content: JSON.stringify({ estimatedDurationMinutes: 20, items: sameConceptPair }) } }] });
+
+    const paper = await generatePrintablePaperFromContent({
+      paperType: "long",
+      title: "Electrochemistry revision",
+      contentText: "The source covers Daniel cells, hydrogen-oxygen fuel cells, electrolysis, and refining. ".repeat(5),
+      pairCount: 1,
+      difficulty: "balanced",
+      sourceContext: { sourceType: "curriculum_scope", sourceTitle: "Electrochemistry" },
+    });
+
+    expect(paper.items).toHaveLength(2);
+    expect(paper.items[0]?.orGroup).toBe(paper.items[1]?.orGroup);
+  });
+
+  it("rejects a second numbered pair that repeats the first pair's underlying concept", async () => {
+    const repeatedPairItems = [
+      { ...longGenerated.items[0], question: "Describe the Daniel cell.", conceptKey: "daniel cell", sourceReference: "Daniel cell", learningObjective: "Explain the Daniel cell." },
+      { ...longGenerated.items[0], question: "Explain the working of a Daniel cell.", conceptKey: "daniel cell", sourceReference: "Daniel cell", learningObjective: "Explain the Daniel cell." },
+      { ...longGenerated.items[0], question: "State the purpose of a Daniel cell.", conceptKey: "daniel cell", sourceReference: "Daniel cell", learningObjective: "Explain the Daniel cell." },
+      { ...longGenerated.items[0], question: "Compare a Daniel cell with another cell.", conceptKey: "daniel cell", sourceReference: "Daniel cell", learningObjective: "Explain the Daniel cell." },
+    ];
+    mocks.invokeLLM.mockResolvedValue({ choices: [{ message: { content: JSON.stringify({ estimatedDurationMinutes: 20, items: repeatedPairItems }) } }] });
+
+    await expect(generatePrintablePaperFromContent({
+      paperType: "long",
+      title: "Electrochemistry revision",
+      contentText: "The source covers Daniel cells, hydrogen-oxygen fuel cells, electrolysis, and refining. ".repeat(5),
+      pairCount: 2,
+      difficulty: "balanced",
+      sourceContext: { sourceType: "curriculum_scope", sourceTitle: "Electrochemistry" },
+    })).rejects.toThrow(/does not provide 2 distinct examinable concepts/i);
+  });
+
+  it("rejects an OR pair when both alternatives are the same question", async () => {
+    const duplicatePromptPair = [
+      { ...longGenerated.items[0], question: "Explain the Daniel cell.", conceptKey: "daniel cell", sourceReference: "Daniel cell", learningObjective: "Explain the Daniel cell." },
+      { ...longGenerated.items[0], question: "Explain the Daniel cell.", conceptKey: "daniel cell", sourceReference: "Daniel cell", learningObjective: "Explain the Daniel cell." },
+    ];
+    mocks.invokeLLM.mockResolvedValue({ choices: [{ message: { content: JSON.stringify({ estimatedDurationMinutes: 20, items: duplicatePromptPair }) } }] });
 
     await expect(generatePrintablePaperFromContent({
       paperType: "long",
@@ -59,6 +98,6 @@ describe("printable paper payload normalization", () => {
       pairCount: 1,
       difficulty: "balanced",
       sourceContext: { sourceType: "curriculum_scope", sourceTitle: "Electrochemistry" },
-    })).rejects.toThrow(/does not provide 2 distinct examinable concepts/i);
+    })).rejects.toThrow(/does not provide 1 distinct examinable concepts/i);
   });
 });

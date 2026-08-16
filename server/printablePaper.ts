@@ -2,7 +2,7 @@ import { invokeLLM } from "./_core/llm";
 import { validateAssessmentDraftPayload, type ModeDraftPayload } from "@shared/assessmentDraftContract";
 import type { GenerationSourceContext } from "./aiAgent";
 import { chunkContent } from "./contentAnalyzer";
-import { buildPriorHistoryExclusion, validateDistinctQuestionCoverage, type QuestionCoverageRecord } from "./generationDiversity";
+import { buildPriorHistoryExclusion, validateDistinctOrPairCoverage, type QuestionCoverageRecord } from "./generationDiversity";
 
 export type PrintablePaperType = "short" | "long";
 export type NormalizedPrintablePaperPayload = {
@@ -25,9 +25,10 @@ QUALITY:
 - Use concise, familiar FBISE-style wording and textbook terminology. Avoid idioms, unnecessary long scenarios, and unfamiliar English.
 - Create a new scenario only when it assesses a verified source concept. Do not copy or paraphrase past-paper questions.
 - Balance cognitive levels across the whole paper: approximately 30% K (knowledge), 50% U (understanding), and 20% A (application), adjusting minimally where item count makes exact ratios impossible.
-- Supply each question as an OR pair. Both alternatives must have the same marks and comparable demand, but each must use a different source-derived conceptKey. Never reuse the same concept across any numbered question or OR alternative in one paper.
-- Return a concise conceptKey for every prompt using the exact or near-exact textbook heading or term that identifies its underlying concept.
-- If the source cannot support the requested number of distinct concepts, return fewer prompts rather than rewording a concept.
+- Supply each numbered question as an OR pair. Both alternatives must have the same marks and comparable demand, and must assess the same source-derived conceptKey from two genuinely different assessment angles (for example, function versus application, or explanation versus comparison).
+- Use a different conceptKey for every numbered OR pair. Never reuse a pair's concept in another numbered pair.
+- Return a concise conceptKey for every prompt using the exact or near-exact textbook heading or term that identifies its underlying concept. The two alternatives in one pair must return the same conceptKey.
+- If the source cannot support the requested number of distinct OR-pair concepts, return fewer pairs rather than rewording or repeating a concept.
 - Never claim that this is an official current-year paper. This is a draft for Portal Admin review.
 
 ANSWER MATERIAL:
@@ -175,7 +176,7 @@ export async function generatePrintablePaperFromContent(params: {
         const response = await invokeLLM({
           messages: [
             { role: "system", content: PRINTABLE_PAPER_PROMPT },
-            { role: "user", content: `This is batch ${batchIndex + 1} of ${batchPlan.length}. Create exactly ${batchPairs} numbered OR pairs (${batchPairs * 2} printed prompts) for a ${paperType}-question paper. Difficulty preference: ${difficulty}. ${marksRule}\n\nPaper title: ${title}\nSource title: ${sourceContext.sourceTitle}\n${paperPatternInstruction}\n\n${existingCoverage}\n\nUse the full source breadth. Every printed prompt, including each OR alternative, must have a different conceptKey.\n\n${safeSections}` },
+            { role: "user", content: `This is batch ${batchIndex + 1} of ${batchPlan.length}. Create exactly ${batchPairs} numbered OR pairs (${batchPairs * 2} printed prompts) for a ${paperType}-question paper. Difficulty preference: ${difficulty}. ${marksRule}\n\nPaper title: ${title}\nSource title: ${sourceContext.sourceTitle}\n${paperPatternInstruction}\n\n${existingCoverage}\n\nUse the full source breadth. Each numbered OR pair must use one distinct conceptKey. Both alternatives inside that pair must share the conceptKey but test it from different angles. Do not reuse any pair concept in a later pair. Return the two alternatives consecutively.\n\n${safeSections}` },
           ],
           response_format: {
             type: "json_schema",
@@ -189,7 +190,8 @@ export async function generatePrintablePaperFromContent(params: {
           diversityShortfall = true;
           throw new Error("Insufficient distinct concept coverage for the requested OR-pair batch.");
         }
-        const diversity = validateDistinctQuestionCoverage(candidate.items, [
+        const candidateItems = candidate.items.map((item, index) => ({ ...item, orGroup: Math.floor(index / 2) + 1 }));
+        const diversity = validateDistinctOrPairCoverage(candidateItems, [
           ...(sourceContext.priorQuestionHistory ?? []),
           ...items,
         ]);
@@ -197,14 +199,14 @@ export async function generatePrintablePaperFromContent(params: {
           diversityShortfall = true;
           throw new Error(diversity.issues.join(" "));
         }
-        batchPayload = candidate;
+        batchPayload = { ...candidate, items: candidateItems };
       } catch {
         // Retry once with the same small batch; no partial output is exposed to the teacher.
       }
     }
     if (!batchPayload) {
       if (diversityShortfall) {
-        throw new Error(`The selected source does not provide ${pairCount * 2} distinct examinable concepts for this paper without repeating a topic. Reduce the requested OR pairs or select a wider approved scope.`);
+        throw new Error(`The selected source does not provide ${pairCount} distinct examinable concepts for this paper without repeating a topic. Reduce the requested OR pairs or select a wider approved scope.`);
       }
       throw new Error("The printable paper could not be completed from the approved material. Please try again with fewer OR pairs or a narrower scope.");
     }
@@ -212,7 +214,7 @@ export async function generatePrintablePaperFromContent(params: {
     completedGroups += batchPairs;
   }
 
-  const finalDiversity = validateDistinctQuestionCoverage(items, sourceContext.priorQuestionHistory ?? []);
+  const finalDiversity = validateDistinctOrPairCoverage(items, sourceContext.priorQuestionHistory ?? []);
   if (!finalDiversity.valid) {
     throw new Error(`The selected source does not provide enough distinct examinable concepts without repetition. ${finalDiversity.issues[0] ?? ""}`);
   }

@@ -50,12 +50,13 @@ describe("printable paper history persistence", () => {
 
     const caller = appRouter.createCaller(createAdminContext());
     const result = await caller.aiAgent.generatePrintablePaper({
-      paperType: "long", title: "Kinematics revision", pairCount: 1, difficulty: "balanced",
+      paperType: "long", title: "Kinematics revision", pairCount: 12, difficulty: "balanced",
       scope: { grade: "10", subject: "physics", scopeType: "single_chapter", chapterIds: [10] },
     });
 
     expect(result.assessmentDraftId).toBe(901);
     expect(mocks.generatePrintablePaperFromContent).toHaveBeenCalledWith(expect.objectContaining({
+      pairCount: 12,
       sourceContext: expect.objectContaining({ priorQuestionHistory: [expect.objectContaining({ conceptKey: "velocity" })] }),
     }));
     expect(mocks.createAssessmentDraft).toHaveBeenCalledWith(expect.objectContaining({

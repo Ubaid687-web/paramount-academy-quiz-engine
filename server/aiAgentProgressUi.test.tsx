@@ -460,10 +460,17 @@ describe("AI quiz generation feedback", () => {
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
 
     expect(await screen.findByText(/does not create an online student quiz/i)).toBeInTheDocument();
+    const pairInput = screen.getByLabelText("Numbered OR pairs");
+    fireEvent.change(pairInput, { target: { value: "" } });
+    expect(pairInput).toHaveValue(null);
+    fireEvent.change(pairInput, { target: { value: "10" } });
+    expect(pairInput).toHaveValue(10);
+    fireEvent.blur(pairInput);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /generate printable paper draft/i }));
     expect(await screen.findByRole("button", { name: /download paper pdf/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /download solution key/i })).toBeInTheDocument();
-    expect(generatePrintablePaperMutation).toHaveBeenCalledWith(expect.objectContaining({ paperType: "short" }));
+    expect(generatePrintablePaperMutation).toHaveBeenCalledWith(expect.objectContaining({ paperType: "short", pairCount: 10 }));
   });
 
   it("offers all approved Computer Science output types while keeping only MCQs online", () => {

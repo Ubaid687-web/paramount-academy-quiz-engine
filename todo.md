@@ -364,3 +364,9 @@
 - [x] Implement side-by-side question-pair rows (left question, right OR alternative, vertical divider, horizontal row separator) with robust measured wrapping.
 - [x] Preserve all header, footer, marks, and draft labels unchanged.
 - [x] Add PDF geometry regressions, verify varied question counts, and save checkpoint.
+
+## Phase 63: Printable Pair Count and Capacity Correction
+- [x] Diagnose why a teacher-entered number of printable OR pairs is being treated as twice as many unique concepts.
+- [x] Restore unrestricted valid numeric entry for printable OR pairs, with range validation only on blur or generation.
+- [x] Treat each OR pair as one source concept with two distinct, non-duplicate assessment angles.
+- [x] Add focused capacity and input regressions, validate the suite, and checkpoint the repair.

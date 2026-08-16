@@ -11,6 +11,10 @@ export type PriorQuestionHistory = QuestionCoverageRecord & {
   assessmentMode?: "mcq" | "short" | "long";
 };
 
+export type OrPairCoverageRecord = QuestionCoverageRecord & {
+  orGroup?: number | null;
+};
+
 function normalise(value: string) {
   return value
     .toLowerCase()
@@ -84,6 +88,48 @@ export function validateDistinctQuestionCoverage(
     }
   });
 
+  return { valid: issues.length === 0, issues };
+}
+
+export function validateDistinctOrPairCoverage(
+  items: OrPairCoverageRecord[],
+  priorHistory: PriorQuestionHistory[] = [],
+) {
+  const issues: string[] = [];
+  const groups = new Map<number, OrPairCoverageRecord[]>();
+  items.forEach((item, index) => {
+    const group = item.orGroup ?? Math.floor(index / 2) + 1;
+    groups.set(group, [...(groups.get(group) ?? []), item]);
+  });
+
+  const representatives: QuestionCoverageRecord[] = [];
+  Array.from(groups.entries()).sort(([left], [right]) => left - right).forEach(([groupNumber, group]) => {
+    if (group.length !== 2) {
+      issues.push(`Numbered OR pair ${groupNumber} must contain exactly two alternatives.`);
+      return;
+    }
+    const [mainQuestion, alternative] = group;
+    const mainConcept = canonicalConceptKey(mainQuestion!);
+    const alternativeConcept = canonicalConceptKey(alternative!);
+    if (!mainConcept || !alternativeConcept) {
+      issues.push(`Numbered OR pair ${groupNumber} has no source-derived concept key.`);
+      return;
+    }
+    if (mainConcept !== alternativeConcept) {
+      issues.push(`Both alternatives in numbered OR pair ${groupNumber} must assess the same source concept from different angles.`);
+      return;
+    }
+    const mainQuestionText = normalise(mainQuestion!.question);
+    const alternativeQuestionText = normalise(alternative!.question);
+    if (mainQuestionText === alternativeQuestionText || tokenSimilarity(mainQuestionText, alternativeQuestionText) >= 0.9) {
+      issues.push(`The alternatives in numbered OR pair ${groupNumber} are too similar; use two genuinely different assessment angles.`);
+      return;
+    }
+    representatives.push(mainQuestion!);
+  });
+
+  const distinctPairs = validateDistinctQuestionCoverage(representatives, priorHistory);
+  issues.push(...distinctPairs.issues.map((issue) => issue.replace(/^Question /, "Numbered OR pair ")));
   return { valid: issues.length === 0, issues };
 }
 

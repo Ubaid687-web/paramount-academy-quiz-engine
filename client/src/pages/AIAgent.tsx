@@ -73,6 +73,8 @@ export default function AIAgent() {
   const [generatedDraft, setGeneratedDraft] = useState<any>(null);
   const [generatedPrintablePaper, setGeneratedPrintablePaper] = useState<any>(null);
   const [paperPairCount, setPaperPairCount] = useState(5);
+  const [paperPairCountInput, setPaperPairCountInput] = useState("5");
+  const [paperPairCountError, setPaperPairCountError] = useState<string | null>(null);
   const [jobId, setJobId] = useState<number | null>(null);
   const [generationProgress, setGenerationProgress] = useState(0);
   const [contentAnalysis, setContentAnalysis] = useState<any>(null);
@@ -518,6 +520,14 @@ export default function AIAgent() {
     if (!quizTitle.trim()) return toast.error("Please enter a paper title.");
     if (!hasGenerationSource) return toast.error("Please upload, paste, or select reviewed curriculum content first.");
     if (scopeType !== "uploaded_content" && !hasValidStoredScope) return toast.error("Complete the selected curriculum scope before generating a printable paper.");
+    const requestedPairCount = Number.parseInt(paperPairCountInput, 10);
+    if (!/^\d+$/.test(paperPairCountInput) || !Number.isInteger(requestedPairCount) || requestedPairCount < 1 || requestedPairCount > 30) {
+      setPaperPairCountError("Enter a whole number from 1 to 30.");
+      toast.error("Enter a whole number from 1 to 30 before generating the paper.");
+      return;
+    }
+    setPaperPairCount(requestedPairCount);
+    setPaperPairCountError(null);
     setIsGenerating(true);
     setActiveStep(4);
     setGeneratedPrintablePaper(null);
@@ -526,7 +536,7 @@ export default function AIAgent() {
       const result = await generatePrintablePaperMutation.mutateAsync({
         paperType: assessmentMode,
         title: quizTitle.trim(),
-        pairCount: paperPairCount,
+        pairCount: requestedPairCount,
         difficulty,
         patternProgramme: { board: "FBISE", grade: gradeLevel, subject },
         ...(scopeType !== "uploaded_content" ? { scope: { board: "FBISE", grade: gradeLevel, subject, scopeType: generationScopeType, chapterIds: selectedChapterIds, segmentIds: selectedSegmentId ? [selectedSegmentId] : [], scopeTemplateId: selectedScopeTemplateId ?? undefined } } : { contentText }),
@@ -840,7 +850,7 @@ export default function AIAgent() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm leading-6 text-muted-foreground"><strong>Draft review required.</strong> Verify source references, answer wording, formulas, and diagrams before issuing this paper.</div>
-                <div><Label htmlFor="paper-pairs" className="mb-2 block text-sm font-medium">Numbered OR pairs</Label><Input id="paper-pairs" type="number" min={1} max={10} value={paperPairCount} onChange={(event) => setPaperPairCount(Math.min(10, Math.max(1, Number(event.target.value) || 1)))} /><p className="mt-1 text-xs text-muted-foreground">Each numbered question includes an alternative of equal marks.</p></div>
+                <div><Label htmlFor="paper-pairs" className="mb-2 block text-sm font-medium">Numbered OR pairs</Label><Input id="paper-pairs" type="number" inputMode="numeric" value={paperPairCountInput} onChange={(event) => { const rawValue = event.target.value; setPaperPairCountInput(rawValue); setPaperPairCountError(null); if (/^\d+$/.test(rawValue)) setPaperPairCount(Number.parseInt(rawValue, 10)); }} onBlur={() => { if (paperPairCountInput === "") { setPaperPairCountError("Enter a whole number from 1 to 30."); return; } const parsedValue = Number.parseInt(paperPairCountInput, 10); if (!/^\d+$/.test(paperPairCountInput) || !Number.isInteger(parsedValue) || parsedValue < 1 || parsedValue > 30) { setPaperPairCountError("Enter a whole number from 1 to 30."); return; } setPaperPairCount(parsedValue); setPaperPairCountError(null); }} /><p className="mt-1 text-xs text-muted-foreground">Each numbered question includes an alternative of equal marks. Choose 1–30 pairs; the source still must support a different concept for each numbered pair.</p>{paperPairCountError && <p className="mt-2 text-xs text-destructive" role="alert">{paperPairCountError}</p>}</div>
                 <div className="flex flex-col gap-2 border-t border-border pt-3 sm:flex-row sm:items-center sm:justify-between"><Button type="button" variant="outline" size="sm" onClick={() => setActiveStep(2)}><ChevronLeft className="mr-1 h-4 w-4" />Back</Button><Button type="button" onClick={handleGeneratePrintablePaper} disabled={isGenerating || generatePrintablePaperMutation.isPending || !canAdvanceToDraft} className="sm:flex-1 bg-primary text-primary-foreground font-semibold shadow-sm hover:bg-primary/90">{isGenerating || generatePrintablePaperMutation.isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating paper draft…</> : "Generate printable paper draft"}</Button></div>
                 {generatedPrintablePaper && <div className="space-y-3 rounded-xl border border-accent/30 bg-accent/5 p-4"><div><p className="font-semibold text-foreground">Printable draft ready</p><p className="mt-1 text-sm text-muted-foreground">{generatedPrintablePaper.items?.length || 0} prompts across {paperPairCount} OR pairs. This is not an online quiz.</p></div><div className="flex flex-col gap-2 sm:flex-row"><Button type="button" variant="outline" className="flex-1" onClick={() => handlePrintableDownload("paper")}>Download paper PDF</Button><Button type="button" variant="outline" className="flex-1" onClick={() => handlePrintableDownload("solution")}>Download solution key</Button></div><p className="text-xs text-muted-foreground">Your browser will receive the PDF directly from this tap. If the paper needs regeneration, the browser will show a clear message.</p></div>}
               </CardContent>
