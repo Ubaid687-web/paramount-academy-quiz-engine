@@ -319,6 +319,51 @@ describe("AI quiz generation feedback", () => {
     expect(screen.getByTestId("topic-capacity-warning")).toHaveTextContent("about 3 distinct examinable topics");
     expect(screen.getByRole("button", { name: "Continue" })).toBeEnabled();
   });
+
+  it("shows a structured approved-textbook citation in the generated draft review", async () => {
+    generateMutation.mockResolvedValue({
+      jobId: 74,
+      mcqs: [{
+        question: "Which quantity determines the frequency of a spring-mass system?",
+        options: { A: "Mass", B: "Temperature", C: "Colour", D: "Volume" },
+        answer: "A",
+        explanation: "Mass affects the frequency of the spring-mass system.",
+        difficulty: "medium",
+        sourceReference: "Simple Harmonic Motion: spring-mass system",
+        learningObjective: "Identify a factor affecting frequency.",
+        sourceCitation: {
+          citationKey: "chapter:1",
+          curriculumSetId: 10,
+          chapterId: 1,
+          chapterCode: "Ch. 10",
+          chapterTitle: "Simple Harmonic Motion",
+          segmentId: null,
+          segmentLabel: null,
+          startPage: 1,
+          endPage: 20,
+          textAnchor: "frequency of a spring-mass system",
+        },
+      }],
+      draft: { quiz: { instructions: "Review every question before use." }, qualityChecks: { reviewWarnings: [] } },
+    });
+
+    render(<AIAgent />);
+    chooseMcqOutput();
+    chooseCustomPasteSource();
+    fireEvent.change(screen.getByLabelText("Paste source text"), {
+      target: { value: "This test uses a generated citation object only to confirm the review card renders its audit fields. ".repeat(4) },
+    });
+    fireEvent.change(screen.getByLabelText("Quiz title"), { target: { value: "Citation audit practice" } });
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    fireEvent.change(screen.getByRole("spinbutton"), { target: { value: "10" } });
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    fireEvent.click(screen.getByRole("button", { name: "Generate MCQs" }));
+
+    await waitFor(() => expect(generateMutation).toHaveBeenCalledTimes(1));
+    const citation = await screen.findByTestId("textbook-citation");
+    expect(citation).toHaveTextContent("Textbook citation: Ch. 10: Simple Harmonic Motion, pp. 1–20");
+    expect(citation).toHaveTextContent("frequency of a spring-mass system");
+  });
   it("does not expose Grade 9 while it has no ready Programme Catalogue entry", async () => {
     render(<AIAgent />);
 

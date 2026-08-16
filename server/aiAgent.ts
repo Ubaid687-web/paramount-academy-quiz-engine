@@ -4,7 +4,7 @@ import { createGenerationJob, updateGenerationJob, createAiGeneratedQuiz, addQue
 import { analyzeContent, chunkContent } from "./contentAnalyzer";
 import { buildDraftQualityChecks, validateGeneratedMcqs, type GeneratedMcq } from "./quizDraftValidator";
 import type { InsertGenerationJob } from "../drizzle/schema";
-import type { FbiseSubject, ScopeType } from "./curriculumScope";
+import type { FbiseSubject, ScopeType, TextbookCitationCandidate } from "./curriculumScope";
 import { buildPriorHistoryExclusion, type PriorQuestionHistory } from "./generationDiversity";
 
 export type GenerationSourceContext = {
@@ -28,7 +28,43 @@ export type GenerationSourceContext = {
     profileEvidenceNotes?: string | null;
   }>;
   priorQuestionHistory?: PriorQuestionHistory[];
+  citationCandidates?: TextbookCitationCandidate[];
 };
+
+type CitationDraft = { citationKey?: unknown; textAnchor?: unknown };
+
+function hydrateTextbookCitations(mcqs: GeneratedMcq[], candidates: TextbookCitationCandidate[]): GeneratedMcq[] {
+  return mcqs.map((mcq) => {
+    const draft = mcq.sourceCitation as unknown as CitationDraft | undefined;
+    const citationKey = typeof draft?.citationKey === "string" ? draft.citationKey : "";
+    const textAnchor = typeof draft?.textAnchor === "string" ? draft.textAnchor.trim().replace(/\s+/g, " ").slice(0, 220) : "";
+    const candidate = candidates.find((entry) => entry.citationKey === citationKey);
+    if (!candidate || !textAnchor) return { ...mcq, sourceCitation: undefined };
+    return { ...mcq, sourceCitation: { ...candidate, textAnchor } };
+  });
+}
+
+function citationCandidatesFromScopeSnapshot(sourceContext: GenerationSourceContext): TextbookCitationCandidate[] {
+  if (sourceContext.citationCandidates?.length) return sourceContext.citationCandidates;
+  if (sourceContext.sourceType !== "curriculum_scope" || !sourceContext.scopeSnapshot || typeof sourceContext.scopeSnapshot !== "object") return [];
+
+  const snapshot = sourceContext.scopeSnapshot as {
+    curriculumSet?: { id?: number };
+    chapters?: Array<{ id: number; code: string | null; title: string; startPage: number | null; endPage: number | null }>;
+    segments?: Array<{ id: number; chapterId: number; label: string; startPage: number | null; endPage: number | null }>;
+  };
+  const curriculumSetId = snapshot.curriculumSet?.id;
+  if (!curriculumSetId || !snapshot.chapters?.length) return [];
+
+  if (snapshot.segments?.length) {
+    return snapshot.segments.flatMap((segment) => {
+      const chapter = snapshot.chapters?.find((entry) => entry.id === segment.chapterId);
+      return chapter ? [{ citationKey: `segment:${segment.id}`, curriculumSetId, chapterId: chapter.id, chapterCode: chapter.code, chapterTitle: chapter.title, segmentId: segment.id, segmentLabel: segment.label, startPage: segment.startPage ?? chapter.startPage, endPage: segment.endPage ?? chapter.endPage }] : [];
+    });
+  }
+
+  return snapshot.chapters.map((chapter) => ({ citationKey: `chapter:${chapter.id}`, curriculumSetId, chapterId: chapter.id, chapterCode: chapter.code, chapterTitle: chapter.title, segmentId: null, segmentLabel: null, startPage: chapter.startPage, endPage: chapter.endPage }));
+}
 
 const MCQ_GENERATION_PROMPT = `You are a careful FBISE-style assessment designer. Generate new, textbook-grounded multiple-choice questions for secondary students. The supplied textbook material is the only factual authority.
 
@@ -159,7 +195,11 @@ export async function generateMCQsFromContent(
       difficultyInstruction = "\nFocus on HARD questions (10% easy, 20% medium, 70% hard).";
     }
 
-    const systemPrompt = MCQ_GENERATION_PROMPT + difficultyInstruction;
+    const citationCandidates = citationCandidatesFromScopeSnapshot(sourceContext);
+    const citationInstruction = sourceContext.sourceType === "curriculum_scope"
+      ? `\n\nSTRUCTURED TEXTBOOK CITATION RULE:\nFor every question, return a sourceCitation object with exactly a citationKey selected from the approved list below and a short exact textAnchor copied from the supporting textbook section. Never invent a chapter, page, heading, or citation key.\n${citationCandidates.map((candidate) => `- ${candidate.citationKey}: ${candidate.chapterCode ? `${candidate.chapterCode}: ` : ""}${candidate.chapterTitle}${candidate.segmentLabel ? ` — ${candidate.segmentLabel}` : ""}${candidate.startPage && candidate.endPage ? ` (pages ${candidate.startPage}-${candidate.endPage})` : ""}`).join("\n")}`
+      : "\n\nCUSTOM MATERIAL RULE:\nDo not return a sourceCitation object. Custom material is not an approved textbook source.";
+    const systemPrompt = MCQ_GENERATION_PROMPT + difficultyInstruction + citationInstruction;
 
     const paperPatternInstruction = sourceContext.paperPatternGuidance?.length
       ? `
@@ -255,8 +295,19 @@ REQUIREMENTS:
                     answerTarget: { type: "string" },
                     sourceReference: { type: "string" },
                     learningObjective: { type: "string" },
+                    sourceCitation: sourceContext.sourceType === "curriculum_scope"
+                      ? {
+                        type: "object",
+                        properties: {
+                          citationKey: { type: "string" },
+                          textAnchor: { type: "string" },
+                        },
+                        required: ["citationKey", "textAnchor"],
+                        additionalProperties: false,
+                      }
+                      : { type: "null" },
                   },
-                  required: ["question", "options", "answer", "explanation", "difficulty", "conceptKey", "facetKey", "answerTarget", "sourceReference", "learningObjective"],
+                  required: ["question", "options", "answer", "explanation", "difficulty", "conceptKey", "facetKey", "answerTarget", "sourceReference", "learningObjective", "sourceCitation"],
                 },
               },
             },
@@ -284,8 +335,10 @@ REQUIREMENTS:
     }
 
     // Ensure we have the right number of questions
-    const finalMcqs = mcqs.slice(0, finalNumQuestions);
-    const validation = validateGeneratedMcqs(finalMcqs, finalNumQuestions, sourceContext.priorQuestionHistory ?? []);
+    const finalMcqs = sourceContext.sourceType === "curriculum_scope"
+      ? hydrateTextbookCitations(mcqs.slice(0, finalNumQuestions), citationCandidates)
+      : mcqs.slice(0, finalNumQuestions);
+    const validation = validateGeneratedMcqs(finalMcqs, finalNumQuestions, sourceContext.priorQuestionHistory ?? [], citationCandidates);
     if (!validation.valid) {
       throw new Error(`Generated draft failed validation: ${validation.issues.join(" ")}`);
     }
@@ -388,6 +441,21 @@ export async function saveGeneratedQuizToDatabase(
     const job = await getGenerationJob(jobId);
     if (!job || job.userId !== userId) {
       throw new Error("Generation job not found or unauthorized");
+    }
+
+    const sourceSnapshot = job.sourceSnapshot ? JSON.parse(job.sourceSnapshot) : undefined;
+    const citationCandidates = job.curriculumSetId
+      ? citationCandidatesFromScopeSnapshot({ sourceType: "curriculum_scope", sourceTitle: "Approved textbook scope", scopeSnapshot: sourceSnapshot })
+      : [];
+    if (citationCandidates.length) {
+      for (let index = 0; index < mcqs.length; index += 1) {
+        const mcq = mcqs[index];
+        const citation = mcq.sourceCitation;
+        const candidate = citation && citationCandidates.find((entry) => entry.citationKey === citation.citationKey);
+        if (!candidate || citation.curriculumSetId !== candidate.curriculumSetId || citation.chapterId !== candidate.chapterId || !citation.textAnchor?.trim()) {
+          throw new Error(`Question ${index + 1} is missing a valid approved-textbook citation and cannot be saved.`);
+        }
+      }
     }
 
     // Create the quiz

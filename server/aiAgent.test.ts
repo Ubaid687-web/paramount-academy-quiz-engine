@@ -107,6 +107,39 @@ describe("AI Agent - MCQ Generation", () => {
     }));
   });
 
+  it("hydrates every approved-scope MCQ with a server-verified textbook citation", async () => {
+    mocks.invokeLLM.mockResolvedValue({
+      choices: [{ message: { content: JSON.stringify({
+        mcqs: createValidMcqs(5).map((mcq) => ({
+          ...mcq,
+          sourceCitation: { citationKey: "chapter:10", textAnchor: "displacement, velocity, and acceleration" },
+        })),
+      }) } }],
+    });
+
+    const result = await generateMCQsFromContent(1, validContent, 5, "balanced", {
+      sourceType: "curriculum_scope",
+      sourceTitle: "Kinematics",
+      curriculumSetId: 77,
+      scopeType: "single_chapter",
+      scopeSnapshot: {
+        curriculumSet: { id: 77 },
+        chapters: [{ id: 10, code: "Unit 1", title: "Kinematics", startPage: 1, endPage: 14 }],
+        segments: [],
+      },
+    });
+
+    expect(result.mcqs[0].sourceCitation).toMatchObject({
+      citationKey: "chapter:10",
+      curriculumSetId: 77,
+      chapterId: 10,
+      chapterTitle: "Kinematics",
+      startPage: 1,
+      endPage: 14,
+      textAnchor: "displacement, velocity, and acceleration",
+    });
+  });
+
   it("uses verified paper metadata only for FBISE-style guidance while keeping textbook material as factual evidence", async () => {
     await generateMCQsFromContent(1, validContent, 5, "balanced", {
       sourceType: "curriculum_scope",
@@ -195,7 +228,13 @@ describe("AI Agent - MCQ Generation", () => {
   });
 
   it("carries scoped source provenance from the generation job into the saved draft quiz", async () => {
-    const snapshot = { scopeType: "single_chapter", displayLabel: "Kinematics", chapters: [{ id: 10, title: "Kinematics" }] };
+    const snapshot = {
+      curriculumSet: { id: 77 },
+      scopeType: "single_chapter",
+      displayLabel: "Kinematics",
+      chapters: [{ id: 10, code: "Unit 1", title: "Kinematics", startPage: 1, endPage: 14 }],
+      segments: [],
+    };
     mocks.getGenerationJob.mockResolvedValue({
       id: 501,
       userId: 1,
@@ -210,7 +249,21 @@ describe("AI Agent - MCQ Generation", () => {
     });
     mocks.createAiGeneratedQuiz.mockResolvedValue({ id: 900 });
 
-    const mcqs = createValidMcqs(1);
+    const mcqs = createValidMcqs(1).map((mcq) => ({
+      ...mcq,
+      sourceCitation: {
+        citationKey: "chapter:10",
+        curriculumSetId: 77,
+        chapterId: 10,
+        chapterCode: "Unit 1",
+        chapterTitle: "Kinematics",
+        segmentId: null,
+        segmentLabel: null,
+        startPage: 1,
+        endPage: 14,
+        textAnchor: "displacement, velocity, and acceleration",
+      },
+    }));
     const quiz = await saveGeneratedQuizToDatabase(1, 501, "Kinematics Draft", mcqs, "hard");
 
     expect(quiz).toEqual({ id: 900 });

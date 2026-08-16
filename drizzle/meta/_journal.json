@@ -85,6 +85,13 @@
       "when": 1786857676896,
       "tag": "0011_curved_william_stryker",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "5",
+      "when": 1786872660678,
+      "tag": "0012_tough_the_fury",
+      "breakpoints": true
     }
   ]
 }

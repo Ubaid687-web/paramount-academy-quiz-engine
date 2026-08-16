@@ -19,6 +19,31 @@ describe("quiz draft validation", () => {
     expect(validateGeneratedMcqs([validQuestion], 1)).toEqual({ valid: true, issues: [] });
   });
 
+  it("requires a structured citation that matches the approved textbook scope", () => {
+    const citationCandidates = [{
+      citationKey: "chapter:10",
+      curriculumSetId: 77,
+      chapterId: 10,
+      chapterCode: "Unit 1",
+      chapterTitle: "Kinematics",
+      segmentId: null,
+      segmentLabel: null,
+      startPage: 1,
+      endPage: 14,
+    }];
+    const uncited = validateGeneratedMcqs([validQuestion], 1, [], citationCandidates);
+    expect(uncited.issues).toEqual(expect.arrayContaining([
+      "Question 1 has no approved textbook citation.",
+      "Question 1 has no textbook text anchor.",
+    ]));
+
+    const cited = validateGeneratedMcqs([{
+      ...validQuestion,
+      sourceCitation: { ...citationCandidates[0], textAnchor: "rate of change of velocity" },
+    }], 1, [], citationCandidates);
+    expect(cited).toEqual({ valid: true, issues: [] });
+  });
+
   it("rejects duplicate, incomplete, and ungrounded questions", () => {
     const invalidQuestion = {
       ...validQuestion,

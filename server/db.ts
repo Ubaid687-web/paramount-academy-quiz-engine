@@ -761,6 +761,7 @@ export async function addQuestionsToQuiz(quizId: number, questionsList: any[]) {
     optionC: q.options.C,
     optionD: q.options.D,
     correctAnswer: q.answer,
+    sourceCitation: q.sourceCitation ? JSON.stringify(q.sourceCitation) : null,
   }));
   
   return db.insert(questions).values(questionsToInsert);

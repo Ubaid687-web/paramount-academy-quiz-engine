@@ -1,5 +1,19 @@
 import { collectMcqLayoutWarnings, diagnoseMcqLayout } from "./mcqLayout";
 import { validateDistinctQuestionCoverage, type PriorQuestionHistory } from "./generationDiversity";
+import type { TextbookCitationCandidate } from "./curriculumScope";
+
+export type TextbookCitation = {
+  citationKey: string;
+  curriculumSetId: number;
+  chapterId: number;
+  chapterCode: string | null;
+  chapterTitle: string;
+  segmentId: number | null;
+  segmentLabel: string | null;
+  startPage: number | null;
+  endPage: number | null;
+  textAnchor: string;
+};
 
 export type GeneratedMcq = {
   question: string;
@@ -12,6 +26,7 @@ export type GeneratedMcq = {
   answerTarget?: string;
   sourceReference?: string;
   learningObjective?: string;
+  sourceCitation?: TextbookCitation;
 };
 
 export type DraftQualityChecks = {
@@ -26,7 +41,7 @@ function normalise(value: string) {
   return value.toLowerCase().replace(/\s+/g, " ").replace(/[^a-z0-9 ]/g, "").trim();
 }
 
-export function validateGeneratedMcqs(mcqs: unknown[], expectedCount: number, priorHistory: PriorQuestionHistory[] = []) {
+export function validateGeneratedMcqs(mcqs: unknown[], expectedCount: number, priorHistory: PriorQuestionHistory[] = [], citationCandidates: TextbookCitationCandidate[] = []) {
   const issues: string[] = [];
 
   if (mcqs.length !== expectedCount) {
@@ -53,6 +68,12 @@ export function validateGeneratedMcqs(mcqs: unknown[], expectedCount: number, pr
     if (!question.learningObjective?.trim()) issues.push(`Question ${number} has no learning objective.`);
     if (!question.facetKey?.trim()) issues.push(`Question ${number} has no assessable facet key.`);
     if (!question.answerTarget?.trim()) issues.push(`Question ${number} has no answer target.`);
+    if (citationCandidates.length) {
+      const citation = question.sourceCitation;
+      const matchingCandidate = citation && citationCandidates.find((candidate) => candidate.citationKey === citation.citationKey);
+      if (!matchingCandidate) issues.push(`Question ${number} has no approved textbook citation.`);
+      if (!citation?.textAnchor?.trim()) issues.push(`Question ${number} has no textbook text anchor.`);
+    }
 
     const layout = diagnoseMcqLayout(question as GeneratedMcq, number);
     layout.warnings.filter((warning) => /unusually long stem|paragraph-like option|multi-sentence option/i.test(warning)).forEach((warning) => issues.push(warning));

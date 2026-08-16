@@ -927,6 +927,18 @@ export const appRouter = router({
             answerTarget: z.string().min(2),
             sourceReference: z.string().min(1),
             learningObjective: z.string().min(1),
+            sourceCitation: z.object({
+              citationKey: z.string().min(1),
+              curriculumSetId: z.number().int().positive(),
+              chapterId: z.number().int().positive(),
+              chapterCode: z.string().nullable(),
+              chapterTitle: z.string().min(1),
+              segmentId: z.number().int().positive().nullable(),
+              segmentLabel: z.string().nullable(),
+              startPage: z.number().int().positive().nullable(),
+              endPage: z.number().int().positive().nullable(),
+              textAnchor: z.string().min(1).max(220),
+            }).nullable().optional(),
           })),
           difficulty: z.string(),
         })

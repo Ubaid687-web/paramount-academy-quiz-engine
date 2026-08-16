@@ -985,6 +985,17 @@ export default function AIAgent() {
                           <div className="mt-3 border-t border-border/60 pt-2 text-xs text-muted-foreground">
                             {mcq.sourceReference && <p><span className="font-medium text-foreground">Source:</span> {mcq.sourceReference}</p>}
                             {mcq.learningObjective && <p><span className="font-medium text-foreground">Learning objective:</span> {mcq.learningObjective}</p>}
+                            {mcq.sourceCitation ? (
+                              <p data-testid="textbook-citation" className="mt-1 rounded-md bg-background/70 px-2 py-1 text-foreground">
+                                <span className="font-medium">Textbook citation:</span>{" "}
+                                {mcq.sourceCitation.chapterCode ? `${mcq.sourceCitation.chapterCode}: ` : ""}{mcq.sourceCitation.chapterTitle}
+                                {mcq.sourceCitation.segmentLabel ? ` — ${mcq.sourceCitation.segmentLabel}` : ""}
+                                {mcq.sourceCitation.startPage && mcq.sourceCitation.endPage ? `, pp. ${mcq.sourceCitation.startPage}–${mcq.sourceCitation.endPage}` : ""}
+                                {` · “${mcq.sourceCitation.textAnchor}”`}
+                              </p>
+                            ) : scopeType === "uploaded_content" ? (
+                              <p className="mt-1 text-muted-foreground">Custom material — no approved textbook citation.</p>
+                            ) : null}
                           </div>
                         )}
                       </div>

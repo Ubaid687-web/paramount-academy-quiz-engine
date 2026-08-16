@@ -398,6 +398,11 @@
 - [x] Identify critical gaps that risk reliability, academic integrity, operational safety, or teacher trust.
 - [x] Deliver a blunt go/no-go decision and a priority-ranked corrective plan before adding further features.
 
+## Phase 70: Auditable Question Source Citations
+- [x] Audit the existing generated-question contract and the approved curriculum scope metadata available for precise citations.
+- [x] Add structured textbook citation fields to generated and persisted questions, without fabricating citations for custom material.
+- [x] Surface citations for Portal Admin review, add source-integrity regressions, validate, checkpoint, and report.
+
 ## Phase 67: Transient Rate-Limit Retry Resilience
 - [x] Define bounded retry eligibility for transient LLM rate-limit and service failures without retrying quota exhaustion, billing, invalid requests, or source errors.
 - [x] Implement exponential backoff with jitter in the shared LLM transport and preserve final error context.

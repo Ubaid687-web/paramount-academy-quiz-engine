@@ -58,6 +58,7 @@ export const questions = mysqlTable("questions", {
   optionC: text("optionC").notNull(),
   optionD: text("optionD").notNull(),
   correctAnswer: varchar("correctAnswer", { length: 1 }).notNull(), // A, B, C, or D
+  sourceCitation: longtext("sourceCitation"), // Structured server-verified textbook citation JSON for generated questions.
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 

@@ -115,6 +115,58 @@ export type ResolvedScope = {
   };
 };
 
+export type TextbookCitationCandidate = {
+  citationKey: string;
+  curriculumSetId: number;
+  chapterId: number;
+  chapterCode: string | null;
+  chapterTitle: string;
+  segmentId: number | null;
+  segmentLabel: string | null;
+  startPage: number | null;
+  endPage: number | null;
+};
+
+/**
+ * Returns only server-approved textbook locations from the resolved selection.
+ * These candidates are the sole allowed targets for question-level citations.
+ */
+export function buildTextbookCitationCandidates(catalog: ScopeCatalog, scope: ResolvedScope): TextbookCitationCandidate[] {
+  const selectedSegments = catalog.segments.filter((segment) => scope.segmentIds.includes(segment.id));
+  if (selectedSegments.length) {
+    return selectedSegments.map((segment) => {
+      const chapter = catalog.chapters.find((entry) => entry.id === segment.chapterId);
+      if (!chapter) throw new ScopeResolutionError("A selected citation segment has no active chapter evidence.");
+      return {
+        citationKey: `segment:${segment.id}`,
+        curriculumSetId: catalog.curriculumSet.id,
+        chapterId: chapter.id,
+        chapterCode: chapter.code,
+        chapterTitle: chapter.title,
+        segmentId: segment.id,
+        segmentLabel: segment.label,
+        startPage: segment.startPage ?? chapter.startPage,
+        endPage: segment.endPage ?? chapter.endPage,
+      };
+    });
+  }
+
+  return scope.chapterIds.map((chapterId) => {
+    const chapter = ensureActiveChapter(catalog, chapterId);
+    return {
+      citationKey: `chapter:${chapter.id}`,
+      curriculumSetId: catalog.curriculumSet.id,
+      chapterId: chapter.id,
+      chapterCode: chapter.code,
+      chapterTitle: chapter.title,
+      segmentId: null,
+      segmentLabel: null,
+      startPage: chapter.startPage,
+      endPage: chapter.endPage,
+    };
+  });
+}
+
 export class ScopeResolutionError extends Error {
   constructor(message: string) {
     super(message);
