@@ -20,6 +20,8 @@ type FbiseSubject = string;
 type GradeLevel = string;
 type GenerationScope = "uploaded_content" | "single_chapter" | "half_chapter" | "multiple_chapters" | "half_syllabus" | "block";
 type AssessmentMode = "mcq" | "short" | "long" | "full_paper";
+type SourceView = "choice" | "approved" | "custom";
+type CustomInputMode = "upload" | "paste";
 type FullPaperDraftItem = {
   id: string;
   kind: "short" | "long";
@@ -95,6 +97,9 @@ export default function AIAgent() {
   const [activeFullPaperSectionId, setActiveFullPaperSectionId] = useState("section-1");
   const [selectedPatternSourceIds, setSelectedPatternSourceIds] = useState<number[]>([]);
   const [activeStep, setActiveStep] = useState<1 | 2 | 3 | 4>(1);
+  const [sourceView, setSourceView] = useState<SourceView>("choice");
+  const [customInputMode, setCustomInputMode] = useState<CustomInputMode>("upload");
+  const [settingsView, setSettingsView] = useState<"count" | "difficulty">("count");
   const [showSavedDraftLoader, setShowSavedDraftLoader] = useState(false);
 
   const readyProgrammes = readyProgrammesQuery.data ?? [];
@@ -249,7 +254,7 @@ export default function AIAgent() {
     ? "single_chapter"
     : scopeType) as Exclude<GenerationScope, "uploaded_content">;
   const hasGenerationSource = isProgrammeReady && (scopeType === "uploaded_content"
-    ? Boolean(contentText.trim())
+    ? customInputMode === "upload" ? Boolean(uploadedFile && contentText.trim()) : Boolean(contentText.trim())
     : hasValidStoredScope);
   const assessmentAvailability = assessmentAvailabilityQuery.data;
   const isSelectedModeAvailable = assessmentAvailability
@@ -262,6 +267,18 @@ export default function AIAgent() {
     && Boolean(quizTitle.trim())
     && ((isAutomaticMcqMode || isPrintablePaperMode) ? hasGenerationSource : scopeType !== "uploaded_content" && hasValidStoredScope);
   const activeFullPaperSection = fullPaperSections.find((section) => section.id === activeFullPaperSectionId) ?? fullPaperSections[0];
+  const sourceInputReady = scopeType === "uploaded_content"
+    ? customInputMode === "upload" ? Boolean(uploadedFile && contentText.trim()) : Boolean(contentText.trim())
+    : hasValidStoredScope;
+  const builderStepLabel = activeStep === 1 ? "Quiz type" : activeStep === 2 ? "Source" : activeStep === 3 ? "Quiz settings" : "Review";
+  const builderProgress = Math.round((activeStep / 4) * 100);
+
+  const changeCustomInputMode = (mode: CustomInputMode) => {
+    setCustomInputMode(mode);
+    setUploadedFile(null);
+    setContentText("");
+    setQuizTitle("");
+  };
 
   const toggleChapter = (chapterId: number, checked: boolean) => {
     setSelectedChapterIds((currentIds) => {
@@ -690,39 +707,11 @@ export default function AIAgent() {
               <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-primary"><GraduationCap className="h-4 w-4" />Assessment builder</p>
               <h1 className="mt-2 text-3xl font-bold text-foreground sm:text-4xl">{activeStep === 4 ? "Review your draft." : !isContextEditing && isProgrammeReady ? `Grade ${gradeLevel} ${selectedReadyProgramme?.teacherLabel ?? formatSubjectLabel(subject)}` : "New assessment"}</h1>
             </div>
-            <div className="rounded-xl border border-primary/15 bg-primary/5 px-3 py-2 text-right">
-              <p className="text-xs font-semibold text-primary">Step {activeStep} / 4</p>
-            </div>
           </div>
-          <nav className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-4" aria-label="Assessment preparation steps">
-            {[
-              { id: 1, label: "Quiz type" },
-              { id: 2, label: "Source" },
-              { id: 3, label: "Quiz settings" },
-              { id: 4, label: "Review" },
-            ].map((step) => {
-              const isCurrent = activeStep === step.id;
-              const isCompleted = activeStep > step.id;
-              return <button
-                key={step.id}
-                type="button"
-                aria-label={`Step ${step.id}: ${step.label}`}
-                aria-current={isCurrent ? "step" : undefined}
-                disabled={step.id > activeStep}
-                onClick={() => setActiveStep(step.id as 1 | 2 | 3 | 4)}
-                onKeyDown={(event) => {
-                  if ((event.key === "Enter" || event.key === " ") && step.id <= activeStep) {
-                    event.preventDefault();
-                    setActiveStep(step.id as 1 | 2 | 3 | 4);
-                  }
-                }}
-                className={`group flex min-h-16 items-center gap-3 rounded-xl border px-3 py-2 text-left transition-[transform,background-color,border-color,box-shadow] duration-200 ease-out active:scale-[0.98] disabled:cursor-default disabled:opacity-55 ${isCurrent ? "border-primary bg-primary/[0.055] shadow-sm" : isCompleted ? "border-primary/20 bg-primary/[0.025] hover:border-primary/40" : "border-border bg-muted/30"}`}
-              >
-                <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${isCurrent ? "bg-primary text-primary-foreground" : isCompleted ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`}>{isCompleted ? "✓" : step.id}</span>
-                <span className="min-w-0"><span className="block text-sm font-bold text-foreground">{step.label}</span></span>
-              </button>;
-            })}
-          </nav>
+          <div className="mt-5" aria-label="Assessment preparation progress" aria-live="polite">
+            <div className="flex items-center justify-between gap-3"><p className="text-xs font-bold uppercase tracking-[0.12em] text-primary">Step {activeStep} of 4</p><p className="text-xs font-medium text-muted-foreground">{builderStepLabel}</p></div>
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuemin={1} aria-valuemax={4} aria-valuenow={activeStep} aria-label={`Step ${activeStep} of 4`}><div className="h-full rounded-full bg-primary transition-[width] duration-300 ease-out" style={{ width: `${builderProgress}%` }} /></div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -745,197 +734,55 @@ export default function AIAgent() {
                   </div>
                   {!isProgrammeReady ? <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-800">This programme is not ready. Choose one of the approved programme entries above.</div> : <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => setIsContextEditing(false)}>Continue</Button>}
                 </div> : <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/15 bg-primary/[0.035] p-3"><div><p className="text-xs font-bold uppercase tracking-[0.12em] text-primary">Teacher context</p><p className="mt-1 text-sm font-bold text-foreground">Grade {gradeLevel} · {selectedReadyProgramme?.teacherLabel ?? formatSubjectLabel(subject)}</p></div><Button type="button" variant="outline" size="sm" onClick={() => { setIsContextEditing(true); setActiveStep(1); }}>Change</Button></div>}
-                <div className="grid gap-3 sm:grid-cols-3" aria-label="Assessment output type">
+                {!isContextEditing && <div className="grid gap-3 sm:grid-cols-3" aria-label="Assessment output type">
                   {[
                     { mode: "mcq" as const, title: "MCQ quiz", detail: "Online practice and printable PDF." },
                     { mode: "short" as const, title: "Short question paper", detail: "Printable paper and solution key only." },
                     { mode: "long" as const, title: "Long question paper", detail: "Printable paper and solution key only." },
-                  ].map((option) => <button key={option.mode} type="button" aria-pressed={assessmentMode === option.mode} disabled={!isProgrammeReady || (assessmentAvailability ? !assessmentAvailability.supportedModes[option.mode] : false)} onClick={() => { setAssessmentMode(option.mode); setGeneratedPrintablePaper(null); setActiveStep(2); }} className={`rounded-xl border p-4 text-left transition-[transform,background-color,border-color,box-shadow] duration-200 ease-out active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-55 ${assessmentMode === option.mode ? "border-primary bg-primary/[0.055] shadow-sm" : "border-border bg-muted/30 hover:border-primary/40"}`}><span className="block text-sm font-bold text-foreground">{option.title}</span><span className="mt-1 block text-xs leading-5 text-muted-foreground">{option.detail}</span></button>)}
-                </div>
+                  ].map((option) => <button key={option.mode} type="button" aria-pressed={assessmentMode === option.mode} disabled={!isProgrammeReady || (assessmentAvailability ? !assessmentAvailability.supportedModes[option.mode] : false)} onClick={() => { setAssessmentMode(option.mode); setGeneratedPrintablePaper(null); setSourceView("choice"); setActiveStep(2); }} className={`rounded-xl border p-4 text-left transition-[transform,background-color,border-color,box-shadow] duration-200 ease-out active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-55 ${assessmentMode === option.mode ? "border-primary bg-primary/[0.055] shadow-sm" : "border-border bg-muted/30 hover:border-primary/40"}`}><span className="block text-sm font-bold text-foreground">{option.title}</span><span className="mt-1 block text-xs leading-5 text-muted-foreground">{option.detail}</span></button>)}
+                </div>}
               </CardContent>
             </Card>}
 
-            {/* Content Input Card */}
             {activeStep === 2 && <Card className="border-border/80 bg-card shadow-sm motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-200">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-xl">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">2</span>
-                  Select source
-                </CardTitle>
-                <CardDescription>Use a verified book or add a custom source.</CardDescription>
+              <CardHeader className="p-5 pb-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <CardTitle className="text-xl">Select source</CardTitle>
+                    <CardDescription>{sourceView === "choice" ? "Choose one path." : sourceView === "approved" ? "Choose reviewed textbook chapters." : "Choose one custom input method."}</CardDescription>
+                  </div>
+                  {sourceView !== "choice" && <Button type="button" variant="ghost" size="sm" onClick={() => setSourceView("choice")} aria-label="Change source">Change</Button>}
+                </div>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-3 sm:grid-cols-2" aria-label="Choose a source path">
-                  {hasActiveApprovedTextbook && <button type="button" onClick={() => setScopeType("multiple_chapters")} className={`rounded-xl border p-4 text-left transition-[transform,background-color,border-color,box-shadow] duration-200 ease-out active:scale-[0.98] ${scopeType !== "uploaded_content" ? "border-primary bg-primary/[0.055] shadow-sm" : "border-border bg-muted/30 hover:border-primary/40"}`}>
-                    <div className="flex items-center gap-2"><LibraryBig className="h-4 w-4 text-primary" /><span className="text-sm font-bold text-foreground">Approved textbook chapters</span></div>
-                    <p className="mt-2 text-xs leading-5 text-muted-foreground">Choose reviewed chapters.</p>
-                  </button>}
-                  <button type="button" onClick={() => setScopeType("uploaded_content")} className={`rounded-xl border p-4 text-left transition-[transform,background-color,border-color,box-shadow] duration-200 ease-out active:scale-[0.98] ${scopeType === "uploaded_content" ? "border-primary bg-primary/[0.055] shadow-sm" : "border-border bg-muted/30 hover:border-primary/40"}`}>
-                    <div className="flex items-center gap-2"><FileText className="h-4 w-4 text-primary" /><span className="text-sm font-bold text-foreground">My custom lesson material</span></div>
-                    <p className="mt-2 text-xs leading-5 text-muted-foreground">Upload a file or paste source text.</p>
+              <CardContent className="space-y-4 p-5 pt-2">
+                {sourceView === "choice" && <div className="space-y-3" aria-label="Choose a source path">
+                  <button type="button" disabled={!hasActiveApprovedTextbook || scopeCatalogQuery.isLoading} onClick={() => { setScopeType("multiple_chapters"); setSourceView("approved"); }} className={`w-full rounded-xl border p-4 text-left transition-[background-color,border-color,box-shadow] ${hasActiveApprovedTextbook ? "border-primary/25 bg-primary/[0.04] hover:border-primary/50 hover:shadow-sm" : "cursor-not-allowed border-border bg-muted/30 opacity-65"}`}>
+                    <div className="flex items-start justify-between gap-3"><div className="flex items-center gap-2"><LibraryBig className="h-4 w-4 text-primary" /><span className="text-sm font-bold text-foreground">Approved textbook chapters</span></div><span className="rounded-full bg-primary/10 px-2 py-1 text-[10px] font-extrabold uppercase tracking-wide text-primary">{hasActiveApprovedTextbook ? "Recommended" : "Unavailable"}</span></div>
+                    <p className="mt-2 text-xs leading-5 text-muted-foreground">Use the reviewed source already prepared by Portal Admin.</p>
                   </button>
-                </div>
-                {!scopeCatalogQuery.isLoading && !hasActiveApprovedTextbook && <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs leading-5 text-muted-foreground"><strong>No verified {SUBJECT_LABELS[subject]} textbook is active.</strong> Use a custom source.</div>}
-                {scopeType === "uploaded_content" ? <>
-                <div>
-                  <Label className="text-sm font-medium mb-2 block">Upload one source file</Label>
-                  <label className="flex items-center justify-center w-full p-6 border-2 border-dashed border-border rounded-xl bg-muted/35 hover:border-primary/45 hover:bg-primary/[0.03] cursor-pointer transition-colors">
-                    <input
-                      type="file"
-                      id="file-upload"
-                      className="hidden"
-                      accept=".txt,.pdf"
-                      onChange={handleFileUpload}
-                    />
-                    <div className="flex flex-col items-center gap-2">
-                      {isProcessingFile ? <Loader2 className="h-8 w-8 animate-spin text-primary" /> : <Upload className="h-8 w-8 text-primary" />}
-                      <div>
-                        <p className="font-semibold text-foreground">{isProcessingFile ? "Extracting document text…" : "Upload a PDF or TXT file"}</p>
-                        <p className="text-sm text-muted-foreground">{isProcessingFile ? "Please keep this page open while we prepare the quiz source." : "or click to browse"}</p>
-                      </div>
-                    </div>
-                  </label>
+                  <button type="button" onClick={() => { setScopeType("uploaded_content"); setSourceView("custom"); }} className={`w-full rounded-xl border p-4 text-left transition-[background-color,border-color,box-shadow] ${!hasActiveApprovedTextbook ? "border-primary/25 bg-primary/[0.04]" : "border-border bg-muted/30 hover:border-primary/40 hover:shadow-sm"}`}>
+                    <div className="flex items-start justify-between gap-3"><div className="flex items-center gap-2"><FileText className="h-4 w-4 text-primary" /><span className="text-sm font-bold text-foreground">My custom lesson material</span></div><span className="rounded-full bg-muted px-2 py-1 text-[10px] font-extrabold uppercase tracking-wide text-muted-foreground">{hasActiveApprovedTextbook ? "Alternative" : "Recommended"}</span></div>
+                    <p className="mt-2 text-xs leading-5 text-muted-foreground">Bring one PDF/TXT file or paste a source excerpt.</p>
+                  </button>
+                  {!hasActiveApprovedTextbook && !scopeCatalogQuery.isLoading && <p className="text-xs text-muted-foreground">No verified {SUBJECT_LABELS[subject]} textbook is active.</p>}
+                </div>}
 
-                  {uploadedFile && (
-                    <div className="flex items-center justify-between p-3 bg-accent/10 rounded-lg mt-3">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 className="h-5 w-5 text-accent" />
-                        <div>
-                          <p className="font-medium text-sm">{uploadedFile.name}</p>
-                          <p className="text-xs text-muted-foreground">{(uploadedFile.size / 1024 / 1024).toFixed(2)} MB</p>
-                        </div>
-                      </div>
-                      <Button
-                        onClick={() => {
-                          setUploadedFile(null);
-                          setContentText("");
-                          setQuizTitle("");
-                        }}
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  )}
-                </div>
+                {sourceView === "approved" && <div className="space-y-4">
+                  {scopeCatalogQuery.isLoading && <div className="flex items-center gap-2 rounded-lg bg-muted/60 p-3 text-xs text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Loading reviewed chapters…</div>}
+                  {!activeScopeCatalog && !scopeCatalogQuery.isLoading && <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-muted-foreground">{scopeCatalogQuery.error ? "Approved chapters are unavailable." : `No verified ${SUBJECT_LABELS[subject]} textbook is active.`}</div>}
+                  {activeScopeCatalog && <fieldset className="space-y-2" aria-label="Select textbook chapters"><legend className="text-sm font-bold text-foreground">Select chapters</legend><div className="max-h-48 space-y-1 overflow-y-auto rounded-lg border border-border bg-background/60 p-2">{chapters.map((chapter) => { const selected = selectedChapterIds.includes(chapter.id); return <label key={chapter.id} className="flex cursor-pointer items-start gap-2 rounded-md p-2 hover:bg-muted/70"><Checkbox checked={selected} onCheckedChange={(checked) => toggleChapter(chapter.id, checked === true)} aria-label={`${chapter.code ? `${chapter.code}: ` : ""}${chapter.title}`} /><span className="min-w-0 text-sm leading-5 text-foreground"><span className="font-medium">{chapter.code ? `${chapter.code}: ` : ""}{chapter.title}</span>{chapter.startPage && chapter.endPage && <span className="block text-xs text-muted-foreground">Pages {chapter.startPage}–{chapter.endPage}</span>}</span></label>; })}</div><p className="text-xs font-medium text-primary">{selectedChapterIds.length === 0 ? "Choose at least one chapter." : selectedChapterIds.length === 1 ? "One chapter selected." : `${selectedChapterIds.length} chapters selected.`}</p></fieldset>}
+                  {sourceInputReady && <div><Label htmlFor="approved-title" className="mb-2 block text-sm font-medium">Quiz title</Label><Input id="approved-title" placeholder="e.g., Grade 10 Physics revision" value={quizTitle} onChange={(event) => setQuizTitle(event.target.value)} /></div>}
+                  <div className="flex items-center justify-between gap-3 border-t border-border pt-3"><p className="text-xs text-muted-foreground">{sourceInputReady ? (quizTitle.trim() ? "Ready" : "Add a title to continue.") : "Select a chapter first."}</p><Button type="button" variant="outline" size="sm" onClick={() => setActiveStep(1)}><ChevronLeft className="mr-1 h-4 w-4" />Back</Button><Button type="button" size="sm" disabled={!canAdvanceToDraft} onClick={() => { setSettingsView("count"); setActiveStep(3); }}>Continue<ChevronRight className="ml-1 h-4 w-4" /></Button></div>
+                </div>}
 
-                {/* Text Input */}
-                <div>
-                  <Label htmlFor="content" className="text-sm font-medium mb-2 block">
-                    Source text
-                  </Label>
-                  <Textarea
-                    id="content"
-                    aria-label="Or Paste Content"
-                    placeholder="Paste source text"
-                    value={contentText}
-                    onChange={(e) => setContentText(e.target.value)}
-                    className="min-h-[200px] resize-none"
-                  />
-                </div>
-
-                {/* Quiz Title */}
-                <div>
-                  <Label htmlFor="title" className="text-sm font-medium mb-2 block">
-                    Quiz Title
-                  </Label>
-                  <Input
-                    id="title"
-                    placeholder="e.g., Grade 10 Physics — Chapter 10 practice draft"
-                    value={quizTitle}
-                    onChange={(e) => setQuizTitle(e.target.value)}
-                  />
-                </div>
-                </> : <>
-                  <div className="rounded-xl border border-primary/15 bg-primary/[0.035] p-5">
-                    <div className="flex items-start gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"><LibraryBig className="h-5 w-5" /></div>
-                      <div>
-                    <p className="font-bold text-foreground">Reviewed textbook</p>
-                        <p className="mt-1 text-sm leading-6 text-muted-foreground">Choose one or more chapters.</p>
-                      </div>
-                    </div>
-                  </div>
-                  {!activeScopeCatalog && !scopeCatalogQuery.isLoading && <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs leading-5 text-muted-foreground">{scopeCatalogQuery.error ? "Approved chapters are unavailable." : `No verified ${SUBJECT_LABELS[subject]} textbook is active.`}</div>}
-                  {scopeCatalogQuery.isLoading && <div className="flex items-center gap-2 rounded-lg bg-muted/60 p-3 text-xs text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Loading approved chapters…</div>}
-                  {activeScopeCatalog && <fieldset className="space-y-2" aria-label="Select textbook chapters">
-                    <legend className="text-sm font-bold text-foreground">Select the chapters for this draft</legend>
-                    <div className="max-h-64 space-y-2 overflow-y-auto rounded-lg border border-border bg-background/60 p-2 pr-1">
-                      {chapters.map((chapter) => {
-                        const selected = selectedChapterIds.includes(chapter.id);
-                        return <label key={chapter.id} className="flex cursor-pointer items-start gap-2 rounded-md p-2 hover:bg-muted/70">
-                          <Checkbox checked={selected} onCheckedChange={(checked) => toggleChapter(chapter.id, checked === true)} aria-label={`${chapter.code ? `${chapter.code}: ` : ""}${chapter.title}`} />
-                          <span className="min-w-0 text-sm leading-5 text-foreground"><span className="font-medium">{chapter.code ? `${chapter.code}: ` : ""}{chapter.title}</span>{chapter.startPage && chapter.endPage && <span className="block text-xs text-muted-foreground">Textbook pages {chapter.startPage}–{chapter.endPage}</span>}</span>
-                        </label>;
-                      })}
-                    </div>
-                    <p className="text-xs font-medium text-primary">{selectedChapterIds.length === 0 ? "Choose at least one chapter." : selectedChapterIds.length === 1 ? "One chapter selected." : `${selectedChapterIds.length} chapters selected.`}</p>
-                    <p className="text-xs text-muted-foreground">Active source: <span className="font-medium text-foreground">{activeScopeCatalog.curriculumSet.label}</span>{activeScopeCatalog.curriculumSet.editionLabel ? ` — ${activeScopeCatalog.curriculumSet.editionLabel}` : ""}</p>
-                  </fieldset>}
-                  <div>
-                    <Label htmlFor="title" className="text-sm font-medium mb-2 block">Draft title</Label>
-                    <Input id="title" placeholder="e.g., Grade 10 Physics — Chapter 10 practice draft" value={quizTitle} onChange={(e) => setQuizTitle(e.target.value)} />
-                  </div>
-                </>}
-
-                <div className="flex flex-col gap-3 rounded-xl border border-dashed border-primary/25 bg-primary/[0.025] p-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div aria-live="polite"><p className="text-sm font-bold text-foreground">{canAdvanceToDraft ? "Ready" : "Source and title required"}</p></div>
-                  <div className="flex gap-2"><Button type="button" variant="outline" size="sm" onClick={() => setActiveStep(1)}><ChevronLeft className="mr-1 h-4 w-4" />Back</Button><Button type="button" size="sm" disabled={!canAdvanceToDraft} onClick={() => setActiveStep(3)}>Continue<ChevronRight className="ml-1 h-4 w-4" /></Button></div>
-                </div>
-
+                {sourceView === "custom" && <div className="space-y-4">
+                  <div className="grid grid-cols-2 rounded-xl border border-border bg-muted/40 p-1" role="tablist" aria-label="Custom source input method"><button type="button" role="tab" aria-selected={customInputMode === "upload"} onClick={() => changeCustomInputMode("upload")} className={`rounded-lg px-3 py-2 text-sm font-bold transition-colors ${customInputMode === "upload" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}>Upload file</button><button type="button" role="tab" aria-selected={customInputMode === "paste"} onClick={() => changeCustomInputMode("paste")} className={`rounded-lg px-3 py-2 text-sm font-bold transition-colors ${customInputMode === "paste" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}>Paste text</button></div>
+                  {customInputMode === "upload" ? <div className="space-y-3"><label className="flex min-h-32 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-border bg-muted/35 p-5 text-center hover:border-primary/45 hover:bg-primary/[0.03]"><input type="file" id="file-upload" className="hidden" accept=".txt,.pdf" onChange={handleFileUpload} /><div className="flex flex-col items-center gap-2">{isProcessingFile ? <Loader2 className="h-7 w-7 animate-spin text-primary" /> : <Upload className="h-7 w-7 text-primary" />}<p className="text-sm font-semibold text-foreground">{isProcessingFile ? "Extracting document…" : "Choose PDF or TXT"}</p><p className="text-xs text-muted-foreground">One source file</p></div></label>{uploadedFile ? <div className="flex items-center justify-between rounded-lg bg-accent/10 p-3"><div className="flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-accent" /><div><p className="text-sm font-medium">{uploadedFile.name}</p><p className="text-xs text-muted-foreground">{(uploadedFile.size / 1024 / 1024).toFixed(2)} MB</p></div></div><Button onClick={() => { setUploadedFile(null); setContentText(""); setQuizTitle(""); }} variant="ghost" size="icon" className="h-6 w-6" aria-label="Remove uploaded source"><X className="h-4 w-4" /></Button></div> : null}</div> : <div><Label htmlFor="content" className="mb-2 block text-sm font-medium">Paste source text</Label><Textarea id="content" aria-label="Paste source text" placeholder="Paste source text" value={contentText} onChange={(event) => setContentText(event.target.value)} className="min-h-32 resize-none" /></div>}
+                  {sourceInputReady && <div><Label htmlFor="custom-title" className="mb-2 block text-sm font-medium">Quiz title</Label><Input id="custom-title" placeholder="e.g., Grade 10 Physics revision" value={quizTitle} onChange={(event) => setQuizTitle(event.target.value)} /></div>}
+                  <div className="flex items-center justify-between gap-3 border-t border-border pt-3"><p className="text-xs text-muted-foreground">{!sourceInputReady ? "Add source material to continue." : quizTitle.trim() ? "Ready" : "Add a title to continue."}</p><div className="flex gap-2"><Button type="button" variant="outline" size="sm" onClick={() => setActiveStep(1)}><ChevronLeft className="mr-1 h-4 w-4" />Back</Button><Button type="button" size="sm" disabled={!canAdvanceToDraft} onClick={() => { setSettingsView("count"); setActiveStep(3); }}>Continue<ChevronRight className="ml-1 h-4 w-4" /></Button></div></div>
+                </div>}
               </CardContent>
             </Card>}
-
-            {false && activeStep === 3 && assessmentMode !== "mcq" && assessmentMode !== "full_paper" && isSelectedModeAvailable && <Card className="border-primary/20 bg-card shadow-sm motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-200">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-xl">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">3</span>
-                  Reviewable {ASSESSMENT_MODE_LABELS[assessmentMode].toLowerCase()} draft
-                </CardTitle>
-                <CardDescription>Write or paste only content grounded in your selected approved chapters. Every saved item requires marks, a source reference, and a learning objective.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {!savedAssessmentDraftId && (scopeType === "uploaded_content" || !hasValidStoredScope) ? <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm leading-6 text-muted-foreground">Select at least one approved textbook chapter above before saving a {ASSESSMENT_MODE_LABELS[assessmentMode].toLowerCase()} draft. Custom pasted material is not used for this review workflow.</div> : <>
-                  <div>
-                    <Label htmlFor="assessment-question" className="mb-2 block text-sm font-medium">Question</Label>
-                    <Textarea id="assessment-question" value={draftQuestion} onChange={(event) => setDraftQuestion(event.target.value)} placeholder="Enter a source-grounded question for review." className="min-h-28 resize-none" />
-                  </div>
-                  {assessmentMode === "short" && <div>
-                    <Label htmlFor="expected-answer" className="mb-2 block text-sm font-medium">Expected answer</Label>
-                    <Textarea id="expected-answer" value={draftExpectedAnswer} onChange={(event) => setDraftExpectedAnswer(event.target.value)} placeholder="State the concise expected answer." className="min-h-24 resize-none" />
-                  </div>}
-                  <div>
-                    <Label htmlFor="marking-points" className="mb-2 block text-sm font-medium">{assessmentMode === "short" ? "Marking guide" : "Expected key points"}</Label>
-                    <Textarea id="marking-points" value={draftMarkingPoints} onChange={(event) => setDraftMarkingPoints(event.target.value)} placeholder="One marking point per line" className="min-h-24 resize-none" />
-                  </div>
-                  {assessmentMode === "long" && <div>
-                    <Label htmlFor="marking-rubric" className="mb-2 block text-sm font-medium">Marking rubric</Label>
-                    <Textarea id="marking-rubric" value={draftRubric} onChange={(event) => setDraftRubric(event.target.value)} placeholder="One criterion per line using: criterion | marks" className="min-h-24 resize-none" />
-                  </div>}
-                  <div className="grid gap-4 sm:grid-cols-3">
-                    <div>
-                      <Label htmlFor="assessment-marks" className="mb-2 block text-sm font-medium">Marks</Label>
-                      <Input id="assessment-marks" type="number" min={1} value={draftMarks} onChange={(event) => setDraftMarks(Number(event.target.value) || 0)} />
-                    </div>
-                    <div className="sm:col-span-2">
-                      <Label htmlFor="source-reference" className="mb-2 block text-sm font-medium">Source reference</Label>
-                      <Input id="source-reference" value={draftSourceReference} onChange={(event) => setDraftSourceReference(event.target.value)} placeholder="e.g., selected chapter heading and page range" />
-                    </div>
-                  </div>
-                  <div>
-                    <Label htmlFor="learning-objective" className="mb-2 block text-sm font-medium">Learning objective</Label>
-                    <Input id="learning-objective" value={draftLearningObjective} onChange={(event) => setDraftLearningObjective(event.target.value)} placeholder="Describe the knowledge or skill this item assesses." />
-                  </div>
-                  <Button type="button" onClick={handleSaveManualAssessmentDraft} disabled={saveAssessmentDraftMutation.isPending} className="w-full bg-primary text-primary-foreground font-semibold shadow-sm hover:bg-primary/90">
-                    {saveAssessmentDraftMutation.isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Saving review draft…</> : `Save ${ASSESSMENT_MODE_LABELS[assessmentMode]} draft for review`}
-                  </Button>
-                  {savedAssessmentDraftId && <div className="rounded-lg border border-accent/30 bg-accent/10 p-3 text-sm text-foreground"><strong>Draft saved.</strong> Assessment draft #{savedAssessmentDraftId} is awaiting Portal Admin review.</div>}
-                </>}
-              </CardContent>
-            </Card>}
-
             {false && activeStep === 3 && assessmentMode === "full_paper" && isSelectedModeAvailable && <Card className="border-primary/20 bg-card shadow-sm motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-200">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-xl">
@@ -982,7 +829,7 @@ export default function AIAgent() {
               <CardContent className="space-y-4">
                 <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm leading-6 text-muted-foreground"><strong>Draft review required.</strong> Verify source references, answer wording, formulas, and diagrams before issuing this paper.</div>
                 <div><Label htmlFor="paper-pairs" className="mb-2 block text-sm font-medium">Numbered OR pairs</Label><Input id="paper-pairs" type="number" min={1} max={10} value={paperPairCount} onChange={(event) => setPaperPairCount(Math.min(10, Math.max(1, Number(event.target.value) || 1)))} /><p className="mt-1 text-xs text-muted-foreground">Each numbered question includes an alternative of equal marks.</p></div>
-                <Button type="button" onClick={handleGeneratePrintablePaper} disabled={isGenerating || generatePrintablePaperMutation.isPending || !canAdvanceToDraft} className="w-full bg-primary text-primary-foreground font-semibold shadow-sm hover:bg-primary/90">{isGenerating || generatePrintablePaperMutation.isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating paper draft…</> : "Generate printable paper draft"}</Button>
+                <div className="flex flex-col gap-2 border-t border-border pt-3 sm:flex-row sm:items-center sm:justify-between"><Button type="button" variant="outline" size="sm" onClick={() => setActiveStep(2)}><ChevronLeft className="mr-1 h-4 w-4" />Back</Button><Button type="button" onClick={handleGeneratePrintablePaper} disabled={isGenerating || generatePrintablePaperMutation.isPending || !canAdvanceToDraft} className="sm:flex-1 bg-primary text-primary-foreground font-semibold shadow-sm hover:bg-primary/90">{isGenerating || generatePrintablePaperMutation.isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating paper draft…</> : "Generate printable paper draft"}</Button></div>
                 {generatedPrintablePaper && <div className="space-y-3 rounded-xl border border-accent/30 bg-accent/5 p-4"><div><p className="font-semibold text-foreground">Printable draft ready</p><p className="mt-1 text-sm text-muted-foreground">{generatedPrintablePaper.items?.length || 0} prompts across {paperPairCount} OR pairs. This is not an online quiz.</p></div><div className="flex flex-col gap-2 sm:flex-row"><Button type="button" variant="outline" className="flex-1" onClick={() => handlePrintableDownload("paper")}>Download paper PDF</Button><Button type="button" variant="outline" className="flex-1" onClick={() => handlePrintableDownload("solution")}>Download solution key</Button></div><p className="text-xs text-muted-foreground">Your browser will receive the PDF directly from this tap. If the paper needs regeneration, the browser will show a clear message.</p></div>}
               </CardContent>
             </Card>}
@@ -998,45 +845,6 @@ export default function AIAgent() {
                 <div className="flex flex-col gap-2 sm:flex-row"><Button type="button" variant="ghost" className="flex-1" onClick={() => setActiveStep(3)}><ChevronLeft className="mr-1 h-4 w-4" />Back to settings</Button><Button type="button" className="flex-1" onClick={() => { setGeneratedPrintablePaper(null); setActiveStep(3); }}>Create another draft</Button></div>
               </CardContent>
             </Card>}
-
-            {/* Content Analysis Card */}
-            {activeStep === 3 && assessmentMode === "mcq" && contentAnalysis && (
-              <Card className="border-secondary/20 bg-secondary/5 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-200">
-                <CardHeader>
-                  <CardTitle className="text-lg">Content Analysis</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Word Count</p>
-                      <p className="text-2xl font-bold text-accent">{contentAnalysis.wordCount || contentAnalysis.totalWords}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Complexity</p>
-                      <p className="text-lg font-semibold capitalize">{contentAnalysis.complexity}</p>
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-2">Recommended MCQ Range</p>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium">{contentAnalysis.recommended?.minimum || contentAnalysis.recommended?.min || contentAnalysis.recommendedQuestions?.minimum}</span>
-                      <div className="flex-1 h-2 bg-accent/20 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-gradient-to-r from-accent to-secondary"
-                          style={{
-                            width: `${((contentAnalysis.recommended?.optimal || contentAnalysis.recommendedQuestions?.optimal) / (contentAnalysis.recommended?.maximum || contentAnalysis.recommended?.max || contentAnalysis.recommendedQuestions?.maximum)) * 100}%`
-                          }}
-                        />
-                      </div>
-                      <span className="text-sm font-medium">{contentAnalysis.recommended?.maximum || contentAnalysis.recommended?.max || contentAnalysis.recommendedQuestions?.maximum}</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Optimal: <span className="font-semibold text-accent">{contentAnalysis.recommended?.optimal || contentAnalysis.recommendedQuestions?.optimal}</span> questions
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
 
             {activeStep === 4 && isGenerating && (() => {
               const activeStep = getGenerationStep(generationProgress);
@@ -1157,10 +965,11 @@ export default function AIAgent() {
                   <SlidersHorizontal className="h-5 w-5 text-primary" />
                   Draft setup
                 </CardTitle>
+                <CardDescription>{contentAnalysis ? `${contentAnalysis.wordCount || contentAnalysis.totalWords} words · ${contentAnalysis.complexity} · recommended ${contentAnalysis.recommended?.optimal || contentAnalysis.recommendedQuestions?.optimal} questions` : "Choose the number of questions, then set difficulty."}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Number of Questions */}
-                <div>
+                {settingsView === "count" && <div>
                   <Label className="text-sm font-medium mb-2 block">
                     Number of Questions: <span className="text-accent font-bold">{numQuestions || "Auto"}</span>
                   </Label>
@@ -1196,7 +1005,8 @@ export default function AIAgent() {
                       </div>
                     </div>
                   )}
-                </div>
+                </div>}
+                {settingsView === "count" && <div className="flex items-center justify-between gap-3 border-t border-border pt-3"><Button type="button" variant="outline" size="sm" onClick={() => setActiveStep(2)}><ChevronLeft className="mr-1 h-4 w-4" />Back</Button><Button type="button" size="sm" onClick={() => setSettingsView("difficulty")}>Continue<ChevronRight className="ml-1 h-4 w-4" /></Button></div>}
 
                 {/* Teacher context */}
                 <div className="hidden" aria-hidden="true">
@@ -1237,11 +1047,6 @@ export default function AIAgent() {
 
                   {isContextEditing && gradeLevel === "10" && <Button type="button" variant="outline" size="sm" className="w-full" onClick={() => setIsContextEditing(false)}>Continue with Grade 10 {SUBJECT_LABELS[subject]}</Button>}
 
-                </div>
-
-                <div className="flex items-center justify-between gap-3 rounded-xl border border-primary/15 bg-primary/[0.035] p-3">
-                  <div><p className="text-xs font-bold uppercase tracking-[0.12em] text-primary">Draft context</p><p className="mt-1 text-sm font-bold text-foreground">Grade 10 · {SUBJECT_LABELS[subject]}</p></div>
-                  <Button type="button" variant="outline" size="sm" onClick={() => setActiveStep(2)}>Review source</Button>
                 </div>
 
                 {/* Legacy sidebar scope controls are superseded by the explicit source cards above. */}
@@ -1325,7 +1130,7 @@ export default function AIAgent() {
                 </div>
 
                 {/* Difficulty */}
-                {assessmentMode === "mcq" && <div>
+                {assessmentMode === "mcq" && settingsView === "difficulty" && <div>
                   <Label htmlFor="difficulty" className="text-sm font-medium mb-2 block">
                     Difficulty profile
                   </Label>
@@ -1342,13 +1147,15 @@ export default function AIAgent() {
                   </Select>
                 </div>}
 
+                {assessmentMode === "mcq" && settingsView === "difficulty" && <div className="flex items-center justify-between gap-3 border-t border-border pt-3"><Button type="button" variant="outline" size="sm" onClick={() => setActiveStep(2)}><ChevronLeft className="mr-1 h-4 w-4" />Back to source</Button><Button type="button" variant="ghost" size="sm" onClick={() => setSettingsView("count")}>Edit count</Button></div>}
+
                 {assessmentMode !== "mcq" && <div className="rounded-xl border border-primary/20 bg-primary/[0.04] p-3 text-sm leading-6 text-muted-foreground">
                   <p className="font-semibold text-foreground">{ASSESSMENT_MODE_LABELS[assessmentMode]} review framework</p>
                   <p className="mt-1">The system will require explicit marks, source references, learning objectives, and a reviewable marking structure before this format can be saved. No automatic question content is produced here yet.</p>
                 </div>}
 
                 {/* Generate Button */}
-                <Button
+                {settingsView === "difficulty" && <Button
                   onClick={handleGenerate}
                   aria-label="Generate MCQs"
                   disabled={!isAutomaticMcqMode || gradeLevel !== "10" || isGenerating || isProcessingFile || !hasGenerationSource || !quizTitle.trim()}
@@ -1365,7 +1172,7 @@ export default function AIAgent() {
                       {isAutomaticMcqMode ? "Generate MCQ Draft" : `${ASSESSMENT_MODE_LABELS[assessmentMode]} generation is not enabled yet`}
                     </>
                   )}
-                </Button>
+                </Button>}
 
                 {/* Save Button */}
                 {generatedMcqs.length > 0 && !isGenerating && (
@@ -1391,21 +1198,7 @@ export default function AIAgent() {
               </CardContent>
             </Card>}
 
-            {/* Info Card */}
-            {activeStep === 3 && isAutomaticMcqMode && <Card className="border-secondary/20 bg-secondary/5 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-200">
-              <CardHeader>
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4" />
-                  Draft Generation Safeguards
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="text-xs text-muted-foreground space-y-2">
-                <p>✓ Uses the selected uploaded material or reviewed curriculum scope</p>
-                <p>✓ Generates conceptual, FBISE-style MCQ drafts</p>
-                <p>✓ Preserves a source reference and learning objective for every item</p>
-                <p>✓ Requires admin review before any assignment or publication</p>
-              </CardContent>
-            </Card>}
+
           </div>
         </div>
       </main>

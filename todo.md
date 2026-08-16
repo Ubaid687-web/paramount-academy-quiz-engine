@@ -344,3 +344,10 @@
 - [x] Implement single-step conditional rendering with state-preserving Back navigation and top progress indicators.
 - [x] Separate Portal Admin curriculum addition and recent draft library into distinct views so steps never stack or scroll indefinitely.
 - [x] Walk through the complete workflow (grade → subject → generation → results) and verify state restoration and zero stacked UI.
+
+## Phase 60: Compact One-Decision Assessment Builder Redesign
+- [x] Audit current Assessment Builder step and source-state structure.
+- [x] Implement compact step header ("Step 2 of 4" + thin progress bar) across all builder views.
+- [x] Redesign Step 2 (Source) into a decision-first card view with default/recommended tags and dedicated sub-views (approved textbook chapters vs custom lesson material with Upload / Paste tabs and delayed title entry).
+- [x] Apply one-decision-at-a-time layouts to Quiz type, Quiz settings, and Review steps so standard phone screens fit each step without scrolling clutter.
+- [x] Run full test suite regressions and browser walkthrough confirming zero stacked choices and correct Back state restoration.
