@@ -2,6 +2,8 @@ import { createHash } from "node:crypto";
 
 export type QuestionCoverageRecord = {
   conceptKey?: string;
+  facetKey?: string;
+  answerTarget?: string;
   question: string;
   sourceReference?: string;
   learningObjective?: string;
@@ -39,29 +41,50 @@ function tokenSimilarity(left: string, right: string) {
 }
 
 export function canonicalConceptKey(record: QuestionCoverageRecord) {
-  return normalise(record.conceptKey ?? record.sourceReference ?? record.learningObjective ?? "");
+  return normalise(record.conceptKey ?? record.sourceReference ?? "");
+}
+
+export function canonicalFacetKey(record: QuestionCoverageRecord) {
+  return normalise(record.facetKey ?? record.learningObjective ?? "");
+}
+
+export function canonicalAnswerTarget(record: QuestionCoverageRecord) {
+  return normalise(record.answerTarget ?? "");
 }
 
 export function questionCoverageFingerprint(record: QuestionCoverageRecord) {
-  return normalise([record.sourceReference, record.learningObjective, record.question].filter(Boolean).join(" | "));
+  return normalise([
+    record.conceptKey,
+    record.facetKey,
+    record.answerTarget,
+    record.question,
+  ].filter(Boolean).join(" | "));
 }
 
 function isSemanticCollision(left: QuestionCoverageRecord, right: QuestionCoverageRecord) {
+  const leftQuestion = normalise(left.question);
+  const rightQuestion = normalise(right.question);
+  if (leftQuestion && leftQuestion === rightQuestion) return true;
+
   const leftConcept = canonicalConceptKey(left);
   const rightConcept = canonicalConceptKey(right);
-  if (leftConcept && rightConcept && leftConcept === rightConcept) return true;
+  const sameConcept = Boolean(leftConcept && rightConcept && leftConcept === rightConcept);
+  const leftFacet = canonicalFacetKey(left);
+  const rightFacet = canonicalFacetKey(right);
+  const leftAnswer = canonicalAnswerTarget(left);
+  const rightAnswer = canonicalAnswerTarget(right);
 
-  const leftReference = normalise(left.sourceReference ?? "");
-  const rightReference = normalise(right.sourceReference ?? "");
-  if (leftReference && rightReference && leftReference === rightReference) return true;
+  if (sameConcept && leftFacet && rightFacet && leftFacet === rightFacet) return true;
+  if (sameConcept && leftAnswer && rightAnswer && leftAnswer === rightAnswer) return true;
 
-  const leftObjective = normalise(left.learningObjective ?? "");
-  const rightObjective = normalise(right.learningObjective ?? "");
-  if (leftObjective && rightObjective && leftObjective === rightObjective) return true;
+  // Older saved drafts may lack the new metadata. Only then use a strict wording fallback.
+  if (sameConcept && (!left.facetKey || !right.facetKey || !left.answerTarget || !right.answerTarget)) {
+    const leftComparable = [left.learningObjective, left.question].filter(Boolean).join(" ");
+    const rightComparable = [right.learningObjective, right.question].filter(Boolean).join(" ");
+    return tokenSimilarity(leftComparable, rightComparable) >= 0.92;
+  }
 
-  const comparableLeft = [left.sourceReference, left.learningObjective, left.question].filter(Boolean).join(" ");
-  const comparableRight = [right.sourceReference, right.learningObjective, right.question].filter(Boolean).join(" ");
-  return tokenSimilarity(comparableLeft, comparableRight) >= 0.9;
+  return tokenSimilarity(leftQuestion, rightQuestion) >= 0.96;
 }
 
 export function validateDistinctQuestionCoverage(
@@ -76,15 +99,23 @@ export function validateDistinctQuestionCoverage(
       issues.push(`Question ${number} has no concept key linked to its source heading or term.`);
       return;
     }
+    if (!canonicalFacetKey(item)) {
+      issues.push(`Question ${number} has no assessable facet for its source concept.`);
+      return;
+    }
+    if (!canonicalAnswerTarget(item)) {
+      issues.push(`Question ${number} has no answer target for duplicate checking.`);
+      return;
+    }
 
     const earlier = items.slice(0, index).find((candidate) => isSemanticCollision(item, candidate));
     if (earlier) {
-      issues.push(`Question ${number} repeats an underlying concept already used in this paper.`);
+      issues.push(`Question ${number} repeats an answer target, assessable facet, or trivial rewording already used in this paper.`);
     }
 
     const previous = priorHistory.find((candidate) => isSemanticCollision(item, candidate));
     if (previous) {
-      issues.push(`Question ${number} repeats a concept or near-duplicate from an earlier saved paper.`);
+      issues.push(`Question ${number} repeats an answer target, assessable facet, or trivial rewording from an earlier saved paper.`);
     }
   });
 
@@ -102,34 +133,18 @@ export function validateDistinctOrPairCoverage(
     groups.set(group, [...(groups.get(group) ?? []), item]);
   });
 
-  const representatives: QuestionCoverageRecord[] = [];
   Array.from(groups.entries()).sort(([left], [right]) => left - right).forEach(([groupNumber, group]) => {
     if (group.length !== 2) {
       issues.push(`Numbered OR pair ${groupNumber} must contain exactly two alternatives.`);
       return;
     }
-    const [mainQuestion, alternative] = group;
-    const mainConcept = canonicalConceptKey(mainQuestion!);
-    const alternativeConcept = canonicalConceptKey(alternative!);
-    if (!mainConcept || !alternativeConcept) {
-      issues.push(`Numbered OR pair ${groupNumber} has no source-derived concept key.`);
-      return;
+    if (isSemanticCollision(group[0]!, group[1]!)) {
+      issues.push(`The alternatives in numbered OR pair ${groupNumber} repeat the same answer target, facet, or wording. Use genuinely different source-supported alternatives.`);
     }
-    if (mainConcept !== alternativeConcept) {
-      issues.push(`Both alternatives in numbered OR pair ${groupNumber} must assess the same source concept from different angles.`);
-      return;
-    }
-    const mainQuestionText = normalise(mainQuestion!.question);
-    const alternativeQuestionText = normalise(alternative!.question);
-    if (mainQuestionText === alternativeQuestionText || tokenSimilarity(mainQuestionText, alternativeQuestionText) >= 0.9) {
-      issues.push(`The alternatives in numbered OR pair ${groupNumber} are too similar; use two genuinely different assessment angles.`);
-      return;
-    }
-    representatives.push(mainQuestion!);
   });
 
-  const distinctPairs = validateDistinctQuestionCoverage(representatives, priorHistory);
-  issues.push(...distinctPairs.issues.map((issue) => issue.replace(/^Question /, "Numbered OR pair ")));
+  const distinctItems = validateDistinctQuestionCoverage(items, priorHistory);
+  issues.push(...distinctItems.issues);
   return { valid: issues.length === 0, issues };
 }
 
@@ -137,9 +152,11 @@ export function buildPriorHistoryExclusion(priorHistory: PriorQuestionHistory[],
   if (!priorHistory.length) return "No earlier saved-paper history is available for this exact source scope.";
   const entries = priorHistory.slice(0, limit).map((item, index) => {
     const concept = canonicalConceptKey(item) || "unclassified concept";
-    return `${index + 1}. conceptKey=${concept}; source=${item.sourceReference ?? "not recorded"}; objective=${item.learningObjective ?? "not recorded"}`;
+    const facet = canonicalFacetKey(item) || "unclassified facet";
+    const answer = canonicalAnswerTarget(item) || "unclassified answer target";
+    return `${index + 1}. conceptKey=${concept}; facetKey=${facet}; answerTarget=${answer}; source=${item.sourceReference ?? "not recorded"}`;
   });
-  return `Previously used concepts for this exact source scope — do not reuse, paraphrase, or test the same underlying idea:\n${entries.join("\n")}`;
+  return `Previously used source targets for this exact scope — do not repeat their concept + facet, answer target, or merely reword the same task. A different supported facet of the same concept remains allowed:\n${entries.join("\n")}`;
 }
 
 export function fingerprintGenerationSource(scopeSnapshot: unknown, contentText: string) {

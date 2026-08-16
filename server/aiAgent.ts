@@ -72,10 +72,11 @@ const MCQ_GENERATION_PROMPT = `You are a careful FBISE-style assessment designer
    - Include a learningObjective describing the knowledge or skill assessed.
 
 7. CONCEPT DIVERSITY:
-   - Build a breadth-first inventory of distinct examinable concepts from the entire supplied source before writing items.
-   - Return a short conceptKey for every item using its exact or near-exact source heading or term.
-   - Never reuse a conceptKey, source reference, learning objective, or underlying idea in the same draft, even with different wording.
-   - If the supplied source has fewer distinct examinable concepts than requested, return fewer items rather than inventing or rewording duplicates.
+   - Build a breadth-first inventory of source concepts and their separate assessable facets before writing items.
+   - A concept may produce several valid questions when each tests a different facet and answer target. Example: pressure definition, pressure formula, and pressure formula application are allowed; two reworded definition questions are not.
+   - Return a short conceptKey, facetKey, and answerTarget for every item. The conceptKey is the source heading or term, the facetKey is the assessed aspect (definition, formula, function, comparison, application, etc.), and the answerTarget is the expected correct outcome.
+   - Never repeat the same concept + facet, answer target, or merely reword the same task in the same draft.
+   - If the supplied source has fewer distinct source-supported question targets than requested, return fewer items rather than inventing or rewording duplicates.
 
 === DIFFICULTY DISTRIBUTION ===
 - 30% Easy: clear textbook knowledge or straightforward understanding
@@ -106,6 +107,8 @@ Return ONLY valid JSON:
       "explanation": "...",
       "difficulty": "easy|medium|hard",
       "conceptKey": "short source-derived heading or term",
+      "facetKey": "definition|formula|function|comparison|application|other source-supported facet",
+      "answerTarget": "concise expected correct term, value, formula, relationship, or outcome",
       "sourceReference": "...",
       "learningObjective": "..."
     }
@@ -195,8 +198,9 @@ REQUIREMENTS:
 - Use plausible, parallel, compact distractors based on common misconceptions.
 - Do not write answer options as sentences of explanation, mini-paragraphs, or multiple ideas joined together.
 - Do not add decorative scenario wording. Use a direct textbook-style stem; include only the minimum context required for a supported application.
-- Cover different parts and aspects of the content without repeating concepts or exercise wording.
-- Give every item a distinct source-derived conceptKey. It must identify one specific concept, not a generic unit name.
+- Cover different parts and facets of the content without repeating answer targets or exercise wording.
+- A concept may appear more than once only when every occurrence has a different source-supported facetKey and answerTarget. Do not make reworded versions of the same definition, formula task, or application outcome.
+- Give every item a source-derived conceptKey, facetKey, and answerTarget. The conceptKey must identify one specific concept, not a generic unit name.
 - ${priorHistoryInstruction}
 - Use the required K/U/A balance; include direct knowledge, conceptual understanding, and familiar application only where supported.
 - Keep explanations and source references as metadata for teacher review; they are not part of the printed MCQ row.
@@ -247,10 +251,12 @@ REQUIREMENTS:
                     explanation: { type: "string" },
                     difficulty: { type: "string", enum: ["easy", "medium", "hard"] },
                     conceptKey: { type: "string" },
+                    facetKey: { type: "string" },
+                    answerTarget: { type: "string" },
                     sourceReference: { type: "string" },
                     learningObjective: { type: "string" },
                   },
-                  required: ["question", "options", "answer", "explanation", "difficulty", "conceptKey", "sourceReference", "learningObjective"],
+                  required: ["question", "options", "answer", "explanation", "difficulty", "conceptKey", "facetKey", "answerTarget", "sourceReference", "learningObjective"],
                 },
               },
             },
@@ -393,6 +399,8 @@ export async function saveGeneratedQuizToDatabase(
         selectedSegmentIds: job.selectedSegmentIds,
         conceptHistory: mcqs.map((mcq) => ({
           conceptKey: mcq.conceptKey,
+          facetKey: mcq.facetKey,
+          answerTarget: mcq.answerTarget,
           question: mcq.question,
           sourceReference: mcq.sourceReference,
           learningObjective: mcq.learningObjective,

@@ -25,10 +25,10 @@ QUALITY:
 - Use concise, familiar FBISE-style wording and textbook terminology. Avoid idioms, unnecessary long scenarios, and unfamiliar English.
 - Create a new scenario only when it assesses a verified source concept. Do not copy or paraphrase past-paper questions.
 - Balance cognitive levels across the whole paper: approximately 30% K (knowledge), 50% U (understanding), and 20% A (application), adjusting minimally where item count makes exact ratios impossible.
-- Supply each numbered question as an OR pair. Both alternatives must have the same marks and comparable demand, and must assess the same source-derived conceptKey from two genuinely different assessment angles (for example, function versus application, or explanation versus comparison).
-- Use a different conceptKey for every numbered OR pair. Never reuse a pair's concept in another numbered pair.
-- Return a concise conceptKey for every prompt using the exact or near-exact textbook heading or term that identifies its underlying concept. The two alternatives in one pair must return the same conceptKey.
-- If the source cannot support the requested number of distinct OR-pair concepts, return fewer pairs rather than rewording or repeating a concept.
+- A source concept may support multiple valid questions when each has a different supported assessable facet and answer target. For example, a pressure section may support a definition, a formula, and a formula application, but not multiple rewordings that all ask for the same definition.
+- Supply each numbered question as an OR pair. Both alternatives must have the same marks and comparable demand, but use different supported facets or answer targets. They may use the same conceptKey or different source concepts.
+- Return a concise conceptKey, facetKey, and answerTarget for every prompt. The conceptKey is the source heading or term, the facetKey states what is assessed (such as definition, formula, function, comparison, or application), and the answerTarget identifies the expected answer outcome.
+- If the source cannot support the requested number of distinct concept-facet-answer targets, return fewer pairs rather than rewording or repeating an answer.
 - Never claim that this is an official current-year paper. This is a draft for Portal Admin review.
 
 ANSWER MATERIAL:
@@ -44,6 +44,8 @@ function buildSchema(type: PrintablePaperType) {
     sourceReference: { type: "string" },
     learningObjective: { type: "string" },
     conceptKey: { type: "string" },
+    facetKey: { type: "string" },
+    answerTarget: { type: "string" },
     cognitiveLevel: { type: "string", enum: ["K", "U", "A"] },
     orGroup: { type: "integer", minimum: 1 },
     marks: { type: "integer", minimum: type === "short" ? 1 : 5, maximum: type === "short" ? 4 : 8 },
@@ -64,7 +66,7 @@ function buildSchema(type: PrintablePaperType) {
               expectedAnswer: { type: "string" },
               markingGuide: { type: "array", items: { type: "string" }, minItems: 1 },
             },
-            required: ["question", "sourceReference", "learningObjective", "conceptKey", "cognitiveLevel", "orGroup", "marks", "difficulty", "expectedAnswer", "markingGuide"],
+            required: ["question", "sourceReference", "learningObjective", "conceptKey", "facetKey", "answerTarget", "cognitiveLevel", "orGroup", "marks", "difficulty", "expectedAnswer", "markingGuide"],
             additionalProperties: false,
           },
         },
@@ -96,7 +98,7 @@ function buildSchema(type: PrintablePaperType) {
               minItems: 1,
             },
           },
-          required: ["question", "sourceReference", "learningObjective", "conceptKey", "cognitiveLevel", "orGroup", "marks", "difficulty", "expectedKeyPoints", "markingRubric"],
+          required: ["question", "sourceReference", "learningObjective", "conceptKey", "facetKey", "answerTarget", "cognitiveLevel", "orGroup", "marks", "difficulty", "expectedKeyPoints", "markingRubric"],
           additionalProperties: false,
         },
       },
@@ -176,7 +178,7 @@ export async function generatePrintablePaperFromContent(params: {
         const response = await invokeLLM({
           messages: [
             { role: "system", content: PRINTABLE_PAPER_PROMPT },
-            { role: "user", content: `This is batch ${batchIndex + 1} of ${batchPlan.length}. Create exactly ${batchPairs} numbered OR pairs (${batchPairs * 2} printed prompts) for a ${paperType}-question paper. Difficulty preference: ${difficulty}. ${marksRule}\n\nPaper title: ${title}\nSource title: ${sourceContext.sourceTitle}\n${paperPatternInstruction}\n\n${existingCoverage}\n\nUse the full source breadth. Each numbered OR pair must use one distinct conceptKey. Both alternatives inside that pair must share the conceptKey but test it from different angles. Do not reuse any pair concept in a later pair. Return the two alternatives consecutively.\n\n${safeSections}` },
+            { role: "user", content: `This is batch ${batchIndex + 1} of ${batchPlan.length}. Create exactly ${batchPairs} numbered OR pairs (${batchPairs * 2} printed prompts) for a ${paperType}-question paper. Difficulty preference: ${difficulty}. ${marksRule}\n\nPaper title: ${title}\nSource title: ${sourceContext.sourceTitle}\n${paperPatternInstruction}\n\n${existingCoverage}\n\nUse the full source breadth. A concept may appear more than once only when every occurrence has a different source-supported facetKey and answerTarget. Do not repeat a definition as a reworded definition, a formula as the same formula task, or an application with the same answer target. Each OR pair must contain two genuinely different alternatives with different answer targets. Return the two alternatives consecutively.\n\n${safeSections}` },
           ],
           response_format: {
             type: "json_schema",
@@ -206,7 +208,7 @@ export async function generatePrintablePaperFromContent(params: {
     }
     if (!batchPayload) {
       if (diversityShortfall) {
-        throw new Error(`The selected source does not provide ${pairCount} distinct examinable concepts for this paper without repeating a topic. Reduce the requested OR pairs or select a wider approved scope.`);
+        throw new Error(`The selected source does not provide ${pairCount} distinct source-supported question targets for this paper without repeating an answer or rewording the same task. Reduce the requested OR pairs or select a wider approved scope.`);
       }
       throw new Error("The printable paper could not be completed from the approved material. Please try again with fewer OR pairs or a narrower scope.");
     }
@@ -216,7 +218,7 @@ export async function generatePrintablePaperFromContent(params: {
 
   const finalDiversity = validateDistinctOrPairCoverage(items, sourceContext.priorQuestionHistory ?? []);
   if (!finalDiversity.valid) {
-    throw new Error(`The selected source does not provide enough distinct examinable concepts without repetition. ${finalDiversity.issues[0] ?? ""}`);
+    throw new Error(`The selected source does not provide enough distinct source-supported question targets without repeating an answer or rewording the same task. ${finalDiversity.issues[0] ?? ""}`);
   }
 
   return {

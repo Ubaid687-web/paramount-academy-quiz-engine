@@ -7,6 +7,9 @@ const validQuestion = {
   answer: "B" as const,
   explanation: "Acceleration is the rate at which velocity changes.",
   difficulty: "medium" as const,
+  conceptKey: "acceleration",
+  facetKey: "definition",
+  answerTarget: "rate of change of velocity",
   sourceReference: "Kinematics: acceleration",
   learningObjective: "Apply the definition of acceleration.",
 };

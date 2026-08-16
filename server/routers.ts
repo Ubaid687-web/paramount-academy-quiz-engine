@@ -706,7 +706,7 @@ export const appRouter = router({
       .input(
         z.object({
           contentText: z.string().min(100, "Content must be at least 100 characters").optional(),
-          numQuestions: z.number().min(5).max(100),
+          numQuestions: z.number().int().min(1).max(100),
           difficulty: z.enum(["balanced", "easy", "medium", "hard"]).default("balanced"),
           patternProgramme: programmeKeySchema.optional(),
           patternSubject: z.string().trim().min(2).max(100).optional(),
@@ -912,6 +912,8 @@ export const appRouter = router({
             explanation: z.string(),
             difficulty: z.string(),
             conceptKey: z.string().min(2),
+            facetKey: z.string().min(2),
+            answerTarget: z.string().min(2),
             sourceReference: z.string().min(1),
             learningObjective: z.string().min(1),
           })),

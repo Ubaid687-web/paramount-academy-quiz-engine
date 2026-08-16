@@ -132,6 +132,8 @@ describe("AI quiz generation feedback", () => {
     const countInput = screen.getByRole("spinbutton");
     fireEvent.change(countInput, { target: { value: "" } });
     expect(countInput).toHaveValue(null);
+    await new Promise((resolve) => window.setTimeout(resolve, 350));
+    expect(countInput).toHaveValue(null);
     fireEvent.change(countInput, { target: { value: "27" } });
     expect(countInput).toHaveValue(27);
     fireEvent.blur(countInput);
@@ -139,7 +141,7 @@ describe("AI quiz generation feedback", () => {
 
     fireEvent.change(countInput, { target: { value: "101" } });
     fireEvent.blur(countInput);
-    expect(screen.getByRole("alert")).toHaveTextContent("whole number from 5 to 100");
+    expect(screen.getByRole("alert")).toHaveTextContent("whole number from 1 to 100");
   });
 
   it("shows an accessible staged loading panel while the quiz request is in progress", async () => {
@@ -210,7 +212,7 @@ describe("AI quiz generation feedback", () => {
     expect(screen.getByText(/Kinematics: acceleration/)).toBeVisible();
   });
 
-  it("automatically analyzes supplied content and exposes one adjustable question-count control", async () => {
+  it("analyzes supplied content while leaving the question count under teacher control", async () => {
     render(<AIAgent />);
 
     expect(screen.queryByRole("button", { name: /Approved textbook chapters/i })).not.toBeInTheDocument();
@@ -225,8 +227,9 @@ describe("AI quiz generation feedback", () => {
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
 
     expect(screen.queryByRole("button", { name: /analyze content/i })).not.toBeInTheDocument();
-    expect(await screen.findByRole("slider", { name: "Number of questions" })).toBeVisible();
-    expect(screen.getByText(/recommended .* questions/i)).toBeVisible();
+    expect(await screen.findByRole("spinbutton")).toHaveValue(null);
+    expect(screen.queryByRole("slider", { name: "Number of questions" })).not.toBeInTheDocument();
+    expect(await screen.findByText(/recommended .* questions/i)).toBeVisible();
   });
 
   it("reveals only the next relevant decision group and restores the selected source", () => {
@@ -333,7 +336,8 @@ describe("AI quiz generation feedback", () => {
     fireEvent.change(screen.getByLabelText("Quiz title"), { target: { value: "Physics Chapter 10 Draft" } });
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
 
-    await waitFor(() => expect(screen.getByRole("spinbutton")).toHaveValue(12));
+    expect(screen.getByRole("spinbutton")).toHaveValue(null);
+    fireEvent.change(screen.getByRole("spinbutton"), { target: { value: "12" } });
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
     fireEvent.click(screen.getByRole("button", { name: "Generate MCQs" }));
 

@@ -370,3 +370,9 @@
 - [x] Restore unrestricted valid numeric entry for printable OR pairs, with range validation only on blur or generation.
 - [x] Treat each OR pair as one source concept with two distinct, non-duplicate assessment angles.
 - [x] Add focused capacity and input regressions, validate the suite, and checkpoint the repair.
+
+## Phase 64: Concept-Facet Diversity and Live Count Flow
+- [x] Trace the deployed and current printable count/capacity paths for stale strict concept-only behavior.
+- [x] Replace one-concept-per-pair limits with concept, assessable facet, and answer-target diversity checks.
+- [x] Preserve source grounding and block only duplicate answer targets or trivial rewordings.
+- [x] Verify editable count behavior in the teacher flow, add regressions, validate, and checkpoint.

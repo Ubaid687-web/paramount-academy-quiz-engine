@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -66,6 +66,8 @@ export default function AIAgent() {
   const [questionCountInput, setQuestionCountInput] = useState("");
   const [questionCountError, setQuestionCountError] = useState<string | null>(null);
   const [isQuestionCountManual, setIsQuestionCountManual] = useState(false);
+  const isQuestionCountManualRef = useRef(false);
+  const questionCountAnalysisTimerRef = useRef<number | null>(null);
   const [difficulty, setDifficulty] = useState<"balanced" | "easy" | "medium" | "hard">("balanced");
   const [quizTitle, setQuizTitle] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -196,11 +198,14 @@ export default function AIAgent() {
   useEffect(() => {
     const trimmedContent = contentText.trim();
     if (!trimmedContent) {
+      if (questionCountAnalysisTimerRef.current !== null) window.clearTimeout(questionCountAnalysisTimerRef.current);
+      questionCountAnalysisTimerRef.current = null;
       setContentAnalysis(null);
       setNumQuestions(null);
       setQuestionCountInput("");
       setQuestionCountError(null);
       setIsQuestionCountManual(false);
+      isQuestionCountManualRef.current = false;
       return;
     }
 
@@ -219,15 +224,14 @@ export default function AIAgent() {
       });
 
       setContentAnalysis({ wordCount, complexity, recommended });
-      if (!isQuestionCountManual) {
-        setNumQuestions(recommended.optimal);
-        setQuestionCountInput(String(recommended.optimal));
-        setQuestionCountError(null);
-      }
     }, 300);
+    questionCountAnalysisTimerRef.current = analysisTimer;
 
-    return () => window.clearTimeout(analysisTimer);
-  }, [contentText, isQuestionCountManual]);
+    return () => {
+      window.clearTimeout(analysisTimer);
+      if (questionCountAnalysisTimerRef.current === analysisTimer) questionCountAnalysisTimerRef.current = null;
+    };
+  }, [contentText]);
 
   useEffect(() => {
     setSelectedChapterIds([]);
@@ -238,15 +242,6 @@ export default function AIAgent() {
   useEffect(() => {
     if (!isProgrammeReady) setActiveStep(1);
   }, [isProgrammeReady]);
-
-  useEffect(() => {
-    if (scopeType !== "uploaded_content" && !isQuestionCountManual) {
-      const defaultCount = subject === "computer_science" ? 13 : 12;
-      setNumQuestions(defaultCount);
-      setQuestionCountInput(String(defaultCount));
-      setQuestionCountError(null);
-    }
-  }, [subject, scopeType, isQuestionCountManual]);
 
   const activeScopeCatalog = scopeCatalogQuery.data;
   const chapters = activeScopeCatalog?.chapters ?? [];
@@ -433,9 +428,9 @@ export default function AIAgent() {
     }
 
     const requestedQuestionCount = Number.parseInt(questionCountInput, 10);
-    if (!/^\d+$/.test(questionCountInput) || !Number.isInteger(requestedQuestionCount) || requestedQuestionCount < 5 || requestedQuestionCount > 100) {
-      setQuestionCountError("Enter a whole number from 5 to 100 before generating.");
-      toast.error("Enter a whole number from 5 to 100 before generating.");
+    if (!/^\d+$/.test(questionCountInput) || !Number.isInteger(requestedQuestionCount) || requestedQuestionCount < 1 || requestedQuestionCount > 100) {
+      setQuestionCountError("Enter a whole number from 1 to 100 before generating.");
+      toast.error("Enter a whole number from 1 to 100 before generating.");
       return;
     }
     setNumQuestions(requestedQuestionCount);
@@ -993,7 +988,7 @@ export default function AIAgent() {
                 {/* Number of Questions */}
                 {settingsView === "count" && <div>
                   <Label className="text-sm font-medium mb-2 block">
-                    Number of Questions: <span className="text-accent font-bold">{questionCountInput || "Auto"}</span>
+                    Number of Questions: <span className="text-accent font-bold">{questionCountInput || "Not set"}</span>
                   </Label>
                   <Input
                     type="number"
@@ -1001,8 +996,12 @@ export default function AIAgent() {
                     value={questionCountInput}
                     onChange={(e) => {
                       const rawValue = e.target.value;
+                      if (questionCountAnalysisTimerRef.current !== null) window.clearTimeout(questionCountAnalysisTimerRef.current);
+                      questionCountAnalysisTimerRef.current = null;
                       setQuestionCountInput(rawValue);
-                      setIsQuestionCountManual(Boolean(rawValue));
+                      // Clearing is an in-progress manual edit, not a request to restore the recommendation.
+                      isQuestionCountManualRef.current = true;
+                      setIsQuestionCountManual(true);
                       setQuestionCountError(null);
                       if (rawValue === "") {
                         setNumQuestions(null);
@@ -1016,8 +1015,8 @@ export default function AIAgent() {
                         return;
                       }
                       const parsedValue = Number.parseInt(questionCountInput, 10);
-                      if (!/^\d+$/.test(questionCountInput) || !Number.isInteger(parsedValue) || parsedValue < 5 || parsedValue > 100) {
-                        setQuestionCountError("Enter a whole number from 5 to 100.");
+                      if (!/^\d+$/.test(questionCountInput) || !Number.isInteger(parsedValue) || parsedValue < 1 || parsedValue > 100) {
+                        setQuestionCountError("Enter a whole number from 1 to 100.");
                         return;
                       }
                       setNumQuestions(parsedValue);
@@ -1030,10 +1029,13 @@ export default function AIAgent() {
                     <div className="mt-3 space-y-2">
                       <Slider
                         value={[numQuestions]}
-                        min={5}
+                        min={1}
                         max={100}
                         step={1}
                         onValueChange={([value]) => {
+                          if (questionCountAnalysisTimerRef.current !== null) window.clearTimeout(questionCountAnalysisTimerRef.current);
+                          questionCountAnalysisTimerRef.current = null;
+                          isQuestionCountManualRef.current = true;
                           setIsQuestionCountManual(true);
                           setNumQuestions(value);
                           setQuestionCountInput(String(value));
@@ -1042,7 +1044,7 @@ export default function AIAgent() {
                         aria-label="Number of questions"
                       />
                       <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>Min 5</span>
+                        <span>Min 1</span>
                         <span>Recommended {contentAnalysis.recommended?.optimal}</span>
                         <span>Max 100</span>
                       </div>

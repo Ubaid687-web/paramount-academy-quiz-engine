@@ -24,6 +24,7 @@ const validContent = "Kinematics studies motion using displacement, velocity, an
 
 function createValidMcqs(count: number) {
   const concepts = ["displacement", "velocity", "acceleration", "distance", "time", "speed", "momentum", "force", "mass", "inertia"];
+  const facets = ["definition", "formula", "application", "unit", "relationship", "calculation", "comparison", "function", "measurement", "inference"];
   return Array.from({ length: count }, (_, index) => ({
     question: `Question ${index + 1}: Which statement best describes ${concepts[index]} in motion?`,
     options: {
@@ -36,6 +37,8 @@ function createValidMcqs(count: number) {
     explanation: `Explanation ${index + 1} applies the textbook meaning of ${concepts[index]}.`,
     difficulty: (index % 3 === 0 ? "easy" : index % 3 === 1 ? "medium" : "hard") as "easy" | "medium" | "hard",
     conceptKey: concepts[index],
+    facetKey: facets[index],
+    answerTarget: `${concepts[index]} textbook outcome`,
     sourceReference: `Kinematics — ${concepts[index]}`,
     learningObjective: `Explain the textbook meaning of ${concepts[index]}.`,
   }));
@@ -69,6 +72,8 @@ describe("AI Agent - MCQ Generation", () => {
     });
     expect(result.mcqs[0]).toMatchObject({
       conceptKey: "displacement",
+      facetKey: "definition",
+      answerTarget: "displacement textbook outcome",
       sourceReference: "Kinematics — displacement",
       learningObjective: "Explain the textbook meaning of displacement.",
     });
@@ -134,6 +139,8 @@ describe("AI Agent - MCQ Generation", () => {
     repeated[1] = {
       ...repeated[1],
       conceptKey: "displacement",
+      facetKey: "definition",
+      answerTarget: "displacement textbook outcome",
       sourceReference: "Kinematics — displacement",
       learningObjective: "Explain the textbook meaning of displacement.",
     };
@@ -142,7 +149,7 @@ describe("AI Agent - MCQ Generation", () => {
     const result = await generateMCQsFromContent(1, validContent, 2, "balanced");
 
     expect(result.draft).toMatchObject({ status: "error", errorType: "validation" });
-    expect(result.draft.message).toMatch(/repeats an underlying concept/i);
+    expect(result.draft.message).toMatch(/repeats an answer target|assessable facet/i);
   });
 
   it("rejects a new draft that collides with a concept saved for the same source scope", async () => {
@@ -151,6 +158,8 @@ describe("AI Agent - MCQ Generation", () => {
       sourceTitle: "Kinematics",
       priorQuestionHistory: [{
         conceptKey: "displacement",
+        facetKey: "definition",
+        answerTarget: "displacement textbook outcome",
         question: "Which quantity describes this motion concept?",
         sourceReference: "Kinematics — displacement",
         learningObjective: "Explain the textbook meaning of displacement.",

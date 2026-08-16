@@ -8,6 +8,8 @@ export type GeneratedMcq = {
   explanation: string;
   difficulty: "easy" | "medium" | "hard";
   conceptKey?: string;
+  facetKey?: string;
+  answerTarget?: string;
   sourceReference?: string;
   learningObjective?: string;
 };
@@ -49,6 +51,8 @@ export function validateGeneratedMcqs(mcqs: unknown[], expectedCount: number, pr
     if (!question.difficulty || !["easy", "medium", "hard"].includes(question.difficulty)) issues.push(`Question ${number} has an invalid difficulty value.`);
     if (!question.sourceReference?.trim()) issues.push(`Question ${number} has no source reference.`);
     if (!question.learningObjective?.trim()) issues.push(`Question ${number} has no learning objective.`);
+    if (!question.facetKey?.trim()) issues.push(`Question ${number} has no assessable facet key.`);
+    if (!question.answerTarget?.trim()) issues.push(`Question ${number} has no answer target.`);
 
     const layout = diagnoseMcqLayout(question as GeneratedMcq, number);
     layout.warnings.filter((warning) => /unusually long stem|paragraph-like option|multi-sentence option/i.test(warning)).forEach((warning) => issues.push(warning));
@@ -64,12 +68,12 @@ export function buildDraftQualityChecks(mcqs: GeneratedMcq[], requestedCount: nu
   return {
     duplicateQuestionRisk: "low",
     hallucinationRisk: "medium",
-    coverageNotes: `${mcqs.length} of ${requestedCount} requested source-grounded MCQs passed structural and concept-diversity validation.`,
+    coverageNotes: `${mcqs.length} of ${requestedCount} requested source-grounded MCQs passed structural and concept-facet-answer diversity validation.`,
     layoutWarnings: collectMcqLayoutWarnings(mcqs),
     reviewWarnings: [
       "Draft only: faculty review is required before assignment or publication.",
       "Verify each source reference against the uploaded material before approving the draft.",
-      "Verify that every concept key is unique and that no earlier saved-paper concept has been reused before approval.",
+      "Verify that every repeated concept uses a different supported facet and answer target, and that no earlier saved-paper task has been reworded.",
       "Review the printable Section A table preview for any wrapped row that exceeds the supplied paper geometry.",
     ],
   };
