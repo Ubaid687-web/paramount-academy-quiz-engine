@@ -15,6 +15,8 @@ export interface ContentAnalysis {
     maximum: number;
   };
   keyTopics: string[];
+  /** Conservative count used for teacher-facing source-capacity guidance. */
+  topicCount: number;
   sections: ContentSection[];
 }
 
@@ -56,6 +58,7 @@ export function analyzeContent(text: string): ContentAnalysis {
     complexity,
     recommendedQuestions,
     keyTopics,
+    topicCount: Math.max(1, keyTopics.length, sections.length),
     sections,
   };
 }

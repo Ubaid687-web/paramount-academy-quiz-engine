@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -215,15 +216,14 @@ export default function AIAgent() {
       const sectionCount = trimmedContent
         .split(/\n\s*(?:chapter|unit|section|\d+[.)])/i)
         .filter((section) => section.trim().split(/\s+/).length >= 40).length;
-      const topicCount = Math.min(10, (trimmedContent.match(/\b[A-Z][a-z]{3,}\b/g) || []).length);
+            const topicCount = Math.max(1, Math.min(10, (trimmedContent.match(/\b[A-Z][a-z]{3,}\b/g) || []).length), sectionCount);
       const recommended = calculateQuestionRecommendation({
         totalWords: wordCount,
         complexity,
         sectionCount,
         topicCount,
       });
-
-      setContentAnalysis({ wordCount, complexity, recommended });
+      setContentAnalysis({ wordCount, complexity, topicCount, recommended });
     }, 300);
     questionCountAnalysisTimerRef.current = analysisTimer;
 
@@ -244,6 +244,35 @@ export default function AIAgent() {
   }, [isProgrammeReady]);
 
   const activeScopeCatalog = scopeCatalogQuery.data;
+  const estimatedTopicCapacity = (() => {
+    if (scopeType === "uploaded_content") return contentAnalysis?.topicCount ?? null;
+    if (!activeScopeCatalog) return null;
+
+    const chapterTopicCount = (chapterId: number) => activeScopeCatalog.chapters.find((chapter) => chapter.id === chapterId)?.estimatedTopicCount ?? 0;
+    if (scopeType === "half_chapter") {
+      if (selectedSegmentId !== null) {
+        return activeScopeCatalog.segments.find((segment) => segment.id === selectedSegmentId)?.estimatedTopicCount ?? null;
+      }
+      return selectedChapterIds[0] ? chapterTopicCount(selectedChapterIds[0]) : null;
+    }
+    if (scopeType === "half_syllabus" || scopeType === "block") {
+      if (selectedScopeTemplateId === null) return null;
+      const chapterIds = activeScopeCatalog.templateMemberships
+        .filter((membership) => membership.scopeTemplateId === selectedScopeTemplateId)
+        .map((membership) => membership.chapterId);
+      return chapterIds.reduce((total, chapterId) => total + chapterTopicCount(chapterId), 0) || null;
+    }
+    if (selectedChapterIds.length === 0) return null;
+    return selectedChapterIds.reduce((total, chapterId) => total + chapterTopicCount(chapterId), 0) || null;
+  })();
+  const parsedQuestionCountForCapacity = /^\d+$/.test(questionCountInput) ? Number.parseInt(questionCountInput, 10) : null;
+  const showTopicCapacityWarning = assessmentMode === "mcq"
+    && settingsView === "count"
+    && parsedQuestionCountForCapacity !== null
+    && parsedQuestionCountForCapacity >= 1
+    && parsedQuestionCountForCapacity <= 100
+    && estimatedTopicCapacity !== null
+    && parsedQuestionCountForCapacity > estimatedTopicCapacity;
   const chapters = activeScopeCatalog?.chapters ?? [];
   const selectedChapter = chapters.find((chapter) => chapter.id === selectedChapterIds[0]);
   const availableSegments = (activeScopeCatalog?.segments ?? []).filter((segment) => segment.chapterId === selectedChapterIds[0]);
@@ -1025,6 +1054,14 @@ export default function AIAgent() {
                     placeholder="10"
                   />
                   {questionCountError && <p className="mt-2 text-xs text-destructive" role="alert">{questionCountError}</p>}
+                  {showTopicCapacityWarning && estimatedTopicCapacity !== null && parsedQuestionCountForCapacity !== null && (
+                    <Alert role="status" className="mt-3 border-amber-500/35 bg-amber-500/10 text-amber-950 dark:text-amber-100" data-testid="topic-capacity-warning">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription className="text-amber-900/85 dark:text-amber-100/85">
+                        This source has about <strong>{estimatedTopicCapacity} distinct examinable topics</strong>, but you requested <strong>{parsedQuestionCountForCapacity} questions</strong>. You can continue, but generation may ask for a broader approved source or fewer questions rather than repeat the same concept.
+                      </AlertDescription>
+                    </Alert>
+                  )}
                   {contentAnalysis && numQuestions && (
                     <div className="mt-3 space-y-2">
                       <Slider

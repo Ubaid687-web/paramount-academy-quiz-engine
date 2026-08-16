@@ -376,3 +376,14 @@
 - [x] Replace one-concept-per-pair limits with concept, assessable facet, and answer-target diversity checks.
 - [x] Preserve source grounding and block only duplicate answer targets or trivial rewordings.
 - [x] Verify editable count behavior in the teacher flow, add regressions, validate, and checkpoint.
+
+## Phase 65: Source-Aware Question-Count Capacity Warning
+- [x] Inspect available chapter segment or content analysis count in AIAgent.tsx.
+- [x] Implement a non-blocking visual warning near the question-count input when the requested count exceeds estimated available topics.
+- [x] Add UI regression coverage for the warning banner and verify test suite passes.
+- [x] Save checkpoint and report deliverables.
+
+## Phase 65: Source-Aware Question Capacity Guidance
+- [x] Add deterministic estimated topic counts to approved chapters and half-chapter segments in the catalog response.
+- [x] Show a non-blocking warning near the MCQ question-count input when requested coverage exceeds the selected source estimate.
+- [x] Add UI and analyzer regression coverage for approved and custom sources, then validate and checkpoint.

@@ -298,6 +298,27 @@ describe("AI quiz generation feedback", () => {
     expect(screen.getByRole("button", { name: /My custom lesson material/i })).toBeVisible();
   });
 
+  it("warns when an approved source may not support the requested question count", async () => {
+    scopeCatalogQuery.mockReturnValue({
+      isLoading: false,
+      data: {
+        curriculumSet: { id: 10, label: "FBISE Grade 10 Physics", editionLabel: "2026 edition" },
+        chapters: [{ id: 1, code: "Ch. 10", title: "Simple Harmonic Motion", startPage: 1, endPage: 20, estimatedTopicCount: 3 }],
+        segments: [],
+        templates: [],
+        templateMemberships: [],
+      },
+    });
+    render(<AIAgent />);
+    chooseMcqOutput();
+    fireEvent.click(screen.getByRole("button", { name: /Approved textbook chapters/i }));
+    fireEvent.click(await screen.findByRole("checkbox", { name: "Ch. 10: Simple Harmonic Motion" }));
+    fireEvent.change(screen.getByLabelText("Quiz title"), { target: { value: "Capacity warning practice" } });
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    fireEvent.change(screen.getByRole("spinbutton"), { target: { value: "4" } });
+    expect(screen.getByTestId("topic-capacity-warning")).toHaveTextContent("about 3 distinct examinable topics");
+    expect(screen.getByRole("button", { name: "Continue" })).toBeEnabled();
+  });
   it("does not expose Grade 9 while it has no ready Programme Catalogue entry", async () => {
     render(<AIAgent />);
 

@@ -478,8 +478,17 @@ export const appRouter = router({
       .input(programmeKeySchema)
       .query(async ({ input }) => {
         const { getActiveCurriculumScopeCatalog } = await import("./db");
+        const { analyzeContent } = await import("./contentAnalyzer");
         const catalog = await getActiveCurriculumScopeCatalog(input);
         if (!catalog) return null;
+
+        // Keep this estimate deterministic and source-bound. It is a teacher-facing
+        // warning signal, not a generation quota: generation still validates the
+        // actual concept/facet/answer inventory on the server.
+        const estimateTopicCount = (contentText: string) => {
+          const analysis = analyzeContent(contentText);
+          return Math.max(1, analysis.keyTopics.length, analysis.sections.length);
+        };
 
         return {
           curriculumSet: catalog.curriculumSet,
@@ -492,6 +501,7 @@ export const appRouter = router({
             partKey: chapter.partKey,
             startPage: chapter.startPage,
             endPage: chapter.endPage,
+            estimatedTopicCount: estimateTopicCount(chapter.contentText),
           })),
           segments: catalog.segments.map((segment) => ({
             id: segment.id,
@@ -500,6 +510,7 @@ export const appRouter = router({
             label: segment.label,
             startPage: segment.startPage,
             endPage: segment.endPage,
+            estimatedTopicCount: estimateTopicCount(segment.contentText),
           })),
           templates: catalog.templates.map((template) => ({
             id: template.id,
