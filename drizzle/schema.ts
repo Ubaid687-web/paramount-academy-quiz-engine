@@ -172,7 +172,6 @@ export const assessmentPatternSources = mysqlTable("assessmentPatternSources", {
   storageUrl: text("storageUrl").notNull(),
   originalFileName: varchar("originalFileName", { length: 255 }).notNull(),
   mimeType: varchar("mimeType", { length: 100 }).notNull(),
-  contentHash: varchar("contentHash", { length: 64 }),
   extractedText: longtext("extractedText"),
   extractionStatus: mysqlEnum("extractionStatus", ["pending", "extracted", "needs_review", "failed"]).default("pending").notNull(),
   status: mysqlEnum("status", ["draft", "active", "archived"]).default("draft").notNull(),
@@ -184,35 +183,6 @@ export const assessmentPatternSources = mysqlTable("assessmentPatternSources", {
 
 export type AssessmentPatternSource = typeof assessmentPatternSources.$inferSelect;
 export type InsertAssessmentPatternSource = typeof assessmentPatternSources.$inferInsert;
-
-// Programme-scoped reference evidence is stored separately from both textbooks and paper-pattern
-// sources. Analysis notes and practical-assessment material may inform administrator review, but
-// never become question-content or automatic paper-pattern evidence.
-export const programmeEvidenceRecords = mysqlTable("programmeEvidenceRecords", {
-  id: int("id").autoincrement().primaryKey(),
-  programmeId: int("programmeId").notNull(),
-  evidenceKind: mysqlEnum("evidenceKind", ["analysis_reference", "practical_assessment"]).notNull(),
-  academicYear: varchar("academicYear", { length: 20 }),
-  storageKey: varchar("storageKey", { length: 512 }).notNull(),
-  storageUrl: text("storageUrl").notNull(),
-  originalFileName: varchar("originalFileName", { length: 255 }).notNull(),
-  mimeType: varchar("mimeType", { length: 100 }).notNull(),
-  contentHash: varchar("contentHash", { length: 64 }).notNull(),
-  extractedText: longtext("extractedText"),
-  extractionStatus: mysqlEnum("extractionStatus", ["pending", "extracted", "needs_review", "failed"]).default("pending").notNull(),
-  status: mysqlEnum("status", ["draft", "reviewed", "archived"]).default("draft").notNull(),
-  evidenceNotes: longtext("evidenceNotes"),
-  uploadedBy: int("uploadedBy").notNull(),
-  reviewedBy: int("reviewedBy"),
-  reviewedAt: timestamp("reviewedAt"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, (table) => [
-  uniqueIndex("programmeEvidenceRecords_programme_hash_unique").on(table.programmeId, table.contentHash),
-]);
-
-export type ProgrammeEvidenceRecord = typeof programmeEvidenceRecords.$inferSelect;
-export type InsertProgrammeEvidenceRecord = typeof programmeEvidenceRecords.$inferInsert;
 
 // A reviewed profile records only the structure that an administrator confirmed from one exact
 // user-supplied pattern-paper file. It is intentionally separate from the paper's extracted text:

@@ -1,0 +1,1578 @@
+
+--- PAGE 31 ---
+[Unit 32Stoichiometry 7} 3; Stoichiometry
+
+Example 3.4
+200 g of Zn were reacted with 200g dil. H,SO,. Determine
+(a) Limiting Reactant
+(a) Mass of hydrogen produced
+ZN) + HSOgaqy ———* — ZNSOjuaqy + Hayy
+
+Solution
+(a) Massof Zn = 200g
+Molar mass of Zn = 63.5 g mol"
+200
+No of moles of Zn "65
+= 3.15 mol
+Mass of H,SO, = 200g / mol
+Molar mass of H,SO, = 2 +32 +16x4 = 98g/ mol
+No of moles of H,SO, = oa
+= 2.04 mol
+
+According to the balanced chemical equation
+
+1 mole of Zn produces = 1 molof H2
+3.15 mol of Zn = 1x3.15 mol of
+= 3.15 mol of H2
+1 mol of H,SO, “= 1 mol of H2
+2.04 moles of = 12.04
+= 2.04 mol’of H2
+
+As H,SO, is producing lesser moles of product so, H,SO, is the limiting reactant.
+
+Mass of hydrogen produced = No. of moles of hydrogen x molar mass of hydrogen
+=2.04x2=4.08¢
+
+Concept Assessment Exercise 3.5
+1. Magnesium metal reacts with Sulphur to produce MgS. How many grams of magnesi
+sulphide (MgS) can be made from 1.50g of Mg and 1.50g of sulphur by the reaction?
+Mg, +S.) ——> Mg5S,,, H
+2. Zinc and Sulphur react to form Zinc Sulphide according to the following balanced
+chemical equation ZNg) + Sy) ——> ZS,
+If 10.0g of Zinc and 10.0g of Sulphur are available for reaction, then determine
+(a) The limiting reactant.
+(b) The mass of Zinc Sulphide produced.
+3. Aluminium reacts with bromine to form Aluminium bromide, as shown by the balanced
+chemical equation, 2Al,,, + 3Bryq) —— 2AlBr,,,
+
+If 54g of Al and 200g of Br2 are available for reaction, then determine
+(a) The limiting reactant (b) The mass of AlBr, produced
+
+
+
+--- PAGE 32 ---
+| Seabees SCOICHIOMetry eee 3; Stoichiometry :
+
+| 3.4 Theoretical Yield, Actual yield and Percent yield
+
+The amount of product as calculated from a balanced chemical equation is known as the
+theoretical yield of a chemical equation. The actual yield is the amount of product actually
+Produced in the reaction. The percent yield of a chemical reaction can be calculated as
+follows:
+
+. Actual Yield
+Percentage Yield Theoretical Yield “102
+
+For many reactions, the theoretical yield is close to the actual yield. These reactions are
+quantitative and can be used for chemical analysis. For some reactions, however, the actual
+yield is below the theoretical yield, and the percent yield is less than 100%. This is because of
+the following reasons:
+
+Side reactions may result in by-products. Some reactions may be reversible. Mechanical loss
+can occur as a result of filtration or distillation. Separation by a funnel, washing or
+crystallization can also cause mechanical loss.
+
+Example 3.5
+In an industry copper metal was prepared by the following reaction, .
+Fey, + CuSO, ——— FeSOpig + CU,
+
+1.274g of CuSO, when reacted with excess of Fe metal a yield of 0.392g of Cu metal is
+obtained. Calculate the percentage yield.
+
+Solution
+Mass of CuSO, = 1.274g
+Molar mass of CuSO, = 63.5 + 32 + 64 = 159.5 g/mol
+159.5g of CuSO, =1 mole
+1.274 g of CuSO, = spy x 1.274
+= 7.982x 10° mol
+1 mol of CuSO, = 1 mole of Cu
+
+7.98 x 10° moles of CuSO, = 7.982x10" mol of Cu
+
+As, 1 mole of Cu = 63.5¢
+so, 7.982 x 10° moles of Cu = 63.5 x 7.982 x 10°
+= 0.5072 g of Cu.
+
+Hence, Theoretical yield = 0.5072 g
+Actual yield =0.392g¢
+Actual yield
+-« oe ere — x 100
+So, *yield = Theoretical yield ©
+= 0.392 «100 = 77.3%
+
+0.5072
+
+
+
+--- PAGE 33 ---
+Concept Assessment Exercise 3.6
+1. Ina reaction, 2.00 moles of CH, were reacted with an excess of Cl,. As a result, 177.0
+g of CCl, is obtained. What is the
+(a) theoretical yield (b) actual yield (c) % yield of this reaction?
+
+CHyg) + 4Cl ig) —> CCl) + 4HCl,
+
+. Phosphorus reacts with bromine to form phosphorus tribromide. When 35g of bromine
+is reacted with 27.9g of phosphorus tribromide is produced. What is the (a) theoretical
+yield (b) actual yield (c) % yield of this reaction? .
+
+2P oy + 3Braqy =? _2PBrny
+
+3.5 Determining Empirical and Molecular Formulas
+
+Remember that the empirical formula of a compound tells you the simplest ratio of elements
+in the compound. On the other hand, the molecular formula tells you the actual ratio of
+elements in the compound.
+
+| Determining the empirical formula of a compound involves the following steps:
+
+Step 1. Find the number of moles of each element from its mass or percentage composition.
+
+| Step 2. Divide each element's molar amount by the smallest or least molar amount to get the
+simplest whole-number ratio of the compound.
+Step 3. Write the empirical formula using the simplest ratio as subscripts.
+Determining the molecular formula of a compound involves the following steps:
+Step 1. Find the molar mass ui ine empirical formula.
+Step 2. Divide the compound's molar mass by the empirical formula’s molar mass. This will
+give you a whole number (n).
+Step 3. Multiply all the subscripts in the empirical formula by n to get the molecular formula.
+Example 3.6
+A compound has the following composition:
+Carbon = 40% , hydrogen = 6.7% and oxygen = 53.3%
+The molar mass of the compound is 180 g/mol. Determine its empirical and molecular
+
+formulas.
+Solution
+Moles of elements
+C= 40/12 = 3.33
+H=6.7/1 =6.7
+O = 53.3/16 = 3.33
+Mole ratio
+| 4 Se | : ie)
+Bas" *s 6i7 €'3333,
+
+3.33/3.33 : 6.7/3.33 : 3.33/3.33
+1 H 2 >: 61
+
+
+
+--- PAGE 34 ---
+—__
+
+Empirical formula = C,H,0,
+= CH,O
+
+Molar mass of empirical formula = 1x12 + 2x1 +1x16
+= 12+2+16
+= 30g/ mol
+
+n = Molar mass / Empirical formula molar mass
+= 180 /30
+=6
+Therefore molecular formula = (CH,O),
+
+= CH0,
+
+Concept Assessment Exercise 3.7
+empirical and molecular of a compound from the following data.
+
+26.4 % Carbon 3.3 % Hydrogen 70.3 % Oxygen, Molar Mass: 91.0 g/mol
+2. Determine the empirical and molecular formula of a compound composed of 18.24 g
+Carbon, 0.51 g Hydrogen, and 16.91 g Fluorine, which has a molar mass 562.0 g/mol.
+
+Percentage purity
+. The amount of the pure substance in a sample represented as a percentage of the
+samples total mass is known as percentage purity.
+You can determine the purity of a compound by comparing the amount of pure compound
+compared to the total mass of a sample. The formula for percentage purity is:
+Percentage purity = Actual mass of compound x 100/ Total mass of sample
+
+Example 3.7
+A student synthesized a compound and obtained a sample weighing 6.3g. Then he performed
+chemical analysis and found that the sample contains 4.2g of pure compound. Calculate the
+percentage purity of the compound.
+Solution
+
+Actual mass of compound = 4.2¢
+
+The total mass of the sample = 6.3g
+Percentage purity of compound = Actual mass of compound x 100/ Total mass of sample
+4.2 x100/6.3
+
+66.67 %
+
+Concept Assessment Exercise 3.8
+
+‘An impure sample of calcium carbonate has a mass of 70g. After purification, 56g of
+calcium carbonate is recovered. What is the percentage purity of calcium carbonate?
+
+
+
+--- PAGE 35 ---
+SI EST-S ARLE
+
+3.6 Concentration Units
+
+When solid solutes are dissolved in water, their molecules or ions readily move about in
+solution. They come in contact with one another readily in solution, so they combine easily.
+The quantity of a solute Present in a given amount of solvent or solution is called the
+concentration of a solution.
+
+Recall that you have learned the difference between a dilute and a concentrated solution. A
+dilute solution is that whose concentration is relatively low while a concentrated solution is a
+solution whose concentration is relatively high. You can find dilute and concentrated solutions
+
+of common acids and bases in your chemistry laboratory. Chemists use many concentration
+units. Here we will discuss molarity and strength.
+
+i. Molarity (M)(mol/dm?)
+If you read the label on the bottle of concentrated H,SO, you will notice 98% by mass and also
+18M. What does 18M stand for? This means there are 18 moles of H,SO, in each dm? of
+
+solution. Similarly, conc. HCl is 37% and 12.1 MHCL. This means there are 12.1 moles of HCl in
+
+each dm? of solution. We can express the concentration in terms of moles of solute in the
+given volume of solution.
+
+Molarity is the concentration unit in which the amount of solute is expressed in moles and the
+quantity of solution in dm?,
+
+Molarity is defined as the number of moles of solute dissolved per dm? of solution.
+Mathematically,
+= Moles of solute
+dm’ of solution
+3.6.1 Problems Involving the Molarity of a Solution
+Example 3.8
+Urea is a white solid used as fertilizer and starting material for synthetic plastic. A solution
+
+contains 40g urea dissolved in 500 cm? of solution. Calculate the molarity of this solution.
+Problem Solving Strategy
+
+To calculate the molarity, you need the number of moles of solute (which are not given) and
+the volume of solution in dm’. Convert the volume of solution 500 cm? to dm’, Determine
+moles of solute from its mass using its molar mass.
+
+Solution
+
+Mass of urea = 40g
+
+Molar mass of urea = 14+1x2+12+16+14+1x2
+= 60g/mol
+
+Moles of urea = = = 0.667mol
+
+Volume of solution = 500cm? = = 0.5dm?
+
+
+
+--- PAGE 36 ---
+Now
+Molarity = moles of solute
+dm’ of solution
+
+Molarity = 0.667
+0.5
+
+= 1,.334M
+Example 3.9
+Calculating molarity from moles of solute and volume of solution.
+Potassium permanganate (KMnO,) is a dark blue-black compound. When it is dissolved in
+
+water, it forms a bright purple solution. It is used as a disinfectant in water tanks. It is also
+known as pinky. A solution contains 0.05 moles of (KMnO,) in 600cm? of solution. Calculate
+
+the molarity of this solution.
+
+Problem Solving Strategy
+To calculate molarity, you need moles of solute which are given, and the volume of solution
+in dm’. But volume is given in cm’. So convert the cm? to dm? by dividing with 1000. Use a
+
+formula to calculate molarity.
+Solution
+Moles of (KMnO,) =0.05
+Volume of solution = 600 cm?
+
+_ 600
+~ 7000
+
+= 0.6 dm*
+Now
+
+_ Moles of solute
+dm’ of solution
+
+_ 0.05
+0.6
+
+= 0.083M
+
+Molarity
+
+Molarity
+
+Concept Assessment Exercise 3.9
+
+Potassium chlorate (KCIO,) is a white solid. It is used in making matches and dyes.
+Calculate the molarity of the solution that contains. (a) 1.5 moles of this compound
+
+dissolved in 250cm? of solution (b) 75g of this compound dissolved to produce 1.25dm? of
+solution. (c) What is the molarity of a 50cm’ sample of potassium chlorate solution that
+yields 0.25g residue after evaporation of the water.
+
+
+
+--- PAGE 37 ---
+Stoichiometry
+
+ii. Strength of a Solution
+The strength of a solution refers to the concentration of solute in a given volume of solution.
+It is expressed in terms of grams of solute per unit volume of solution. It is typically
+represented as:
+
+« g/dm? (grams per cubic decimeter) or
+
+« g/cm} (grams per cubic centimeter).
+These units express how much solute is dissolved in a specified volume of solution.
+Mathematically
+
+Mass of solute(g)
+
+Volume of solution (dm? or cm?)
+Mass of solute is measured in grams (g). Volume of solution is measured in cubic decimeters
+(dm?) or cubic centimeters (cm?).
+Unit Conversion:
+
+Strength of solution =
+
+1 dm? = 1000 cm?
+So, to convert between g/dm? and g/cm}:
+1g/dm?=0.001 g/cm?
+Example 3.10 (g/dm?)
+A solution contains 20 g of salt dissolved in 2 dm? of solution. Calculate the strength of the
+solution. ~
+‘Solution
+Mass of solute (g) = 20g
+Volume of solution = 2dm?
+Mass of solute (g)
+
+Strength of solution = Volume of solution (dm)
+
+= 10g/dm>*
+
+‘Strength of solution = an
+
+Example 3.11 (g/cm?)
+* Asolution contains 25g of sugar dissolved in 500 cm” of solution. Calculate the strength of the
+solution. ‘
+Solution
+Mass of solute = 25g: -
+_ Volume of solution = 500 cm?
+Mass of solute(g)
+* Volume of solution (cm?)
+
+25g
+
+Strength of solution =
+
+_ Strength of solution =
+
+*500cm?
+= 0.05 g/cm?
+
+
+
+--- PAGE 38 ---
+| nit 3:Stoichiometry
+
+Example 3.12 (Unit Conversion)
+A solution has a strength of 50 g/dm?. Express this strength in g/cm.
+Solution
+
+Strength of solution = 50 g/dm?.
+
+Strength of solution in g/cm? =?
+1g/dm3 = 0.001 g/cm?
+50g/dm? = 500.001
+= 0.05 g/cm?
+
+3.6.2 Problems Involving Interconversion of Molarity and Strength
+
+Example 3.13
+Converting the molarity of a solution into its concentration in g/dm? and g/cm?
+
+A flask contains 0.25M NaOH solution. What mass of NaOH is present per dm? of solution?
+
+Problem Solving Strategy
+Molarity means the number of moles per dm? of solution. So, 0.25M NaOH means 0.25 moles
+of NaOH dissolved per dm? of solution. You need to convert moles of solute to mass using
+molar mass.
+Solution
+Molarity = 0.25M
+Moles of NaOH = 0.25
+Volume of solution = 1dm?
+Molar mass of NaOH == 23+16+1
+= 40g/mole
+mass of solute
+molar mass of solute(g/mole)
+mass of NaOH
+40g/mole
+Mass of NaOH = 0.25 moles x 40g/mole
+=10g
+Thus, the solution contains 10g NaOH per dm’.
+Now
+
+Moles of solute =
+
+0.25 moles =
+
+As 1dm?= 1000cm*
+
+The solution contains 10g/ dm? of solution
+or the solution contains 10g of NaOH per 1000cm?
+So, 1000cm? of solution contains = 10g NaOH
+1cm? of solution contains = 10g/1000
+
+= 0.01g NaOH
+Therefore concentration of solution is = 0.01 g/ cm?
+
+
+
+--- PAGE 39 ---
+Example 3.14
+Converting concentration in g/dm? into molarity.
+
+Potassium hydroxide (KOH) is used in the manufacturing of shaving creams, paints and
+varnish. An analyst makes up a solution by dissolving 5.8g of KOH in one dm? of solution.
+
+Calculate the molarity of this solution.
+
+Problem solving strategy !
+To calculate the molarity, you need moles of solute per dm’ of solution. Moles of solute are
+
+not given. But the mass of solute per dm? of the solution is given, Convert the mass of the
+solute into moles by using its molar mass.
+Solution
+Mass of KOH dissolved in one dm? of solution = 5.6g
+Molar mass of KOH = = 39+16+1
+= 56g/mol
+= ___Mmass of KOH(g)
+molar mass of KOH(g)
+_ 5.6
+56
+= 0.1 mol
+Thus, the solution contains 0.1 moles of KOH in one dm’ of the solution, so the
+molarity of the solution is 0.1M.
+
+Moles of KOH
+
+Teacher’s Point
+A teacher may give different concentration interconversion numerical to students as
+homework.
+
+Concept Assessment Exercise 3.10
+
+1. Sodium hydroxide solutions are used to neutralize acids and in the preparation of soaps
+and rayon. If you dissolve 25g of NaOH to make 1 dm’ of solution, what is the molarity
+of this solution?
+
+. A solution of NaOH has a concentration of 1.2M. Calculate the mass of NaOH in g/dm?
+and g/cm? in this solution.
+
+. A solution is prepared by dissolving 10g of haemoglobin in enough water to make up
+1dm’ in volume. Calculate molarity of this solution. Molar mass of haemoglobin is
+6.51x10*g/mol.
+
+
+
+--- PAGE 40 ---
+Unit 3: Stoichiometry
+
+3.6.3 Dilution of Solutions
+
+Dilution is a process by which you make a solution less concentrated by adding more
+of the liquid (usually water). Suppose you have a cup of strong lemonade. If you add
+more water, the lemonade becomes weaker or less strong. This means that dilution
+reduces the strength or concentration of a solution. By using the dilution formula, you
+can determine how much of a concentrated solution is to be mixed with water to get
+the desired concentration and volume.
+
+To understand how to dilute a solution, we use a simple formula:
+MixVy-M2xV2
+where:
+M; is the concentration of the original (concentrated) solution.
+V1 is the volume of the original solution you use.
+Mz is the concentration you want after dilution.
+V2 is the total volume of the final solution.
+Plug the known values into the formula to find out how much of the concentrated
+solution you need. Mix the calculated amount of the concentrated solution with
+enough water to reach the final volume you want.
+Activity 3.1
+Prepare 250 cm? solution of 0.1M from concentrated hydrochloric acid.
+Materials required
+e Conc.HCl
+¢ 250 cm? volumetric flask
+Graduated pipette
+Distilled water
+
+Steps
+¢ Concentrated HCI is 12M. Using formula calculate the volume of Conc.HCl
+required to be diluted to 250 cm?.
+M1xV4-M2xV2
+Molarity of Conc. HCI x its volume to be diluted = Required molarity of HCI x required
+volume of HCI solution.
+
+12 x Vi = 0.1M x 250
+Vi= 0.1x250/12
+= 2.08 cm?
+e Transfer 2.08 cm? of conc. HCI with the help of a graduated pipette into a 250
+cm? volumetric flask.
+¢ Add distilled water up to the mark and shake well.
+© This is required 0.1M HCI solution
+
+
+
+--- PAGE 41 ---
+Example 3.15
+If you have 150 cm? of a 4 M potassium nitrate (KNO3) solution, what volume of this
+solution will be needed to prepare 500 cm? of a 1 M potassium nitrate solution?
+Solution
+The formula for dilution is:
+MixV1=M2xV2
+where:
+M1 is the concentration of the initial (concentrated) solution of KNO3 = 4 MV; is the
+volume of the initial solution of KNO3 that you need to find.
+Mz is the concentration of the final (diluted) solution = 1M
+V2 is the volume of the final solution = 500 cm?
+Substitute the known values into the formula:
+4MxV1=1 Mx500
+1Mx500 cm3
+4M
+V1=125 cm?
+To prepare 500 cm? of a 1 M potassium nitrate solution, you need to use 125 cm? of
+the 4 M potassium nitrate solution.
+Mix 125 cm? of the 4 M solution with enough water to make a total of 500 cm? to
+achieve the desired concentration.
+
+3.6.4 Calculating the concentration of a solution through titration
+
+1
+
+Activity 3.2
+To standardise the given solution of hydrochloric acid.
+Note: Perform this activity in the chemistry laboratory.
+You will need:
+= Burette, Pipette, burette stand, beakers, conical flash, glass rod.
+
+= Standard 0.1M NaOH solution and phenolphthalein.
+Chemical equation
+HCl(agytNaOH (ag) ————>_NaCliaqy +20,
+ny = 1 mole n2 = 1 mole
+
+Corry out the following
+Fit up a clean burette in the burette stand vertically.
+= Fill the burette with HCl solution up to zero mark.
+= Take 10 cm? of NaOH solution in a conical flask with the help of a pipette.
+= Add a few drops of phenolphthalein as an indicator.
+= Note the initial reading on the burette.
+= Run the acid solution. in the conical flask drop by drop, and shake the flask constantly.
+
+
+
+--- PAGE 42 ---
+[Unit 3: Stoichiometry 3: Stoichiometry
+
+= Go on adding the acid solution till the pink colour just disappears.
+
+= Note down the final reading from the burette.
+
+= The difference between the final and initial readings gives the volume of the acid used to
+neutralize 10.0 cm? of NaOH solution.
+
+* Repeat the experiment to get three concordant readings.
+
+= Find the mean volume of the HCI solution used.
+
+Observations and calculations
+Suppose the volume of HCI solution used = V,= 10 cm? :
+
+* Molarity of HCl solution = M;=?
+Volume NaOH solution used = V2= 10 cm?
+Molarity of NaOH solution = M)= 0.1M
+No. of moles of HCl =n,=1
+No. of moles of NaOH = n2= 1
+
+MyxVy _MaV2
+7 om
+M10 0,1x10
+tT A
+M = 0.1M
+Strength of HCI solution = Molarity x Molar mass
+= 0.1.x 36.5
+= 3.65 g/dm?
+
+Result: Molarity of HCl solution is 0.1M
+M; = 0.1M
+
+Strength of HCI solution = Molarity x Molar mass
+= 0.1 x 36.5 ”
+
+= 3.65 g/dm?
+
+Concept Assessment Exercise 3.11
+When 10 cm’ solution of NaOH solution is titrated against 9.8 cm? of 0.1M HCI solution
+for complete neutralization.
+
+HCliaqy+NaOH (aq) ————>_ NaCliagy H20(y,
+Calculate (i) the molarity of NaOH solution (ii) the amount of NaOH present per cm? of
+
+solution.
+Achemist has a 200 cm? solution of hydrochloric acid with a concentration of 6
+
+M (molar). He wants to dilute it to a concentration of 2 M. How much of the
+original solution should be mixed with water to achieve the desired
+concentration?
+
+
+
+--- PAGE 43 ---
+[Unit 3:Stoichiometry J 3: Stoichiometry
+
+KEY POINTS
+
+The study of relative amounts of the substances involved in the chemical reaction is
+known as stoichiometry
+
+The atomic mass, formula mass and molecular mass of a substance expressed in
+grams ts called Mole.
+
+A balanced chemical equation will tell you the ratio of the reactants/products to
+the mole.
+
+The mole is the SI unit to express the amount of a substance.
+
+The relative amounts of each element in a compound are expressed as the
+percentage composition.
+
+A limiting reactant is the reactant that is completely consumed in a reaction.
+Reactant in excess is the reactant left unutilized or unreacted after the reaction is
+complete. It is also referred to as a Non-Limiting reactant.
+
+The amount of product a chemical reaction produces is known as the theoretical
+yield of a chemical equation.
+
+The actual yield is the amount of product produced in the reaction.
+Molarity is defined as the number of moles of solute dissolved per dm3 of solution.
+
+References:
+¢ James Brady and John R. Holum, Chemistry, The studies of matter and its changes.
+¢ Theodore L. Brown, H. Eugene LeMay Jr and Bruce E. Bursten,
+¢ Chemistry, The central Science.
+* Rose Marie Gallagher and Paul Ingram, Complete chemistry.
+
+EXERCISE
+| 1. Multiple Choice Questions (MCQs)
+| i. What mass of CO, is produced by the combustion of each mol of CH,?
+CHyq) + 2034, ———+ CO) + 2H,O,,
+
+| (a) 16g (b) 44g
+| (c) 32g (d) none
+! ii. _A flask contains 500 cm’ of SO2 at RTP. The flask contains;
+| (a) 32g (b) 2.4¢
+| (c) 64g (d) 1.33g
+iii. A mecklace has 6g of diamond in it. How many carbon atoms are present in it?
+(a) 1 (b) 0.5
+(c) 1.5 (d) 0.25
+iv. What is the mass of aluminium in 204 g of the aluminium oxide, Al,0,?
+(a) 26g - (b) 27g
+
+(c) 54g (d) 108g
+
+
+
+--- PAGE 44 ---
+vii.
+
+viii.
+
+The reactant which is consumed earlier and gives least quantity of product is
+called;
+
+(a) Reactant in excess (b) Stoichiometry
+
+(c) Limiting reactant (d) Stoichiometric amount
+
+Which one of the following compounds contains the highest percentage by mass of
+nitrogen?
+
+(a) NH, (b) NH,
+
+(c) NO (d) NH,OH
+
+Vitamin A has a molecular formula of C,,H,,0. The number of moles of vitamin A
+in 500 mg of its capsule will be;
+
+(a) 1.7 (b) 1.7x 10°
+
+(c) 1.05 (d) 3.01x10"
+
+When one mole of each of the following is completely burnt in oxygen, which will
+give the largest mass of CO,?
+
+(a) Carbon monoxide (b) Diamond
+
+(c) Ethane (d) Methane
+
+One mole of ethanol and one mole of ethane have an equal;
+(a)Mass (b)Number of atoms
+(c)Number of electrons (d)Number of molecules
+
+How many moles of oxygen are needed for the complete combustion of two moles
+of butane, C4Hi0?
+2CH yoy) + 1303) ———* 8COx) + 10H,
+(a) 12 mol (b) 13 mot
+(c) 4 mol (d) 10 mol
+
+2. Short questions
+
+Analysis of a compound used in photography indicated the following chemical
+
+composition:
+65.45% C, 5.45 % H, and 29.09 % O. Its molar mass is 110 g/mol. Determine its
+
+molecular formula.
+How many moles of HCI will be produced when 125g of AlCl: are reacted with
+
+excess of water?
+2AlCl,, + 3H,0Qy ——+ AlOy) + BHCl isa)
+How many moles of oxygen are needed to produce 1.0g of calcium nitrate?
+Cay) + 30x) + Nog) ——— Ca(NO))o..)
+Calculate the limiting reactant when ALS; is produced by the reaction of 25g of
+-each reactant.
+
+2A, + 3S) AL S35)
+Calculate the empirical and molecular formulas of a compound from the following
+
+data.
+20.2 % Sodium 37.6 % Sulphur 42.2 % Oxygen, Molar Mass: 682.8 g/mol
+
+For the reaction
+CaCO) + ZHClinq) ———F_ CAC yfaqy + CO24@) + HO
+
+
+--- PAGE 45 ---
+[Unit 3: Stoichiometry 3: Stoichiometry
+
+viii. 68.1 g solid CaCO; is mixed with 51.6 g HCl. Which one will be the limiting
+reactant?
+ix.  Copper(ll) sulphate is prepared by the reaction of dilute sulphuric acid on |
+Copper(ll)oxide. A student prepared 1.85g of copper(II) sulphate. If its theoretical |
+yield is 2.5g, calculate its percentage yield. |
+| CuO) + H,SOysg, ———* CUSOyaq) + H,Oq /
+% In an experiment some amount of limestone was heated, and only 24 dm? of
+carbon dioxide was produced at room temperature and pressure. What mass of
+limestone was heated? |
+CaCOy, ——* CaO + COr®
+xi. For the reaction of C;H,., with O,.., to form CO,,,, and H20,,,, what number of
+moles of CO, can be produced by the reaction of 0.480 mol of C,H, and 1.08 mol
+of O,.
+xii. Which reactant will be left un-reacted?
+CHa + 30g) ———*  2COq) + 2H,04)
+xiii. Given 48 g of methane (CH,) and excess oxygen, calculate the volume of carbon
+dioxide gas produced at room temperature and pressure.
+xiv. Calculate the empirical formula of a compound that contains 40% carbon, 6.7%
+hydrogen, and 53.3% oxygen by mass.
+xv. A solution is prepared by dissolving 10.0 g of sodium chloride in water to make a
+total volume of 500 cm. Calculate the concentration of the solution in g/dm? and
+mol/dm?.
+xvi. Ina titration, 25.0 cm? of a 0.10 mol/dm? NaOH solution neutralized 20.0 cm? of. |
+an HCl solution. Calculate the concentration of the HCI solution in mol/dm?3.
+xvii. A student is required to prepare a 0.5 mol/dm? NaCl solution for an experiment.
+| a. Define concentration in the context of this solution.
+b. Calculate the mass of NaCl needed to prepare 250 cm? of the solution.
+¢. Convert the concentration of the prepared solution to g/dm?.
+d. Propose a step-by-step procedure to accurately prepare this solution.
+
+] THINK TANK
+} 1. Critically assess why the percentage yield in a reaction is rarely 100% and discuss the
+{ factors that might contribute to a lower yield.
+} 2. A solution has a concentration of 0.5 mol/dm?. Propose a method to double this
+concentration without changing the volume of the solution.
+3. Calculate the percentage purity of a sample of sodium carbonate (Na,CO,) if 1.00 g of the
+sample requires 25.0 cm? of 0.1 mol/dm? hydrochloric acid for complete reaction.
+Na,CO + 2HClieq) ———* = 2NaChiaqy + COy, + 1,0
+4. If a solution has a concentration of 2 mol/dm?, what is its concentration in g/dm? if the
+solute is H,SO,? Answer: 196 g/dm?.
+5. Design a method to determine the concentration of acetic acid in vinegar using titration.
+
+
+
+--- PAGE 46 ---
+Zinc anode Copper cathode
+
+raliC
+
+ELECTROCHEMISTRY
+
+Student Learning Outcomes (SLOs)
+
++ Define electrolysis as decomposition of ionic compounds, in molen state or aqueous
+solution, by passage of electric current.
+
++ Identify and labet in simple electrolytic cells, the anode (+), cathode (-), electrolyte and
+direction of flow of electrons in the external circuit.
+
++ Describe the transfer of charge in external circuit, movement of ions in the electrolyte
+and transfer of electrons in the electrodes.
+
++ Identify the products formed at electrodes and describe the observations made during the
+electrolysis of molten lead(|I)chloride, concentrated aqueous sodium chloride, dilute
+sulphuric acid using inert electrodes (platinum or carbon/graphite).
+
++ State that hydrogen-oxygen fuel cell uses hydrogen and oxygen to produce water as the
+
+only chemical product.
+
+
+
+--- PAGE 47 ---
+ee dade its Erectroctemistry suum) 4: Electrochemistry
+
+Describe the advantages and disadvantages of using hydrogen-oxygen fuel cells in
+comparison with gasoline/petrol engines in vehicles. Z
+* Identify the products formed at electrodes and describe the observations made during
+
+the electrolysis of dilute Copper(!!)sulphate using an inert electrode or copper
+electrode.
+
+* Predict the identity of Products of electrolysis of a halide compound in dilute or
+concentrated solution.
+
+© Construct ionic half-equations for reaction at either electrode.
+
+* Describe electroplating and its applications.
+
+* Sketch a schematic diagram for a voltaic cell e.g. Daniel cell.
+
+* Use the voltage data given for the voltaic cell to determine the order of reactivity of
+any two metals.
+
+Electrochemistry is the study and application of the fundamental principles of
+electrochemical reactions. Electrochemical Processes include electrolysis, electroplating, and
+voltage cells. Electrochemistry principles include understanding the role of anode and
+cathode, the movement of electrons in an external circuit, and the migration of ions in an
+electrolyte. In this chapter, we will explore electroplating and electrolysis principles. We also
+look at the potential advantages of a hydrogen and oxygen fuel cell over a traditional fuel
+
+engine. Finally, we will discuss the importance of the voltaic cell, the Daniel cell, and the
+role of metals in determining reactivity.
+
+4.1 Electrochemical cells
+Devices that convert chemical energy into electrical energy or vice versa are called
+electrochemical cells. Therefore, there are two types of electrochemical cells:
+(1) Electrolytic Cells
+(2) Galvanic Cells
+
+An electrochemical cell that uses electrical energy to drive a chemical reaction is called
+an electrolytic cell. An electrochemical cell that converts chemical energy into electricity
+is called a galvanic cell.
+
+4.1.1 Nature of Electrochemical Process
+Electrochemical processes are oxidation- .
+
+Science Tidbit
+reduction reactions in which chemical energy | A physical or chemical change that occurs by itself is
+
+released by a spontaneous reaction is converted | <alled a require a source of nT
+
+to electricity or in which electrical energy is | happen. For instance, water flows from a higher level
+
+used to drive a non-spontaneous reaction. | ‘2? Ot acted tea hte kee
+
+Le mT fi taneous oxidation-reduction reaction, This
+Whether an electrochemical process releases or fn yearpacpeery the
+
+requires energy, it always involves the transfer On the other hand, a pecalnt or chemical change that
+of electrons from one substance to another. | requires a source of energy ne make it happen is Face
+This means that this process always involves an | *nge spontaneous process. For example higher level By
+oxidation-reduction or a redox reaction. using a pump.
+
+
+
+--- PAGE 48 ---
+4.1.2 Concept of Electrolytes and Electrolysis
+When an ionic compound is dissolved in water, it splits up into its positive and negative ions,
+these ions are capable of conducting electricity. Such compounds are referred to as electrolytes.
+
+Substances that can conduct electricity when they are in a molten state or aqueous
+solution and undergo chemical changes. Whereas, a substance that cannot conduct
+electricity when dissolved in water or in the molten state is called a non-electrolyte.
+Examples of electrolytes are NaCl, KCl, HCl, NaOH, etc.
+
+Examples of non-electrolytes are urea, glucose, sucrose, benzene etc.
+
+4.1.3 Electrolytic Cells
+An electrochemical cell in which electrical energy is used
+to drive a chemical reaction is called an electrolytic cell.
+The figure shows the sketch of an electrolytic cell.
+An electrolytic cell consists of
+
+(a) A vessel containing an electrolyte (MX)
+
+(b) Two inert electrodes
+
+(c) A battery
+The figure shows that electrons move from anode to
+cathode in the outer circuit, in the solution the cations
+move towards the cathode and anions towards anode. At
+the anode, anions oxidize by losing electrons. At the
+cathode, cations reduce by gaining electrons. This means
+oxidation occurs at the anode and reduction at the
+cathode. The electrons released by anions at the anode move in the external circuit towards
+the cathode. This means the movement of ions in the electrolyte and the transfer of electrons
+occur at electrodes in the external circuit.
+
+At Anode xX ~X+le
+
+At cathode M’+le >M :
+Concept Assessment Exercise 4.1
+. Sketch an electrolytic cell for the electrolysis of fused KCl.
+
+2. Sketch a simple representation of electrolytic cell for the electrolysis of fused
+sodium chloride. Indicate the direction of the flow of electrons. Identify anode and
+
+cathode.
+
+4.2 Electrolysis
+Electrolysis is the chemical process in which an electric current is passed through an
+electrolyte, either in its molten state or as an aqueous solution, causing a non-spontaneous
+redox reaction to occur. This process involves the movement of ions towards oppositely
+charged electrodes, where oxidation occurs at the anode and reduction occurs at the
+cathode. This process leads to the decomposition of the electrolyte or its components into
+simpler substances or elements.
+
+
+
+--- PAGE 49 ---
+4.2.1 Electrolysis of molten electrolyte
+
+(i) Electrolysis of Molten Sodium chloride
+
+On a large scale, sodium metal is produced by the
+electrolysis of fused sodium chloride. The electrolytic
+cell used in the process is called a Down’s Cell.
+Down’s Cell uses an iron cathode and carbon anode.
+During the electrolysis, the sodium ions are reduced
+at the cathode to liquid sodium metal. At the anode,
+the chloride ions are oxidized to chlorine gas.
+
+At anode
+
+2Cl g) ———> Cl + 2e° (oxidation half-reaction)
+At cathode
+
+2Na"*\) + 2&7 ———+ 2Naq, (reduction half-reaction)
+
+(ii) Electrolysis of molten lead(Il) chloride using platinum or graphite electrodes
+
+On a large scale, lead metal is produced by the electrolysis of molten or fused lead(Il)
+chloride. An electrolytic cell is used for this purpose. Molten lead chloride is placed in the
+electrolytic tank and platinum, or graphite electrodes are dipped in it. The electrolysis is
+conducted above 327°C, which is the melting point of lead chloride.
+
+Molten lead chloride contains free lead ions and chloride ions. During electrolysis, chloride
+
+ions move towards the anode and lead ions towards the cathode. At the electrodes following
+reactions occur.
+
+At anode
+
+2cr 0 7 feb YE 26 (oxidation half-reaction)
+At cathode
+
+Pb, + 2e ———+> Phy (reduction half-reaction)
+Molten lead is collected at the bottom of the cathode and chlorine gas at the anode.
+
+4.2.2 Electrolysis of concentrated aqueous solution
+
+Electrolysis of a concentrated aqueous solution of sodium chloride called brine is used for the
+industrial production of sodium hydroxide. Electrolysis is carried out by using inert electrodes
+such as platinum, or carbon (graphite). The electrolytic cell is shown in Figure 4.3. The brine
+
+contains sodium ions and chloride ions from NaCl and hydrogen ions and hydroxide ions from
+water,
+
+
+
+--- PAGE 50 ---
+During electrolysis, chloride ions move towards the
+anode. At anode chloride ions are oxidized to
+produce chlorine gas. Sodium ions move towards the
+cathode. However, sodium ions are not reduced to
+sodium metals in this process. Instead, hydrogen ions
+from water are discharged to produce hydrogen gas.
+More and more water molecules keep ionizing to
+replace H* ions as soon as they are consumed. The
+
+electrolyte in the solution becomes sodium hydroxide Figure 4.3: Electrolysis of
+(NaOH). Following reactions occur in the electrolytic Concentrated aqueous NaCl
+
+cell.
+At anode: 2CU oq) ————> Cloyaq + 2
+At cathode: 2H ua + 28 —— > Hoy
+
+The solution contains Na* and OH’ ions. Evaporation of water from this solution produces pure
+solid sodium hydroxide.
+4.2.3 Electrolysis of dilute aqueous solution
+
+a. Electrolysis of dilute aqueous Sodium chloride using platinum electrodes
+
+Unlike electrolysis of concentrated aqueous sodium chloride, chloride ions are not oxidized at
+the anode. Instead, hydroxide ions are oxidized and oxygen gas is produced at the anode.
+Reaction at the cathode remains the same. And hydrogen is produced at the cathode. The
+following reactions take place during electrolysis.
+
+” ; 4H"aq) + 4€ ———> 2H)
+At anode:
+
+40H (49) * — 2H,0y + 4€ + Org)
+
+Cathode (-) Anode (+)
+
+Figure 4.4: Electrolysis of dilute aqueous NaCl
+
+
+
+--- PAGE 51 ---
+b. Electrolysis of dilute sulphuric acid using platinum electrodes
+In an aqueous solution, sulphuric acid ionizes to form hydrogen ions and sulphate ions.
+Autoionization of water gives hydrogen ions and hydroxide ions.
+
+HSO jg) ———*>- 2H"ay + $0} 109)
+
+HO, = 2H + ON ag
+During electrolysis, hydrogen ions move towards the cathode and are reduced to form
+hydrogen. Whereas hydroxyl ions and sulphate ions move towards the anode. At the anode,
+hydroxyl ions are oxidized and sulphate ions remain unchanged.
+
+At cathode
+
+4H aq) *4€  ———> Hag
+
+At anode
+
+40H (ac) 2H,0y + 4€ + On
+Therefore, in the electrolysis of dilute aqueous H,SO, using a platinum electrode, hydrogen
+gas is produced at the cathode and oxygen gas at the anode.
+
+c. Electrolysis of copper(II) sulphate using platinum electrodes
+
+The aqueous solution of copper sulphate contains copper ions and sulphate ions from
+copper(II) sulphate and hydrogen ions and hydroxide ions from water. During electrolysis
+copper ions and hydrogen ions are attracted towards the cathode. At the cathode, only
+Copper ions are reduced and hydrogen ions remain unchanged. The sulphate ions and
+hydroxide ions are attracted towards the anode. At the anode, only hydroxide ions are
+oxidized and sulphate ions remain unchanged.
+
+At cathode
+
+2Cu*,4) + 4e ———> 2Cu,,
+At anode
+
+on, > 2H,0y, + Org) +47
+Therefore, in the electrolysis of aqueous copper(ll)sulphate using a platinum electrode,
+copper metal is produced at the cathode and oxygen gas at the anode. The blue colour of the
+Copper sulphate solution gradually fades away as the reaction goes on.
+d. Electrolysis of copper(I!) sulphate using copper electrodes
+If you use copper electrodes rather than Platinum, the cathode reaction remains the same but
+the anode reaction differs. At anode, copper atoms break away from the electrode forming
+
+Cu’* ions giving up electrons to the anode. These electrons are moved towards the cathode by
+the power source. The following reactions occur during electrolysis.
+
+At cathode
+
+Cua + 2e° Cu,
+
+At anode
+
+Cuy.———>__ Cu,
+
+(aq + 2€
+
+
+
+--- PAGE 52 ---
+During electrolysis copper anode is consumed gradually negative
+
+- + _ Positive
+and the copper cathode gains mass due to the Cu poor Gieetricity — anode CU
+deposition of pure copper on it. “electrons” | Slectrode
+The copper metal obtained from its ores is usually copper
+impure. It contains impurities such as zinc, iron, silver removed
+
+and gold. These impurities are removed by the process Sopeek
+of electrolysis. In this process, impure copper bars act
+
+as anode and pure copper bars as cathode. CuSO, a copper (II) sulphate solution
+
+solution containing little sulphuric acid is used as the
+
+Figure 4.5: Electrolysis of
+electrolyte. (See Figure 4.5)
+On passing electricity, copper anode dissolves forming
+Cu” ions. Cations move towards the cathode at which only Cu’? ions are reduced. Thus pure
+copper deposits at the cathode. The less electropositive metals, silver and gold fall to the
+bottom of the cell. Copper obtained in this process is 99.5% pure. The following reaction
+occurs in this process.
+At anode: Cu, ———> Cu, + 2
+
+At cathode: Cua) + 26 ——+> Cuy
+
+4.3 Electrolysis of halid compound
+During the electrolysis of a halide compound (a compound containing halogen ions like
+chloride, bromide, or iodide), the products depend on whether the solution is dilute or
+concentrated. Here's a simple explanation:
+1. Electrolysis of Dilute Halide Solution
+At the Anoue (positive electrode): Oxygen gas is usually produced because water breaks
+down into oxygen and hydrogen ions. This happens because the water molecules compete the
+halide ions for discharge.
+At the Cathode (negative electrode): Hydrogen gas is produced as water molecules are
+reduced to form hydrogen gas and hydroxide ions.
+Example:
+If you electrolyse a dilute sodium chloride (Nacl) solution, the products are:
+Anode: Oxygen gas (02)
+Cathode: Hydrogen gas (Hz)
+2. Electrolysis of Concentrated Halide Solution
+At the Anode: The halogen (chlorine, bromine, or iodine) is produced because there are many
+halide ions, so they are discharged instead of water.
+At the Cathode: Hydrogen gas is still produced because water is reduced.
+
+Example:
+If you electrolyse concentrated sodium chloride (NaCl) solution, the products are:
+
+Anode: Chlorine gas (Cl2)
+Cathode: Hydrogen gas (H2)
+
+
+
+--- PAGE 53 ---
+[Unit 4: Electrochemistry 9) 4: Electrochemistry
+
+Key Rule to Remember:
+
+Dilute Solution: Oxygen at the anode.
+
+Concentrated Solution: Halogen at the anode.
+
+The cathode always produces hydrogen gas in both cases.
+
+4.4 Electroplating (deposition using the same electrode).
+
+The electrolytic process used to deposit one metal on another metal is called
+electroplating. An object can be electroplated by making it cathode in an electrolytic tank
+containing ions of the plating metal. The plating metal is made anode. On passing electricity
+through the electrolytic tanks, a thin layer of anode metal is deposited on the surface of the
+
+object.
+
+4.4.1 Applications of Electroplating
+
+Steel objects are often protected from corrosion by electroplating with zinc, tin and
+
+chromium.
+
+Zine Plating
+
+Zinc plating on steel is done by using zinc metal as anode. A solution of potassium zinc
+| cyanide K,[Zn(CN),] containing little sodium cyanide is used as an electrolyte. The steel
+object is made of cathode. During the electrolysis zinc at the anode enters the solution as
+| Zn* ions, which are deposited at the cathode. The electrolyte ionizes as follows.
+| . KIZM(CN)4]iag) = 2K "aq + [ZN(CN) Ia)
+| [ZN(CN),I7,0 = Zn"%aq) + ACN say
+
+Following reactions occur at the electrodes:
+
+At anode: Zn») —> Zny + 2€° Tin-plated oma tmp cans.
+At cathode: Zn) +2e° —> Znw | Food and beverages industries use
+Sodium cyanide prevents the hydrolysis of tinplated steel cans, this is because the
+electrolytes. components of food beverages and
+Awareness against pollution preservatives contain organic acids or
+
+Cyanide ions are extremely toxic. Therefore, a | their salts. They may form toxic
+solution containing cyanide ions must not be | Substances by reacting with iron. These
+dropped into rivers and streams. This is | acids and salts are corrosive. Tin plating
+responsible for killing fish and other animals. is non-poisonous and prevents corrosion.
+
+Tin Plating
+
+Food cans are generally tin-plated. Tin plating on steel is done by using tin as an anode and a
+solution of stannous sulphate, (SnSO,) as electrolyte. A few drops of dil. H,SO, are added to
+the electrolyte to prevent its hydrolysis. The electrolyte ionizes as follows.
+
+SMSO 4 (aq) = Sn%ag) + S047 (0q)
+
+2
+
+
+--- PAGE 54 ---
+During the electrolysis following reactions occur:
+
+At anode: Sn) ——> Sn? aq + 2°
+
+At cathode: Sn” aq + 26° ——> Snw
+Chromium Plating
+
+Since chromium metal does not adhere strongly to the
+steel therefore steel is first plated with copper or nickel
+and then with chromium. For electroplating chromium,
+chromium metal is used as an anode and chromium
+sulphate, Cr,(SO,), as an electrolyte. A few drops of dil.
+H,SO, are added to the electrolyte to prevent its
+hydrolysis.
+
+The electrolyte ionizes as follows:
+Cry(SO,)s faq === Crug) + 380,709)
+
+At anode: Cry == CrP + 3e
+
+At cathode: Cry + 36 em Cry
+
+Do you agree that the following reactions will occur at the electrodes?
+
+Figure 4.6: Motor Bike
+
+Chromium-plated steel is used to make automobile parts (see Figure 4.5).
+
+4.5 Galvanic Cells (Daniel Cells)
+
+The cell which involves a spontaneous redox reaction
+to generate electricity is called a galvanic or voltaic
+cell. The name Voltaic is given to this cell because
+Alessandro Volta discovered the first such cell. The
+English chemist Fredrick Daniel constructed the first
+voltaic cell using zinc (Zn) and copper (Cu) electrodes.
+Therefore this cell is named Daniel Cell. A galvanic or
+Daniel cell is shown in Figure 4.7.
+
+A galvanic cell consists of the following parts:
+
+(1) A zinc bar dipped into a 1M ZnSO, solution. Figure 4.7: Galvanic Celt
+
+(2) A copper bar dipped into a 1M CuSO, solution.
+(3) A salt bridge is an inverted U tube containing an
+
+inert electrolyte such as KCl. Its ions do not react with the electrodes or the ions in
+the solution. It makes the electrical contact between the solutions through which ions
+
+can move.
+(4) A voltmeter to measure current.
+
+
+
+--- PAGE 55 ---
+Each compartment of the cell is called a half-cell. Thus a Daniel cell consists of two half-cells
+joined in series. When the circuit is complete, electrons begin to flow from the Zn rod
+through the external wires to the Cu rod. Thus Zn half-cell acts as an anode and the Cu half-
+
+ce as a cathode. Note that a half cell consists of a metal rod dipped in the solution of its
+salt.
+
+Concept Assessment E
+
+‘ing the cat
+ing chemicals:
+
+Silver, Zinc, Silver Nitrate and zinc sulphate (ZnSO,).
+(Hint: Zn is more active than Ag)
+
+4.5.1 Reactions in a Daniel Cell
+
+In Daniel's cell, electrons flow from the Zn rod, through the external wire to the Cu rod. This
+is because Zn has more tendency to undergo oxidation than Cu. Zn atoms from the rod go into
+the solution as Zn** ions leaving electrons on the rod. These electrons flow in the external
+circuit. Thus oxidation half reaction occurs at the anode compartment. Cu” ions in copper
+sulphate solution capture electrons from the Cu electrode and are reduced. Reduction half
+reduction occurs at the cathode compartment. Such oxidation and reduction reactions are
+called half-cell reactions.
+
+At Anode (Oxidation half reaction):
+
+Zr) —— Zn"? aq + 2e7
+At Cathode (Reduction half-reaction):
+
+Cu’ oq) + 22° ——> Cus
+
+4.6 Electrochemical Series
+
+The tendency of a metal to become oxidized or reduced, when placed in its salt solution is
+called electrode potential (E°). Electrode potential is the measure of the potential of a
+reaction that can occur at the electrode. It is measured in volts. The electrode potential of
+an electrode is determined experimentally by using a standard hydrogen electrode. The
+International Union of Pure and Applied Chemistry (IUPAC) has recommended the
+representation of electrode potential as reduction potentials. A table showing the
+arrangement of metals based on increasing reduction potentials is called an electrochemical
+series.
+
+A metal higher in the series has a lower value of reduction potential than the metal below it
+in the series. So, it has a higher tendency to lose electrons and is more active than the metals
+below it. In a voltaic cell electrode with the lower value of reduction potential acts as anode
+and the electrode having a higher reduction potential act as a cathode.
+
+ee
+
+
+--- PAGE 56 ---
+Nae mmm a iia
+
+Table 1: Electrochemical Series
+£° (Volts)
+
+Ar*+ 36 =Al
+Mn* + 26 =Mn
+2H,O + 26=H,+ 20H™
+
+Fe” + 26=—Fe
+PbSO, + 26 =Pb+SO7
+
+Pb** +26 =Pb
+Fe” +36 = Fe
+
+AgCl +6= Ag + Cl
+
+
+
+--- PAGE 57 ---
+MnO, + 4H* +26 = Mn” +2H,O
+Cr,OF +14H" +68 = 2Cr* + 7H,O +1.33
+Clyg) +28 2Cr . +1.36
+
+2010; + 12H" +108 =Cl, + 6H,0
+
++1.28
+
+8H" +MnO; +56 =Mn* +4H,0 +1.49
+
+PbO, +SO;? + 4H’ +46 =PbSO, +2H,O
+
+Wonarvah wa
+S,07 +28 2802 +2.00
+
+F428 a2
+
+Example:
+
+Electrochemical series helps us predict which substances will form at the electrodes during
+
+electrolysis.
+
+At the Cathode (Negative Electrode):
+
+At the cathode positive ions (cations) gain electrons (reduction happens).The ion lower in the
+
+electrochemical series (less reactive) is more likely to get reduced. Example: If the solution
+
+contains sodium ions (Na*) and hydrogen ions (H*), hydrogen gas (H2) forms because hydrogen
+
+is lower in the series than sodium.
+
+At the Anode (Positive Electrode):
+
+At the anode negative ions (anions) lose electrons (oxidation happens). Halide ions (Cl-, Br-,
+
+I") are discharged before hydroxide (OH) unless halides are absent. For example: In a
+
+concentraded solution of sodium chloride, chloride ions (Cl) are discharged, producing
+
+chlorine gas (Cl,) because chlorine is lower in the series than water.
+
+However in the electrolysis of dilute aqueous NaCl, OH™ ions are discharged instead of Cl-
+
+ions, even though Cl- ions are lower in the electrochemical series This is due to the following
+
+reasons.
+
+Concentration Effect:
+
+The discharge of ions during electrolysis is influenced not only by their position in the
+electrochemical series but also by their concentration. In dilute aqueous NaCl, the
+
+concentration of Cl- ions is relatively low compared OH- ions, which are present in larger
+
+amounts due to the ionization of water.
+
+Overpotential of Chlorine Gas:
+
+The overpotential (extra voltage required) for the oxidation of Cl- ions to chlorine gas is
+
+higher than that for the oxidation of OH™ ions to oxygen gas. This makes it energetically less
+favourable to discharge Cl- ions.
+
+——_,-—__—
+
+
+
+--- PAGE 58 ---
+Concept Assessment Exercise 4.3
+Which of the following metals is more likely to undergo reduction?
+
+1.
+
+AP + 30 = Aly E°= -1.66V
+Fe™...) + 3€ = Fey E° = -0.44V
+2. Arrange the following metals in order of increasing ability to get reduce.
+Na‘yqg + @& = Nay E? = -2.71V
+Zug + 26° > Zn E° = -0.76V
+Cu". + 20 = Cuy E° = +0.34V
+
+3. Identify the half-cell in which oxidation occurs
+and the half-cell in which reduction occurs in
+the given voltaic cell (Figure 4.8).
+
+Following reactions occur in the cell.
+At Anode Zn). ——> Zn” (oq + 2€° Vi, hatlcot Tn haitcot
+
+At cathode 2H'jq +2e"§ —+> Hw Figure 4.8: Voltaic Cell
+
+4.7 Battery-A Source of Electrical Energy
+A battery is a galvanic cell, or a group of galvanic cells joined in series. It generates
+electric current by a redox reaction. When connected in a circuit its anode is oxidised by
+releasing electrons. These electrons through the external circuit begin to flow towards the
+cathode. At the cathode, these electrons reduce the oxidizing agent present in the
+electrolyte. Examples of batteries are dry cells, storage cells, mercury batteries etc.
+
+Fuel Cell
+
+A fuel cell is a special type of galvanic cell which is based upon the reaction between oxygen
+and a gaseous fuel hydrogen. When hydrogen burns in air, an exothermic reaction occurs and
+a lot of chemical energy is released in the form of heat and light. In this reaction, hydrogen is
+
+oxidized to water.
+
+2Hyg) + Ong) —>2H,0,, + heat
+The energy released from the reaction of hydrogen with
+oxygen to form water is converted to electrical energy.
+A hydrogen-oxygen fuel cell has three compartments
+separated from one another by porous carbon
+
+electrodes. These electrodes contain platinum as a “nde Cathode:
+catalyst. The middle compartment contains a hot
+aqueous solution of KOH. Hydrogen gas is passed
+through the anode compartment and oxygen is passed H,,,—> +0,,
+
+through the cathode compartment.
+
+At the anode, hydrogen is oxidized to water and at the
+cathode oxygen is reduced to hydroxide ions.
+
+Anode reaction = 2Hy_, + 40H,,.,-——> 4H,0,, + 4”
+
+|
+
+
+--- PAGE 59 ---
+Cathode reaction = Oy, + 2H,0,, + 4e° ——> 40H),
+
+Net cell reaction = ZHyg) + Oy)—> 2H,0,,
+
+The electrons released in the oxidation of hydrogen flow through the circuit towards the cathode.
+A hydrogen-oxygen cell delivers 0.9 V. The fuel cell operates at high temperatures so the water
+formed evaporates and may be condensed.
+
+The fuel cells of this kind have been used by the American space program. The water condensed
+in spacecraft is consumed by the astronauts.
+
+4.7.1 Advantages and disadvantages of fuel cells
+
+Hydrogen-oxygen fuel cells are highly efficient since they convert fuel directly into electricity
+with very little waste. Fuel cells are a source of clean energy, as they do not produce harmful
+pollutants. They emit water vapour only. Moreover, fuel cells are highly reliable, as they have no
+moving parts. They also have a long life span with little maintenance. Hydrogen - oxygen used in
+fuel cells is obtained from renewable energy sources.
+
+Unlike fuel cells, gasoline-powered combustion engines in vehicles emit pollutants, including
+carbon dioxide, oxides of nitrogen and sulphur, which cause pollution and create smog. These
+pollutants cause respiratory problems and other health issues. Moreover, gasoline is obtained
+from non-renewable sources of energy.
+
+Fuel cells have a few disadvantages. Hydrogen is highly inflammable and explosive in nature. It
+requires careful handling for storage and use. So, it cannot be transported easily from one place
+to another. Hydrogen used in fuel cells is produced by electrolysis of water which is very
+expensive.
+
+KEY POINTS
+
+An electrochemical cell in which electrical energy is used to drive a chemical
+reaction is called an electrolytic cell.
+
+Oxidation always occurs at the anode. Reduction always occurs at the cathode.
+
+An electrochemical cell in which a spontaneous oxidation-reduction reaction
+generates electricity is called a galvanic or voltaic cell.
+
+In a galvanic cell oxidation half-reaction occurs in the anode compartment and
+
+reduction half-reaction occurs in the cathode compartment.
+
+A battery is a galvanic cell, or a group of galvanic cells joined in series.
+
+Electrolysis of brine is used for the industrial production of sodium hydroxide.
+Electrolytic process used to deposit one metal on another metal is called
+electroplating.
+
+A fuel cell is a special type of galvanic cell which is based upon the reaction
+between oxygen and gaseous fuel hydrogen.
+
+A table showing the arrangement of metals based on increasing reduction potentials
+is called an electrochemical series.
+
+References:
+¢ 8B.Earl and LDR Wilford, Further Advanced Chemistry. |
+
+e 8B.Earl and LDR Wilford, Introduction to Advanced Chemistry.
+
+
+--- PAGE 60 ---
+[Unit 4: Electrochemistry 4: Electrochemistry
+
+EXERCISE
+
+1. Multiple Choice Questions (MCQs)
+i. Which of the following statements is not correct about the galvanic cell?
+(a) Cations are reduced at the cathode (b) Anions are oxidized at the anode
+(c) Electrons flow from cathode to anode (c) Oxidation occurs at the anode
+ii. Which of the following is not true about the Daniel cell
+(a) Half-cell of an active metal acts as a cathode.
+(b) Half-cell contains an element in contact with its ions in aqueous solution.
+(c) A salt bridge connects the two half-cells.
+(d) A spontaneous oxidation-reduction reaction generates electricity.
+iii, Which of the following does not involve an electrolytic process?
+(a) Refining of copper
+(b) Manufacture of sodium from NaCl
+(c) Electroplating of steel
+(d) Reduction of metal oxide by a reducing agent.
+iv. Galvanizing is
+(a) Coating with Sn (b) Coating with Zn
+(c) Coating with Cr (d) Coating with Cu
+v. Which of the following is true for the Nelson cell?
+(a) Sodium metal is produced at the anode
+(b) Chlorine gas is produced at anode
+(c) Hydrogen gas is produced at the anode
+(d) Sodium ions are not reduced at the cathode
+vi. Electroplating involves:
+a) Using an electrolyte to oxidize a metal.
+b) Coating a metal object with a thin layer of metal through electrolysis.
+c) Melting a metal object to form a thin coating.
+d) Using heat to form a layer of metal on another metal object
+vii. In a voltaic cell, the salt bridge serves the function of:
+a) Preventing electrons from flowing in the external circuit.
+b) Maintaining electrical neutrality by allowing ion movement.
+c) Storing excess energy from the cell.
+d) Generating additional voltage for the cell.
+viii. If the voltage data shows metal A has a higher standard reduction potential. than
+metal B, it can be concluded that:
+a) Metal A is more reactive than metal B.
+b) Metal B is more reactive than metal A.
+c) Metal A and metal B have the same reactivity.
+d) Metal A is less likely to gain electrons than metal B
+
+

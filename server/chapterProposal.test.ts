@@ -25,4 +25,14 @@ describe("proposeChaptersFromExtractedText", () => {
     const headingFreeText = "A".repeat(520) + " This long extracted source includes ordinary explanatory prose but no chapter or unit heading that can justify a reliable boundary.";
     expect(() => proposeChaptersFromExtractedText(headingFreeText)).toThrow("No explicit CHAPTER or UNIT headings");
   });
+
+  it("recognises bracketed unit headers and keeps repeated page headers within one unit", () => {
+    const scannedText = `[Unit 1: History of Chemistry]\n${"Textbook evidence about scientific methods. ".repeat(10)}\n[Unit 1: History of Chemistry]\n${"More evidence about paradigms and repeatability. ".repeat(10)}\n[Unit 2: States of Matter]\n${"Textbook evidence about states and phase changes. ".repeat(10)}`;
+    const proposals = proposeChaptersFromExtractedText(scannedText);
+
+    expect(proposals).toHaveLength(2);
+    expect(proposals[0]).toMatchObject({ code: "Ch. 1", title: "History of Chemistry" });
+    expect(proposals[1]).toMatchObject({ code: "Ch. 2", title: "States of Matter" });
+    expect(proposals[0].contentText).toContain("More evidence about paradigms");
+  });
 });

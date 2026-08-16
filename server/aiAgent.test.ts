@@ -18,7 +18,7 @@ vi.mock("./db", () => ({
   getGenerationJob: mocks.getGenerationJob,
 }));
 
-import { buildMcqGenerationSystemPrompt, generateMCQsFromContent, saveGeneratedQuizToDatabase } from "./aiAgent";
+import { generateMCQsFromContent, saveGeneratedQuizToDatabase } from "./aiAgent";
 
 const validContent = "Kinematics studies motion using displacement, velocity, and acceleration. ".repeat(12);
 
@@ -52,13 +52,6 @@ describe("AI Agent - MCQ Generation", () => {
     mocks.invokeLLM.mockResolvedValue({
       choices: [{ message: { content: JSON.stringify({ mcqs: createValidMcqs(10) }) } }],
     });
-  });
-
-  it("adds chronological preparation guidance only to Computer Science while preserving the textbook-only boundary", () => {
-    expect(buildMcqGenerationSystemPrompt("balanced", "physics")).not.toContain("two neutral 2025 PDF variants");
-    const computerSciencePrompt = buildMcqGenerationSystemPrompt("balanced", "computer_science");
-    expect(computerSciencePrompt).toContain("two neutral 2025 PDF variants");
-    expect(computerSciencePrompt).toContain("only factual authority");
   });
 
   it("returns a validated, source-grounded draft without relying on a live model call", async () => {
@@ -124,17 +117,6 @@ describe("AI Agent - MCQ Generation", () => {
     expect(prompt).toContain("only examinable content boundary");
     expect(prompt).toContain("Do not use any analysis note as factual evidence");
     expect(prompt).toContain("concise FBISE-style wording");
-  });
-
-  it("instructs compact printed-paper MCQ forms and textbook-supported transfer instead of copied exercise wording", async () => {
-    await generateMCQsFromContent(1, validContent, 5, "balanced");
-
-    const systemPrompt = mocks.invokeLLM.mock.calls[0][0].messages[0].content as string;
-    expect(systemPrompt).toContain("USE COMPACT PRINTED-PAPER FORMS");
-    expect(systemPrompt).toContain("one direct stem");
-    expect(systemPrompt).toContain("Do not turn options into explanatory paragraphs");
-    expect(systemPrompt).toContain("TRANSFER BEYOND MEMORISED EXERCISES");
-    expect(systemPrompt).toContain("Do not copy or lightly reword them");
   });
 
   it("returns a structured failure contract when a model response omits required source fields", async () => {

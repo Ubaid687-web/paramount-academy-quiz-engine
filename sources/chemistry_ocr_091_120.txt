@@ -1,0 +1,1568 @@
+
+--- PAGE 91 ---
+[Unit 72 Nitrogen, Sulphur and Metals] 7: Nitrogen, Sulphur and Metals
+
+Activity 7.1:
+
+Exploring Metal Reactivity
+
+Objective: Students will explore the reactivity of different metals by conducting simple
+experiments and then arrange the metals in order of their reactivity, from most reactive to
+least reactive.
+
+Materials Required:
+
+Small strips or pieces of various metals (e.g., Magnesium, Zinc, Iron, Copper)
+
+4 Test tubes or small beakers
+
+Dilute hydrochloric acid (HCl) solution (safely diluted for the grade level)
+Sandpaper (to clean metal surfaces)
+
+Water
+
+Safety goggles and gloves
+
+« Activity worksheet
+
+Procedure:
+
+Introduction to Metals and Reactivity:
+
+Introduce the concept of a reactivity series.
+
+1. Cleaning the Metals:
+
+Give each student or group of students a small piece of each metal and a piece of
+
+sandpaper. Ask them to clean the surface of the metal to remove any oxide layer, making
+
+it shiny.
+2. Setting Up the Experiment: :
+
+¢ Label each test tube or beaker with the name of the metal.
+
+* Place one piece of metal into each test tube.
+
+* Add enough dilute hydrochloric acid to each test tube to cover the metal.
+
+3. Observation:
+
+* Ask students to observe what happens to the metals when they come into contact with
+the acid.
+
+* Encourage students to record their observations on the activity worksheet. They
+should note any bubbles (indicating a reaction), the speed of the reaction, and any
+other changes.
+
+4. Arranging the Metals:
+
+¢ Based on their observations, students will arrange the metals from most reactive to
+least reactive on their worksheet.
+
+¢ Guide them to understand that metals that reacted vigorously (produced a lot of
+bubbles quickly) are more reactive, while those that reacted slowly or not at all are
+less reactive.
+
+5. Discussion:
+Discuss the results in the class. Ask students why they think some metals reacted more
+than others and how this relates to the metal's position in the reactivity series.
+| 6. Safety Considerations:
+* Ensure that all students wear safety goggles and gloves during the experiment.
+* Remind students to handle the acid with care, even though it is dilute.
+¢ Supervise students closely during the activity.
+
+
+
+--- PAGE 92 ---
+Unit 7: Nitrogen, Sulphur and Metals 7: Nitrogen, Sulphur and Metals
+
+Sas
+Es Concept Assessment Exercise 7.1
+
+. If you were to conduct this experiment with a new metal, what steps would you take
+to predict its reactivity before starting the experiment? ,
+
+2. Compare the reactions of magnesium and copper in hydrochloric acid. What does the
+difference in their reactions tell you about their positions in the reactivity series?
+
+3. Some students observed that a metal did not react with hydrochloric acid. How could
+you confirm whether this result is due to the metal’s low reactivity or an experimental
+error?
+
+4. Design an experiment to test the reactivity of metals using a different acid, such as
+sulphuric acid. What changes would you make to the procedure, and what results
+
+would you expect?
+
+KEY POINTS |
+
+PAN is a stable molecule at lower temperatures and can travel long distances in the
+atmosphere.
+
+Nitric oxide (NO) and nitrogen dioxide (NO,) play important roles in the formation of
+acid rain through both direct and catalytic processes.
+
+Nitrogen dioxide and Sulphur dioxide are significant precursors of acid rain.
+
+Binary compounds of elements with oxygen are called oxides.
+
+Acidic oxides typically form acids when they react with water. They are the oxides
+of non-metals.
+
+Basic oxides form bases when they react with water. They are the oxides of metals.
+Amphoteric oxides can react with acids and bases, displaying both acidic and basic
+properties.
+
+Metals react with dilute acids to form a salt and hydrogen gas.
+
+Reactive metals react with cold water to form a metal hydroxide and hydrogen gas.
+
+EXERCISE
+
+1. Multiple Choice Questions (MCQs)
+i. What is a key component of photochemical smog formed by the reaction of NO and
+
+NO, with unburned hydrocarbons?
+a) Sulfuric acid b) Peroxyacetyl nitrate (PAN)
+c) Carbon monoxide d) Ozone
+ii. Which of the following is the balanced equation for the production of ammonia in the
+Haber process?
+a) Nog + Haig) = NH B) Nagy + 2Haig) = 2NH 39)
+€) Nai) + 3Haiq) == 2NH 39) d) 2Ngiq) + 3Hyig) = ZNH yg)
+iii. What are the sources of hydrogen and nitrogen in the Haber process?
+a) Water and air . b) Methane and air
+
+c) Methane and water ‘ d) Water and methane
+
+
+
+--- PAGE 93 ---
+[ © Unit 7: Nitrogen, Sulphur and Metals | 7: Nitrogen, Sulphur and Metals .
+
+iv. Which catalyst is used in the Haber process?
+
+a) Platinum b) Vanadium(V) oxide
+c) Iron d) Nickel
+vy. At what temperature is the Haber process typically conducted?
+a) 300°C b) 450°C
+c) 600°C d) 200°C
+vi. What is the symbol equation for the conversion of sulphur dioxide to sulphur trioxide
+in the Contact process?
+8) SO x4) + Ong) = S054 b) 25024) + Ox(g) = 2505)
+C) SOz4q) + 20344) == 2505.4) ) 250,19) + O24) = S054)
+vii. Which catalyst is used in the Contact process for the conversion of SO, to SO,?
+a) Iron b) Vanadium(V) oxide
+c) Platinum d) Nickel
+
+viii. What are the sources of sulphur dioxide in the Contact process?
+a) Burning sulphur or roasting sulphide ores
+b) Burning methane
+c) Electrolysis of water
+d) Combustion of natural gas
+ix. How do atmospheric oxides react with acids and bases?
+a) Forming a salt and water
+b) Forming an acid and a gas
+c) Forming a base and hydrogen
+d) Forming a salt and hydrogen
+x. Which of the following oxides is amphoteric?
+a) SO, b) CO,
+c) Cud d) Al,O,
+
+2. Short Answer Questions
+
+i. What is peroxyacetyl nitrate (PAN) and how is it formed?
+
+fi. Describe the role of NO and NO, in the formation of acid rain.
+
+iii. Write the balanced equation for the production of ammonia in the Haber process.
+
+iv. What are the typical conditions (temperature, pressure, catalyst) for the Haber
+process?
+
+y. _ How is sulphur dioxide produced for the Contact process?
+
+vi. State the balanced chemical equation for the conversion of sulphur dioxide to
+sulphur trioxide.
+
+vii. Describe the role of vanadium(V) oxide in the Contact process.
+
+viii. What are acidic oxiues? Give two examples.
+
+ix. What are basic oxides? Give two examples.
+
+x. What is meant by amphoteric oxides? Provide examples.
+
+xi. Evaluate the environmental impact of acidic oxides like SO, and CO).
+
+xii. Evaluate the significance of controlling the emission of oxides like NO, and SO, in
+industrial processes.
+
+
+
+--- PAGE 94 ---
+| at 7s Nitrogen, Sulphur and Metals] 7; Nitrogen, Sulphur and Metals
+
+3. Long Answer Questions
+
+i.
+
+ii.
+
+vii.
+
+1.
+2.
+
+3.
+
+Explain the environmental impact of nitrogen oxides in the atmosphere, particularly
+focusing on photochemical smog and acid rain.
+
+Discuss the Haber process, including the chemical reaction, sources of reactants,
+conditions required, and its significance in the production of ammonia.
+
+Describe the Contact process for sulphuric acid production, detailing the chemical
+reactions involved, the sources of reactants, and the industrial conditions used.
+Compare and contrast acidic, basic, and amphoteric oxides with suitable examples
+for each type.
+
+How do industrial processes like the Haber and Contact Processes contribute to
+environmental pollution, and what measures can be taken to minimize their impact?
+Compare the roles of NO and NO, in the formation of acid rain. How do their
+chemical behaviours contribute to both direct acid formation and the oxidation of
+sulphur dioxide?
+
+Analyse the classification of oxides. Wiy are oxides like SO, considered acidic, while
+oxides like CuO are considered basic? Liscuss how the metallic or non-metallic
+character of the element influences this classification.
+
+THINK TANK
+
+Explain why gold and platinum are often used in jewellery despite their high cost.
+If a new metal was discovered and found to react with steam but not cold water,
+where would you place it in the reactivity series? Justify your placement.
+Give the expected reactivity series from the following data for the following three
+metals. Justify your placement.
+Metal A
+a. Reaction with Cold Water: Reacts slowly, producing hydrogen gas.
+b. Reaction with Steam: Reacts vigorously, producing hydrogen gas and white
+oxide.
+c. Reaction with Dilute Acid: Reacts quickly, producing hydrogen gas.
+Metal B
+a. Reaction with Cold Water: No reaction.
+b. Reaction with Steam: No reaction.
+c. Reaction with Dilute Acid: Reacts slowly, producing hydrogen gas.
+Metal C
+a. Reaction with Cold Water: No reaction.
+b. Reaction with Steam: No reaction.
+c. Reaction with Dilute Acid: No reaction.
+4. How can the knowledge of basic oxides, such as CaO, be applied to neutralize acidic
+pollutants in industrial wastewater treatment?
+5. Evaluate the choice of 450°C and 200 atm for the Haber process.
+6. Evaluate the environmental impact of acidic oxides.
+7. Evaluate the significance of controlling the emission of oxides like NO» and 50, in
+
+industrial processes.
+
+
+
+--- PAGE 95 ---
+Name and draw the structural and displayed formulae of unbranched alkanes, alkenes,
+alcohols, and carboxylic acids. ( include but-1-ene and but-2-ene, propan-1-ol, propan-
+2-ol, butan-1-ol and butan-2-ol).
+
+State the type of compound present given the chemical name ending in -ane, -ene,-yne,
+-ol, or -oic acid or from a molecular, structural or displayed formula,
+
+Name and draw the displayed formulae of the unbranched esters which can be made
+from unbranched alcohols and carboxylic acids, each containing upto four carbon
+atoms.
+
+
+
+--- PAGE 96 ---
+Organic chemistry is the study of carbon-based compounds, which are fundamental to life and
+have diverse applications in various industries. Understanding the structures, properties, and
+
+reactions of organic molecules is crucial for fields such as medicine, materials science, and
+environmental science.
+
+8.1 Structural Formula
+
+A structural formula shows how different atoms are joined up or arranged in a molecule or
+compound. You can represent structural formulas in two ways. You can draw it as a displayed
+structural formula or as a condensed structural formula.
+
+A displayed formula is a full structural formula that shows all the bonds between the atoms in
+a molecule as individual lines. The bonds are represented by lines. The strength of the bond is
+indicated by the number of lines. Single bonds are represented by one line. Double bonds are
+represented by two lines. In some molecules, three lines are Possible. These formulas are
+very useful because they show as much information as Possible about the molecule.
+
+Methane is the simplest alkane. Other examples of alkanes are ethane, Propane, butane etc.
+The displayed formulas of methane and ethane: .
+
+H H oH
+H en —H H—C—C—H
+|
+H H oH
+Methane is Ethane
+
+Note that displayed formulas are always drawn with the molecule straightened out and
+flattened. They, however, show exactly how all the atoms are joined together in a condensed
+structural formula.
+
+However, they are very large and time-consuming to draw. Condensed structural formulas try
+to solve this problem by omitting some of the bonds and grouping some of the atoms
+together.
+
+8.1.1 The normal way to draw a structural formula
+
+Except for the smallest molecules, drawing a fully displayed formula is very time-consuming.
+You can simplify the formula by listing the main chain carbon atoms and the hydrogen atoms
+attached to them in the sequence they appear, for example, CH, or CH, instead of showing all
+the carbon-hydrogen bonds. So, the structural formula for methane could be written as CH,,
+
+and that of ethane as CH,-CH, or as CH,CH,.
+
+
+
+--- PAGE 97 ---
+The condensed structural formulas of these alkanes are
+
+CH, , CH3CH; , CH3CH2CH3
+A condensed or normal structural formula uses established abbreviations for various
+groups of chains. In the displayed formula, we list the main chain carbon atoms and
+the hydrogen atoms attached to them in the sequence in which they appear in the
+naming system. It means that a condensed or normal formula is a simplified version
+that omits some or all of the bonds. It involves grouping atoms that are connected to
+the same carbon atom.
+
+For instance,
+
+Shown as ——CH, (Methyl)
+
+as ——CH,—— (Methylene)
+
+CH;—CH,—CH
+Or CH,CH,CH,
+Table 8.1 Shows the condensed structural formutas of alkane.
+
+Table 8.1: Condensed or normal structural formulas of some alkanes
+
+Name Molecular Formula Structural Formula
+
+CHaCH,CHSCH,
+
+| Pentane | CH3CH,CH,CH,CH;
+
+ee ; CH3CH,CH,CH2CH,CH3-
+Heptane CH3CH,CH,CH,CH,CH,CHy
+
+% CH,CH,CH,CH,CH,CH,CH,CHs
+CH3CH,CH,CH,CH,CH,CH,CH,CH3
+
+CH3CHCH,CH,CH,CH,CH,CH,CH,CH3-
+
+
+
+--- PAGE 98 ---
+[Unit 8: Organic Chemistry 8: Organic Chemistry
+
+Example 8.1 |
+
+Give the displaced and normal structural formula for pentane.
+
+Problem Solving Strategy
+
+i) The stem pent -means five carbon atoms.
+
+ii) The ending -ane indicates an alkane.
+
+iii) Write a string or chain of five carbon atoms.
+
+iv) Attach hydrogen atoms to the carbons to give each carbon atom four bonds. This requires
+three hydrogen atoms on each end of carbon and two each on others.
+
+v) For the structural formula, write each carbon atom’s set of hydrogen atoms next to the
+carbon.
+
+Solution
+c-C-C-C-C
+Displayed formula
+
+H H H H H
+
+| | | | |
+H#—C——¢ — —C —C——"H
+
+I’ LZN |
+
+H H H H H
+
+Normal Structural formula (Condensed Structural formula)
+
+CH, - CH, - CH, - CH, - CH,
+Or — CH,CH,CH,CH,CH, —or CH, (CH,),CH,
+
+Concept Assessment Exercise 8.1
+
+je displayed and structural formulas for
+(a) Butane (b) Hexane
+
+8.1.2 Structural formulae for alkenes
+
+Alkenes have one or more double bonds between carbon atoms. They have the general
+formula C,H2,. When two carbon atoms share two pairs of electrons, they form a double
+covalent bond between the carbon atoms. Doubly bonded carbon atoms form a single bond
+
+with two other atoms.
+H ‘i H
+Noa" H—c—c=c*
+v=. 1 | “y
+H H HoH
+
+Ethene Propene
+
+
+
+--- PAGE 99 ---
+Example 8.2
+
+Draw structural and condensed formulas for:
+
+(a) But-1-ene
+(b) But-2-ene
+
+Problem Solving Strategy
+
+(i) But- means four carbon atoms.
+
+(ii) Ending -ene indicates an alkene.
+
+(iii) | Write a string of four carbon atoms and assign a number to each carbon atom from one
+side. .
+
+(iv) The Number written in the name indicates the position of the double bond. Make a
+double bond between the indicated carbon atom and the atom next to it.
+
+(v) Attach enough hydrogen atoms to the carbon atoms to give each carbon atom four
+bonds. ‘i
+
+(vi) For the normal or condensed structural formula write each carbon atom’s set of
+hydrogen atoms next to the carbon.
+
+Solution
+(a) But-1-ene
+Indicates double bond between C-1 and C-2
+
+1 2 ‘3 4
+c—-c——c—-c
+
+c=——c—Cc—C
+
+H HH
+\ |
+P=o—-G—-GH
+
+H ie ae
+H HH
+
+CH, = CH— CH2— CH;
+
+(b) But-2-ene
+Indicates double between C-2 and C-3
+
+1 2 3
+c-——c-——c—-c
+c—c=——c—c
+H HHH
+ig! oe
+Gomer ore
+H H
+
+4
+
+CH; — CH = CH — CH;
+
+
+
+--- PAGE 100 ---
+Concept Assessment Exercise 8.2
+
+Draw structural and displayed formulas for the following compounds.
+
+(a) Pent-1-ene (b) Pent-2-ene
+
+8.1.3 Structural formulae for alkynes
+Hydrocarbons which have at least one triple bond between carbon atoms are called alkynes.
+Those with one triple bond have the general formula C,H2,.2-
+
+Ethyne, also called acetylene is the simplest member of the alkyne family. In ethyne, the two
+carbon atoms share three pairs of electrons. This means the carbon atoms are joined by a triple
+bond. How many hydrogen atoms can share electrons with each triply-bonded carbon atom?
+The structure of ethyne is
+
+H-C=C-H
+Example 8.3
+
+Draw structural and condensed formulas for:
+Draw structural formulas for
+
+(a) But-1-yne (b) But-2-yne
+Problem Solving Strategy
+
+(i) But- means four carbon atoms.
+
+(ii) Ending-yne indicates an alkyne.
+
+(iii) | Write a string of four carbon atoms and give number to each carbon atom form one
+side.
+
+(iv) The Number written in the names indicates the position of the triple bond. Make a
+triple bond between this Carbon atom and next to it.
+
+(v) Attach the required number of hydrogen atoms to the carbon atoms to give each
+
+carbon atom four bonds.
+(vi) | For the normal or condensed structural formula write each carbon atom’s set of
+
+hydrogen atoms next to the carbon.
+
+Solution
+
+lim "c-—c_coc!
+
+cic_c*c*
+
+
+
+--- PAGE 101 ---
+[ Unit’: Organic Chemistry 8: Organic Chemistry
+
+H—C=c—
+
+xz—oO—=z
+a 3
+=x
+
+H-C=C-CH, — CH,
+
+(i) C-e-e=c"
+
+e—c=c—c*
+
+Key Differences:
+
+Displayed formulas provide a clear view of how atoms are connected and can reveal
+structural isomers and the spatial arrangement of atoms.
+
+Condensed formulas are more concise and used when detailed bond information is
+not required, offering a quick way to write the structure of a compound.
+
+8.2 Naming Organic Compounds
+
+The IUPAC (International Union of Pure and Applied Chemistry) system provides a
+standardized set of rules for naming organic molecules based on their structure, which helps
+chemists and researchers accurately identify and differentiate compounds regardless of
+language or region. This systematic approach avoids the confusion that can arise from the use
+of common or trivial names, which may vary widely and lack specificity. Additionally, IUPAC
+names convey important information about the molecular structure, such as the type and
+position of functional groups, the length of carbon chains, and the presence of double or
+triple bonds.
+
+Recall that functional groups serve as a basis for naming organic compounds. A functional
+group serve to classify organic compounds into different classes. All the compounds with the
+same functional group belong to the same class. The name has two parts. Each part of the
+name tells you something specific about the molecule. One part tells you how many carbon
+atoms are there in the longest chain, This part is called the stem. The other part tells you
+about the functional group. This part is called a suffix. It is indicated by the ending in the
+name. The suffix is placed after the stem. (see Table 8.2)
+
+
+
+--- PAGE 102 ---
+For example, stem meth means one carbon atom and ending -ane indicat
+carbon alkane is named as methane, CH, . ae
+
+The suffix, indicates alkane
+Methane
+
+io
+
+Stem, indicates the number of carbon atom
+
+Table 8.2: Shows stem names
+
+8.2.1 Naming Alkanes
+
+Alkanes are hydrocarbons in which all the carbon atoms are joined to each other with single
+covalent bonds. Their names are coded with the ending “-ane”. Adding stem before ane gives
+the name of alkane. For example;
+
+One carbon alkane is methane, CH,, Two carbon alkane is ethane, CH3CH;
+Three carbon alkanes are propane, CH;CH2CH; and so on. What is the name of an alkane
+
+| containing 4 carbon atoms?
+4 H H HoH H H oH OH
+| | | | | | | |
+H—C——C—H H—C——C—c—H H—C —+T TT
+L | Ld tid
+
+
+
+--- PAGE 103 ---
+8.2.2 Naming Alkenes
+
+Alkenes contain carbon-carbon double bond. This is shown in their name by the ending “ene”.
+For example 2-carbon chain containing a carbon-carbon double bond is named ethene,
+CH,=CH,, 3-carbon chaining alkene is named propene, CH;CH:=CH2. What will be the name of
+alkene containing 4-carbon atoms?
+
+With larger chains, the position of double bond is indicated by numbering the chain.
+Numbering is started from the end nearest to the double bond, noting which carbon the
+
+double bond starts from.-For example a 4-carbon chain with a double bond starting on carbon
+number 1 is named as;
+
+‘CH, ="CH'CH,‘CH,
+But-1-ene
+If the double bond is starting on the second carbon, then the alkene is named;
+'CH,?CH="CH‘CH,
+But-2-ene
+
+NOTE: How do you know from which end of the longest chain numbering is done? For this,
+
+you should remember the rule that numbering is started from the end which gives the smaller
+number to the name.
+
+8.2.3 Naming Alkynes
+
+Alkynes contain a carbon-carbon triple bond. This is shown in their name by the ending
+“yne”. For example, 2-carbon chain containing a carbon-carbon triple bond is named ethyne,
+
+H-C=C-H
+
+3-carbon chaining alkyne is named propyne, CH;C=CH. What will be the name of the alkene
+containing 4-carbon atoms?
+
+With larger chains, the position of the triple bond is indicated by numbering the chain.
+Numbering is started from the end nearest to the triple bond, noting which carbon the triple
+
+bond starts from. For example, a 4-carbon chain with a double bond starting on carbon
+number 1 is named;
+
+‘CH =7C°CH,‘CH,
+But-1-yne
+
+If the triple bond is starting on the second carbon, then the alkene is named;
+‘CHC = ?C‘CH,
+But-2-yne
+
+
+
+--- PAGE 104 ---
+Concept Assessment Exercise 8.3
+
+. Write the name and structural formula of an alkane containing 5-carbon atoms.
+2. Write the name and structural formula of an alkene containing 6-carbon atoms with a
+
+double bond starting on the third carbon.
+
+. Which name is correct for the following compound
+
+CH,CH,CH = CHCH,
+Pent-2-ene or Pent-3-ene
+
+. Write the structural formula of an alkyne containing 6-carbon atoms with a triple
+
+bond starting on the second carbon.
+
+8.2.3 Naming Alcohols
+
+Alcohols are characterized by the presence of the hydroxyl group(-OH) attached to a
+hydrocarbon chain. This is shown by the ending “ol” in their names. While naming alcohols
+the “e” of alkane containing the same number of carbon atoms is replaced by the suffix “ol”.
+For example; one carbon alkane is methane, so the name of one carbon alcohol is methanol.
+
+e to ol
+Alkane ———
+
+e to ol
+Methane ——
+
+Ethane Cs
+CH,OH
+Methanol
+3CH,2CH,'CH,OH
+Propan-1-ol
+
+Alkanol
+Methanol
+
+Ethanol
+
+CH,CH,OH
+
+Ethanol
+VERN,
+
+OH
+Propan-2-ol
+
+Concept Assessment Exercise 8.4
+
+1. Write the name, display and structural formula of an alcohol-containing 4-carbon chain
+with -OH group attached to a second carbon atom.
+2. Write the structural formulas of the following alcohols.
+
+(a) Butan-1-ol (b) Butan-2-ol
+
+Hint: Write a string of relevant numbers of carbon atoms and number them from one side.
+
+Attach OH group on the indicated C-atom and then complete the structure by H-atoms.
+
+
+
+--- PAGE 105 ---
+8.2.4 Naming Carboxylic Acids
+
+The carboxylic acids are characterized by the presence of carboxylic group -COOH attached
+to a hydrocarbon chain. This is shown by ending -oic acid in their names. While naming
+carboxylic acids the ending “e” of the name of the corresponding alkane containing the same
+number of carbon atoms is replaced by ‘oic acid’. For example;
+
+9° 9° ie)
+H-C-oH cH; C-oH CH;CH;-C-OH
+Methanoic acid Ethanoic acid Propanoic acid
+[Formic acid] [Acetic acid] [Propionoic acid]
+
+Name shown in square brackets are common names of these compounds.
+
+°
+The position of carbonyl carbon cl is not mentioned in the name, because it is always
+
+numbered carbon 1 i.e. numbering always starts from the carbonyl carbon atom in naming
+carboxylic acids.
+
+Concept Assessment Exercise 8.5
+
+1. Write the name, displayed and structural formulae of a carboxylic acid
+containing 4-carbon atoms.
+
+2. Identify the class of each of the following compounds from their names. Also,
+write their displayed structural formulas and condensed structural formulas
+Pent-2-ol, Pentanoic acid, Pent-2-ene, Pentane
+
+8.3 Esters
+
+Esters are organic compounds that are derived from carboxylic acids and alcohols. Carboxylic
+acids contain -COOH group(carboxylic group) and can be represented by the general formula
+
+RCOOH. When OH of the carboxyl group is simply replaced by OR’ group from an alcohol an
+
+ester is formed. It has a general formula RCOOR: The reaction is carried out in the presence
+of a few drops of dilute sulphuric acid as a catalyst. This reaction is known as esterification
+
+reaction. Esters possess a fruity odour. Both R and R’ may be the same or different.
+RCOOH + ROH — RCOOR + HO
+
+CH,COOH + CHOH -+  CH,COOCH, + —+H,0
+
+Ethanoic acid = Methanol Methyl Ethanoate Water
+
+Their names have two parts, which reflect these two molecules. The first part indicates the
+attached alkyl group from alcohol and the second one is the name of carboxylic acid, the -ic
+acid is replaced with -ate. For example, methyl ethanoate gets its name from the methyl
+
+group of the parent methyl alcohol, while ethanoate is obtained by replacing the -ic acid of
+Parent ethanoic acid with -ate.
+
+
+
+--- PAGE 106 ---
+| _Unit 8: Organic Chemistry | 8: Organic Chemistry
+
+Concept-AssessmentiExercise'8: 64 a
+
+Complete the fuitowing reactions and write the names of the reactants and the products.
+(i) CH,CH,COOH + CH,OH ———+
+
+(ii) CH,CH,COOH + CH,CH,CH,OH ———+
+(iii) CH,COOH + CH,CH,OH ———+
+
+KEY POINTS
+
+Hydrocarbons are compounds containing carbon and hydrogen only. Hydrocarbons
+whose carbon-carbon bonds are all single bonds are called alkanes.
+
+Alkenes have at least one carbon-carbon double bond between carbon atoms.
+Alkynes have at least one carbon-carbon triple bond between carbon atoms.
+
+The class of organic compounds which have a hydroxyl functional group attached to
+a hydrocarbon chain are called alcohol Alcohols are named by changing the ending
+‘e’ of the parent alkane by ‘ol’.
+
+The family compounds which have -COOH functional group attached to the carbon
+chain are called carboxylic acids of organic.
+
+Esters are organic compounds that are derived from carboxylic acids and alcohols.
+
+EXERCISE
+1. Multiple Choice Questions (MCQs):
+
+i. Which of the following correctly represents the formula for but-2-ene?
+
+a) CH,CH=CHCH, b) CH,=CHCH,CH,
+c) CH,CH,CH=CH, d) CH,C=CHCH,
+ii. Given the molecular formula C,H,,0, which compound is most likely to be represented
+by this formula?
+a) Butanoic acid b) Butan-1-ol
+c) But-2-ene d) Butanal
+iii. Which of the following is the correct IUPAC name for the compound with the formula
+CH,CH,CH,COOH?
+a) Butanoic acid b) Propanoic acid
+c) Butanal d) Butanol
+
+iv. Identify the statement which is true regarding the propan-1-ol and propan-2-ol.
+a) Both have identical condensed structural formula.
+b) They have the same molecular formula.
+c) They are different compounds with the same structural formula,
+d) Propan-1-ol is a carboxylic acid, and propan-2-ol is an ester.
+
+
+
+--- PAGE 107 ---
+[Unit 8: Organic Chemistry 8: Organic Chemistry
+
+v. Name the compound that can be formed by the esterification of methanol and |
+propanoic acid.
+
+a) Methyl propanoate b) Propyl methanoate |
+c) Ethyl propanoate d) Propyl ethanoate
+vi. Which of the following molecules contains an -OH functional group?
+a) Butane b) Ethene
+c) Butan-1-ol d) But-2-yne
+vii. If a compound ends in "-oic acid", what functional group must it contain?
+a) —OH b) -COOH
+c) -C=0 d) -C=C-
+viii. Which formula corresponds to an ester that could be formed from butan-1-ol and
+ethanoic acid? 4
+a) CH,CH,CH,CH,COOCH, b) CH,COOCH,CH,CH,CH,
+c) CH,CH,CH,CH,CH,COOH d) CH,CH,COOCH,
+ix. Which structural formula represents butan-1-ol?
+a) CH,CH,CH,CH,OH b) CH,CH,CH,CH,COOH
+c) CH,CH,CH=CH, d) CH,CH=CHCH,
+
+x. Identify the compound based on the following information: It has the formula C3HsO
+and the name ends with "-ol”.
+
+a) Propanoate b) Propan-2-ol
+c) Propane d) Propanoic acid
+xi. Which of the following names is incorrect for the given formula?
+a) But-2-ene: CH,CH,CH=CH, b) But-1-ene: CH,=CHCH,CH,
+c) Butane: CH,CH,CH,CH, d) Butan-2-ol: CH,CH(OH)CH,CH,
+
+2. Short Answer Questions F ,
+i. Define the term displayed structural formula in organic chemistry.
+ii. Explain the difference between an alkane and an alkene.
+iii. How can you distinguish between an alcohol and a carboxylic acid by their structural
+formulae?
+iv. Write the name for CH,—CH,—CH,—CH,—CH,—OH.
+v. Describe the process of esterification.
+vi. Given the condensed structural formula CH;CH,CH;, what is the displayed structural
+formula?
+vii. Give displayed structural formulae for (i) Ethanol (ii) Ethanoic acid
+viii. Identify the type of organic compounds from the given names. And give the normal
+structural of each compound.
+a. Propyne
+b. Propanoic acid
+¢c. Propan-2-ol
+d. Methyl propaoate
+ix. Identify the type of compound given the name “but-2-ene".
+
+
+
+--- PAGE 108 ---
+}___Unit 8: Organic Chemistry) 99) 8: Organic Chemistry
+
+x. _ Draw the structural formula of but-1-ene and but-2-ene and explain the difference
+between them.
+xi. Draw the displayed formula of ethyl butanoate.
+. xii. Given the displayed formula CH;COOCH,CH;, identify the alcohol and carboxylic acid
+used to form the ester.
+xiii. From the displayed formula CH;—-C=C-—CH,, identify the compound and its type.
+xiv. Design the synthesis pathway for converting butan-1-ol into but-1-ene.
+
+3. Long Questions:
+
+i. Discuss the significance of functional groups in organic chemistry and provide
+examples.
+
+ii. How can you differentiate alkenes, alcohols, and carboxylic acids by looking at their
+structural formulae?
+
+iii. Explain the reaction between an alcohol and a carboxylic acid to form an ester.
+
+iv. Explain the chemical reaction process for forming esters from alcohols and
+carboxylic acids. Draw the structural and displayed formulas of the ester formed
+from ethanol and propanoic acid.
+
+v. Given the esters methyl methanoate, ethyl ethanoate, and butyl butanoate, Give the
+starting materials required to produce these esters.
+
+vi. Explain the significance. of the suffixes -ane, -ene, -yne, -ol, and -oic acid in naming
+organic compounds. Provide examples of each with their molecular and displayed
+formulas.
+
+vii. Compare the functional groups of esters and carboxylic acids. Use specific examples
+
+to illustrate your answer.
+Develop a table that helps you to determine the type of organic compound based on
+its structural formula (having two carbon atoms) and functional groups.
+
+THINK TANK
+
+viii.
+
+1. Develop a flowchart or decision tree that helps students determine the type of
+organic compound based on its molecular formula and functional groups.
+2. Given the molecular formula C,;H,O,, draw all possible structural formulas and
+
+identify the type of compound.
+
+
+
+--- PAGE 109 ---
+HYDROCARBONS
+
+lent Lea Outcomes (SLOs)
+
+State that the bonding in alkene includes a double carbon-carbon covalent bond and that
+alkenes are unsaturated hydrocarbons.
+Describe the manufacture of alkenes by the cracking of large alkane molecules using a high
+temperature and a catalyst.
+Describe the reasons for the cracking of large alkane molecules.
+
+“ Describe the test to distinguish between saturated and unsaturated hydrocarbon by their
+reaction with aqueous bromine and KMnO,.
+Describe the properties of alkenes in term of addition reactions with, a) bromine or
+aqueous bromine, b) hydrogen in the presence of nickel catalyst, c) steam in the presence
+of an acid catalyst and draw the structural or displayed formulae of the products.
+Describe, using symbol equations, preparation of alkenes by elimination reaction in
+halogenoalkanes and alcohols.
+Identify alkynes as hydrocarbons containing triple carbon-carbon covalent bond and that
+alkynes are unsaturated hydrocarbons.
+Describe the use of ethyne as fuel for welding and in artificially ripening fruits.
+Describe separation of petroleum into useful fractions by fractional distillation.
+Describe how the properties of fractions obtained from petroleum change from bottom o
+the top of the fractionating column, limited to: a. decreasing the chain length b. higher
+volatility c. lower boiling point d. lower viscosity.
+Name the uses of the fractions as: a. refinery gas fraction for gas used in heating and
+cooking b. gasoline/petrol fraction for fuels used in cars, c. naphtha fraction as a chemical
+feedstock, d. kerosene/paraffin fraction for jet fuel. e diesel oil/gas oil fraction for fuel
+used in diesel engines, f. fuel oil fraction for fuel used in ships and home heating systems,
+g. lubricating oil fraction for lubricants, waxes and polishes, h. bitumen fraction for
+making roads.
+Name fossil fuels; coal, natural gas and petroleum.
+Name methane as main constituent of natural gas.
+State that petroleum is a mixture of hydrocarbons, compounds containing hydrogen and
+carbon only.
+
+
+
+--- PAGE 110 ---
+[Unit 9: Hydrocarbons 9: Hydrocarbons
+
+Hydrocarbons are organic compounds composed solely of carbon (C) and hydrogen (H). Carbon
+atoms attach to each other to form the backbone of the compound. Hydrogen atoms attach to
+the carbon atoms in a variety of ways. Hydrocarbons make up the major component of
+petroleum and natural gas (methane). They are raw materials for plastics, fibers, explosives,
+and many industrial chemicals.
+
+9.1 Saturated and Unsaturated Hydrocarbons
+
+Hydrocarbons are compounds containing carbon and hydrogen only. Hydrocarbons whose
+carbon-carbon bonds are all single bonds are called saturated. Saturated hydrocarbons are
+also called alkanes. In alkanes, each carbon atom is bonded to four other atoms. Methane is
+the simplest alkane. Other examples are ethane, propane, butane, etc. The general formula
+of alkanes is C,H2n42, Where n is the number of carbon atoms.
+
+H
+H—¢—H
+A
+Methane
+
+Hydrocarbons containing carbon-carbon multiple bonds are called unsaturated. Which of
+the following are unsaturated hydrocarbons?
+
+H H
+| | i
+7 re wo H—C=C—H
+H H 3 H
+Ethane Ethene Ethyne
+
+Unsaturated hydrocarbons are further divided into:
+(i) Alkenes
+(ii) Alkynes
+
+Unsaturated hydrocarbons containing at least one carbon-carbon double bond are called
+alkenes. They have the general formula (C,H2,), for example, ethene. Unsaturated
+hydrocarbons that have at least one carbon-carbon triple bond are called alkynes. They have a
+general formula CxH2n-2, for example, ethyne.
+
+Concept Assessment Exercise.9 1
+Choose saturated and unsaturated compounds from the following.
+(i) CH,—-CH,—CH, (i) CHy-C=CH
+(iii) CH;-CH = CH, (iv) CH, = CH — CH =CH,
+
+
+
+--- PAGE 111 ---
+_——a-
+
+[Unit 9: Hydrocarbons 9: Hydrocarbons
+
+9.2 ALKENES
+
+Alkenes have one or more double bonds between
+carbon atoms. They have the — general
+formulaC,,H2,. When two carbon atoms share two
+pairs of electrons, they form a double bond
+between the carbon atoms. How many electrons
+
+Do you know?
+Ethylene or ethene is the most
+important commercial organic chemical.
+It is used to manufacture polythene,
+
+one of the most familiar plastics. It is
+are left on each carbon atom? Doubly bonded | ajcso converted to ethylene glycol
+
+carbon atoms form a single bond with two other | which is used as antifreeze in
+
+atoms. automobile radiators.
+H
+H | H
+ee vi H—c—c=c*
+Poi ie Dy
+H H H oH
+Ethene Propene
+
+9.2.1 Preparation of Alkene
+1. By the cracking of large alkanes
+i. A large alkane molecule breaks up into smaller hydrocarbons when heated at high
+temperatures such as 450-750°C and high pressure. This process is called thermal
+cracking. This process produces a mixture of alkanes and alkenes. For example, when
+the decane is heated at high temperatures and pressure, it breaks into octane and
+ethene.
+CyoHa a ew a CH + GH,
+Decane Octane Ethene
+fi. Large alkane molecules can also be broken into smaller pieces by catalytic cracking. In
+catalytic cracking, alkanes are heated at 550°C in the presence of a catalyst such as
+zeolite. Catalytic cracking gives a higher percentage of hydrocarbons containing 5 to
+
+10 carbon atoms.
+CyaHos Sarasin ae CH + CHy,
+Dodecane Pentane Heptene
+CH, —— CH, + CH,
+Heptane Pentane Ethene
+
+Cracking gives a mixture of smaller hydrocarbons containing a higher proportion of alkenes.
+These hydrocarbons are more volatile and possess lower boiling points, making them easier to
+use as better fuels. Moreover, their combustion can be controlled and they produce large
+amounts of heat per gram.
+
+For example, the following reaction occurs when alkanes are burned.
+
+CaHag) + 302%) ———* 2COzq) + 2H20q) + heat
+CsHi24g) + 802g) ————* 5COxg) + 6H20q) + heat
+
+
+
+--- PAGE 112 ---
+ans
+Unit 9: Hydrocarbons
+
+2. By Dehydration of Alcohols
+
+Dehydration means loss of water. Alcohols dehydrate when their vapour are passed over
+heated alumina to give alkenes.
+
+H oH
+
+[ | AIO. HL H
+HEH sitet OCC" + Hon
+H OH i Hf
+Ethanol Ethene
+
+Phosphoric acid (H,PO,) and phosphorus pentaoxide (P,0,,)can also be used as the catalyst for
+the dehydration of alcohols.
+Concentrated sulphuric acid is also used for dehydration.
+
+CH3—CHp Conc. H2SO,
+
+H,C—=CH, + H,0
+OH 140-170°C
+
+Note that in a dehydration reaction the -OH group is removed from one carbon and the H
+atom from the adjacent carbon atom, resulting in the formation of a double bond between
+such carbon atoms. Such a reaction is called an elimination reaction.
+
+3. By dehydrohalogenation of halogenoalkanes
+
+Science titbits
+Dehydrohalogenation means the loss of hydrogen halide. CEA Wiis) RS
+Halogenoalkanes on heating with alcoholic potassium Ripening fruits and vegetables give
+
+hydroxide undergo —__ off ethene which helps in further
+ing. So artificially ethene is
+
+CH3—CH2 + KOH Ah, CH»=CH2+ KCI + H20 eT cs vases ha parcel ceeniog
+ke process. For example 1 kg of
+tomatoes can be ripened by
+
+Note that removal of H and halogen takes place from two | exposure to 0.1mg of ethene for 24
+
+hours. The red color of tomatoes is
+adjacent carbon atoms. Is dehydrohalogenation an doe to ani blleens edtlad' 9c :
+elimination reaction? :
+
+“Concept Assessment Exercise 9.2
+Complete the following reactions.
+1. CHs-CHa=CH, ete
+d 170°C
+
+Bite Oriepiie + KOH Alcohol,
+Br
+
+3. Which alkene is formed by the dehydration of the following alcohol?
+CH,—CH,—CH,
+
+OH
+
+
+
+--- PAGE 113 ---
+9.2.2 Properties of Alkenes
+
+a. Physical Properties
+
+Alkenes are unsaturated hydrocarbons. The first three members i.e. ethene, propene and
+butene are gases while Cs-C:s members are liquids, and the higher members are solids. They
+are insoluble in water but soluble in organic solvents such as alcohol etc.
+
+b. Chemical Properties
+
+The two carbon atoms forming double bond is the site where other molecules can attack
+giving addition reaction.
+
+1. Reaction with halogens
+
+Chlorine and bromine are added to the double bond (~c=C<). One bromine atom becomes
+attached to one carbon and another carbon atom. Such a type of reaction is called an
+addition reaction. Alkenes react with bromine water in the same way.
+
+HH
+2 ie a
+ee + Br—Br——» H—C—C—H
+u H Br Br
+
+Ethene(colourless) (Reddish-brown) 1,2-Dibrome ethane (colourless)
+Bromine is a reddish-brown liquid and the product is colourless. When bromine water is added
+to an alkene, the red-brown colour disappears. The decolourization of bromine solution is
+
+frequently used as a simple test for the detection of unsaturation. Alkynes also give this
+reaction.
+
+2. Reaction with KMn0,
+When an alkene is treated with a dilute alkaline aqueous solution of KMn0O, (1%) addition of
+
+two hydroxyl groups occurs across the double bond. The pink colour of KMn0, the solution is
+
+discharged during the reaction. This reaction is used as a test for the presence of an
+unsaturated compound like alkene and is known as Baeyer’s test. This test is used to
+
+distinguish saturated and unsaturated hydrocarbons. Saturated hydrocarbons do not give this
+reaction.
+
+3CH2==CH;+ 2KMnO4+ 4H>0——> ial tal 2MnO2+ 2KOH
+
+OH OH
+
+Ethene | : Ethylene Glycol
+Ethylene glycol is used as an anti-freeze.
+
+Concept As
+Complete the following reactions:
+
+1. CH;—CH = CH, + Br; ——+ ‘
+2, CH; —CH =CH,+ KMnO, + H,0 ——+
+
+
+
+--- PAGE 114 ---
+1. Hydrogenation of alkenes
+
+The addition of hydrogen molecules across carbon-carbon multiple-bond is called
+hydrogenation. Hydrogenation takes place in the presence of finely divided nickel at
+200 - 300 °C and high pressure. Hydrogenation can also be done in the presence of Pt or Pd at
+room temperature.
+
+Ni,200-300°C
+CH2 = CH2 + Hy “Tigh Pressure’ 3 — CH;
+Ethene Ethane
+
+Concept Assessment Exercise 9: CRS
+
+Complete the following reactions
+
+CH, CH=CH, + H, meer
+
+N1,200-300°C
+
+CH, —CH=CH-CH, + Hy
+
+2. Hydration of alkenes
+Alkenes produce alcohol on treatment with steam. Phosphoric acid is used as a catalyst in this
+‘reaction. Ethanol is commercially produced by this reaction. t
+
+HsPO4
+
+CH,=CH, + H-OH —~—~+ CH,—CH,—OH
+
+Ethene Steam Ethanol
+CH,CH=CH, + HOH —2"*s CH,—CH,—CH,-OH
+Propene Steam Propanol
+9.3 ALKYNE
+
+Hydrocarbons that have at least one triple bond between carbon atoms are called alkynes.
+This means alkynes are unsaturated hydrocarbons. Alkynes with one triple bond have the
+general formula C,H2p.2-
+
+Ethyne, also called acetylene i$ the simplest member of the alkyne family. In ethyne, the two
+carbon atoms share three pairs of electrons. This means the carbon atoms are joined by a triple
+H-C=C-H
+
+Commercial Importance of Ethyne
+
+Ethyne has great commercial importance. It is also known as acetylene and is commonly used
+in cutting and welding metals. When it is ignited in oxygen or air, it burns with a bluish colour
+producing a very hot flame called oxy-acetylene flame. Its temperature is about 3200 °C. Oxy:
+acetylene flame has the highest flame temperature of all other fuel gases. Welding and
+cutting of metals require high temperatures. Therefore, ethyne is used for this pyrpose.
+
+
+
+--- PAGE 115 ---
+Another advantage of ethyne is its use in the artificial ripening of fruits. Have you ever seen a
+packet containing solid material in your fruit boxes, especially in mango crates? This packet
+contains calcium carbide, which on coming in contact with moisture produces ethyne gas.
+This ethyne promotes ripening and also induces colour changes in fruits. However, its use can
+lead to exposure to harmful chemicals, that can cause respiratory issues and other health
+problems.
+
+Cac, + HO —— CH, + Ca(OH),
+9.4 Distinguishing saturated and unsaturated hydrocarbons
+
+To distinguish between saturated and unsaturated hydrocarbons, you can perform the
+bromine water test. This test involves adding bromine water (Br2 in water, which is an
+orange-brown solution) to the hydrocarbon and observing the colour change.
+
+Procedure
+
+1. Add bromine water to the hydrocarbon sample.
+2. Observe the colour change.
+
+Observations
+
+¢ Saturated hydrocarbons (alkanes) will not react with bromine water. The solution will
+remain orange-brown. ‘
+
+« Unsaturated hydrocarbons (alkenes and alkynes) will react with bromine water. The
+solution will decolourize (turn colourless) because the bromine reacts with the double or
+triple bonds.
+
+Symbol Equations :
+
+For an alkene (unsaturated hydrocarbon)
+
+Ethene reacts with bromine to form dibromoethane.
+
+H
+He nM | i
+ae +Br—Br——> H—C—C—H
+H H |
+Br Br
+
+Ethene(colourless)  (Reddish-brown) _1,2-Dibrome ethane (colourless)
+Ethyne reacts with bromine to form tetrabromoethane.)
+
+ir
+H—C=C—H + 2Br, ——+H bs
+ir
+Ethyne Bromine 1,1,2,2-Tetrabromoethane
+(colourless)
+
+(colourless) ——_(redish brown)
+For an alkane (saturated hydrocarbon) }
+
+GH, + Br; ——+ Noreaction
+(Ethane does not react with bromine water, so the colour remains unchanged.)
+This test is effective because the presence of a double or triple bond in unsaturated
+
+hydrocarbons allows them to react with bromine, breaking the bond and forming a dibromo
+compound, which is colourless.
+
+
+
+--- PAGE 116 ---
+method to disti satura!
+The Baeyer’s test is another inguish between saturat
+i 1 ed and unsaturated
+
+id, dilute alkaline, aqueous soluti
+a KMnOs (1%), which is purple. i iat
+rocedure
+
+3. Add a few drops of cold, dilute alkaline, aqueous KMnO,
+
+. solution to the hydrocarbon
+4. Shake the mixture and observe the col
+
+pottalat ‘olour change.
+
+* Saturated hydrocarbons (alkanes) do not react with KMnO,, and the solution remains
+
+purple.
+
+* Unsaturated hydrocarbons (alkenes) react with KMnO,, causing the solution to become
+colourless as the permanganate ion is reduced to manganese dioxide (MnO.), which
+Precipitates as a brown solid.
+
+Symbal Eouations
+
+For an alkene (unsaturated hydrocarbon):
+
+3C2H, + 2KMnO, + 4H,Q ———+ 3C2H«(OH)2 + 2MnO2 + 2KOH
+
+(Ethene reacts with potassium Permanganate, resulting in the formation of ethane-1,2-diol,
+
+manganese dioxide, and potassium hydroxide. The solution turns brown due to MnO, and loses
+
+its purple colour.)
+
+Alkynes do not react with cold 1% alkaline aqueous solution of KMnO, (Baeyer’s agent).
+
+Activity 9.1
+
+To distinguish between saturated (butter representing saturated hydrocarbon) and
+unsaturated (vegetable oil representing an unsaturated hydrocarbon) hydrocarbons based on
+the reaction with bromine.
+Materials Required
+
++ Vegetable oil (e.g., olive oil or sunflower oil)
+
+* Butter or lard
+
+* Bromine water (a dilute solution of bromine in water. CAUTION: Bromine is toxic and
+corrosive; handle with gloves and under supervision)
+Two small glass containers or test tubes
+Droppers or pipettes
+Safety goggles and gloves
+Lab apron
+White paper or white tiles (to better observe colour change)
+Tongs or test tube holders.
+
+* Fume hood or well-ventilated area for safety
+Safety Precautions
+
+« Ensure all students wear safety — _ and ee eae:
+
+t in a well-ventilated area or fume F ;
+: it, “ah apices with bromine water and the importance of not directly
+
+inhaling or contacting the solution.
+
+
+
+--- PAGE 117 ---
+Procedure
+* Pour a small amount (about 5 mL) of vegetable oil into one glass container or test
+tube.
+Place a small piece of butter in another glass container or test tube.
+Label each container appropriately (e.g., "Vegetable Oil" and “Butter”).
+Using a dropper, add a few drops of bromine water to each container.
+
+Observe and note the initial colour of the bromine water (orange-brown).
+Observations
+
++ Gently swirl each container to mix the contents:
+
+o Vegetable Oil (Unsaturated Hydrocarbon): The bromine water will react with
+the double bonds in the unsaturated hydrocarbons, causing the orange-brown
+colour to disappear or lighten. This reaction occurs because the bromine adds
+across the double bonds, forming a colourless dibromo compound.
+
+o Butter (Saturated Hydrocarbon): The bromine water will remain orange-brown
+in colour, indicating no reaction. Saturated hydrocarbons do not have double
+bonds, so they do not react with bromine under these conditions.
+
+Discussion
++ Ask the students to discuss their observations:
++ Why did the colour of bromine water change with vegetable oil but not with butter?
++ What does this indicate about the types of bonds present in vegetable oil and butter?
+
+Where does most of the energy used today come from?
+
+Fossil fuels are natural energy sources. Fossil fuels are a non-renewable energy source. It is
+believed that they are formed from the remains of ancient organisms. They include coal,
+natural gas, and petroleum.
+
+9.5.1 Coal
+
+Coal is a material usually found in sedimentary rock deposits where rock and dead plant and
+animal matter are piled up in layers. It can be burned for fuel and used to generate
+electricity. Coal is the leading source of energy in the world. Because coal takes millions of
+years to develop and there is a limited amount of it, it is a non-renewable resource.
+
+9.5.2 Natural Gas
+
+Natural gas is a gaseous mixture of hydrocarbons that occurs naturally. The main component
+of natural gas is methane, but there are also smatl amounts of other high-alkanes such as
+ethane, propane, and butane, as well as trace gases such as carbon dioxide (CO2), nitrogen
+(N2), hydrogen sulfide (H2S), and helium. Natural gas is used extensively for heating,
+electricity generation, and as a fuel for vehicles and spacecraft.
+
+9.5.3 Petroleum
+
+The name petroleum is derived from Latin words, petra meaning rock and oleum meaning oil.
+It is also known as crude oil. Petroleum or crude oil is a thick dark liquid composed mostly of
+
+
+
+--- PAGE 118 ---
+| Unit 9: Hydrocarbons
+|
+
+hydrocarbons. Natural gas, usually associated with petroleum deposits, consists mostly of
+| methane. It also contains significant amounts of ethane, propane, and butane.
+|
+
+Petroleum is extracted by drilling holes into the earth's crust where it is found. When a drill is
+made through the rocks, natural gas comes out first with great pressure. After the gas
+pressure subsides, crude oil is extracted by pumps.
+
+2. Separating crude oil
+
+Refining is the process of separating crude oil into usable products. These useful products
+contain a group of hydrocarbon molecules that have similar chain lengths, similar boiling
+points, and condense over a range of temperatures. These groups of hydrocarbons are called
+fractions. This means that each useful fraction consists of a combination of different
+hydrocarbons that boil at a specific temperature. Oil refining takes place in a high-
+temperature fractionation tower, where the temperature at the top of the tower is colder
+than at the bottom of the tower (see figure). Crude oil is heated under high pressure in a
+furnace to a temperature of 400 °C. The oil is then Passed through a distillation column where
+vapour rises. As the hot vapour move up the tower, it condenses into different fractions
+according to the boiling point. Compounds with the highest boiling point condense near the
+bottom, compounds with the lowest boiling point at the top, and non-boiling compounds
+collect at the bottom (see Figure 9.1). Therefore, crude oil is divided into several fractions.
+Each fraction has its specific boiling range and composition. How many fractions are obtained?
+
+Figure 9.1: Fractional distillation of petroleum
+
+
+
+--- PAGE 119 ---
+The physical properties and uses of petroleum fractions are given in the table 9.1.
+Table 9.1: Fractions of petroleum and their uses ,
+
+Nuniber of carbon
+‘atoms per molecule
+
+Liquefied
+petroleum gas Below 20
+
+Fraction Boiling point C Important
+
+Fuel for jet planes,
+fuel for heating,
+lighting and cooking
+Fuel for diesel
+
+| 350-500
+
+20-50
+Paving roads and
+More than 70 making roofing
+
+‘As the length of the hydrocarbon carbon chain increases, the strength of the intermolecular
+force also increases. Bitumen has the longest carbon chain, highest boiling point, highest
+viscosity, lowest volatility, and darkest colour. As you move from bottom to top. The chain
+length of carbon atoms in different fractions gradually decreases. Thus, their boiling points
+and viscosity also decrease. However, the weakening of the strength of the intermolecular
+forces increases the volatility of the fractions. For example, refinery gas (LPG) has the
+shortest carbon chain, lowest boiling point, lowest viscosity, and highest volatility.
+
+| Lubricating oil
+
+Concept Assessment Exercise 9.5
+
+1. List names of fractions obtained by the fractional distillation of petroleum.
+3. List one use of each petroleum fraction.
+4. How is petroleum obtained?
+
+
+
+--- PAGE 120 ---
+Hydrocarbons are compounds containing carbon and hydrogen only.
+Hydrocarbons whose carbon-carbon bonds are all single bonds are called saturated.
+Hydrocarbons containing carbon-carbon multiple bonds are called unsaturated.
+Unsaturated hydrocarbons containing at least one carbon-carbon double bond are
+
+called alkenes.
+Unsaturated hydrocarbons that have at least one carbon-carbon triple bond are called
+
+alkynes.
+¢  Incatalytic cracking alkanes are heated at 550 °C in the presence of a catalyst such as
+zeolite.
+Dehydration means loss of water.
+e Dehydrohalogenation means loss of hydrogen halide.
+« The name petroleum is derived from Latin words, petra meaning rock and oleum
+meaning oil. It is also known as crude oil.
+
+EXERCISE
+
+1, Multiple Choice Questions (MCQs)
+i. What Alkenes have one or more double bonds between carbon atoms? They have the
+general formula C,H2,. When two carbon atoms share two pairs of electrons, they
+form a double bond between the carbon atoms. How many electrons are left on each
+
+carbon atom?
+a)2 b)3 c)1 d)4
+ii. The type of bond present between the carbon atoms in alkynes is:
+a) Single covalent bond b) Double covalent bond
+Cc) Triple covalent bond d) Saturated covalent bond
+iii. Alkenes are classified as:
+a) Saturated hydrocarbons b) Unsaturated hydrocarbons
+c) Aromatic hydrocarbons d) None of the above
+
+iv. Cracking of large alkane molecules requires:
+
+a) Low temperature and pressure b) High temperature and catalyst
+
+cc) Low temperature and catalyst _d) High temperature and high pressure
+v. Which of the following is a product of cracking large alkane molecules?
+
+a) Carbon dioxide b) Alkenes
+c) Water d) Hydrogen
+vi. The chemical test to distinguish between alkanes and alkenes involves:
+a) Limewater b) Bromine water
+c) Litmus paper d) Universal indicator
+vii. Alkynes contain which type of carbon-carbon bond?
+a) Single covalent bond b) Double covalent bond
+C) Triple covalent bond d) Saturated covalent bond
+
+SO ee
+

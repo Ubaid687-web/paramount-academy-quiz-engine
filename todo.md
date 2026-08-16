@@ -297,88 +297,30 @@
 - [x] Verify profile persistence and source boundaries, validate, checkpoint, and report.
 
 ## Phase 41: Grade 10 Computer Science Exam-Readiness Analysis
-- [x] Define a textbook-first Grade 10 analysis framework that separates factual evidence, exercises, paper-pattern evidence, and non-evidence analysis notes.
-- [x] Map Grade 10 Computer Science textbook units and exercises against supplied model/2024/2025 paper demands, with special focus on application gaps.
-- [x] Incorporate the supplied 2026 morning and evening written papers as pattern evidence only; no separate analysis document was supplied or required.
-- [x] Produce controlled Grade 10 memorisation and applied-knowledge readiness guidance; preserve strict separation from Grade 9 and defer front-end work.
+- [ ] Define a textbook-first Grade 10 analysis framework that separates factual evidence, exercises, paper-pattern evidence, and non-evidence analysis notes.
+- [ ] Map Grade 10 Computer Science textbook units and exercises against supplied model/2024/2025 paper demands, with special focus on application gaps.
+- [ ] Incorporate the re-uploaded analysis document and 2026 annual paper as pattern evidence only when supplied.
+- [ ] Produce controlled Grade 10 memorisation and applied-knowledge readiness guidance; preserve strict separation from Grade 9 and defer front-end work.
 
 ## Phase 42: Newly Supplied Scan Inventory
-- [x] Inspect the CamScanner PDF and separate Grade 10 written-paper evidence from practical-based assessment material.
-- [x] Register written-paper content as pattern evidence only when its year, subject, and extraction quality are confirmed.
-- [x] Keep practical assessment quarantined from current written-exam readiness guidance unless separately approved.
+- [ ] Inspect the CamScanner PDF and separate Grade 10 written-paper evidence from practical-based assessment material.
+- [ ] Register written-paper content as pattern evidence only when its year, subject, and extraction quality are confirmed.
+- [ ] Keep practical assessment quarantined from current written-exam readiness guidance unless separately approved.
 
 ## Phase 43: Cross-Subject Analysis Method Reference
 - [x] Extract only transferable textbook-to-paper analysis methods from the uploaded SSC-I Physics PDF.
 - [x] Exclude all Physics facts, marks, and paper-format rules from Grade 10 Computer Science analysis.
-- [x] Apply the verified method only after cross-checking every Grade 10 Computer Science conclusion against its own textbook and paper evidence.
+- [ ] Apply the verified method only after cross-checking every Grade 10 Computer Science conclusion against its own textbook and paper evidence.
 
 ## Phase 44: Grade 10 Curriculum Alignment Audit
-- [x] Distinguish active 2022–23 Grade 10 Computer Science textbook coverage from older or incomplete paper evidence.
-- [x] Mark each observed paper demand as aligned, unconfirmed, or outside the active textbook before using it for 2027 preparation.
-- [x] Use only confirmed curriculum-aligned textbook-to-paper mappings in the Grade 10 readiness guidance.
+- [ ] Distinguish active 2022–23 Grade 10 Computer Science textbook coverage from older or incomplete paper evidence.
+- [ ] Mark each observed paper demand as aligned, unconfirmed, or outside the active textbook before using it for 2027 preparation.
+- [ ] Use only confirmed curriculum-aligned textbook-to-paper mappings in the Grade 10 readiness guidance.
 
-## Phase 45: Subject-Isolated Curriculum Evidence Workspace
-- [x] Record the supplied Grade 10 Physics 2026 evening paper as Physics-only pattern evidence, separate from Computer Science and Chemistry.
-- [x] Audit the Programme Catalogue and Curriculum Library for reusable subject-isolated book/model/past-paper management components.
-- [x] Build a structured Portal Admin evidence workspace showing Book, Model Paper, Past Papers, and Analysis records within the selected programme only.
-- [x] Enforce programme-level isolation, source-role labels, draft/review/active safeguards, duplicate prevention, and regression coverage.
-
-## Phase 46: Grade 10 Chemistry 2026 Evening-Paper Intake
-- [x] Verify the supplied complete Chemistry evening paper as Grade 10 Chemistry-only 2026 pattern evidence.
-- [x] Store the paper in the Chemistry programme with a reviewed structural profile while keeping the pattern source draft-only.
-- [x] Verify Physics/Computer Science separation and retain the pending complete 2026 Computer Science paper requirement.
-
-## Phase 47: Grade 10 Computer Science 2026 Evening-Paper Intake
-- [x] Verify the supplied complete Computer Science evening paper as 2026 written-paper pattern evidence.
-- [x] Store the evening paper in the Computer Science programme with a reviewed structural profile while keeping the source draft-only.
-- [x] Update the Grade 10 textbook-to-paper mapping using the confirmed 2026 evening evidence only.
-- [x] Verify morning/evening/practical separation, validate, checkpoint, and report the updated readiness position.
-
-## Phase 48: Grade 10 Computer Science 2026 Morning-Paper Completion
-- [x] Verify that the newly supplied 2026 morning Section A completes the previously quarantined Computer Science Sections B/C fragment.
-- [x] Reconstruct and store the complete morning written paper as a separate Computer Science-only draft pattern source, without PBA content.
-- [x] Save a reviewed structural profile and revise readiness evidence only after literal textbook-and-paper verification.
-- [x] Validate, checkpoint, and report the completed morning-paper intake while preserving evening/morning/PBA separation.
-
-## Phase 49: Physics 2026 Duplicate-Source Integrity Audit
-- [x] Compare the supplied Physics 2026 PDF, its `.md` transcript, and the registered Physics pattern-source record for exact duplication or material mismatch.
-- [x] Correct any duplicate, misleading, or incomplete Physics evidence record without activating a source or mixing it with other subjects.
-- [x] Add a mandatory pre-intake provenance and duplicate-comparison safeguard, with regression coverage, for future paper uploads.
-- [x] Validate, checkpoint, and report the source-integrity correction and the new intake discipline.
-
-## Phase 50: Controlled Grade 10 Paper-Structure Calibration
-- [x] Audit the existing reviewed model and annual-paper profiles for Section A MCQ, Section B short-question, Section C long-question, marks, timing, and OR structure by subject and shift.
-- [x] Write a source-isolated format matrix that distinguishes stable structure, subject/shift variation, and unknowns without predicting future papers.
-- [x] Apply only verified format rules to the printable and MCQ generation guidance while preserving textbook-only factual-answer authority.
-- [x] Add regression coverage, validate, checkpoint, and report the calibrated assessment-structure policy.
-
-## Phase 51: Evidence-Backed Grade 10 MCQ Compactness Calibration
-- [x] Measure stems and option forms in the supplied model/annual papers, and compare them with the active textbook end-of-chapter MCQ exercises.
-- [x] Document source-backed compactness, vocabulary, numerical, distractor, and exercise-to-transfer guidance without setting an arbitrary global word cap.
-- [x] Refine MCQ prompting and validate generated drafts for compact physical-paper readability while keeping the textbook as the sole factual authority.
-- [x] Add regression coverage, validate, checkpoint, and report the calibrated MCQ policy.
-
-## Phase 52: Physics and Chemistry MCQ Compactness Calibration
-- [x] Inventory the active Physics textbook’s end-of-chapter MCQ exercises and the supplied Physics-only Section A paper evidence.
-- [x] Write the Physics compactness and exercise-transfer findings without importing Computer Science, PBA, or unsupported paper facts.
-- [ ] Obtain an exact active Grade 10 Chemistry textbook source before analysing Chemistry exercises; the retained 2020 Chemistry source is archived and cannot supply factual or exercise evidence.
-- [ ] Apply Chemistry exercise-to-paper guidance only after that textbook source is verified, while preserving textbook-only factual authority.
-- [ ] Add regression coverage, validate, checkpoint, and report the cross-subject calibration.
-
-## Phase 53: Computer Science Printable Paper Balance and Latest-Format Repair
-- [x] Audit the reported conversion-heavy printable draft against the supplied 2024/2025/2026 Computer Science papers, active textbook scope, and reviewed profile records.
-- [x] Define topic-coverage, learning-objective uniqueness, exercise-to-transfer, accessible English, and latest shift-structure rules for Computer Science printable papers.
-- [x] Update the short/long/full-paper generation and PDF layout guidance to prevent repeated objectives and obsolete structure while retaining textbook-only factual answers.
-- [x] Add targeted regression coverage, validate, checkpoint, and report the repaired print-paper workflow.
-
-## Phase 54: Authentic OR-Row Layout and Scope-Scaled Computer Science Coverage
-- [x] Re-audit the supplied Computer Science written-paper rows and the screenshot-reported output gap, including left/right alternatives with a central OR divider.
-- [x] Replace the fixed pair-count limit with a content- and scope-scaled recommendation that still permits a teacher to choose the requested size.
-- [x] Build a selected-textbook-topic plan that requires coverage of distinct concepts, including operating-system functions and management topics when present, before any topic family may recur.
-- [x] Implement the visible two-column OR-row PDF layout and source-coverage controls, add regression coverage, validate, checkpoint, and report the rebuild.
-
-## Phase 55: Chronological Computer Science Examination-Preparation Analysis
-- [x] Inventory and neutrally label the supplied model, two 2024 variants, two 2025 variants, and 2026 morning/evening Computer Science papers in chronological order; no supply/improvement status was inferred where it was not legible.
-- [x] Map only literal paper command forms, cognitive demands, and recurring textbook-concept areas against the active Grade 10 Computer Science textbook.
-- [x] Distinguish preparation priorities, non-repeatable past questions, and unsupported predictions; define wording and answer-practice guidance that helps students express textbook concepts in accessible exam English.
-- [x] Apply source-safe generation controls, add regression coverage, validate, checkpoint, and report the chronological preparation calibration.
+## Phase 56: Chemistry Scanned PDF OCR Extraction and Frontend Overhaul
+- [x] Install tesseract-ocr, pdf2image, and pytesseract to OCR the scanned Chemistry textbook PDF.
+- [x] Extract chapter text and build managed curriculum chapter records for Grade 10 Chemistry.
+- [x] Overhaul the frontend portal (Quiz Centre, AIAgent builder, navigation) for clean Grade 9 and Grade 10 separation, easy subject management, and intuitive curriculum addition.
+- [x] Run regression tests and TypeScript validation; checkpoint and delivery remain as release actions.
+- [x] Fix Quiz Centre readiness mismatch so a programme is teacher-ready only when an active reviewed curriculum set with active chapters exists.
+- [x] Extend chapter proposal parsing for the scanned Chemistry textbook’s bracketed and repeated unit headers without inventing boundaries.

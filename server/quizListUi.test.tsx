@@ -51,7 +51,7 @@ describe("Quiz Centre entry experience", () => {
   it("guides teachers from a ready grade to a ready subject and then the builder", () => {
     setReadyGrade10();
     render(<QuizList />);
-    expect(screen.getByRole("heading", { name: "Select a class." })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Choose a grade." })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /Choose Grade 10/i }));
     expect(screen.getByRole("heading", { name: "Choose a subject." })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /Physics.*Continue/i }));
@@ -76,7 +76,7 @@ describe("Quiz Centre entry experience", () => {
     expect(document.querySelectorAll('[data-slot="skeleton"]').length).toBe(21);
   });
 
-  it("hides an intake-only Grade 9 programme from teachers", () => {
+  it("keeps Grade 9 visibly separate as a curriculum-intake path", () => {
     programmesQuery.mockReturnValue({
       data: [...grade10Programmes, { id: 9, board: "FBISE", grade: "9", subject: "physics", teacherLabel: "Physics", status: "intake_only" }],
       isLoading: false,
@@ -84,8 +84,22 @@ describe("Quiz Centre entry experience", () => {
     });
     quizzesQuery.mockReturnValue({ data: [], isLoading: false, error: null, refetch: vi.fn() });
     render(<QuizList />);
-    expect(screen.queryByRole("button", { name: /Choose Grade 9/i })).toBeNull();
-    expect(screen.queryByText(/Curriculum setup pending/i)).toBeNull();
+    expect(screen.getByText("Grade 9")).toBeTruthy();
+    expect(screen.getByText(/kept separate/i)).toBeTruthy();
+    expect(screen.getByRole("link", { name: /Open curriculum management/i })).toBeTruthy();
+  });
+
+  it("shows Grade 9 intake messaging even when the ready catalogue has only Grade 10", () => {
+    setReadyGrade10();
+    render(<QuizList />);
+    expect(screen.getByText("Grade 9")).toBeTruthy();
+    expect(screen.getByText(/curriculum intake/i)).toBeTruthy();
+  });
+
+  it("keeps the add-subject action in the admin path instead of mixing it into teacher setup", () => {
+    setReadyGrade10();
+    render(<QuizList />);
+    expect(screen.getByRole("link", { name: /Open curriculum management/i }).getAttribute("href")).toBe("/curriculum");
   });
 
   it("shows all existing ready Grade 10 programmes without a staff-detail selector", () => {
@@ -103,7 +117,7 @@ describe("Quiz Centre entry experience", () => {
     render(<QuizList />);
     fireEvent.click(screen.getByRole("button", { name: /Choose Grade 10/i }));
     fireEvent.click(screen.getByRole("button", { name: "Return to class selection" }));
-    expect(screen.getByRole("heading", { name: "Select a class." })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Choose a grade." })).toBeTruthy();
   });
 
   it("returns to subject cards through the visible Change subject button", () => {
@@ -121,7 +135,7 @@ describe("Quiz Centre entry experience", () => {
     fireEvent.click(screen.getByRole("button", { name: /Choose Grade 10/i }));
     const classReturn = screen.getByRole("button", { name: "Return to class selection" });
     fireEvent.keyDown(classReturn, { key: "Enter" });
-    expect(screen.getByRole("heading", { name: "Select a class." })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Choose a grade." })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /Choose Grade 10/i }));
     fireEvent.click(screen.getByRole("button", { name: /Physics.*Continue/i }));
     const subjectReturn = screen.getByRole("button", { name: "Return to subject selection" });

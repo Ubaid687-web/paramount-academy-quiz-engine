@@ -1,0 +1,2336 @@
+
+--- PAGE 121 ---
+[oi Unit 9: Hydrocarbons 99) 9: Hydrocarbons
+
+viii. Ethyne is commonly used for:
+
+a) Cooking b) Welding
+c) Fuel for cars d) Heating
+ix. Fractional distillation separates petroleum into fractions based on:
+a) Density b) Boiling point
+c) Viscosity d) Solubility
+x. Which property increases as you move from the bottom to the top of the fractionating
+column? ‘
+a) Volatility b) Chain length
+Cc) Boiling point d) Viscosity
+xi. The gasoline/petrol fraction from petroleum is primarily used for:
+a) Jet fuel b) Heating
+c) Car fuel * d) Chemical feedstock
+xii. Doubly bonded carbon atoms form which type of bond with two other atoms.
+a) Single b) Double
+Cc) Trible d) Non
+
+2. Short Answer Questions
+
+| i. Describe the bonding in alkenes.
+ii. What are the conditions required for the cracking of alkanes?
+iii. Why is the cracking of large alkane molecules important in the petroleum industry?
+iv. How can you test for the presence of an unsaturated hydrocarbon?
+v. Write the symbol equation for the preparation of ethene from ethanol.
+vi. What type of bond is present in alkynes?
+vii. Name two uses of ethyne.
+viii. What is the principle behind the fractional distillation of petroleum?
+ix. How does the boiling point of fractions change from the bottom to the top of the
+fractionating column?
+x. _ List two uses of the naphtha fraction obtained from petroleum
+xi. How can you distinguish between propane and propene?
+xii. In a refinery, large alkane molecules are cracked to produce smaller alkenes and
+
+other hydrocarbons.
+
+a. Explain why alkenes are considered unsaturated hydrocarbons. Write ne
+for cracking.
+
+b. Write the symbol equation for the cracking of decane to produce ethene and
+octane.
+
+c. Why cracking of large alkanes is necessary in the petroleum industry.
+d. Propose a method to increase the efficiency of the cracking process.
+xiii. Ethyne (acetylene) is a hydrocarbon, used as a fuel for welding and in artificially
+ripening fruits.
+a. Explain why ethyne is considered an unsaturated hydrocarbon.
+b. Explain why ethyne is an effective fuel for welding.
+
+Sas ae
+
+
+--- PAGE 122 ---
+[Unit 9: Hydrocarbons 9: Hydrocarbons
+
+¢. Discuss the potential health risks associated with the use of ethyne for
+artificially ripening fruits.
+d. Propose a safer alternative method for ripening fruits that does not involve
+ethyne.
+xiv. Explain why alkenes are considered unsaturated hydrocarbons.
+xv. Write the symbol equation for the cracking of decane (C,9H2.).
+xvi. Explain why the refinery gas fraction is more volatile than the fuel oil fraction.
+
+3, Long Answer Questions
+
+i. Explain the process of fractional distillation of petroleum, including how the
+Properties of fractions change from the bottom to the top of the fractionating column.
+
+fi. Discuss the significance of cracking in the petroleum industry and how it helps in
+meeting the demand for various hydrocarbons.
+
+iii. Describe the preparation of alkenes by elimination reactions from halogenoalkanes and
+alcohols, providing balanced chemical equations for each process.
+
+THINK TANK
+
+1. Compare the economic benefits of producing alkenes via cracking versus extracting them
+directly from crude oil.
+
+2. Describe the chemical properties of ethyne that make it suitable for welding.
+
+3. In a laboratory, you need to distinguish between a sample of hexane and hexene.
+Describe the test to distinguish between them.
+
+
+
+--- PAGE 123 ---
+Tai
+H H
+
+HYDROXY COMPOUNDS
+
+Describe the manufacture of ethanol (This can be done by discussing- fermentation of
+aqueous glucose at 25-35°C in the presence of yeast and in the absence oxygen.-
+catalytic addition of steam to ethene at 300°C and 600kPa/6atm in the presence of
+an acid catalyst including a comparison of the advantages and disadvantages of the
+two methods.
+
+* Describe the combustion of alcohols.
+
+Discuss the applications of alcohols as fuels, including their advantages over fossil
+
+fuels.
+
+« Explain the role of alcohols in various industries such as pharmaceuticals, cosmetics,
+
+and fuel production.
+
+Discuss the impact of alcohols on daily life, including their uses as solvents and
+
+disinfectants.
+
+
+
+--- PAGE 124 ---
+[ Unit 10% Hydroxy Compounds] 10: Hydroxy Compounds
+
+An alcohol is an organic compound in chemistry that contains at least one hydroxy functional
+group attached to a saturated carbon atom. The class of organic compounds which have a
+hydroxyl functional group attached ‘to a hydrocarbon chain are called alcohols. There are
+many different types of alcohols, ranging from simple,
+
+for example, methanol (CH,OH), and ethanol (CH,CH,OH), to complex alcohols like sugar,
+cholesterols, etc.
+
+10.1 Manufacture of Ethanol
+
+1. Making ethanol by fermentation
+
+When aqueous glucose is mixed with yeast and left for several days at 25-35 °C in the absence
+of oxygen. Enzymes present in yeast convert the glucose into ethanol and carbon dioxide. This
+process is called fermentation.
+
+CoH 120 6(ag) ————* — 2CHjCH,OH aq) ao 2CO x45)
+
+glucose ethanol carbon dioxide
+The fermentation process produces 10-15% ethanol. The yeast is killed beyond this
+concentration. The ethanol is separated from the mixture by fractional distillation, which
+gives 96% pure alcohol also called rectified spirit. The remaining 4% of water cannot be
+removed by fractional distillation. Rectified spirit is converted into 100% pure ethanol by
+using a dehydrating agent such as concentrated H2S04. This method uses renewable resources
+and low energy levels.
+
+2. Making ethanol by the hydration of ethene
+
+Ethanol is produced when steam is added to ethene at 300°C and 6000kPa/6 atm. in the
+presence of phosphoric acid as a catalyst.
+CHi=CHy + HO —~—> CH,CHOH,
+ethene steam ethanol
+Only 4% of ethene is converted into ethanol. The ethanol produced is condensed into liquid
+and unreacted ethene is recycled in the process. By repeating these steps 96% ethanol is
+produced. This method uses non-renewable resources and high energy levels.
+
+Table 10.1: Comparing hydration and fermentation
+
+Fermentation of glucose
+The raw material is glucose, which comes from
+plants such as sugar cane (a renewable source)
+' Batch process (less efficient) - all the reactants
+are mixed in a reaction vessel and left for several
+days to react. A new reaction is set up when the
+
+Hydration of ethenes =
+The raw material is ethene, which comes from
+crude oil (non-renewable source) _
+
+Continuous process (efficient) - the reaction
+occurs as long as the reactants are constantly
+
+provided first batch of reaction is over
+ts a fast reaction Is a slow reaction
+
+Produces impure ethanol, so needs further
+frecnrreetmns | esi
+Requires high temperature and pressure, so needs | Requires moderate temperature, so less energy
+a lot of energy required
+
+
+
+--- PAGE 125 ---
+10.2 Combustion of Alcohols
+
+Alcohols are flammable organic compounds. They burn in the air due to the presence of a
+hydrocarbon chain. Just like fossil fuels, all alcohols burn in the presence of oxygen to form
+carbon dioxide water and release energy. This feature makes it possible to use alcohol as a
+fuel. In countries where there is no oil industry, ethanol produced by fermentation is used as
+an alternative fuel to imported oil.
+
+CH,OH + 20, —— CO, + 2H,O + heat
+CH,CH,OH + 30, ———+ 2CO, + 3H0 + heat
+10.2.1 Application of Alcohols as Fuels
+
+Methanol has been used as an alternative fuel for cars. However, it has a low energy content
+as compared to gasoline, diesel, or ethanol. So, methanol reduces the driving range of the
+vehicles. Ethanol, on the other hand, is a more useful fuel. It produces about two-thirds as
+much energy per litre as gasoline. Ethanol has a higher octane number than gasoline. Petrol
+blended with 10-20% ethanol is used in many countries, for example Brazil. This mixture is
+commonly known as gasohol. Ethanol not only increases the octane value of fuel but also cuts
+down the formation of carbon monoxide and other smog-causing emissions. Moreover, ethanol
+is a renewable energy source. Whereas, fossil fuels are non-renewable energy source. At the
+same time, pollution is a major disadvantage of fossil fuels.
+
+According to recent studies conducted at Harward, USA, corn-based ethanol reduces
+greenhouse gas emissions by roughly 40-50%.
+
+The disadvantage of using alcohols as fuel is that it can corrode certain materials used in
+
+engines. This is due to their much hygroscopic nature char gasoline, so, they absorb
+significant amounts of water from air.
+
+10.3 Role of alcohols in the pharmaceutical industry
+
+Alcohols have many important roles in the pharmaceutical industry. Some of these are:
+
+« Assolvent alcohols such as ethanol and isopropanol are used as solvents. Ethanol is used in
+the production of herbal extracts and homoeopathy in the preparation of liquid potencies.
+
+« Alcohols are also used for sterilization and disinfection of equipment, surfaces and
+pharmaceutical manufacturing areas. Isopropyl alcohol or isopropanol are especially
+useful for disinfecting, and sterilizing, as they can kill or inhibit the growth of many
+microorganisms.
+
+« Alcohols exhibit rapid antibacterial properties against vegetative bacteria, viruses, and
+fungi. So, they are used in medicines as an antiseptic, and disinfectant, in tropical
+pharmaceutical formulations such as creams or lotions.
+
+« Asa solvent alcohols diffuse active pharmaceutical ingredients through the skin, which
+makes them easier to administer and more effective.
+
+* Some alcohols, such as ethanol and isopropanol are also used as antiseptic agents in
+making disinfectant wipes to kill or inhibit the growth of harmful microorganisms. Alcohol
+swabs are also used on the skin to disinfect the skin before injection or before surgery.
+
+
+
+--- PAGE 126 ---
+10.4 Role of alcohols in the cosmetic industry
+
+Ethanol is widely used in the cosmetic industry because of its antibacterial, antiviral,
+antimicrobial, and antifungal qualities. It is used in hygiene products such as deodorants, skin
+care products, toners, perfumes, and skin lotions. Alcohols keep cosmetic ingredients
+together in a formulation and prevent them from separating. It also increases the adhering
+
+Properties of a product.
+10.5 Impact of alcohols on Everyday Life Public Health
+
+Alcohols significantly impact daily life through their diverse applications as solvents and
+disinfectants. Their chemical properties make them invaluable in medical, industrial, and
+household contexts, contributing to health, hygiene, and convenience. Alcohols are widely
+used in household and industrial cleaners, paints, and inks.
+
+Alcohol-based disinfectants are widely used and play an important role in controlling the
+spread of infections, especially during pandernics such as COVID-19. Alcohols’ solubility and
+rapid drying make them easy to use in a variety of applications, improving the efficiency and
+effectiveness of many products. Alcohols are effective in sanitizing surfaces and hands,
+especially in healthcare settings. y
+
+« Enzymes present in yeast convert the glucose into ethanol and carbon dioxide in the
+absence of air. This process is called fermentation.
+The fermentation process produces 10- 15%.
+Ethanol is produced when steam is added to ethene at 300 °C and at 6000kPa/ 6 atm.
+in the presence of phosphoric acid as catalyst ethanol.
+
+© 96% pure alcohol is also called rectified spirit.
+Ethanol is used in the production of herbal extracts and homoeopathy in the
+
+preparation of liquid potencies.
+
+Alcohols exhibit rapid antibacterial properties against vegetative bacteria, viruses, and
+fungi. Petrol blended with 10-20% ethanol is commonly known as gasohol.
+
+Ethanol has a higher octane number than gasoline. Ethanol has a higher octane number
+than gasoline.
+
+Ethanol not only increases the octane value of fuel but also cuts down the formation
+of carbon monoxide and other smog-causing emissions.
+
+Ethanol is widely used in the cosmetic industry because of its antibacterial, antiviral,
+
+antimicrobial, and antifungal qualities.
+
+
+
+--- PAGE 127 ---
+EXERCISE
+
+1. Multiple Choice Questions (MCQs):
+i. What is the optimal temperature range for the fermentation of glucose to produce
+
+ethanol?
+a) 0-10°C b) 25-35°C
+c) 50-60°C d) 70-80°C
+
+ii. Which organism is used in the fermentation process to produce ethanol?
+a) Bacteria b) Yeast
+c) Algae d) Molds
+
+iii. What is the catalyst used in the catalytic hydration of ethene to ethanol?
+a) Sulfuric acid b) Hydrochloric acid
+c) Phosphoric acid d) Nitric acid
+
+iv. What is the primary by-product of ethanol fermentation?
+a) Methane b) Oxygen
+c) Carbon dioxide d) Water
+
+v. Which.of the following is a major advantage of using ethanol as a fuel?
+a) High cost . _ b) Non-renewable
+c) Clean burning d) Low energy density
+
+vi. What is the chemical formula for ethanol?
+a) CH,OH b) CH,
+c) C,Hs0H d) C,;H,OH
+
+vii. Which process requires high pressure and temperature for ethanol production?
+a) Fermentation b) Catalytic hydration
+c) Distillation d) Sublimation
+
+viii. Ethanol combustion primarily produces:
+a) CO and H,O b) CO, and H,
+
+i" c) CO, and H,0 d) CO and H,
+
+ix. What is the disadvantage of ethanol production through fermentation?
+a) High-temperature requirement b) Slow process
+
+c) High-pressure requirement d) Uses non-renewable resources
+x. Which industry uses alcohol extensively as a solvent?
+
+a) Agriculture b) Pharmaceuticals
+
+c) Mining d) Construction
+
+2. Short Answer Questions:
+
+i. What is the chemical equation for the fermentation of glucose to ethanol?
+
+ii. Name two advantages of producing ethanol via fermentation.
+
+iii. What catalyst is used in the catalytic hydration of ethene to ethanol?
+
+iv. List two disadvantages of the catalytic hydration method for ethanol production.
+
+v. | What are the primary products of ethanol combustion?
+vi. Why is ethanol considered a renewable fuel?
+
+vii. How is ethanol used in the pharmaceutical industry?
+
+
+
+--- PAGE 128 ---
+viii. Describe one environmental benefit of using ethanol as a fuel.
+
+ix. What role does yeast play in ethanol production?
+
+x. | Name two industries where alcohols are used as solvents.
+
+xi. Write the chemical equation for the fermentation of glucose.
+
+xii. Evaluate the environmental impact of the two ethanol production methods.
+
+xiii. Explain why alcohols are considered cleaner fuels compared to fossil fuels.
+
+xiv. Discuss the benefits of using ethanol as a fuel in internal combustion engines
+compared to gasoline.
+
+xv. Describe how ethanol is used in cosmetic products.
+
+xvi. Explain the role of alcohols in the pharmaceutical industry.
+
+xvii. Evaluate the environmental impact of the two ethanol production methods.
+
+3. Long Answer Questions:
+i. Compare and contrast the fermentation and catalytic hydration methods of ethanol
+production, including their advantages and disadvantages.
+ii. Explain the combustion process of alcohols and discuss why they are considered
+cleaner fuels compared to fossil fuels.
+iii. Discuss the role of ethanol in fuel production, highlighting its benefits and potential
+
+challenges.
+
+Describe the impact of alcohols on various industries, including pharmaceuticals,
+
+cosmetics, and household products.
+
+v. Analyse the overall impact of alcohols on daily life, considering their use as fuels,
+solvents, and disinfectants, and discuss potential health and environmental
+implications.
+
+vi. Compare the advantages and disadvantages of the two methods of ethanol
+production in terms of energy efficiency, cost, and environmental impact.
+
+vii. Analyse the impact of replacing traditional fossil fuels with alcohol-based fuels in
+terms of emissions and energy efficiency.
+
+viii, Evaluate the feasibility of switching to ethanol as a primary fuel source for
+
+transportation in your country.
+
+Evaluate the impact of widespread use of alcohol-based disinfectants on public
+
+health and the environment
+
+iv.
+
+THINK TANK
+
+1. Assess the potential economic and environmental impacts of shifting from fossil fuels to
+
+alcohols as primary fuels.
+2. Which raw material is better for the production of ethanol, glucose or ethane? Give
+
+reasons for your choice.
+Evaluate the impact of the widespread use of alcohol-based disinfectants on public health
+
+and the environment.
+4. Develop a strategy for promoting the use of alcohols in the cosmetics industry,
+
+emphasizing their benefits.
+
+
+
+--- PAGE 129 ---
+CARBOXYLIC COMPOUNDS
+
+Student Learning
+
+Describe the reactions of carboxylic acids with metals, bases, and carbonates
+including names and formulae of the salts produced.
+
+« Describe the formation of ethanoic acid by the oxidation of ethanol with acidified
+aqueous potassium manganate(Vil) and by bacterial oxidation during vinegar
+production.
+
+« Describe the reaction of a carboxylic acid with an alcohol using an acid catalyst to
+form an ester. :
+
+« Describe the industrial applications of carboxylic acids and esters, including their use
+as solvents, flavours, fragrance, and plastics.
+
+¢ Explain the role of carboxylic acids and esters in daily life, including their use in food
+
+preservation, cosmetics, and pharmaceuticals.
+
+
+--- PAGE 130 ---
+The organic compounds that contain carbon-oxygen double bonds (CC=0) are called carbonyl
+compounds. There are many types of carbonyl compounds, such as aldehydes, ketones,
+carboxylic acids, etc. Carbonyl compounds in which carbonyl carbon is attached to the -OH
+(hydroxyl) group are called carboxylic acids. For example:
+
+G 9° °
+H-C-oH cH; C-oH CH;-CH-C-OH
+Methanoic acid Ethanoic acid Propanoic acid
+[Formic acid] [Acetic acid] [Propionoic acid]
+
+Name shown in square brackets are common names of these compounds.
+
+Organic compounds which contain a carboxyl group (—COOH) functional group in their
+molecule are called carboxylic acids. Aliphatic carboxylic acids have the carboxyl group
+attached to an open chain of carbon atoms of alkyl group. Aromatic carboxylic acids have the
+carboxylic group with phenyl or aryl group. “
+
+i 6:3
+They may be represented by the general formula'R—G—oH
+where R = H or any alkyl or aryl group. CoN Maa
+11.1 Formation of Ethanoic acid
+
+1. By the Oxidation of Alcohols
+
+Ethanol is readily oxidized to aldehyde, which further oxidizes to carboxylic acids in
+the presence of oxidizing agents such as potassium dichromate or potassium
+permanganate(VIl) in an acidic medium. This process is fast but requires strong
+oxidizing agents.
+
+OH °
+R— by | LE Ai
+Oxidation
+9 KMn0,/H ?
+r—t—u a Ci ee, eee
+
+Oxidation
+The oxidizing agent provides nascent oxygen for the oxidation of alcohol. In the first step,
+oxygen an atom removes two hydrogen atoms from ethanol to form water and ethanal. In the
+second step, the oxygen atom oxidizes ethanal into ethanoic acid.
+CH,CH,OH,, + [QO], ———* CH,CHO,, + H,0,)
+
+Ethanol Ethanal
+CH;CHO,, + [0], ———- CH,COOH,,
+Ethanol Ethanoic acid
+
+2. By the Bacterial Oxidation of Ethanol
+Ethanol can be converted into vinegar by the action of micro-organisms called acetobacter in
+an aerobic environment. The reaction is catalysed by enzymes produced by acetobacter
+bacteria.
+
+CH,CH,OH,, + 04) —— CH;COOH,,_) + H204)
+
+
+
+--- PAGE 131 ---
+eee EE EEE
+
+The fermentation is complete when the ethanol is fully converted to acetic acid. This can be
+confirmed by tasting or by measuring the acetic acid concentration using titration.
+
+Typical vinegar contains about 4-8% acetic acid. This process is slow but environmentally
+friendly, uses renewable resources.
+
+11.2 Reactions of Carboxylic Acids
+°
+
+The carboxyl group shows the chemistry of both the carbonyl (—o-—} and the hydroxyl
+(—OH) groups. In most reactions, the carboxyl group is retained. However, the reactivity
+of these molecules is due to the presence of the carbonyl group.
+
+Carboxylic acids undergo the following types of reactions.
+°
+1
+
+i) The reaction in which the hydrogen atom of the carboxyl group (-Cc—0=H) is involved
+(salt formation).
+
+ii) The reaction in which the —OH group is replaced by another group (-OH).
+
+iii) The reactions involving the carboxyl group as a whole (-COOH).
+
+14. Reaction involving H-atom of the carboxyl group (Acidic properties
+
+of Carboxylic acid)
+Carboxylic acids are weaker acids than mineral acids. They produce H'ion when dissolved in
+water
+| i YT ow ee
+at R—C O+H
+. (Carboxylate ion) (Proton)
+
+(a) Reactions with bases
+Carboxylic acids react with strong bases (NaOH, KOH) to form salts
+
+CH,COOH,, + NAOH ga) CH COONAg, + H20q
+Acetic acid ‘Sodium Acetate
+(b) Reaction with carbonates and bicarbonates
+Carboxylic acids decompose carbonate and bicarbonates evolving carbon dioxide gas with
+effervescence.
+
+CH ,COOH gy + Na2CO340q)
+CH,COOH,,, + NaHCO3,.
+
+2CH ,COONA, 4+ COzq;+ HO,
+CH,COONa,,) + COaq+* H20%,
+
+(c) Reactions with metals
+Carboxylic acids react with active metals such as Na, K, Ca, Mg etc to form their salts with
+the evolution of hydrogen gas,
+
+2CH ;COOH yy + 2N@y~) ———+ 2CH,COON@ aq * H2@
+Acetic acid Sodium Acetate
+
+
+
+--- PAGE 132 ---
+2. Reaction involving the OH group of Carboxylic acid
+
+Reaction with Alcohol (Preparation of Esters)
+
+When a carboxylic acid is heated with an alcohol in the presence of conc. sulphuric acid as
+catalyst and esters is formed and the reaction is named “Esterification reaction”. Esters are
+usually significant for their fruity smells and act as flavouring agents. Such a reaction in which
+two molecules combine with the elimination of a small molecule like water is called a
+condensation reaction.
+
+° °
+I Conc H,SO, i H.0.
+R—C—OH,, * H—O—Ri,q === + R—C—0—R; 2
+Carboxylic ead oa Ester toa)* ®
+°
+I cone eee I
+H3C—C—OH,,+, H—O—CH seq) H3C—C—O—CH54_q) + HO,
+
+Acetic add Ethanol Ethyl acetate
+
+Concept Assessment Exercise 11.1
+
+Complete the following reactions and write the names of reactants and products.
+
+1. CH;COOH,, + CH;OH, ———>
+2. CH,CH,COOH,.,, + Nay | ——>
+3. HCOOH, + NaHCO,,,.,  ———>
+
+Activity 11.1
+
+Studying and analyzing the reactions between vinegar (acetic acid) and two different
+substances: sodium metal and sodium carbonate.
+Materials Needed:
++ Vinegar (acetic acid, CH,COOH)
++ Small pieces of sodium metal (Na) (Caution: Sodium metal is highly reactive and
+should be handled with extreme care under the supervision of a qualified instructor)
+* Sodium carbonate (Na,CO,)
++ Two small beakers or glass containers
++ Droppers or pipettes
+Safety goggles and gloves
+Sifety Precautions
+« Ensure all students wear safety goggles, gloves, and lab aprons.
+* Explain the safety hazards associated with handling sodium metal and performing
+reactions that release gases.
+« Conduct the experiment in a fume hood or a well-ventilated area.
+Sodium metal should be handled only with tweezers or tongs and kept away from water.
+ineroductigi to Chemical Reactions
+* Briefly introduce the concept of chemical reactions, reactants, and products.
+* Discuss the properties of vinegar (acetic acid), sodium metal, and sodium carbonate.
++ Explain that vinegar is an acid that can react with metals and carbonates to produce
+different products.
+
+‘Sin9 SithA Procese Moonta Ndi TN 2k 977-90-00 cine ne
+
+
+--- PAGE 133 ---
+Procedure
+
+* Place a small piece of sodium metal in a dry beaker,
+
+* Using a dropper, carefully add a small amount of vinegar to the beaker with sodium
+metal.
+
+Observation
+* Reaction: The sodium metal reacts vi
+fizzing.
+* Gas Released: Hydrogen gas (H,) is released, and sodium acetate (CH,COONa) is
+formed in the solution.
+Chemical Equation:
+
+igorously with vinegar, Producing bubbles and
+
+2Na,) + 2CH,COOH,,,) ——i-> 2CH,COONa,,., + H.
+
+2g)
+Discussion Points:
+
+« Why is hydrogen gas released?
+* Discuss the safety concerns of handling sodium metal and why the reaction is
+exothermic (releases heat).
+
+Reaction: Vinegar with Sodium Carbonate
+Procedure:
+* Ina separate beaker, add a small amount (about a teaspoon) of sodium carbonate.
+* Slowly add vinegar using a dropper until the bubbling reaction occurs.
+Observation:
+* Reaction: Vigorous bubbling and fizzing are observed as carbon dioxide gas (CO,) is
+released.
+* Gas Released: Carbon dioxide (CO,) is released, forming water (H,0) and sodium
+acetate (CH,COONa).
+Chemical Equation:
+Na,CO,,, + 2CH,COOH,
+Discussion Points:
+* Why does carbon dioxide gas form?
+* How can we identify the gas released?
+
+aq) 2CH,COONa,,, + COx4)
+
+Concept Assessment Exercise 11.2
+
+acidified potassium manganate(VIl).
+2. Explain the role of bacteria in the production of vinegar from ethanol.
+3. Write structural formulas for the following compounds.
+
+1, Ethanoic acid —_b) Propanoic acid
+
+11.3 Industrial Applications of Carboxylic acids and Esters
+
+Carboxylic acids and esters have many industrial applications.
+
+1. Methanoic acid commonly known as formic acid is used in the textile industry as an acid-
+reducing agent.
+
+2. Ethanoic acid commonly known as acetic acid is used in making plastics and esters.
+
+
+
+--- PAGE 134 ---
+[Unit 11: Carboxylic Compounds arboxylic Compounds
+
+PPNADaAwW
+
+10.
+
+11.
+
+12.
+13.
+
+CHICOOCH,CH,CHICHD
+
+Sodium salts of fatty acids are used in making soaps and detergents.
+Ethanoic acid is used in making medicines like aspirin.
+
+. Many carboxylic acids are used as industrial solvents.
+
+Citric acid is a natural preservative and is used in both processed foods and drinks.
+
+Many carboxylic acids are used as industrial solvents.
+
+Carboxylic acids are used in the preparation of perfumes and artificial food essences.
+Benzoic acid and sodium benzoate are used in the food industry, the pharmaceutical
+industry and the personal care industry. These are widely used for making jams, jellies,
+sauces, toothpaste, mouthwashes, lipsticks, and facial cleansers. Esters enhance the feel
+and performance of other ingredients in cosmetics. They hydrate, soften, and smooth the
+surface of skin texture so they are widely used in making lotions and creams. They also
+reduce the greasy feel of products.
+
+Tartaric acid is used in baking powder. It reacts with carbonates in dough in the baking
+industry.
+
+Esters are industrial solvents for dyes, glues, inks for permanent markers, and whiteboard
+markers.
+
+Esters are used for making car spray paints, varnishes and nail polish remover.
+
+Esters are used to making polymers called polyesters, which are used to make plastic
+bottles, canes, and textile clothing fibers.
+
+Table 11.1: Some'ca ices> sed as flavouring agents
+SEA ecas "Eins
+
+en ane | [a oe
+
+CH,COO(CH,),CH, octyl acetate
+CH,(CH,),COOCH,CH, ethyl butyrate
+CH CFa,COOCH,
+HCOOCH, CHICA
+
+Pineapple
+
+Raspberry
+
+11.4 Everyday uses of Carboxylic acids
+
+‘Ethanoic acid solution (5%) is used as vinegar.
+
+Vinegar is used to make pickles, flavouring food, and dress salads.
+Lemon juice which contains ascorbic acid is used to reduce the smell of fish and flavouring food.
+
+Ascorbic acid is also used as vitamin-C.
+Benzoic acid and its salt sodium benzoate are used as preservatives in food and beverages
+
+to inhibit the growth of bacteria and fungi.
+11.5 Everyday uses of Esters
+
+Esters are sweet-smelling organic compounds. They are used as;
+
+Food flavouring compounds as they give a characteristic odour to fruits.
+
+As fragrance and perfumes.
+Some esters are used in the treatment of rheumatoid arthritis.
+Aspirin is an ester. It is used as a fever reducer and pain killer.
+
+
+
+--- PAGE 135 ---
+KEY POINTS
+
+Carbonyl compounds in which carbonyl carby. is attached to the -OH (hydroxyl) group
+are called carboxylic acids
+
+Ethanol can be converted into vinegar by the action of micro-organisms called
+acetobacter in an aerobic environment.
+
+vinegar contains about 4-8% acetic acid
+
+Carboxylic acids react with bases (NaOH, KOH) to form salts
+
+Carboxylic acids decompose carbonate and bicarbonates evolving carbon dioxide gas
+with effervescence.
+
+When a carboxylic acid is heated with an alcohol in the presence of conc. sulphuric acid
+as catalyst and ester is formed.
+
+Carboxylic acids are used in the preparation of perfumes and artificial food essences.
+Esters are sweet-smelling organic compounds.
+
+EXERCISE
+
+1. Multiple Choice Questions (MCQs)
+i. What is the product of the reaction between ethanoic acid and sodium carbonate?
+
+a) Sodium propanoate b) Sodium hydroxide
+c) Sodium chloride d) Sodium acetate
+ii. Which catalyst is used in the esterification reaction between a carboxylic acid and an
+alcohol?
+a) Potassium manganate(VIl) b) Sulfuric acid
+c) Sodium hydroxide d) Hydrochloric acid
+iii. What is the main component of vinegar?
+a) Ethanol b) Methanol
+c) Propanoic acid d) Ethanoic acid
+iv. What gas is produced when a carboxylic acid reacts with a metal?
+a) Oxygen b) Carbon dioxide
+c) Hydrogen d) Nitrogen
+v. Which compound is formed by the bacterial oxidation of ethanol?
+a) Methanoic acid b) Propanoic acid
+c) Ethanoic acid d) Butanoic acid
+vi. What type of bond is formed between a carboxylic acid and an alcohol during
+esterification?
+a) lonic bond b) Hydrogen bond
+c) Covalent bond d) Metallic bond
+vii. Which of the following is an example of a carboxylic acid?
+a) Ethanol b) Ethanoic acid
+
+c) Ethyl acetate d) Methanol
+
+
+
+--- PAGE 136 ---
+viii. In the oxidation of ethanol to ethanoic acid, what is the role of potassium
+
+ix.
+
+manganate(VII)?
+
+a) Reducing agent b) Oxidizing agent
+
+c) Catalyst d) Inhibitor
+
+What is produced when ethanoic acid reacts with sodium hydroxide?
+a) Sodium chloride b) Sodium ethanoate
+
+c) Sodium oxide d) Sodium bicarbonate
+
+2. Short Answer Questions
+
+i.
+ii.
+iii.
+
+iv.
+v.
+
+vi.
+
+vii.
+
+viii.
+
+Write the balanced chemical equation for the reaction between ethanoic acid and
+sodium.
+
+Describe how ethanoic acid can be formed from ethanol using an oxidizing agent.
+What is the role of sulfuric acid in the esterification process?
+
+Name the salt formed when ethanoic acid reacts with sodium carbonate.
+
+How is ethanoic acid used in the food industry?
+
+Explain the industrial use of ethyl acetate.
+
+Write the chemical equation for the esterification reaction between methanol and
+ethanoic acid.
+
+ii. What happens when a carboxylic acid reacts with a base? Provide a general reaction.
+
+Describe the bacterial oxidation process used in vinegar production.
+What are the products of the reaction between a carboxylic acid and a metal?
+
+. Long Answer Questions
+
+Explain why esters are commonly used in the fragrance industry.
+
+Discuss the industrial importance of carboxylic acids and esters.
+
+Compare the efficiency of chemical and bacterial oxidation methods in the
+production of ethanoic acid.
+
+Analyze the importance of esterification reactions in the pharmaceutical industry.
+Compare the reactivity of carboxylic acids with metals, bases, and carbonates.
+Which reaction releases a gas, and why is this significant in practical applications?
+Describe how carboxylic acids are used in the food industry, particularly in food
+preservation.
+
+Explain the use of esters in the cosmetics industry and pharmaceutical industry.
+Evaluate the impact of carboxylic acids and esters on daily life.
+
+THINK TANK
+
+1. Explain why carbon dioxide is produced when ethanoic acid reacts with sodium
+carbonate.
+2. Write the balanced chemical equation for the esterification reaction between
+
+methanoic acid and propanol.
+
+3. Discuss the environmental and economic implications of producing ethanoic acid
+
+via the chemical method (using potassium manganate(VIl) compared to the
+biological method.
+
+
+
+--- PAGE 137 ---
+POLYMERS
+
+e Define polymers as large molecules built up from many smaller molecules called
+
+monomers.
+
+¢ Identify the repeating units and/or linkages in addition polymers and condensation
+polymers.
+
+* Deduce the structure or repeat unit of an addition polymer from a given alkene and
+vice versa.
+
+¢ Deduce the structure or repeating unit of a condensation polymer from given
+monomer and vice versa, limited to; a. Polyamides from dicarboxylic acid and a
+diamide, b. Polyester from a dicarboxylic acid and a diol.
+
+* Describe the differences between addition and condensation polymerisation.
+
+¢ State that plastics are made from polymers.
+
+e Describe how the properties of plastics have implications for their disposal.
+
+e Describe the environmental challenges caused by plastics, limited to: a. Disposal in
+landfill sites, b. Accumulation in oceans, c. Formation of toxic gases from burning..
+
+¢ Describe the structure of: a. Nylon, a polyamide, b. PET, a polyester. The full name
+for PET, polyethylene tetraphthalate in not required.
+
+e State that PET can be converted back into monomers and re-polymerised.
+
+¢ Outline the importance of polymers in the textile industry.( Examples for polymers
+
+being used may be given along with their specific properties).
+
+
+--- PAGE 138 ---
+[unit 12: Polymers. 12: Polymers
+
+12.1 Polymers
+
+Polymers are large molecules built from many smaller repeating units called monomers.
+These monomers bond covalently to form long chains giving polymers their unique properties.
+Polymerisation is the joining up of many monomers to form a big molecule.
+
+Polymers can be classified into two categories based on their synthesis: addition polymers and
+condensation polymers.
+
+12.1.1 Addition polymers
+
+Addition polymers are formed by adding monomer units without losing the small molecules.
+Monomers usually contain double or triple bonds that open and combine to form a polymer.
+The number of carbon atoms in these chains can vary from 4000 to 40,000.
+
+For example; Ethene is the smallest hydrocarbon containing a carbon-carbon double bond.
+Ethene molecules can join together to produce very long chains. Part of the double bond is
+broken, and the electrons in it are used to join neighbouring molecules. This process is called
+addition polymerisation.
+
+At high temperatures and high pressures, the monomer ethene joins up to give a polymer
+called polyethylene or polyethene.
+
+HH
+Hy ra
+C=C. — —
+a a ae
+HH
+
+Ethene Polyethene
+
+Repeating units: For a polymer, a repeating unit is the same as a monomer, except that the
+double bond is replaced by a single bond after polymerization.
+Repeating unit: -CH,—CH,— Polyethylene (PE) consists of ethylene monomer (CH,=CH,).
+Monomer: CH, = CH,
+For example, Polypropylene (PP) consists of propylene monomer (CH,=CH-CH,).
+Monomer: CH,=CH—CH,
+Repeating unit: -CH,—CH(CH,)— or —CH,— =
+CH;
+Example: Polyvinylchloride consists of vinyl chloride monomer(CH,=CHCI).
+
+Chloroethene is an ethene molecule in which one of the hydrogen atoms is replaced by a
+chlorine atom. It is called vinyl chloride. Ploymerising vinyl chloride gives polychloroethene.
+Its commercial name is polyvinylchloride(PVC).
+
+Hy Cl ha
+Z'
+
+= — -C
+7 Hey vac
+~ H HJ,
+
+Vinylchloride polychloroethene
+
+
+
+--- PAGE 139 ---
+ee ———————————
+
+12.1.2 Condensation polymers
+
+Condensation polymers are formed in a condensation reaction where each time a bond is
+formed between two monomers, a small molecule (often water) is released.
+
+Some polymers form in a different way than addition polymers. If one monomer contains a
+—OH group and the other —H, then they can be joined by eliminating a molecule of water.
+This reaction is called a condensation reaction. This type of polymerisation process is called
+condensation polymerisation.
+
+Condensation polymers are usually polyamides or polyesters formed by the reaction of
+functional groups (e.g. carboxyl and amino in polyamides or carboxyl and hydroxyl group in
+polyesters) with the removal of a small molecule such as water.
+
+Repeating units: In condensation polymers, the repeating unit usually consists of two
+different types of monomers, each of which forms the polymer backbone with functional
+groups that react to form the polymer and release small molecules. Example: Polyesters such
+as polyethylene terephthalate (PET) are formed from terephthalic acid (HOOC—CsH.—COOH)
+and ethylene glycol (HO—CH,—CH,—OH).
+Monomers: terephthalic acid and ethylene glycol (a diol)
+Repeating unit: -OC—C,H,-COO—CH,—CH,—O-
+Released molecule: water (H,0)
+
+H oH 0
+
+|_| Pp
+n HO—C—C—O + \, ¢
+i AS / \
+Mak H HO (OH
+Ethane-1,2-diol Benzene-1,4-dicarboxytic acid
+Ethylene glycot | Terephthalic acid Fe ticdois tga
+
+oO for each ester
+
+unit n
+Example: Polyamides such as nylon-6, 6 are formed from hexamethylenediamine
+(H2N— (CH2)s—NH2) and adipic acid (HOOC—(CH2)«—COOH).
+Monomers: hexamethylenediamine and adipic acid
+Repeating unit: -NH—(CH,),—NH—CO— (CH,),—CO—
+
+Released molecule: water (H,0)
+
+° H H
+I | | -nH,0
+nHO—C—(CH,),—C——OH + nH—-N—(CH,),—N—H —>
+Adipic acid Hexamethylenediamine
+H H
+| |
+Ss ey 5 P Pi
+
+Nylon 66
+
+
+
+--- PAGE 140 ---
+Nylon is used to make carpets, clothing, ropes that do not rot, and toothbrushes. Naylon is
+stronger and durable than natural fibers such as cotton.
+
+Polyester fibres are very strong and flexible and are used to make clothing. For example,
+terylene, which can give permanent crease, useful for trousers.
+
+Concept Assessment Exercises 12! {eeey
+
+. What ive of aed is involved in the formation of addition polymers?
+
+. What is released during the formation of addition and condensation polymers?
+. Give an example of a condensation polymer.
+|. How do these building blocks come together to form polymers?
+
+PET Recycling and Re-polymerisation
+
+Condensation polymers generally have a higher potential for recycling compared to addition
+polymers. Polyethylene terephthalate (PET) undergoes acid hydrolysis in the presence of
+strong acids such as sulphuric acid (H,SO,) or hydrochloric acid (HCl) at high temperature
+(e.g., 200-250°C) and pressure. The reaction breaks down the ester bonds in PET. This
+reaction produces the monomers from which PET is made i.e., terephthalic acid and ethylene
+
+glycol
+
+The Chemical Reaction:
+
+During acid hydrolysis:
+
+1. The ester bonds (-COO-) in PET are cleaved.
+
+2. Water molecules (HO) and the acid catalyst attack these bonds, breaking the polymer into
+
+smaller molecules.
+
+The reaction can be written as:
+
+-(OOC-C,H,-COO-CH,-CH;),- + (2n-1)H,0 —- n HOOC-C,H,-COOH + nHO-CH,-CH,-OH
+PET benzene-1,4-dicarboxylic acid ethane-1-2-diol
+
+Acid hydrolysis of PET is an essential step in recycling, as it allows recovery of pure monomers
+
+for reuse in making new PET or other products. This process contributes to sustainability by
+
+reducing the need for raw materials and minimizing plastic waste.
+
+Figure 12.1: PET recycling flow diagram
+
+
+
+--- PAGE 141 ---
+12.2 Plastics
+
+The word “plastic” is derived from the Greek word “plastikos” which means “malleable” or
+“moldable” and “plastos” meaning “mouldable.” Plastics are synthetic materials made from
+organic polymers, such as PVC (polyvinyl chloride), polyethylene (polyethylene), nylon, etc.
+These materials can be melted down and then transformed into solid or slightly flexible
+shapes. They are also referred to as “long carbon chain polymers”. The ability of a material
+to be moulded or malleable during the manufacturing process means that it can be cast,
+pressed, or extruded into a variety of forms, including film, fiber, sheet, tube, bottle, and
+box.
+
+12.2.1 Properties of Plastics
+
+The properties of plastics are directly derived from the characteristics of the polymers they
+are made from. Some of these are:
+
+1. Molecular Structure
+
+Polymer chains tend to be longer and more durable which can be linear or branched.
+Branched polymers are softer and more flexible. On the other hand, linear polymers are
+stronger and more rigid. Cross-linking is also possible, with high cross-linking resulting in
+tough and heat-resistant plastics, such as vulcanized rubber.
+
+2. Chemical Composition
+
+Chemical composition is determined by the monomer type, which determines the plastic’s
+Properties. For example, polyethylene(PE)is flexible and moisture-resistant, while polystyrene
+(PS) is stiff and brittle. Additives such as plasticizers, stabilizers, and fillers can also enhance
+the plastic’s properties, depending on the processing conditions.
+
+3. Temperature and Pressure
+
+Conditions such as temperature and pressure during polymerisation and moulding affect the
+
+plastics’ crystalline structure, affecting properties like transparency, tensile strength, and
+melting point.
+
+12.2.2. Environmental Impact of plastics
+
+Most plastics are highly resistant to degradation due to their strong carbon-carbon backbone.
+This leads to long persistence to degradation. As plastics degrade slowly, they can break down
+into microplastics, which are small particles that can contaminate water bodies.. These
+microplastics are harmful to aquatic life and human health.
+
+Incineration
+
+While incineration reduces plastic volume, it can release harmful chemicals and greenhouse
+
+gases if not properly managed. Certain plastics, when burned, can emit toxic substances like
+dioxins and furans.
+
+
+
+--- PAGE 142 ---
+—$_—_—___
+|
+| 12.3 Importance of Polymers in the Textile Industry
+
+Polymers are essential for the textile industry because they are versatile and can be used in a
+variety of applications. The properties of polymers allow them to be used for a variety of
+purposes, from everyday clothing to specialised industrial applications. Some of the most
+commonly used polymers in textiles, with their specific characteristics are:
+
+1. Polyester (PET): Durability, shrinking and stretching resistance, rapid drying, excellent
+colour retention, etc. PET is used in clothing (for example, shirts and pants), home
+furnishing (for example, curtains and bed linens) Industrial applications (ropes and tyre
+cords).
+
+2. Nylon-6,6 (polyamide) has properties such as high strength, high elasticity, resistance to
+abrasion, and chemical and oil resistance. It is commonly used in clothing. It can also be
+used as a part of blended fabrics for different garments. It is also used for making tooth
+brushes, ropes that don't rot, carpets, and other products.
+
+3. PE (polyethylene) is lightweight, durable, and has properties such as good thermal
+insulation, water resistance, chemical resistance, moisture resistance, mildew resistance,
+and other properties. Polyethene is used for making trays, fruit juice containers, milk
+containers, crates, food packaging products, garbage bags, toys, insulation for wires and
+cables, and housewares.
+
+12.4 Properties of Plastics and Their Implications for Disposal
+
+The properties of plastics, while beneficial for their intended uses, create significant
+challenges for disposal. Therefore, plastics cause numerous environmental issues. The
+following properties of plastics pose implications for disposal.
+
+1. Durability and Longevity
+
+Plastics are made durable, which means that they can withstand a wide range of
+environmental conditions without breaking down quickly. However, because of the same
+durability plastics can last hundreds or even thousands of years in the environment. This
+makes them difficult to dispose off. After being disposed off, plastic can end up in landfill
+sites or nature for an extended period of time, resulting in long-term problems with waste
+management.
+
+2. Lightweight Nature
+
+Because plastics are lightweight, they can be easily packed and transported, but they can also
+be transported by wind or water. This makes it easier for them to spread over long distances,
+which can lead to extensive environmental pollution, particularly in marine environments.
+
+3. Chemical Composition
+
+The chemical composition of plastics can vary from one plastic material to another. Many
+plastic materials contain additives to enhance their properties, such as stabilisers,
+plasticizers, flame retardants, etc. These adaitives can leach materials into the environment,
+which can pose a risk to ecosystems and to human health.
+
+
+
+--- PAGE 143 ---
+_ 7S
+
+4. Recyclability
+Some plastics can be recycled. However, their contamination, sorting issues, and
+economic constraints often limit the amount that can be recycled. Many plastics cannot
+
+be recycled effectively, resulting in a large portion of them going to landfill or being
+burned.
+
+12.4 1 Environmental Challenges Caused by Plastics
+Many environmental challenges are caused by plastics. Some of these are as follows.
+
+1. Disposal of plastics in Landfill Sites
+The disposal of plastics in landfills has the following implications.
+
+a) Plastics take up a lot of space in a landfill because of their size and resistance to
+compaction. This means that landfills fill up quickly, leading to more landfilling and
+exacerbating land use issues.
+
+b) Over time, plastic in a landfill can leach dangerous chemicals into soil or groundwater.
+
+c) As plastic slowly decomposes in a landfill, it breaks down into smaller micro-plastic
+Particles. Micro-plastics can then seep into soils and water bodies and become a
+persistent environmental pollutant.
+
+2. Accumulation in Oceans
+
+Plastics are a major component of marine litter, and an estimated 8M tons of plastic are
+dumped into the ocean each year. Plastics accumulate in ocean rings and build up into large
+floating debris, like the Pacific Garbage Patch. Plastics can also be ingested and entangled by
+marine animals, which often mistake plastic for food. This can cause gastrointestinal blockage
+and even death. Microplastics can enter the food chain, and once in the food supply, these
+pollutants can reach toxic levels in humans.
+
+3. Formation of Toxic Gases from Burning
+
+Incinerating plastics releases a variety of toxic gases and particulates. These substances are
+known to be carcinogenic and can cause serious health problems for humans and animals.
+
+Burning plastics contributes to air pollution, releasing greenhouse gases like carbon dioxide
+(CO,) and methane (CH,), which aggravate climate change. The emission of other pollutants
+
+can also cause respiratory problems, cardiovascular diseases, and other health issues for
+populations living near incineration facilities.
+
+The residual ash from burning plastics can contain toxic substances that, if not properly
+managed, can contaminate soil and water sources. This further complicates the disposal
+Process and poses additional environmental risks.
+
+Addressing these challenges requires comprehensive waste management strategies, increased
+recycling efforts, and the development of more sustainable materials.
+
+
+
+--- PAGE 144 ---
+“KEY POINTS
+
+Polymers are large molecules built from many smaller repeating units called monomers.
+Addition polymers are formed by adding monomer units without losing the small
+molecules. y
+
+Condensation polymers are formed in a condensation reaction where each time a bond
+is formed between two monomers, and a small molecule (often water) is released.
+
+In condensation polymers, the repeating unit usually consists of two different types of
+monomers.
+
+Polyesters such as polyethylene terephthalate (PET) are formed from terephthalic acid
+(HOOC—C,H,—COOH) and ethylene glycol (HO—CH,—CH,—OH).
+
+Polyamides such as nylon-6,6 are formed from hexamethylenediamine
+
+_(H,N— (CH,),—NH,) and adipic acid (HOOC— (CH,),—COOH).
+
+The word “plastic” is derived from the Greek word “plastikos” which means
+“malleable” or “moldable” and “plastos” meaning “mouldable.
+
+Plastics are synthetic materials made from organic polymers. é
+
+Polymers are essential for the textile industry because they are versatile and can be
+used in a variety of applications.
+
+PET is used in clothing.
+
+Properties of plastics, while beneficial for their intended uses, create significant
+challenges for disposal.
+
+Light weight nature of plastic makes it easier for them to spread over long distances,
+which can lead to extensive environmental pollution.
+
+Incinerating plastics releases a variety of toxic gases and particulates.
+
+EXERCISE
+
+1. Multiple Choice Questions (MCQs)
+
+t
+
+iv.
+
+Which of the following best defines polymers?
+
+a) Small molecules bonded together to form large molecules
+
+b) Large molecules built up from many smaller molecules called monomers
+c) Simple molecules consisting of one type of atom
+
+d) Large molecules made up of metals and non-metals
+
+. What type of linkage is found in polyamides?
+
+a) Ester linkage b) Amide linkage
+
+c) Glycosidic linkage d) Phosphodiester linkage
+Polyethylene is an example of:
+
+a) A condensation polymer b) An addition polymer
+c) A copolymer d) A natural polymer
+
+The repeating unit of the addition polymer tormed from ethene is:
+
+a) —CH,—CH,— b) —CH—CH—
+
+c) -CH,-CH- d) -C-C-
+
+
+
+--- PAGE 145 ---
+[Unit 12: Polymers 12; Polymers
+
+v. Nylon-6,6 is an example of a:
+
+a) Polyester b) Polyamide
+c) Polysaccharide d) Polyurethane
+vi. Which of the following processes produces water as a by-product?
+a) Addition polymerisation b) Condensation polymerisation
+c) Hydrogenation d) Hydrolysis
+vii. Which statement is not true about PET?
+a) It cannot be recycled b) It is a polyamide
+
+C) It can be converted back into monomers and re-polymerised
+d) It is used only in textiles
+viii. What is a major environmental challenge caused by plastics?
+
+a) They are biodegradable b) They are easily recycled
+
+c) They accumulate in oceans d) They are non-toxic when burned
+ix. Polyesters are formed from:
+
+a) Dicarboxylic acids and diamines b) Dicarboxylic acids and diols
+
+Cc) Diols and diamines d) Monocarboxylic acids and diols
+x. Which of the following is NOT a property of plastics?
+
+a) They are lightweight b) They are durable
+
+c) They are easily decomposed by microorganisms
+d) They are versatile in application
+
+2. Short Answer Questions
+
+i. Define a polymer.
+
+fi. What is a monomer?
+
+iii. Identify the repeating unit in polyethylene.
+
+iv. Explain what is meant by addition polymerisation.
+
+vy. Describe the process of condensation polymerisation
+
+vi. Name the linkage found in polyesters.
+
+vii. What are the monomers required to form Nylon?
+
+viii. Explain one environmental challenge associated with the disposal of plastics in
+landfills.
+
+ix. Describe the structure of PET.
+
+x. Why is PET considered recyclable?
+
+xi. How are addition polymers formed from monomers?
+
+xii. What is released during the formation of condensation polymers?
+
+xiii, What is the repeating unit in the polymer formed from ethylene glycol and
+terephthalic acid?
+
+xiv. Why is PET widely used in textiles?
+
+xv. What is a key difference between the polyamides and polyesters?
+
+xvi. What is one benefit of recycling PET?
+
+xvii. What is released during the formation of condensation polymers?
+
+xviii. Give an example of a condensation polymer.
+
+xix. How do the properties of plastics depend on their polymer structure?
+
+xx. What are two environmental challenges associated with plastic disposal?
+
+
+
+--- PAGE 146 ---
+3, Long Answer Question
+
+i. Describe in detail the process of addition polymerization, giving an example of an
+addition polymer and its repeating unit.
+
+ii. Explain how condensation polymerisation works, using the formation of polyester as
+an example. Include the reactants and the type of linkage formed.
+
+iii. Discuss the differences between addition and condensation polymerization, giving
+examples of polymers formed by each process.
+
+iv. Evaluate the environmental impacts of plastic disposal, covering landfills, ocean
+accumulation, and the forntation of toxic gases from burning.
+
+v. Outline the importance of polymers in the textile industry, giving examples of
+specific polymers used and their properties that make them suitable for textile
+applications.
+
+vi. What process allows PET to be reused? Why is this process beneficial?
+
+vii. Assess the role of polymers such as nylon and PET in the textile industry. How do
+their specific properties make them suitable for different applications?
+
+viii. Evaluate the differences between addition and condensation polymerization in terms
+of the types of monomers used, the nature of the polymer chains formed, and the by-
+products produced.
+
+ix. Analyse the environmental impact of addition and condensation polymers. Compare
+their biodegradability and discuss how this affects their disposal and accumulation in
+the environment.
+
+THINK TANK
+
+1. Considering the environmental challenges posed by plastics, propose a sustainable
+strategy for managing plastic waste, including recycling and alternative materials.
+
+2. Analyse the impact of microplastics in marine environments and discuss potential
+solutions to mitigate their effects.
+
+3. Evaluate the need for developing biodegradable polymers to replace traditional
+plastics. °
+
+4. Imagine you are an environmental scientist tasked with reducing oceanic plastic
+pollution. Analyse the key sources of plastic waste that end up in the oceans.
+
+5. Polyamide polymers like nylon are used extensively in various applications. Analyse the
+properties that make nylon a preferred material for such uses.
+
+6. Consider a monomer (such as ethylene or terephthalic acid and ethylene glycol), and
+deduce the structure of the corresponding polymers that can be made from the.
+
+
+
+--- PAGE 147 ---
+Describe the proteins as natural polyamides and that they are formed from amino
+acids monomers with the general structure.
+
+Draw the general structures of proteins
+
+Explain the sources, use and structure of proteins, lipids and carbohydrates
+Describe the importance of nucleic acids
+
+Explain vitamins, their sources and their importance to health
+
+Identify applications of biochemistry in testing (blood cells, pregnancy test, cancer
+screening, parental generic testing)genetic engineering, gene therapy and cloning
+
+
+
+--- PAGE 148 ---
+Unit 13: Biochemistry
+
+13.1 Proteins
+
+The Basic Unit of Protein - Amino Acids
+
+Proteins are found in our muscles, bones, skin, hair, and almost every part of the body.
+Proteins are also known as the building blocks of life because they are the most abundant
+molecules present in the body. Proteins are called natural polyamides because they are
+naturally occurring polymers. Proteins are large, complex molecules made up of long chain of
+monomers which are all amino acids. Amino acids are the basic structural unit of protein. An
+amino acid is a simple organic compound consisting of two functional groups, a basic group
+(Amine group —NH,), an acidic group (carboxylic group—COOH) with a variable alkyl group (R)
+that is unique to each amino acid.
+
+The body makes proteins through a process called protein synthesis. Protein synthesis
+requires adequate amounts of amino acids.
+
+Molecules of amino acids join together through the amino (—NH,) group of one molecule and
+the carboxyl (—COOH) group of another molecule by eliminating a water molecule.
+
+Peptide bond
+R ° R oO R ° R
+i i iff i i¢ i
+ANF ok + vB edd a i iia
+
+H HoH H HOH
+Amino acid Amino acid Dipeptide
+
+i
+
+The linkage >». 7s which joins two
+amino acid units is called a peptide bond. The “
+resulting molecule is called a dipeptide. There is
+still an amino group on the left and a carboxyl
+group on the right. Each of these groups can
+react further to join more amino acid units. In
+this way, thousands of amino acid units join to
+form a giant molecule of protein. This sequence
+
+\ /
+CO'0-0-0-O“G
+
+.
+
+of amino acid linkages is called the primary : :
+structure of the protein. Figure 13.1: Primary structure of
+
+
+
+--- PAGE 149 ---
+Unit 13: Biochemistry
+
+DO YOU KNOW?
+Enzymes are proteins that fasten chemical reactions in the body. They act like small
+machines that help break down food, make molecules, and carry out other important
+functions in cells, all without being used up or changed themselves. Hemoglobin is found in
+red blood cells in our blood and carries oxygen from your lungs to your cells. In addition, a
+protein called collagen is a strong and tough material that makes up our skin and
+fingernails and even helps to hold our internal organs in place.
+
+13.1.1 Classification of Protein
+
+The proteins are classified on the basis of the shape, constitution, and nature of the
+
+molecule. Each amino acid is connected to the next amino acid by covalent bonds.
+
+1. Primary structure: Primary protein structure is a sequence of amino acids in a chain.
+
+2. Secondary structure: Secondary protein structure is formed by folding and twisting of
+the amino acid chain.
+
+3. Tertiary structure: Tertiary protein structure is formed when the twists and folds of
+the secondary structure fold again to form a larger three-dimensional structure.
+
+4. Quaternary structure: Quaternary protein structure is a protein consisting of more
+than one folded amino acid chain.
+
+PROTEIN STRUCTURE
+
+DO YOU KNOW?
+
+Insulin is a protein hormone that is made by specific
+cells inside the pancreas called beta cells. Insulin signals
+cells to absorb sugar from the bloodstream. Cells can’t
+absorb sugar without insulin. Insulin protein is first
+produced as an immature, inactive chain of amino acids
+(preproinsulin).
+
+
+--- PAGE 150 ---
+P_ Unit 13: Biochemistry 13: Biochemistry
+
+13.2 Carbohydrates
+They have a general formula C,(H20),. This formula suggests that they are hydrates of carbon.
+Plants prepare carbohydrtes through Photosynthsis, in the presence of chlorophyll and
+
+sunlight.
+Sunlight
+
+Chlorophytt
+6H20(+6CO2(g) ———> Cg H206(aq)+60 2g)
+Plants convert glucose into starch and cellulose. Carbohydrates are monomers and polymers
+of aldehydes and ketones that have numerous hydroxyl groups attached.
+
+CH,OH H. 10 H 0
+° H~C-OH H OH
+HO: H Ho~¢ -H HO H
+H OH H—C-OH HO. H
+H OH H~G-OH H——0OH
+CH,OH ‘CH,OH CH,OH
+Fructose Glocose Galactose
+
+13.3 Lipids
+
+A lipid is a component of plant or animal tissue that is insoluble in water, but soluble in
+solvents of low polarity such as ether, hexane, benzene and carbon tetrachloride. The
+primary function of lipids in the body is long-term energy storage.
+Lipids includé:
+a) Fats and oils
+b) Cholesterol
+c) Sex hormones
+d) Components of the cell membrane called phospholipids
+e) Some vitamins (A, D, E and K)
+Fats and oils are referred to as simple lipids. They are esters of fatty acids with a trihydroxy
+alcohol, glycerol. For this reason, they are called glyceryl esters or glycerides. Fatty acids
+are long-chain carboxylic acids. They are the building blocks of lipids.
+
+fe]
+
+Il
+H,cC—O—C—R
+
+RCOOH H,C—OH
+i
+
+R'COOH + Hc—on —M@bst, coc + 3H,0
+q
+
+R'COOH H,C—OH H,cC—O—C—R
+
+Three
+
+fatty acids Glycerol
+
+Triglyceride
+
+
+
+--- PAGE 151 ---
+Table 13.1: THE ORGANIC MOLECULES: PROTEINS, LIPIDS AND CARBOHYDRATES
+
+Amino acid + amino acid | Fatty acids + glycerol | Glucose + glucose =
+= Protein = lipids/fats Carbohydrates/starch
+DESCRIPTION All vital processes, Lipids act as energy Energy comes from
+including immunity and storage and are similar | carbohydrates.
+general metabolism, are | to a larger source of Carbohydrates are
+carried out by proteins energy organic molecules
+that contain carbon,
+hydrogen and oxygen
+Protein is found in meat | Lipids found in canola, | Carbohydrates found
+and fish eggs dairy corn, olive, peanut, in wheat, beans,
+products seeds and nuts, | soy, and sunflower oil | milk, popcorn,
+beans and lentils. potatoes, cookies,
+spaghetti, soft drinks,
+corn, cherry pie,
+| sugar cane
+“Proteins build and repair Lipids are used to | Carbohydrates are
+tissues, muscles and regulate hormones, | used for storing
+bones, to make hormones | insulation, energy, supporting
+and enzymes, support components of cell digestive health,
+immune function, provide | membranes, cell sparing protein for
+structural support, signaling and tissue repair, and
+maintain fluid balance absorption of fat- playing roles in cell
+and as a secondary source | soluble vitamins, and | structure and
+of energy and to make provide energy during | communication.
+hormones and enzymes. _| prolonged exercise.
+Protein helps in the Lipids help with The primary function
+structure, function, and | moving and storing of carbohydrates is to
+regulation of living energy, absorbing provide energy to the
+organisms like digestion, | vitamins and making | body. Carbohydrates
+and movement of hormones. help in digestion,
+muscles, and helps to absorbed into the
+build hair and nails. stream as blood sugar
+Protein also serves for (glucose)
+cellular communication
+and acts as a messenger.
+
+
+
+--- PAGE 152 ---
+|___Unit 13: Biochemistry 13: Biochemistry
+
+13.4 Nucleic Acid
+
+Nucleic acids are long-chain organic molecules present in all living cells. Nucleic acids are the
+main information-carrying molecules of the cell. They determine the inherited characteristics
+of every living thing. Nucleic acids play an important role in the storage and transfer of
+genetic data from one generation to another. These are the molecules that contain all the
+information necessary for an organism to develop traits, carry out life functions, and
+reproduce.
+
+13.4.1 SIGNIFICANCE OF NUCLEIC ACID
+
+Nucleic acids and DNA in particular, are key macromolecules for the continuity of life. DNA
+Possesses the hereditary information that transfers from Parents to children, providing
+instructions for how (and when) to make proteins needed to build and maintain functioning
+cells, tissues, and organisms. Nucleic acids carry genetic information which is read in cells to
+make the RNA and protein.
+
+13.5 Vitamins- Sources and their Importance to Health
+
+Vitamins are organic molecules that are
+important to an organism in small quantities
+for proper metabolic function. Vitamins allow
+your body to grow and develop. Vitamins play
+important roles in body functions such as
+metabolism, immunity, and “digestion.
+Important nutrients cannot be synthesized in
+the organism in sufficient quantities for
+
+through a ‘balanced diet. These ‘are s3 |___igure 13.3: Sources of Vitamins
+38 if Vitamii
+through a balanced diet. There are 13 Paure:]3.9: Sources of Vitamins
+
+essential vitamins, including vitamins A, C, D, E, K, and B vitamins such as riboflavin and
+folate. The best way to meet your vitamin needs is to eat a balanced diet containing a variety
+of foods,
+
+
+
+--- PAGE 153 ---
+There are two major types of Vitamins.
+1. Fat-soluble vitamins
+
+Vitamins A, D, E, and K are fat-soluble. The body stores fat-soluble vitamins in fatty
+tissue and the liver, and reserves of these vitamins can stay in the body for days and
+sometimes months. Dietary fats help the body absorb fat-soluble vitamins through the
+intestinal tract.
+
+2. Water-soluble vitamins
+
+Vitamins B and C are water-soluble vitamins. They do not stay in the body:for long
+and cannot be stored. They leave the body via the urine. Because of this, people need
+a more regular supply of water-soluble vitamins than fat-soluble ones.
+
+Different vitamins play different roles in the body, and a person requires a different amount
+of each vitamin to stay healthy. Vitamin play diverse and essential roles in the body, including
+supporting metabolism, immune function, growth and development, bone health, antioxidant
+defense, maintaining healthy skin, hair, and nails. A balanced diet that includes a variety of
+nutrient-rich food is important for meeting vitamin needs and maintaining overall health.
+Fortified foods and supplements may be appropriate in some cases. Anyone taking
+supplements should be careful not to exceed the maximum dose or too much of any vitamin
+can lead to health problems. Also, some medications can interact with vitamin supplements.
+Overall, it is important to speak with a healthcare provider before trying any supplement.
+
+13.5.1 Sources and functions of vitamins
+1. Vitamin A
+
+« Sources: Carrots, sweet potatoes, spinach, kale, apricots, eggs, liver, and dairy
+products.
+* Function: Supports vision, immune function, and skin health.
+
+2. Vitamin B Complex
+
+Vitamin B1 (Thiamine): Whole grains, pork, legumes, nuts, and seeds.
+
+Vitamin B2 (Riboflavin): Milk, eggs, almonds, spinach, and fortified cereals.
+
+Vitamin B3 (Niacin): Chicken, turkey, fish, peanuts, and whole grains.
+
+Vitamin B5 (Pantothenic Acid): Avocados, yogurt, eggs, meat, and sweet potatoes.
+Vitamin B6 (Pyridoxine): Chickpeas, fish, poultry, bananas, and potatoes.
+
+Vitamin B7 (Biotin): Eggs, nuts, seeds, and sweet potatoes.
+
+Vitamin B9 (Folate): Leafy greens, legumes, seeds, and fortified cereals.
+
+Vitamin B12 (Cobalamin): Meat, fish, dairy products, and fortified cereals.
+
+Function: The B vitamins play roles in energy production, red blood cell formation,
+and nervous system function.
+
+
+
+--- PAGE 154 ---
+3. Vitamin C
+
+* Sources: Oranges, strawberries, kiwi, bell peppers, broccoli, Brussels sprouts, and
+tomatoes.
+¢ Function: Supports immune function, acts as an antioxidant, and aids in collagen
+synthesis.
+4. Vitamin D
+
+* Sources: Sunlight (synthesis in the skin), fatty fish (salmon, mackerel), fortified milk
+and orange juice, and egg yolks.
+
++ Function: Essential for bone health and calcium absorption, and supports immune
+function.
+
+5. Vitamin E
+* Sources: Nuts and seeds (almonds, sunflower seeds), spinach, broccoli, and vegetable
+oils (sunflower, safflower).
+* Function: Acts as an antioxidant, protecting cells from damage.
+6. Vitamin K
++ Sources: Leafy green vegetables (kale, spinach), broccoli, Brussels sprouts, and fish,
+meat, and egss (in smaller amounts).
++ Function: Essential for blood clotting and bone health.
+
+13.6 Applications of Biochemistry
+
+Biochemistry is the branch of science dedicated to the study of the chemical processes within
+acell.
+
+The findings of biochemistry are applied primarily in medicine, nutrition, and agriculture. In
+medicine, biochemists investigate the causes and cures of diseases. Several blood tests are
+carried out to detect the presence of disease, monitor its progression, and evaluate the
+effectiveness of treatments.
+
+Blood Tests
+
+A blood test is carried out with a blood specimen that measures the concentration of certain
+chemicals in a blood sample. Blood tests are essential for understanding the body's internal
+function and balance. They analyse various breakdowns in the blood, including ions, enzymes,
+sugars, lipids, and proteins, providing crucial insights into overall health. Blood chemistry
+tests provide significant information about how well our kidneys, liver and other organs are
+working.
+
+Pregnancy test
+
+A pregnancy test can analyze the state of pregnancy by checking a sample of your urine or
+blood for a specific hormone. The hormone is called human chorionic gonadotropin (hCG).
+High levels of hCG are a sign of pregnancy.
+
+
+
+--- PAGE 155 ---
+T Unit 13:/Biochemistry 9) 13: Biochemistry
+
+Cancer Screening
+
+Cancer screening is a test that looks for early signs of cancer in people without symptoms. It
+can help spot cancer at an early stage when treatment is more likely to be successful.
+Cervical screening can even prevent cancer from developing. Cancer screening is for people
+with no symptoms at all.
+
+Parental Screening Tests
+
+Parental screening test helps to identify genetic disorders, assess the risk of inherited
+conditions, prevent transmission of infectious diseases, and prepare parents for the care of
+their children. Parental screening empowers parents to take proactive steps to safeguard the
+health and well-being of their family. Reproductive genetic carrier screening describes a
+screening test carried out before pregnancy or in early pregnancy. It is used to identify a
+couple's chance of having a child with a serious genetic disorder.
+
+13.7 GENETICS
+
+Genetics is the branch of biology that studies genes, heredity, and variation in living
+organisms. It encompasses on understanding of how traits are passed from parents to
+offspring through the transmission of genetic information fixed in DNA. It plays an essential
+role in various fields such as medicine, agriculture, and evolutionary biology, contributing to
+advancements in understanding and manipulating genetic information for practical
+applications.
+
+Gene is unit of DNA that is usually located on a chromosome and that controls the
+development of one or more traits and is the basic unit by which genetic information is
+passed from parent to offspring and ultimately determines the growth and function of the
+organism. An organism inherits some genes from each parent and thus the parents pass on
+certain traits to their offspring.
+
+13.7.1 Genetic Engineering
+Genetic engineering isa process that uses
+laboratory-based technologies to modify the
+
+DNA structure of an organism. Genetic
+engineering aims to alter the genes to enhance Dal DI
+the capabilities of the organism. The principle 2
+of genetic engineering isto manipulate and a ® h
+modify the genetic material of an organism by a. tae
+
+adding, removing or repairing part of the ‘
+
+genetic material (DNA) and to incorporate LY
+
+desirable traits. Genetic engineering aims to
+produce vaccines against disease, life-saving
+
+drugs, pharmaceutical development, and the |
+tafetmnatit of diseaae: 4 Figure 13.4: Genetic Engineering
+|
+.
+
+
+
+--- PAGE 156 ---
+13.7.2 Gene Therapy
+
+Gene therapy is a medical technique that involves modifying or manipulating a person's genes
+to treat or prevent disease. It typically involves the introduction, alteration, or removal of
+genes within a patient's cells to correct genetic disorders, fight diseases, or improve the
+body's ability to fight or resist a specific condition. It does not change the DNA in all your
+body, it targets a single faulty cell. This method involves inserting a healthy copy of a
+defective gene into a patient's cells. This is often used for conditions caused by a single gene
+defect. In some cases, gene therapy introduces a new or modified gene into the body to help
+treat a disease. For example, researchers may introduce a gene that helps the body fight
+cancer more effectively.
+
+Gene therapy could keep children from carrying such genes (for unfavourable genetic diseases
+and disorders) that the children got from their patients.
+
+Figure 13.5: Gene Therapy Figure 13.6: Genetically modified Tomato
+
+13.7.3 Cloning
+
+Cloning is the act of rearranging’a cell by replacing its nucleus with that of another cell so it
+becomes the genetic equivalent of the original. In general, cloning means the creation of a
+perfect replica. Typically, the word is'used to describe the creation of a genetically identical
+copy.
+
+There are three types of cloning.
+
+1. Reproductive cloning creates genetically identical organisms. It is widely used in
+agriculture, conservation, and the production of genetically identical animals for
+research purposes.
+
+2. Therapeutic cloning produces embryonic stem cells for medical research. Cloning new
+organs from stem cells is another way that stem cells can aid people waiting for donor
+organs. It is used in treating conditions such as spinal cord injuries, Parkinson's
+disease, diabetes, and heart disease.
+
+3. Gene cloning involves copying specific genes or DNA segments for various purposes,
+including research, medicine, agriculture, and industry. It is used in biotechnology,
+genetic engineering, pharmaceuticals, agriculture, vaccines, and genetically modified
+
+organisms (GMOs).
+
+
+
+--- PAGE 157 ---
+DO YOU KNOW?
+
+STEM CELLS:
+
+Stem cells are unique cells in the body that have an amazing ability to transform into
+different types of cells. They serve as a repair system for the body and can divide and
+renew themselves over long periods.
+
+They act as repair, division and differentiation systems to complement other cells and
+maintain the function of various tissues. Stem cells are found in the brain, blood, bone
+marrow, muscle, skin, heart, and liver tissues.
+
+Concept Assessment Exercise 13.1
+
+14. Discuss the interconnectedness between amino acids, proteins, lipids, and
+carbohydrates within living organisms.
+
+2. Evaluate the effectiveness and usefulness of vitamins in maintaining overall health and
+preventing nutrient deficiencies.
+
+KEY POINTS
+
+Gene: A gene is the basic physical and functional unit of heredity. Genes are made
+up of DNA.
+
+Biotechnology: the use of artificial methods to modify the genetic material of living
+organisms or cells to produce novel compounds or to perform new functions
+
+Cloning: the production of an exact copy, specifically, an exact genetic copy of a
+gene, cell, or organism.
+
+Genetic engineering: alteration of the genetic makeup of an organism using the
+molecular methods of biotechnology.
+
+Monomers: Monomers are simple molecules that bond together to form more
+complex structures called polymers.
+
+Amino Acids: Amino acids act as the building blocks or monomers for proteins.
+
+Proteins: When multiple amino acids link together through peptide bonds, they form
+a protein molecule.
+
+iad sistant
+
+
+--- PAGE 158 ---
+EXERCISE
+
+1. Multiple Choice Questions (MCQs)
+i. Which of the following is NOT a function of proteins in the body?
+
+a) Acting as enzymes b) Storing genetic information
+Cc) Providing structural support d) Transporting molecules
+ii. Which of the following best describes proteins?
+a) Polysaccharides b) Polymers of amino acids
+c) Chains of fatty acids d) Simple sugars
+iii. Which bond is responsible for linking amino acids together in a protein?
+a) Hydrogen bond b) lonic bond
+b) Peptide bond d) Covalent bond
+iv. Which of the following is a component of nucleic acids?
+a) Amino acid b) Fatty acid
+¢) Phosphate group d) Glucose
+v. Which of the following is a characteristic of vitamins?
+a) They provide energy directly.
+
+b) They are essential for normal body function.
+Cc) They are inorganic molecules.
+d) They are a primary source of protein.
+vi. Which vitamin is important for vision and immune function and is fat-soluble?
+
+a) Vitamin C b) Vitamin B12
+c) Vitamin A d) Vitamin K
+vii. Which acid carries genetic information?
+a) Amino acid b) Nucleic acid
+Cc) Sulphuric acid d) Ascorbic acid
+viii. Which vitamin helps the body absorb calcium and is fat-soluble?
+a) Vitamin B12 b) Vitamin C
+c) Vitamin D d) Vitamin E
+ix. Which of the following is a primary function of lipids in the body?
+a) Providing immediate energy b) Storing genetic information
+c) Long-term energy storage d) Catalyzing biochemical reactions
+
+x. How might a diet lacking in lipids affect the absorption of certain vitamins?
+a) It would have no effect since vitamins are not related to lipids.
+b) It would increase absorption because lipids compete with vitamins for absorption.
+C) It would decrease the absorption of fat-soluble vitamins, such as A, D, E, and K.
+d) It would decrease the absorption of water-soluble vitamins, such as C and B.
+
+xi. Which vitamin is essential for blood clotting?
+
+a) Vitamin A b) Vitamin C
+c) Vitamin D d) Vitamin E
+
+xii. Which biochemistry application is used to determine Parentage?
+a) Pregnancy test b) Genetic engineering
+
+c) Cancer screening d) Parental genetic testing
+
+
+
+--- PAGE 159 ---
+|
+|
+
+2. Short questions
+
+3.
+
+{.
+ii.
+iii.
+iv.
+v.
+vi
+
+vii.
+
+How does the body make protein?
+
+What do vitamins do for our body?
+
+How do parent protect their children from genetic disorders?
+Differentiate between genetic engineering and gene therapy.
+
+How gene cloning is different from therapeutic cloning?
+
+Explain why proteins are considered natural polyamides.
+
+How do pregnancy tests use biochemical principles to detect pregnancy?
+
+viii. Evaluate the role of nucleic acids in heredity and cell function.
+Long questions
+
+i.
+ii.
+iii.
+iv.
+v.
+vi.
+vii.
+
+viii.
+
+ce
+
+What is the significance of nucleic acids as information-carrying molecules?
+
+Compare and contrast the functions and properties of lipids and carbohydrates.
+Why is Protein Structure Important?
+
+Explain the significance of amino acids in living organisms
+
+Explain the process of cloning in biochemistry.
+
+What is the difference between genetic engineering and gene therapy?
+
+Why are vitamins essential to human health? Provide two examples with their
+functions.
+
+Compare and contrast the uses and functions of proteins, carbohydrates, and
+lipids.
+
+THINK TANK
+
+What is the importance of carbohydrates in maintaining energy levels?
+What is the difference between genetic engineering and gene therapy?
+
+
+
+--- PAGE 160 ---
+GLOSSARY
+
+Acid is a substance that can donate a proton to a base.
+
+Alkenes The family of hydrocarbons contain one carbon-carbon double bond.
+Alkyl group oa hang = atoms that contains one less hydrogen atom than its
+Aqueous solutions —_are the mixtures in which substances are dissolved in water.
+
+Acid rain is formed when air pollutants dioxide are dissolved in rainwater.
+Acid salts are formed by the incomplete neutralization of an acid.
+
+Alkanes the simplest hydrocarbons in which all carbon-carbon bonds are single.
+Alkynes unsaturated hydrocarbons with a carbon-carbon triple bond.
+
+Amino Acids organic compounds containing both amino and carboxyl groups.
+
+A limiting reactant ~— reactant is the reactant that is completely consumed in a
+Actual yield oe yield is the amount of product actually produced in the
+Acidic oxides secape _ olapees a acids when they react with water. They
+Aetrationenerey Thee wcunil netic nary ne ie pensive
+
+can react both with acids and bases, displaying both acidic and
+Amphoteric oxides basic properties.
+
+Average rate of The rate of reaction between two specific time intervals is called
+
+reaction the average rate of reaction.
+
+Avogadro's Law It states that for a gas at constant temperature and pressure, the
+volume of the gas is directly proportional to the number of moles of gas.
+Boiling is the process in which a liquid turns into vapour when it is
+
+Boiling heated to its boiling point.
+
+Boyle's Law It states that for a fixed amount of gas at a constant temperature,
+the volume of a gas is inversely proportional to its pressure.
+
+Battery A battery is a galvanic cell or a group of galvanic cells joined in series.
+
+Basic oxides te eo poh bases when they react with water. They are
+
+Binary compounds _ Binary compounds of elements with oxygen are called oxides.
+
+Carbohydrates -polyhyroxy aldehydes or ketones.
+
+Catenation poi bob ig laa with one another to form long chains or
+
+Chemical A state of a chemical reaction at which rate of forward reaction
+
+equilibrium equals the rate of reverse reaction.
+
+
+
+--- PAGE 161 ---
+CS
+
+Concentration separation of mineral from the gangue.
+Crude oil a dark brownish viscous liquid.
+Carboxyl group the COOH functional group
+
+A cooling curve typically shows temperature change over time as a
+substance is cooled.
+
+| Charles's Lar It states that for a fixed amount of gas at constant pressure, the
+aa aed volume of a gas is directly proportional to its absolute temperature.
+
+A catalyst is a substance that accelerates the chemical reaction but
+
+Cooling-curve
+
+Catalyst doesnot change its chemical structure atthe end is called a catalyst. _
+Destructive
+
+distillation heating a substance in the absence of air.
+
+Ethylene the industrial name for ethene.
+
+Evaporation Evaporation is the process by which molecules at the surface of a
+
+liquid gain enough kinetic energy to escape into the gaseous phase.
+
+An electrochemical cell in which electrical energy is used to drive a
+Electrolytic cell chemical reaction is called an electrolytic cell.
+
+The electrolytic process used to deposit one metal on another
+
+Electroplating metal is called electroplating.
+Electrochemical A table showing the arrangement of metals on the basis of
+series increasing reduction potentials is called an electrochemical series.
+Enzymes Enzymes are catalysts in living organisms.
+are carboxylic acids which contain three or more carbon atoms in
+Fatty Acids their chain.
+are groups of atoms in an organic molecule which give particular
+Functional groups properties.
+Fossil fuels fuels made from the remains of decayed animal and plant matter
+compressed over millions of years.
+psoas separating a mixture on the basis of differences in boiling points.
+Fuel cell A fuel cell is a special type of galvanic cell which is based upon the
+reaction between oxygen and a gaseous fuel hydrogen.
+Graham's law of The rate of diffusion is inversely proportional to the square root of
+diffusion the molar mass of the gas particles.
+Galvanic or voltaic An electrochemical cell in which a spontaneous oxidation-reduction
+cell reaction generates electricity is called a galvanic or voltaic cell.
+Hydrogenation is addition hydrogen in alkenes and alkynes.
+Hydrocarbons compounds containing only carbon and hydrogen.
+
+A heating curve typically shows temperature change over time as a
+
+Heatingurve: substance is heated.
+
+|
+
+
+--- PAGE 162 ---
+—__- a
+
+a compound having the same molecular formula but different
+
+Isomer
+structures, |
+any component of plant or animal tissue that is insoluble in water,
+
+Lipids but soluble in solvents of low polarity such as ether, hexane,
+
+benzene and carbon tetrachloride.
+Monosaccharides the simple sugars that can not be hydrolyzed.
+
+Mole The atomic mass, formula mass and molecular mass of a substance
+expressed in grams is called Mole.
+
+Molarity is defined as the number of moles of solute dissolved per
+
+Molarity dm3 of solution.
+
+Normal salts salt is formed by the complete neutralization of an acid and a base.
+
+Oligosaccharides carbohydrates that on hydrolysis give 2 to 9 monsaccharide
+molecules.
+
+Ozone an allotropic form of oxygen that contains three oxygen atoms.
+
+Organic compounds containing carbon except carbon dioxide, carbon
+
+Compounds monoxide and carbonates, bicarbonates and carbonates.
+
+Petroleum a dark brownish viscous liquid.
+
+Pollutants are substances that have adverse effect
+
+Polysaccharides ann that contain ten to thousands of monosaccharide
+
+Proteins organic compounds which on complete hydrolysis form amino acid units.
+
+Refining a process of separation of crude oil into useful fractions.
+
+The reactant in excess is the reactant left unutilized or unreacted
+Reactant inexcess after the reaction is complete. It is also referred to as a Non-
+Limiting reactant.
+
+Rate of a chemical The rate of a chemical reaction is a change in the concentration of
+
+reaction a reactant or product in a given time.
+Salts are ionic compounds formed through the electrostatic
+Salt attraction between oppositely charged ions. Salts that dissolve in
+water at room temperature are called soluble salts.
+Saturated Molecules in which every carbon atom present in the hydrocarbon is
+hydrocarbons attached to four atoms.
+
+Structural formula shows the arrangements of atoms in a molecule.
+Sublimation is the process in which molecules of a substance in the
+Sublimation solid state go to the vapour state directly, without going through
+the liquid state.
+The amount of product a chemical reaction produces is known as
+Theoretical yield the theoretical yield of a chemical equation.
+Unsaturated molecules containing only carbon and hydrogen in which at least
+hydrocarbons two carbon atoms form double or a triple bond.
+
+
+
+--- PAGE 163 ---
+About the Authors
+
+ABOUT THE AUTHOR
+Prof (R) Muhammad Iqtidar-ud-Din
+
+He is an accomplished alumnus of Quaid-i-Azam University Islamabad,
+obtaining a master's degree in Chemistry in 1979 and an M.Phil degree in
+1988. Commencing his teaching career in 1980, he served in various
+capacities, including as Professor/Principal at Islamabad College for Boys,
+G-6/3, Islamabad. Recognized for his teaching excellence, he received the
+best teacher in Chemistry award and a gold medal during the Silver Jubilee
+celebrations of 1.C.B, G-6/3. His extensive experience also led him to
+contribute as a member of the National Review Committee from 2002-2006, finalizing Chemistry
+textbook manuscripts for secondary and higher secondary classes, and managing/co-authoring
+numerous textbooks published by NBF.
+
+Tahira Rauf
+
+She obtained her Master's and M.Phill degrees in Inorganic/Analytical
+Chemistry form Quaid e Azam University, Islamabad. She has over 25 years
+of teaching experience at SSC / HSSC level and 5 years at BS level. She is
+serving as associate professor and Head of Department of Chemistry in ICG
+F-6/2 Islamabad. Her prolonged experience in teaching enabled her to
+become the Course commetti member in FBISE. She was also a prominent
+member in implementing SLO based learning at SSC and HSSC level.
+Furthermore she closely worked with FBISE in the formation Practical Base Assessment (PBA) at
+HSSC/ SSC levels. She was also the review commetti member of MDCAT. She received Best Teacher
+award (Chemistry) in 2023 on Salam Teacher's Day.
+
+Gul-e-Zehra
+
+Ms. Gul-e-Zehra, currently working as Deputy Director at the Federal
+Directorate of education islamabad.She did her M.Sc in organic chemistry
+and M.Ed from Agha Khan University Institute for Educational Development
+Karachi in Science Teaching and Learning under STEP Project. She started
+her Professional career from Pak-Turk International Schools and colleges as
+Section Head and Science teacher in 2002. Later, in 2005, she joined her
+current job as Senior Teacher Chemistry at Islamabad Model College for
+Girls G-6/1-4, She has been teaching Science to secondary classes and Chemistry
+to SSC and HSSC for last fifteen years. She worked as an author in General Science Grade 7 2020
+and 2022 edition, professional development trainer, researcher. She also worked as a head of
+Professional Development Department in Fatimiyah Education Network, Karachi.
+
+
+
+--- PAGE 164 ---
+Dr. Saira Riaz
+
+Dr. Saira Irshad Assistant Professor Islamabad College for girls F-6/2
+Islamabad. She obtained her Ph.D in physical chemistry from Germany
+Christian Albrecht university Kiel Master's and M.Phill degrees in physical |
+Chemistry form Quaid e Azam University, Islamabad. She has over 22 years
+of teaching experience at SSC / HSSC level and 5 years at BS level. She is
+serving as assistant professor of Chemistry in ICG F-6/2 Islamabad. She
+
+was also a prominent member in implementing SLO based learning at ssc ©
+and HSSC level. She worked in National Curriculum to design Chemistry SLOs at SSC snd level. She
+received Best Teacher award (Chemistry SSC & HSSC) in 2022 on Salam Teacher's Day. She is BS
+coordinater and focal person of ICG.
+
+

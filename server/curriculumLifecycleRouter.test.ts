@@ -10,12 +10,6 @@ const mocks = vi.hoisted(() => ({
   getCurriculumSet: vi.fn(),
   getCurriculumSource: vi.fn(),
   proposeChaptersFromExtractedText: vi.fn(),
-  getProgrammeEvidenceRecord: vi.fn(),
-  updateProgrammeEvidenceRecordStatus: vi.fn(),
-  getProgrammeCatalogue: vi.fn(),
-  findAssessmentPatternSourceByContentHash: vi.fn(),
-  listAssessmentPatternSources: vi.fn(),
-  createAssessmentPatternSource: vi.fn(),
 }));
 
 vi.mock("./db", () => ({
@@ -27,12 +21,6 @@ vi.mock("./db", () => ({
   activateProgrammeCatalogue: mocks.activateProgrammeCatalogue,
   getCurriculumSet: mocks.getCurriculumSet,
   getCurriculumSource: mocks.getCurriculumSource,
-  getProgrammeEvidenceRecord: mocks.getProgrammeEvidenceRecord,
-  updateProgrammeEvidenceRecordStatus: mocks.updateProgrammeEvidenceRecordStatus,
-  getProgrammeCatalogue: mocks.getProgrammeCatalogue,
-  findAssessmentPatternSourceByContentHash: mocks.findAssessmentPatternSourceByContentHash,
-  listAssessmentPatternSources: mocks.listAssessmentPatternSources,
-  createAssessmentPatternSource: mocks.createAssessmentPatternSource,
 }));
 
 vi.mock("./chapterProposal", () => ({ proposeChaptersFromExtractedText: mocks.proposeChaptersFromExtractedText }));
@@ -113,38 +101,5 @@ describe("curriculum lifecycle administration", () => {
     expect(mocks.saveAssessmentPatternProfile).toHaveBeenCalledWith(expect.objectContaining({
       patternSourceId: 41, reviewStatus: "reviewed", reviewedBy: 77, reviewedAt: expect.any(Date), mcqCount: 12,
     }));
-  });
-
-  it("keeps analysis and practical reference evidence inside its selected programme", async () => {
-    mocks.getProgrammeEvidenceRecord.mockResolvedValue({ id: 81, programmeId: 11, evidenceKind: "analysis_reference", status: "draft" });
-    mocks.updateProgrammeEvidenceRecordStatus.mockResolvedValue({ id: 81, programmeId: 11, status: "reviewed" });
-    const caller = appRouter.createCaller(createContext("admin"));
-
-    await expect(caller.curriculum.reviewProgrammeEvidence({ programmeId: 12, recordId: 81, status: "reviewed" })).rejects.toThrow("does not belong to the selected programme");
-    await expect(caller.curriculum.reviewProgrammeEvidence({ programmeId: 11, recordId: 81, status: "reviewed" })).resolves.toMatchObject({ id: 81, status: "reviewed" });
-    expect(mocks.updateProgrammeEvidenceRecordStatus).toHaveBeenCalledWith(81, "reviewed", 77);
-  });
-
-  it("blocks an identical paper-pattern upload inside the selected programme", async () => {
-    mocks.getProgrammeCatalogue.mockResolvedValue({ id: 11, board: "FBISE", grade: "10", subject: "physics", teacherLabel: "Physics" });
-    mocks.findAssessmentPatternSourceByContentHash.mockResolvedValue({ id: 90, originalFileName: "physics-2026.pdf" });
-    const caller = appRouter.createCaller(createContext("admin"));
-
-    await expect(caller.curriculum.ingestPaperPatternSource({
-      programmeId: 11, sourceKind: "past_paper", academicYear: "2026", fileName: "duplicate.pdf", mimeType: "text/plain", fileBuffer: Buffer.from("same paper").toString("base64"),
-    })).rejects.toThrow("already stored for Physics as “physics-2026.pdf”");
-  });
-
-  it("blocks a substantially overlapping transcript pending duplicate and shift review", async () => {
-    const sharedPaperText = "SECTION B marks 33 answer the following parts briefly alpha particle scatter experiment electric field transverse wave calculate electricity bill state lenz law".repeat(4);
-    mocks.getProgrammeCatalogue.mockResolvedValue({ id: 11, board: "FBISE", grade: "10", subject: "physics", teacherLabel: "Physics" });
-    mocks.findAssessmentPatternSourceByContentHash.mockResolvedValue(undefined);
-    mocks.listAssessmentPatternSources.mockResolvedValue([{ id: 60001, academicYear: "2026", originalFileName: "physics-2026-evening.txt", extractedText: `Complete paper ${sharedPaperText} Section C marks 20` }]);
-    const caller = appRouter.createCaller(createContext("admin"));
-
-    await expect(caller.curriculum.ingestPaperPatternSource({
-      programmeId: 11, sourceKind: "past_paper", academicYear: "2026", fileName: "physics-sections-b-c.txt", mimeType: "text/plain", fileBuffer: Buffer.from(sharedPaperText).toString("base64"),
-    })).rejects.toThrow("Potential duplicate paper");
-    expect(mocks.createAssessmentPatternSource).not.toHaveBeenCalled();
   });
 });

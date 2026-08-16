@@ -4,7 +4,6 @@ import type { TrpcContext } from "./_core/context";
 const mocks = vi.hoisted(() => ({
   getActiveCurriculumScopeCatalog: vi.fn(),
   listActiveAssessmentPatternSources: vi.fn(),
-  listActiveReviewedPatternGuidance: vi.fn(),
   listAssessmentPatternSourcesByIds: vi.fn(),
   createAssessmentDraft: vi.fn(),
   getAssessmentDraft: vi.fn(),
@@ -15,7 +14,6 @@ const mocks = vi.hoisted(() => ({
 vi.mock("./db", () => ({
   getActiveCurriculumScopeCatalog: mocks.getActiveCurriculumScopeCatalog,
   listActiveAssessmentPatternSources: mocks.listActiveAssessmentPatternSources,
-  listActiveReviewedPatternGuidance: mocks.listActiveReviewedPatternGuidance,
   listAssessmentPatternSourcesByIds: mocks.listAssessmentPatternSourcesByIds,
   createAssessmentDraft: mocks.createAssessmentDraft,
   getAssessmentDraft: mocks.getAssessmentDraft,
@@ -63,7 +61,6 @@ const physicsScope = {
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.listActiveAssessmentPatternSources.mockResolvedValue([]);
-  mocks.listActiveReviewedPatternGuidance.mockResolvedValue([]);
   mocks.listAssessmentPatternSourcesByIds.mockResolvedValue([]);
   mocks.resolveCurriculumScope.mockReturnValue({
     snapshot: { curriculumSetId: 1, chapterIds: [10] },
@@ -86,20 +83,6 @@ describe("assessment router", () => {
       textbookReady: false,
       paperPatternReady: false,
       supportedModes: { mcq: false, short: false, long: false, full_paper: false },
-    });
-  });
-
-  it("exposes only active reviewed section counts that agree across profiles as printable defaults", async () => {
-    mocks.getActiveCurriculumScopeCatalog.mockResolvedValue(physicsCatalog);
-    mocks.listActiveAssessmentPatternSources.mockResolvedValue([{ id: 1, sourceKind: "past_paper", academicYear: "2025", originalFileName: "paper.pdf" }]);
-    mocks.listActiveReviewedPatternGuidance.mockResolvedValue([
-      { sourceKind: "past_paper", academicYear: "2024", shortOrPairCount: 11, longOrPairCount: 4 },
-      { sourceKind: "past_paper", academicYear: "2025", shortOrPairCount: 11, longOrPairCount: 4 },
-    ]);
-    const caller = appRouter.createCaller(createAdminContext());
-
-    await expect(caller.assessment.getAvailability({ subject: "physics" })).resolves.toMatchObject({
-      printablePairDefaults: { short: 11, long: 4 },
     });
   });
 

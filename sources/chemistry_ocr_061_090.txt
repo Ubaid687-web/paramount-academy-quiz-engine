@@ -1,0 +1,1613 @@
+
+--- PAGE 61 ---
+4: Electroch
+
+2. Short questions
+
+i.
+ii.
+iii.
+iv.
+v.
+vi.
+
+vii.
+viii.
+
+3. Lon
+
+i.
+ii.
+iti.
+iv.
+
+vii.
+viii.
+
+xi.
+
+xii.
+
+xiii.
+
+What is a fuel cell?
+
+Write chemical reactions that occur in Nelson’s cell.
+
+Why tin-plated steel is used to make food cans? :
+Explain one example from daily life which involves an oxidation-reduction reaction.
+Define electrochemical series.
+
+Why does chlorine gas form at the anode during the electrolysis of molten lead(Il)
+chloride?
+
+How do hydrogen-oxygen fuel cells benefit the environment compared to gasoline
+engines
+
+Sketch a Daniel cell with labelled components and indicate the direction of electron
+flow.
+
+ig questions
+Define oxidation and reduction in terms of loss or gain of oxygen or hydrogen.
+Sketch a Daniel Cell, labelling the cathode, anode, and the direction of flow of the
+electrons.
+Describe the method of recovering metal from lead(Il) chloride. ‘
+Construct ionic half-equations for reaction at electrodes in the electrolysis of
+copper(I!) sulphate in the presence of copper electrodes.
+Electrolysis has a major role in electrochemical industries.
+(a) Sketch an electrolytic cell, label the anode and cathode and indicate the
+direction of electron transfer.
+(b) Describe the nature of the electrochemical process.
+(c) Distinguish between electrolytic and voltaic cells.
+For each of the following electrolytes, write electrode half-reactions in each case
+that would occur during their electrolysis.
+a. Copper(Il) sulphate solution using copper electrodes
+b. Copper(Il) chloride using carbon electrodes
+Predict the products of electrolysis for a dilute solution of potassium iodide
+Why does chlorine gas form at the anode during the electrolysis of molten lead(Il)
+chloride?
+What changes in observations might. you expect when comparing electrolysis in
+molten lead(Il) chloride and concentrated aqueous sodium chloride?
+How would you set up an experiment to demonstrate the production of different
+substances at the anode and cathode during the electrolysis of dilute copper(I!)
+sulfate using copper electrodes?
+Compare and contrast the products formed at the electrodes during the electrolysis
+of concentrated aqueous sodium chloride and dilute sulphuric acid using inert
+electrodes.
+Assess the environmental impact of using hydrogen-oxygen fuel cells compared to
+gasoline engines in vehicles. Provide arguments for and against each technology.
+Compare the ionic half-equations for the electrolysis of a dilute solution and a
+concentrated solution of sodium chloride. How do the products differ?
+
+
+--- PAGE 62 ---
+Unit lectrochemistry
+
+THINK TANK
+
+1. The following redox reaction occurs in the
+voltaic cell illustrated below:
+Ni"? (q + Fe) ——> Fe aq + Ni‘
+Select the anode, and cathode and indicate
+the direction of flow of electrons.
+
+2. When molten sodium bromide is electrolyzed,
+reddish-brown fumes are seen at the anode.
+Answer the following questions.
+
+{i) Name the reddish-brown fumes seen at anode
+
+(ii) What difference would you expect to observe if you used molten sodium
+iodide?
+
+(iii) Write the electrode reactions in both cases.
+
+(iv) What difference would expect to observe if you used a dilute aqueous solution
+of potassium bromide? Also, write electrode reactions.
+
+3. State what is formed at electrodes during the electrolysis of the following substances
+using carbon electrodes. Do not write reactions.
+
+(i) dilute aqueous solution of potassium chloride
+(ii) copper(ll) chloride
+(iii) molten lead(II) bromide
+
+
+
+--- PAGE 63 ---
+Describe collision theory in terms of number of Particles per unit volume, frequency of
+collisions of particles, kinetic energy of particles, and activation energy.
+
+State that catalyst increases the rate of reaction, provides alternate pathway with lower
+activation energy, and remains unchanged at the end of a reaction.
+
+Describe the physical parameters that may be affected by the rate of reaction including
+change in mass, temperature, and formation of gas.
+
+Interpret data, including graphs, for investigating rate of reaction.
+
+Explain the effect on rate of reaction of changing concentration of a reactant, pressure of
+gases, surface area of solids, temperature, and presence of catalyst (including enzymes)
+using collision theory.
+
+Justify the importance of chemical kinetics in food industry to determine ideal harvesting
+and transportation times for Produce,
+
+
+
+--- PAGE 64 ---
+[_Unit 5: Reaction Kinetics, | 5: Reaction Kinetics
+
+Chemical reactions are processes in which mass and energy are constantly changing. These
+reactions can take place at a range of speeds, from very fast to very slow. Fermentation is
+
+| known to be a slow reaction, taking several weeks to make’ enough products, and digestion is
+a slow reaction. Acid-base neutralization is a fast reaction, taking only a few microseconds.
+Other reactions take place at a moderate speed, such as those that contract muscles send
+impulses along nerves and capture photographic images. For industry, it is important to
+understand the conditions under which a reaction will be most cost-effective. Kinetics, also
+known as chemical kinetics, is the study of the rate of chemical reactions, their
+mechanisms, and the factors that influence them.
+
+5.1 Rates of Reactions
+
+The rate of a chemical reaction tells us how quickly the reactants are used up or how quickly
+the products are formed over time. It is the change in the concentration of reactants or
+products in a given amount of time.
+
+Mathematically,
+
+_ Change in concentration of a substance
+Time taken for change
+
+Rate
+
+As a reaction happens, the amount of reactants decreases, and the amount of products
+increases. For example, we measure concentration in moles per cubic decimeter (mol dm”)
+and time in seconds (s). So, the unit for the rate of reaction is mol dm”s’.
+
+To better understand this, we can use a graph. (See figure 5.1)
+
+A— B
+
+[B]
+
+Concentration —>
+
+[A]
+0 Time —>
+
+Figure 5.1; Graphical Representation of the rate ofa
+chemical reaction
+
+
+
+--- PAGE 65 ---
+| ___Unit 5: Reaction Kinetics 5: Reaction Kinetics
+
+A graph with two curves—one for reactants showing decreasing concentration and one for
+Products showing increasing concentration over time. At the beginning of the reaction, the
+slope of the reactant curve is steep, showing that the reactants are being used up quickly. At
+the same time, the product curve is steep, showing that products are being formed quickly.
+1. As time goes on, the curves become less steep. This means the reaction slows down
+because there are fewer reactant particles to react.
+2. Eventually, the curves become flat. This means the reaction has stopped because all the
+reactants are used up or the system has reached equilibrium.
+This shows that the rate of reaction is not constant. It changes as the reaction progresses.
+Average Rate of Reaction
+Total change in concentration
+average fates Ta time taken
+Consider a general reaction
+
+A——B
+
+The rate of reaction can be expressed in terms of the rate of disappearance of reactant A or
+the rate of appearance of product B.
+
+Rate of reaction = = afl
+
+Rate of reaction = + are
+Where, d [A] and d [B] are the changes in the concentration of A and B respectively. The
+negative sign indicates a decrease in the concentration of the reactant A whereas the Positive
+sign indicates the increase in the concentration of product B.
+When we talk about the rate of a chemical reaction, we’re interested in how quickly or slowly
+a chemical reaction happens. This is often measured by how fast the reactants are used up or
+how quickly the products are formed.
+
+Suppose you are carrying out a chemical reaction where substance A reacts with another
+substance B to produce substance C.
+
+Interpreting Data
+Suppose a student is carrying out a chemical reaction where substance A reacts with another
+
+substance B to produce substance C. He followed the rate of reaction by determining the
+concentration of C produced at regular intervals. The following data was obtained.
+
+A+B ——C
+
+Time (minutes)
+
+Concentration of C (mol dm”)
+
+
+
+--- PAGE 66 ---
+[Unit 5: Reaction Kinetics 5: Reaction Kinetics
+
+The rate of reaction can be found by plotting a graph of concentration of C against time.
+
+30:
+
+nN
+a
+
+Nn
+oS
+
+Conc. of C (mol dm”)
+sa
+
+a
+
+0-
+0 10 20 30 40 50 60 70 80 90 100 110
+Time (minutes)
+
+From this graph you can determine the rate of reaction at any moment by determining the
+gradient at that moment. Suppose you want to calculate the rate of reaction at 20 minutes.
+
+For this purpose, draw a tangent to the curve at 20 minutes:
+30:
+
+nN
+a
+
+ny
+So
+
+AC = 27-3 = 24 mol dm?
+
+Cone. of C (mol dm”)
+os a
+
+At = 40 - 0.0 = 40 min
+
+0 10 20 30 40 50 60 70 80 90 100 11
+Time (minutes) .
+
+on
+
+Rate of reaction (or gradient) =e
+
+24 mol dm*
+40x60s
+
+= 0.01 mol dm’s".
+Thus, the rate of reaction at 20min = 0.01 mol dm”s"
+total amount of C produced
+Total time taken
+25 mol dm?
+100 x 60s
+
+Rate of reaction (or gradient)=
+
+Average rate of reaction=
+
+Average rate of reaction=
+
+= 0, 0042 mol dm?s*.
+
+
+
+--- PAGE 67 ---
+| __Unit 5: Reaction Kinetics] 5: Reaction Kinetics
+
+Conclusion
+
+From this experiment, you can see that the reaction rate isn't constant. The amount of
+substance C formed increases more quickly at first and then slows down. This is a common
+pattern in chemical reactions, where the rate can change as reactants are consumed.
+
+5.2 Collision Theory and Activation Energy
+
+In a chemical reaction, bonds between atoms are broken and new bonds are formed. Collision
+theory helps us understand how these reactions happen. For a reaction to occur, the atoms or
+molecules must collide with each other. However, not all collisions lead to a reaction. The
+success of a collision depends on two things:
+
+1, Energy
+
+The colliding particles must have enough energy to overcome the repulsion between their
+outer electrons.
+
+2. Orientation
+
+The particles must be aligned in a way that allows the necessary atoms to come together and
+form new bonds.
+
+The smallest amount of energy needed for a reaction to happen is called activation energy. If
+the energy of the colliding particles is less than this activation energy, the reaction will not
+occur.
+
+Reactions happen faster when more particles have enough energy to collide effectively. If the
+activation energy is high, fewer particles will have enough energy, and the reaction will be
+slower. If the activation energy is low, more particles can collide effectively, and the
+reaction will happen faster.
+
+For example, when hydrogen (H2) and chlorine (Clz) react to form hydrogen chloride (HCU, |
+the molecules need enough energy to break their bonds and form new ones. When an
+effective collision occurs, the particles form a temporary, high-energy state called the
+activated complex (or transition state). This complex quickly breaks down to form the final
+products. (Figure 5.2)
+
+H—H H-——-H H H
+| | | + |
+Cl Cl Cl—— Cl Cl Cl
+Reactants — Activated complex Products
+
+Figure 5.2: Effective Collision of Molecules
+
+You can think of activation energy like a hill. The reacting molecules need to climb this hill
+(using energy) before they can roll down the other side and form Products, If the molecules
+don’t have enough energy to reach the top, they roll back and remain unchanged.
+
+
+
+--- PAGE 68 ---
+‘ [| __Unit 5: Reaction Kinetics 5: Reaction Kinetics
+
+5.3 Catalysts and their Role in Reaction Kinetics
+
+In industries, reactions are often carried
+. out at high temperatures to produce
+products quickly. However, high
+temperatures can be dangerous and may
+damage certain chemicals. An alternative
+way to speed up reactions is to use a
+catalyst.
+
+A catalyst is a substance that speeds up a
+chemical reaction without being used up
+itself. It works by providing an easier
+pathway for the reaction to happen,
+which has a lower activation energy. With
+a lower activation energy, more particles
+can collide effectively, and the reaction
+happens faster.
+
+It’s important to note that a catalyst doesn’t change the overall energy of the reaction
+or its outcome. It only makes the reaction happen faster. Catalysts cannot make a
+reaction occur if it is not already possible based on the reaction’s energy changes.
+
+Concept Assessment Exercise 5.1
+1. How does the presence of a catalyst alter the activation energy of a reaction?
+2. Why is it important for a catalyst to remain unchanged at the end of a reaction?
+
+5.3.1 Physical Parameters that Affect the Rate of Reaction
+
+1. Change in Mass
+
+During a chemical reaction, the mass of the reactants decreases because they are used up,
+while the mass of the products increases as they are formed.
+
+2. Formation of Gas
+
+In some reactions, a gas is produced. If the gas escapes (in an open system), the total mass of
+the reaction mixture decreases. In a closed system where gas cannot escape, the pressure
+increases as more gas is formed because the volume stays the same.
+
+3. Temperature
+When the temperature of a reaction increases, the particles move faster, causing them to
+collide more often. This increase in collision frequency results in a faster reaction rate.
+
+
+
+--- PAGE 69 ---
+[Unit 5: Reaction Kinetics = 5: Reaction Kinetics
+
+5.3.2 Factors Affecting Rate of Reactions
+
+Several factors influence how fast a reaction happens by changing the number of successful
+collisions between particles. Some of the important factors are:
+
+1. Concentration of Reactants
+
+The more reactant particles there are in a given space, the more likely they are to collide.
+This means that increasing the concentration of reactants makes the reaction happen faster.
++ For example, acid rain damages marble more quickly when the acid is stronger.
+* Two antacid tablets neutralize stomach acid faster than one tablet because there are
+more reacting particles.
++ Hydrogen and chlorine gases react twice as fast if their concentrations are doubled.
+2. Surface Area
+
+When solid reactants have more surface area exposed, the reaction happens faster. This is
+because there are more opportunities for particles to collide.
+« Powdered zinc reacts with dilute HCl faster than a solid chunk of zinc because the
+powder has more exposed surface area.
++ Similarly, powdered aluminium reacts quickly with NaOH, while aluminium foil reacts
+more slowly.
+
+3. Temperature
+Raising the temperature increases the speed of particles, leading to more frequent and
+energetic collisions. However, for a collision to cause a reaction, the particles must:
+
++ Have enough energy (called activation energy).
++ Be oriented correctly when they collide.
+
+At normal temperatures, only a small number of particles have enough energy to react. A
+graph called the Maxwell-Boltzmann curve shows how energy is distributed among particles.
+Most particles have medium energy, while only a few have the activation energy needed for a
+reaction. When the temperature increases, more particles gain enough energy to overcome
+the actjvation energy barrier, leading to faster reactions.
+
+The curve shows the distribution of available energy between the molecules of a gas at
+constant temperature (Figures 5.4 and 5.5). It clearly shows that most of the molecules do
+not have the necessary activation energy. When temperature increases (say from T; to T2),
+the energy of the molecules also increases. Thus, the proportion of molecules having required
+activation energy increases.
+
+Figure 5.4: Maxwell Boltzmann curve of Figure 5.5: Maxwell Boltzmann curve of
+kinetic energy kinetic energy at 2 temperature
+
+
+
+--- PAGE 70 ---
+[Unit 5: Reaction Kinetics. J 5: Reaction Kinetics
+
+Hence an increase in kinetic energy of reactant molecules increases the collision frequency
+i.e. the number of effective collisions and hence the reaction rate.
+| 1, Pressure of gases
+Pressure increases the concentration of gases for a given volume. There will be more
+collisions, which will increase in reaction rate. For instance, a mixture of H2 molecules and Clz
+molecules will react twice as quickly when the partial pressure of one of the H2 molecules is
+doubled compared to the partial pressure of the other.
+2. Catalyst
+A detailed account of the influence of catalyst on reaction rates is given in section 5.3
+
+Concept Assessment Exercise 5.2
+
+. In what-way does increasing the surface area of a solid reactant affect the rate of
+reaction? .
+
+. How does temperature affect the rate of reaction?
+. Discuss the effect of changing the concentration of a reactant on the rate of
+reaction.
+
+5.3.4 Enzymes
+
+Most of the chemical reactions that occur in living organisms are regulated by molecules called
+enzymes. These are biochemical catalysts i.e., substances that increase the rate of chemical
+reactions within living things. Enzymes like catalysts are not consumed during chemical
+reactions. Virtually all reactions in living cells are catalyzed by enzymes. An enzyme is a
+specialized protein that catalyzes specific biochemical reactions. Each enzyme catalyzes only
+one reaction. Most of the enzymes are found inside the cells. However, some are found in
+extracellular fluids such as saliva, gastric juice, etc. Enzymes may speed up reactions by a
+factor of 10°. Enzymes have specific shapes. They hold the reactant molecules in the right
+orientation necessary for successful collisions. This causes an increase in reaction rates.
+
+5.4 Role of Chemical Kinetics in the Food Industry
+
+When it comes to the food industry, chemical kinetics plays an important role. Some of its
+key roles include:
+e Identifying the optimal time to harvest and transport product, so that it has the best
+taste, texture, and nutritional content.
+¢ Identifying factors that cause degradation during transportation.
+e Estimating the optimal time of harvest so that the product reaches the market at its
+best quality. Minimizing losses due to ripeness during transportation
+e Developing methods for storage and transportation that help maintain nutritional
+value.
+e Identifying methods for slowing down specific reactions by controlling temperature
+and humidity increasing the shelf life of the product.
+
+
+
+--- PAGE 71 ---
+[Unit 5: Reaction Kinetics | 5: Reaction Kinetics
+
+« The rate of a chemical reaction is a change in the concentration of the reactant or
+product in a given time.
+
+« The rate of reaction between two specific time intervals is called the average rate
+of reaction.
+
+e The rate of a chemical reaction depends upon the activation energy for the reaction.
+
+* The minimum amount of kinetic energy that the interacting particles must have is
+known as activation energy.
+
+e Asubstance that accelerates the chemical reaction but does not change its chemical
+structure at the end is called a catalyst
+
+* Reaction rates are influenced by the catalyst, which changes the mechanism of the
+
+| reaction by decreasing the energy of activation.
+
+{ « Enzymes are catalysts in living organisms.
+
+References
+= Silberberg, Chemistry The Molecular Nature of Matter and Energy
+* Bonderand Pardue, Chemistry and Experimental Science 2/e
+= Uno Kask and J. David Rawn, General Chemistry
+* Graham Hill and John Holman, Chemistry in Context
+= John M. Deman, Principles of Food Chemistry
+
+EXERCISE
+1. Multiple Choice Questions (MCQs)
+i. The rate of a reaction as the reaction proceeds.
+(a) Increases (b) Decreases
+(c) Remains the same (d) May increase or decrease.
+
+ii) The activation energy for a reaction can be;
+(a) Increased by increasing temperature
+(b) Increased by decreasing temperature
+(c) Decreased by increasing concentration of reactants
+(d) None of these
+(iii) Reactions with high activation energy are usually;
+(a) Fast (b) Slow (c) Exothermic (d) Reversible
+(iv) Ina reversible reaction catalyst lowers the activation energy of the;
+(a) Forward reaction
+(b) Reverse reaction
+(c) Forward as well as reverse reaction
+(d) Forward reaction but increases for the reverse reaction
+
+
+
+--- PAGE 72 ---
+[Unit 5: Reaction Kinetics. 5: Reaction Kinetics
+
+(v) Which of the following is NOT a factor affecting the rate of reaction according to
+collision theory?
+a) Number of particles per unit volume
+b) Activation energy
+c) Presence of a catalyst
+d) Molar mass of reactants
+(vi) How does a catalyst increase the rate of reaction?
+a) By decreasing the number of particles per unit volume
+b) By increasing the activation energy
+Cc) By providing an alternate pathway with higher activation energy
+d) By providing an alternate pathway with lower activation energy
+(vii) Which physical parameter is NOT typically affected by the rate of reaction?
+a) Change in mass
+b) Temperature
+c) Formation of gas
+d) Colour of the reactants
+(viii) Which factor can affect the rate of reaction involving gases?
+
+a) Change in solubility b) Change in pressure
+c) Change in volume d) Change in viscosity
+(ix) Increasing the surface area of solids generally:
+a) Decreases the rate of reaction b) Increases the rate of reaction
+c) Has no effect on the rate of reaction d) Makes the reaction irreversible
+
+(x) How does temperature affect the rate of reaction according to collision theory?
+a) Higher temperature decreases the frequency of collisions
+b) Higher temperature increases the activation energy
+c) Higher temperature decreases the kinetic energy of particles
+d) Higher temperature increases the frequency of collisions and kinetic energy of
+particles
+
+a Questions
+Draw energy diagrams that represent the activation energy and show the effect of a
+catalyst.
+
+ii. What is the effect of a catalyst on the following?
+a) The rate of reaction
+b) The energy of activation
+
+i. | Why powdered Zn reacts faster with acid than a piece of Zn? Give reason.
+
+ii. _ List physical parameters which are affected by reaction rates.
+
+iii. Explain collision theory and its key components.
+
+iv. Discuss the effect of changing the concentration of a reactant on the rate of
+reaction.
+
+v. Describe how graphs are used to interpret the rate of reaction.
+
+vi. Why is activation energy important in determining the rate of reaction?
+
+vii. If you increase the temperature of a reaction, how does this affect the kinetic
+energy of the particles?
+
+
+
+--- PAGE 73 ---
+[Unit 5: Reaction Kinetics 5: Reaction Kinetics
+
+viii. Why do only a fraction of collisions lead to a reaction according to collision theory?
+
+ix. Evaluate how increasing activation energy affects the rate of reaction.
+
+x. Suggest a way to identify if a catalyst has been effective in a reaction.
+
+xi. Assess the impact of catalysts on industrial chemical processes.
+
+xii. Evaluate the impact of adding an enzyme to a biochemical reaction.
+
+xiii. Analyse how temperature control during transportation can affect the quality of the
+product.
+
+3. Long Questions
+i. Examine the graph depicting
+a. the concentration of reactants over time.
+b. the effect of temperature on the rate of reaction.
+c. the effect of the catalyst on reaction rate.
+ii. An increase in surface area increases the reaction rate. Evaluate this statement in
+the light of collision theory to support your answer.
+iii. Interpret the role of a catalyst in a chemical reaction.
+Discuss the impact of temperature on the rate of reaction.
+Justify the role of chemical kinetics in the food industry.
+Propose a hypothesis for how temperature and surface area affect the reaction rate.
+Design a set of experiments to test your hypothesis, detailing the methods and
+measurements.
+vii. You are investigating a new catalyst for a reaction that produces a valuable
+pharmaceutical product.
+viii. Explain the role of the catalyst in the reaction mechanism, including its effect on
+activation energy.
+ix. Design an experiment to compare the reaction rates with and without the catalyst.
+x. A chemical reaction between substances A and B follows collision theory. You are
+| tasked with maximizing the reaction rate. Describe how you would modify the
+number of particles per unit volume, temperature, and activation energy to achieve
+this goal.
+| xi. Compare and contrast the effects of temperature and concentration on the rate of
+reaction.
+xii. Discuss the significance of activation energy in chemical reactions and its
+relationship to reaction rates.
+
+as
+
+THINK TANK
+: Analyse a scenario where a catalyst is not effective in increasing the rate of reaction.
+2. Evaluate the role of chemical kinetics in optimizing food production Processes in the food
+industry.
+3. Predict the effect of doubling the surface area of a solid reactant on the rate of reaction,
+Providing reasoning based on collision theory.
+
+4. Explain why the formation of gas is often associated with an increase in the rate of
+reaction.
+
+ss
+
+
+
+--- PAGE 74 ---
+Explain that salts are ionic compounds formed due to electrostatic attraction between
+oppositely ions ( in which the positive ions come from bases and negative ions come from
+acids.
+
+Explain why at STP salts are solids with high melting points.
+
+Describe that under normal conditions, ionic compounds are usually solids with lattice
+structures.
+
+Explain why the molten and aqueous solutions of salts are good conductors of electricity
+by making reference to the idea of mobile ions.
+
+Describe the general solubility rules for salts. these are; a. Sodium, nitrate, potassium
+and ammonium salts are soluble, b. Chlorides are soluble except lead and silver, c.
+Carbonates are insoluble except sodium, potassium, and ammonium, d. hydroxides are
+insoluble except sodium, potassium, ammonium, and calcium( partially).
+
+Describe the preparation , separation and purification of soluble salts by reactions of
+
+acids with alkali(titration), excess metal, excess insoluble base, excess insoluble
+carbonate.
+
+
+
+--- PAGE 75 ---
+6.1 Salts
+
+Salts are ionic compounds formed through the electrostatic attraction between oppositely
+charged ions. These ions originate from acids and bases. In a typical reaction, a base provides
+the positive ions, also known as cations, while an acid supplies the negative ions or anions.
+When these ions combine, they create a neutral compound, a salt. This process is
+fundamental to many chemical reactions and is a key concept in understanding the behaviour
+of acids and bases.
+
+For example, in the reaction between hydrochloric acid (HCl) and sodium hydroxide (NaOH),
+the sodium ions (Na*) from the base combine with the chloride ions (Cl-) from the acid to
+form sodium chloride (NaCl), which is a common table salt. Here, the Na* cations from the
+base and the Cl- anions from the acid come together due to an electrostatic attractive force
+between their opposite charges, resulting in the formation of the salt NaCl.
+
+This principle of ionic bonding in salts is crucial in chemistry, as it explains the formation and
+Properties of a wide range of compounds found in nature and used in various applications.
+
+6.2 Physical State and Melting Points
+6.2.1 Solids at STP
+
+At Standard Temperature and Pressure (STP), salts are usually solids. This is due to the strong
+electrostatic forces of attraction between the oppositely charged ions, which form a tightly
+bound lattice structure. These forces require significant energy to overcome, resulting in high
+melting points.
+
+6.2.2 Lattice Structure of lonic Compounds
+
+Under normal conditions, ionic compounds
+are usually solids with a well-defined lattice
+structure. This property is due to the nature
+of the ionic bonds that hold the ions
+together. lonic bonds are formed by
+electrostatic attraction between positively
+charged ions (cations) and negatively
+charged ions (anions). These ions are
+arranged in a repeating three-dimensional
+pattern called a crystal lattice. This
+arrangement maximizes the electrostatic
+attractions and minimizes the repulsions
+between ions, leading to a stable structure.
+
+Figure 6.1: Crystal Structure of NaCl
+
+
+
+--- PAGE 76 ---
+—___ £838
+| 6.2.3 Electrical Conductivity
+
+Molten and aqueous solutions of salts are good conductors of electricity because of the
+presence of free-moving ions.
+
+When salts are in their solid state, their ions are held together in a rigid lattice structure by
+
+strong ionic bonds. In this state, the ions are not free to move, so solid salts do not conduct
+electricity. Upon melting, the rigid lattice breaks down due to the high temperature. The ions
+become free to move in the molten state. These free-moving positive (cations) and negative
+(anions) ions can carry electrical charge, allowing the molten salt to conduct electricity.
+
+Similarly, when salts dissolve in water, they dissociate into their constituent ions due to the
+polar nature of water molecules. For example, sodium chloride (NaCl) dissociates into Na* and
+Cl- ions. These free ions are now surrounded by
+water molecules but can move freely within the
+solution. When an electric potential is applied, Battery
+cations migrate toward the cathode (negative
+electrode), and anions migrate toward the anode
+(positive electrode), completing the circuit and
+allowing electrical conductivity.
+
+In both molten and aqueous states, the ionic lattice
+is disrupted, liberating the ions. Free-moving ions
+
+under the influence of an electric field enable the Figure 6.2: Electrical Conductivity
+conduction of electricity.
+
+6.2.4 High melting points and boiling points
+
+The strong electrostatic forces of the lattice require significant energy to break, resulting in
+high melting points and boiling points. lonic compounds are solid at STP with high melting
+points because of the strong electrostatic forces of attraction between their ions, which hold
+these ions in fixed positions.
+
+6.2.5 Hardness and brittleness
+
+Lattice stiffness makes ionic compounds hard. However, when a voltage is applied, like-
+charged ions can be pushed together, causing repulsion and brittleness and a tendency to
+break.
+
++
+
+Examples of ionic compounds are sodium chloride (NaCl), potassium bromide (KBr), calcium
+carbonate (CaCO,), magnesium sulphate (MgSO,), etc. Each of these compounds forms a clear
+crystal lattice that determines their structure and many of their physical properties.
+
+6.3 Preparation, Separation, and Purification of Soluble Salts
+
+Soluble salts can be prepared through various methods, depending on the nature of the
+reactants involved. Here, welll describe four common methods: reaction of acids with alkali
+(titration), excess metal, excess insoluble base, and excess insoluble carbonate.
+
+
+
+--- PAGE 77 ---
+_ eee
+
+6.3.1 Preparation by Titration (Acid and Alkali)
+
+Activity 6.1
+
+Preparation of sodium chloride (NaCl) from hydrochloric acid (HCl) and sodium hydroxide
+
+(NaOH) by titration.
+HCl.q) + NaOH,.q) ————* NaCl... + HO, |
+
+Materials required i |
+
+Dilute solutions of sodium hydroxide and hydrochloric acid.
+
+Phenolphthalein indicator
+
+Burette
+
+Pipette
+
+Conical flask
+
+Funnel
+
+Evaporating disc
+
+Burette stand, tripod stand, and heating source.
+
+Procedure
+
+* Measure exactly 25 cm? of HCI solution using a pipette and transfer it to a conical flask.
+
+Add a few drops of phenolphthalein as an indicator to the acid.
+
+Fill a burette with NaOH solution using a funnel.
+
+} Slowly add the NaOH from the burette to the HCl in the conical flask, swirling the flask
+
+continuously until the indicator changes colour from colourless to light pink indicating
+
+neutralization is complete.
+
+Separation
+
+* Once the endpoint is reached, indicating that the acid and alkali have completely
+
+| reacted, note the volume of NaOH used.
+
+} Crystallization
+
+¢ Evaporate the water from the resulting NaCl solution gently to obtain a hot saturated
+
+solution.
+* Allow the solution to cool and crystallize, then filter to collect the crystals.
+
+6.3.2 Preparation with Excess Metal
+Example: Zinc sulphate (ZnSO,) from sulphuric acid (H,SO,) and zinc (Zn)
+Activity 6.2:
+Preparation of zinc sulphate
+Reaction
+
+| Zn + HSOyaq) ———* — ZNSOy_q) + H,Oq)
+Materials required
+
+Zinc metal
+
+Dilute sulphuric acid
+
+Beaker and glass rod
+
+Filter funnel and filter paper
+
+Evaporating disc
+
+Tripod stand, wire gauze and heating source
+
+
+
+--- PAGE 78 ---
+_—$$$___ oe
+
+Procedure
+
+* Measure 25 cm’ dilute sulphuric acid into a beaker.
+
+« Add excess zinc metal to dilute sulphuric acid in a beaker. You will observe bubbles of
+hydrogen are produced,
+
+* The reaction produces zinc sulphate and hydrogen gas.
+
+«If all the zinc disappears, add more until there is some left un-reacted, indicating the acid
+has been fully reacted.
+
+Separation
+
+¢ Filter the mixture to remove unreacted excess zinc.
+
+Crystallization
+
+Evaporate the filtrate to obtain a hot saturated solution. Allow the solution to cool and
+
+crystallize, then filter to collect the crystals.
+
+6.3.3 Preparation with Excess Insoluble Base
+Example: Copper(II) sulphate (CuSO,) from sulphuric acid (H,SO,) and copper(II) oxide (CuO)
+
+Activity 6.3:
+
+Preparation of copper(II) sulphate
+
+Reaction: CuO, + HySOgag, ———*  CUSOyjaq) + HO,
+Materials required
+
+¢ Copper(Il) oxide
+
+¢ Dilute sulphuric acid
+
+e Beaker and glass rod
+
+e Filter funnel and filter paper
+
+e. Evaporating disc
+
+© Tripod stand, wire gauze and heating source
+
+Procedure
+
+* Measure 25 cm’ dilute sulphuric acid into a beaker.
+
+« Add excess copper(I!) oxide to dilute sulfuric acid in a beaker.
+
+« The reaction produces copper(I!) sulphate and water.
+
+« Continue adding CuO until no more dissolves, indicating all the acid-has reacted.
+Separation :
+« Filter the mixture to remove unreacted CuO.
+
+Crystallization
+« Evaporate the filtrate to obtain a hot saturated solution. Allow the solution to cool and
+
+crystallize, then filter to collect the crystals.
+
+6.3.4 Preparation with Excess Insoluble Carbonate
+
+Activity 6.4:
+Calcium chloride (CaCl,) from hydrochloric acid (HCl) and calcium carbonate (CaCO;)
+
+Reaction: CaCO,,, + 2HClsqg ———* CaClaaq * CO, + H,0y,
+
+
+
+--- PAGE 79 ---
+___ ._£™ (ee
+
+Materials required
+
+Calcium carbonate (limestone)
+
+Dilute hydrochloric acid
+
+Beaker and glass rod
+
+Filter funnel and filter paper
+
+Evaporating disc
+
+Tripod stand, wire gauze and heating source
+
+Procedure
+
+* Measure 25 cm? dilute hydrochloric acid into a beaker.
+
+Add excess calcium carbonate to dilute hydrochloric acid in a beaker.
+
+The reaction produces calcium chloride, carbon dioxide, and water.
+
+You will observe carbon dioxide has evolved with effervescence.
+
+Continue adding CaCO, until no more effervescence (bubbles) is observed, indicating all /
+
+the acid has reacted. |
+
+Separation
+
+« Filter the mixture to remove unreacted CaCO.
+
+Crystallization
+
+« Evaporate the filtrate to obtain a hot saturated solution. Allow the solution to cool and |
+crystallize, then filter to collect the crystals. |
+
+6.4 Soluble and insoluble salts |
+
+Soluble salts are salts that dissolve in water at room temperature, and insoluble salts are salts
+that do not dissolve in water at room temperature.
+
+] General rules for the solubility of salts help predict the solubility of various ionic compounds
+in water. These rules are necessary to understand the reactions of aqueous solutions. Here is
+a detailed description of the solubility rules:
+
+1. All sodium, potassium and ammonium salts are soluble in water.
+This includes common compounds such as sodium chloride (NaCl), sodium sulphate
+(Na,SO,), potassium chloride (KCI), potassium bromide(KBr), ammonium chloride(NH.Cl),
+
+ammonium sulphate (NH,),SO, etc
+
+2. All nitrate salts are soluble in water. This rule applies to all nitrate compounds such as
+Potassium nitrate (KNO,), calcium nitrate Ca(NO,), etc
+
+3. Most chloride (Cl-) salts are soluble in water, except lead (II) chloride (PbCl,) and silver
+chloride (AgCl) are insoluble in water.
+
+4. Most carbonate salts (CO;?-) are insoluble in water.
+Except sodium, potassium, and ammonium carbonates which are soluble. Examples of
+insoluble carbonates include calcium carbonate(CaCO,), magnesium carbonate(MgCO,),
+etc
+
+5. Most common sulphates are soluble, except lead(II) sulphate, barium sulphate and calcium
+sulphate.
+
+
+
+--- PAGE 80 ---
+Concept Assessment Exercise 6.1
+
+Which of the following salts are insoluble,
+Silver chloride, barium sulphate, sodium nitrate, ammonium carbonate, and lead nitrate.
+
+KEY POINTS
+
+«Salts are ionic compounds formed through the electrostatic attraction between
+oppositely charged ions.
+« Under normal conditions, ionic compounds are usually solids with a well-defined lattice
+
+structure.
+
+* Lattice stiffness makes ionic compounds hard.
+
+« In the solid state, ionic compounds do not conduct electricity because the ions are fixed
+in the lattice.
+
+* Soluble salts are salts that dissolve in water at room temperature.
+
+* All nitrate salts are soluble in water.
+
+EXERCISE
+
+1, Multiple Choice Questions (MCQs)
+i. Which of the following salts is soluble in water?
+
+a. Silver chloride (AgCl) b. Lead carbonate (PbCO,)
+c. Sodium nitrate (NaNO;) d. Lead chloride (PbCl,)
+
+ii. What type of ions do bases provide for salt formation?
+a. Negative ions b. Positive ions
+c. Neutral molecules d. Complex ions
+
+fii. What is the primary reason salts have high melting points?
+a. Weak van der Waals forces b. Strong electrostatic forces
+c. Hydrogen bonding d. Covalent bonding
+
+iv. In what state are salts generally good conductors of electricity?
+a. Solid b. Gas
+c. Molten d. Powdered
+
+v. Which of the following is a general solubility rule for chlorides?
+a. All chlorides are insoluble. b. All chlorides are soluble.
+
+c. Chlorides are soluble except lead and silver chlorides.
+d. Chlorides are soluble except sodium and potassium chlorides.
+vi. What happens to the ions in a salt when it is dissolved in water?
+
+a. They form a gas. b. They become fixed in place.
+c. They become mobile. d. They form a solid.
+
+vii. Which of the following methods is used to prepare a salt by titration?
+a. Acid + Metal b. Acid + Insoluble Base
+
+c. Acid + Insoluble Carbonate d. Acid + Alkali
+
+
+
+--- PAGE 81 ---
+_
+
+viii. Which of these salts is insoluble in water?
+a. Potassium carbonate (K,CO;) b. Ammonium nitrate (NH,NO;)
+
+c. Calcium Cloride (CaCl,) d. Lead chloride (PbCl,)
+ix. What is formed when an acid reacts with an excess of an insoluble base?
+a. Salt and hydrogen b. Salt and water
+c. Salt and carbon dioxide d. Salt and oxygen
+x. Which ion is commonly found in soluble nitrates?
+a. NH,* b. NO,” er CF d. CO;?-
+
+2. Short Answer Questions
+
+i. Define what a salt is in terms of ions. j
+ii. Why do salts generally have high melting points? j
+iii. Describe the lattice structure of an ionic compound. }
+iv. How do salts conduct electricity when molten or in solution? }
+v. _ List three salts that are generally soluble in water.
+
+vi. What happens to the ions in an ionic compound when it dissolves in water?
+
+vii. Do you think that most carbonates are soluble in water?
+
+viii. How can you prepare a soluble salt using an excess of an insoluble base?
+
+ix. Which salts are typically soluble according to the general solubility rules?
+
+3. Long Answer Questions
+
+i. Explain the process of preparing a soluble salt using titration. Include a detailed
+description of the steps involved.
+
+ii. Discuss the properties of salts that make them solid at STP and have high melting
+points.
+
+iii. Describe the solubility rules for salts and explain the exceptions for chlorides,
+carbonates, and hydroxides.
+
+iv. Explain why ionic compounds have lattice structures and how this influences their
+physical properties.
+
+vy. Describe the preparation, separation, and purification of salts using an excess of an
+insoluble carbonate, providing an example reaction.
+
+THINK TANK
+
+Design an experiment to make magnesium sulphate crystals with suitable reactants.
+Design an experiment to make potassium sulphate crystals using titration method.
+
+Name two types of salts that are always soluble.
+
+How could you prepare pure dry sample of copper(II) sulphate from copper(II) carbonate.
+What would you add to dilute sulphuric acid to make copper(II) sulphate?
+
+gayno
+
+
+
+--- PAGE 82 ---
+«2
+
+NITROGEN, SULPHUR
+AND METALS
+
+Student Learning Outcomes (SLOs):
+
+Recognize that atmospheric oxides of nitrogen( NO and NO,) can react with unburned
+hydrocarbons to form peroxyacetyl nitrate, PAN, which is a component of
+photochemical smog.
+
+Describe the role of NO and NO, in the formation of acid rain both directly and in their
+catalytic role in the oxidation of atmospheric sulphur dioxide.
+
+State the symbol equation for the production of ammonia in the Haber process,
+Now * By) = 2NH 4)
+
+State the sources of hydrogen (methane) and nitrogen(air) in Haber process.
+
+State that typical conditions in the Haber process as 450°C, 20000kPa/ 200 atm and an
+iron catalyst.
+
+State the symbol equation for the conversion of sulphur dioxide to sulphur trioxide in the
+contact process, 2S0,,,,+ 0,., = 250,,,
+
+State the sources of the sulphur dioxide (burning sulphur or roasting sulphide ores) and
+oxygen (air0 in the Contact process.
+
+State the typical conditions for the conversion of sulphur dioxide to sulphur trioxide in
+the Contact process as 450°C, 200kPa/atm and vanadium(V) oxide catalyst.
+
+Describe atmospheric oxides as oxides that react with acids and bases to produce a salt
+and water.
+
+Classify oxides as acidic, including SO, and CO,, basic, including CuO and CaO, or
+amphoteric , limited toAl,0, and ZnO, related to metallic and mon-metallic character.
+Identify the general chemical properties of metals, limited to their reactions with dilute
+acids, cold water, steam and oxygen.
+
+Arrange metals in order of reactivity given relevant information.
+
+
+
+--- PAGE 83 ---
+| [Uniti7# Nitrogen, Sulphur and Metals | 7: Nitrogen, Sulphur and Metals
+
+Nitrogen and sulphur oxides play important roles in the environment and industrial processes.
+For instance, in the atmosphere, oxides such as nitric oxide (NO) and nitrogen dioxide (NO2)
+react with unburned hydrocarbons, resulting in the formation of peroxy acetyl nitrate, or
+PAN, which is a major component of photochemical smog. Nitrogen oxides also play a role in
+acid rain, both directly and by catalyzing the oxidation of SO, to SO;. On the industrial level,
+nitrogen is important for the production of ammonia in Haber processes, while sulphur
+dioxide is essential for the production of sulphuric acid. Understanding the chemistry of
+nitrogen and sulphur oxides, including their behaviour, and their industrial applications is
+important in both the environment and chemical engineering.
+
+7.1 Photochemical Smog
+
+Photochemical smog occurs when sunlight reacts with specific chemicals in the air. One of the
+most important step in photochemical smog formation is the reaction of nitrogen oxides (NO
+and NO,) in the atmosphere with unburned (unburned) hydrocarbons in the presence of
+sunlight. This reaction leads to the formation of various secondary pollutants, including
+peroxyacetyl nitrate (PAN).
+
+The chemical reactions involved in the formation of PAN:
+
+1. Formation of Nitrogen Dioxide (NO2)
+
+Nitric oxide (NO) is emitted from vehicles, industrial processes, and other combustion
+sources. NO reacts with oxygen (O,) in the atmosphere to form nitrogen dioxide (NO,):
+UV Radiations
+
+2NOq + Ong, ————> 2NO29)
+2. Photolysis of Nitrogen Dioxide (NO2)
+
+NO2 absorbs sunlight (particularly UV light) and undergoes. photodissociation to form nitric
+
+oxide (NO) and a free oxygen atom (0):
+UV Radiations
+NOx)
+
+3. Formation of Ozone (03)
+Nascent [O] or atomic oxygen is highly reactive and reacts with atmospheric O2 to form Os.
+
+UV Radiations
+Ox) + [O]) ————> Ox
+
+4. Reaction of Hydrocarbons
+
+Unburned hydrocarbons (often referred to as volatile organic compounds or VOCs) in the
+atmosphere can react with nascent oxygen in the. presence of UV light to form a variety of
+intermediate organic radicals.
+
+Hydrocarbons, + [0], ————+> RCO'w
+
+NOw + [O}
+
+
+
+--- PAGE 84 ---
+[Unit 7: Nitrogen; Sulphur'and Metals 7: Nitrogen, Sulphur and Metals
+
+5. Formation of Peroxyacyl Radicals:
+These organic radicals react with molecular oxygen (O,) to form peroxy acyl radicals
+
+(RC(O)O,).
+RCO") + Ong ———*  RC(0)0z"
+Peroxy acyl Radical
+
+6. Formation of PAN:
+The peroxy acyl radicals (RC(O)O,") react with NO2 to form peroxyacetyl nitrate (PAN):
+
+RC(O)O," ~) + NO ———* RC(O)O,NO,..)
+Peroxyacetyl Nitrate (PAN)
+
+PAN is a stable molecule at lower temperatures and can travel long distances in the
+atmosphere. It acts as a reservoir for NOx and organic radicals, releasing them under
+conditions of higher temperatures and sunlight, thereby contributing to the formation and
+persistence of photochemical smog.
+
+7.2 Acid rain
+
+The acidity of rainwater increases in polluted areas during thunderstorms e.g SO) Sulphur
+dioxide from power plants during the combustion of fossil fuels and NO; form automobiles.
+Exhaust fumes dissolve in rainwater producing acids. The pH of rainwater can be much lower
+due to the production of H,SO, and HNO3. By lightning during the thunderstorm. The rain may
+have a pH as low as 2. Acid Rain is defined as rain having a pH less than 5.
+
+7.2.1 Role of nitric oxide and nitrogen dioxide in the formation of acid
+rain
+
+Nitric oxide (NO) and nitrogen dioxide (NO;) play important roles in the formation of acid rain
+through both direct and catalytic processes. Here’s an overview of their involvement:
+
+7.2.2 Direct Role in Acid Rain Formation
+
+Formation of Nitric Acid (HNO)
+Nitric oxide (NO) is initially produced during combustion processes, such as those occurring in
+vehicle engines and industrial activities. NO is relatively stable but can be oxidized to form
+
+NO):
+2NOq + Org) ———* 2NOre)
+
+Formation of Nitric Acid: NO, can further react with hydroxyl radicals (OH) and water in the
+atmosphere to form nitric acid (HNO3), a major component of acid rain:
+ANOz + 2HOqy + Ox) ——— A4HNOs/a9)
+
+
+
+--- PAGE 85 ---
+[© Unit 7: Nitrogen, Sulphur and Metals} 7; Nitrogen, Sulphur and Metals
+
+Catalytic role in the oxidation of sulphur dioxide (SO,)
+Sulphur dioxide (SO,) is another significant precursor of acid rain, primarily originating from
+the burning of fossil fuels containing sulphur. The conversion of SO, to sulphuric acid (H,SO,)
+can be catalysed by NO}.
+
+SO + NOyg ———* S0xq + NO
+
+Formation of Sulphuric Acid (H,SO,)
+SO, readily reacts with water vapour to form sulphuric acid (H,SO,)
+SOyq) + HyQy ———* H,SOxaqy
+Regeneration of NO,
+The NO produced in the oxidation of SO, can be re-oxidized to NO, by reacting with
+molecular oxygen (02), continuing the catalytic cycle:
+2NOq, + Ox) ———* 2NOx)
+
+This cycle allows a small amount of NO, to catalyse the conversion of a large amount of SO,
+to sulphuric acid.
+
+7.3.3 Overall Impact on Acid Rain
+NO2 acts as a catalyst in the oxidation of SO, to sulphuric acid, thereby increasing the
+concentration of another strong acid in the atmosphere.
+
+7.3 Contact Process
+
+Contact Process for the Manufacture of Sulphuric Acid
+
+Sulphuric acid is a most important industrial chemical used for making a large number of
+compounds e.g. fertilizer, plastic, explosives, paints, leather, tanning, textiles, metallurgy
+etc. Sulphuric acid is used in almost all industries which is why it is called the King of
+Chemicals.
+
+Sources:
+
+This process is based on the catalytic oxidation of SO, and SO; in the presence of atmospheric
+oxygen. Sulphur dioxide is produced by burning sulphur or roasting sulphide ores.
+2502, + Or == 250; + 45.2 kcals
+
+This reaction is reversible and exothermic. Therefore the optimum conditions for the reaction
+are:
+
+1) Concentration: A controlled amount of air is passed.
+2) Temperature: The temperature of the reaction should be kept at 450°C
+
+3) Pressure: Pressure is usually kept at 200kPa / 2 atm
+
+4) Catalyst: Vanadium pentaoxide is an efficient catalyst
+
+
+
+--- PAGE 86 ---
+Uni
+
+Nitrogen, Sulphur and Metals
+
+Different Steps involved in the contact process
+
+i) Burner: Sulphur is burnt in a Sulphur burner, SO, gas produced and vapours of this
+gas are cooled by passing through a pipe cooler made up of iron.
+Si) + Orgy ———* SOx)
+ii) The gases then pass through a coke filter which filters the traces of suspended
+matter.
+iii) The purified gases then pass through the heat exchanger and are cooled to 25°C
+iv) From heat exchange gases go to catalytic chambers called converters. Where SO3is
+
+formed
+v0,
+
+450°C atm
+
+2502, + Ory SO3,,+ Heat
+
+503 is cooled and passed through an absorption tower, steam, water and dil. sulphuric acid
+runs into the tower and oleum H2S207 or fusing H2SO, is obtained and stored in the oleum
+tower. The oleum tower is made up of brick-lined steel packed with quartz and fed with 98%
+H,S0,.
+
+H2SO4y + SO3g) ————® —H,S,07,1, (Oleum)
+By adding the appropriate amount of water oleum to concentrated H2SO4
+H2S207y + H2Oq) ———» 2H2SO,q)
+The acid obtained from this method is extremely pure.
+Any concentration of H2SO, can be obtained in this method.
+
+Flow chart of the contact process
+
+Concentrated
+Sulphuric acid
+
+
+
+--- PAGE 87 ---
+init 7=\Nitrogeny Sulphur and Metals) 7: Nitrogen, Sulphur and Metals
+
+7.4 Haber Process:
+Ammonia NH; is commercially produced by the Haber process.
+
+Ammonia can be liquefied and its Boiling point is -33.35°C. It can be solidified as white ice
+crystals. Most of the commercial ammonia is prepared by fixing atmospheric nitrogen.
+
+Sources of reactants: Hydrogen is obtained by the decomposition of methane and nitrogen is
+obtained from air.
+
+Optimum Condition for Haber process *
+i) Concentration of Reactant: A mixture of 1 volume of nitrogen and 3 volume of hydrogen.
+
+ii) Catalytic Chamber: These two gases are compressed to 200 - 500 atm. pressure by special
+pumps injected into the heated reaction vessel and then passed over a catalyst consisting
+of a mixture of Fe/Mo (Molybdenum) at 450°C
+
+iii) Refrigerated Brine: The gases coming out of the catalytic chamber contain 10-12%.
+Ammonia is removed periodically and then passed through refrigerated brine
+(concentrated solution of NaCl) to liquefy Ammonia. The residual or unreacted gases are
+recycled. Excess of nitrogen is used to favour the reaction to the right.
+
+Fe/Mo
+
+—_ 2Nh;,
+
+450°C ,200atm
+
+Haber process is the cheapest method for manufacturing Ammonia. The reaction between
+
+nitrogen and hydrogen is an exothermic and reversible process and is accompanied by a
+
+decrease in the volume of the product.
+
+N2,, + 3H»
+
+Favourable conditions according to the le-Chatellier’s Principal
+1) High pressure (200 atm) due to a decrease in the volume of the product.
+
+2) The temperature must be kept as low as possible. In the presence of a catalyst, the
+optimum temperature is 450°C
+
+| . Unused H, + Nz Refrigerated Brine
+
+
+
+--- PAGE 88 ---
+[Unit 7: Nitrogen, Sulphur and Metals 7: Nitrogen, Sulphur and Metals
+
+7.5 Oxides
+
+Binary compounds of elements with oxygen are called oxides. For example, CaO, CO,, SO,,
+Na,0, CuO, Al,0, etc.
+
+Oxides can be classified as acidic, basic, or amphoteric based on their chemical Properties
+and their relationship with metallic and non-metallic elements.
+
+1. Acidic Oxides
+Acidic oxides typically form acids when they react with water. They are oxides of non-metals.
+Examples include:
+SO, (Sulphur dioxide): Reacts with water to form sulphurous acid (H,SO;).
+SOx + = H,0q = ———_H,SO sig)
+CO, (Carbon Dioxide): Reacts with water to form carbonic acid (H,CO;).
+COy) + HO, H,CO3,.4)
+
+2. Basic Oxides
+Basic oxides form bases when they react with water. They are oxides of metals. Examples
+
+include:
+Na,0 (sodium oxide): Reacts with acids to form salts and water, indicating its basic nature.
+
+Na,0,) + 2HCl, ———* 2NaCl,,q + H,0,)
+
+CaO (Calcium Oxide): Reacts with water to form calcium hydroxide (Ca(OH),), a strong base.
+It reacts with acids to form salt.
+
+CaO, + H,Oy ——> Ca(OH)pi0q)
+
+CaO, + 2HCheg) ———* CaClyjuq) + H,Oy,
+
+3. Amphoteric Oxides
+Amphoteric oxides can react both with acids and bases, displaying both acidic and basic
+properties. These are oxides of some metals. Examples include:
+
+Al2O3 (Aluminum Oxide): Reacts with acids to form salts and water, and with bases to form
+
+aluminates.
+With acid (HCL):
+| AlOy4) + 6HClg) ———* 2ALClyjaq) + 3H,Oq
+| With base (NaOH):
+| ALO) + 2NaOH,,) + 3H;O, ———* 2NaAl(OH) qq
+Sodium aluminate
+ZnO (Zinc Oxide): Reacts with acids to form salts and water, and with bases to form zincates.
+
+| With acid (HCl):
+ZNO) + 2HCliygy) ———* ZNClyaq + H20
+
+With base (NaOH):
+ZNO.) + ZNAOH ag + HO ———>  Na,[Zn(OH),}/4q
+
+Sodium zincate
+
+88
+
+
+--- PAGE 89 ---
+[Unit 7: Nitrogen, Sulphur and Metals] 7: Nitrogen, Sulphur and Metals
+
+7.5 General characteristics of metals
+
+Metals exhibit various chemical properties based on their reactions with different substances,
+including dilute acids, cold water, steam, and oxygen.
+
+Reactions with Dilute Acids
+
+Metals react with dilute acids to form a salt and hydrogen gas.
+Metal + Dilute Acid ————> Salt + Hydrogen Gas
+Example with Hydrochloric Acid
+
+Mga) + ZHClg) ———* MBClriaq * Ha)
+
+Metals like potassium and sodium react explosively.
+Metals like magnesium, zinc and iron react steadily, producing bubbles of hydrogen.
+Metals such as copper, silver and gold do not react with dilute acids.
+
+Reactions with Cold Water
+Reactive metals react with cold water to form a metal hydroxide and hydrogen gas.
+
+Metal + Water ————+ Metal Hydroxide + Hydrogen Gas
+Example
+
+2Naj) + 2H,0y ———* 2NaQH aq + Hag
+Metals like potassium, sodium and calcium react vigorously, sometimes explosively.
+Metals like magnesium react slowly with cold water, but faster with hot water.
+
+Where as Metals like zinc and iron do not react significantly with cold water.
+
+Reactions with Steam
+Metals react with steam to form a metal oxide and hydrogen gas.
+Metal + Steam ————+ Metal Oxide + Hydrogen Gas
+
+Example
+Fey + H,Oy ———> FeOy) + 4Hrg
+Metals such as potassium and sodium are typically not tested with steam due to violent
+reactions.
+Metals such as magnesium, zinc and iron react readily.
+| But less reactive metals like copper do not react with steam.
+
+Reactions with Oxygen
+| Metals react with oxygen to form metal oxides.
+
+Metal + Oxygen ———> Metal Oxide
+Example
+
+2M84) + Ong ————* 2Mg0,,
+Metals like potassium and sodium react rapidly, forming oxides and sometimes peroxides or
+superoxides,
+Metals like magnesium, aluminium form a protective oxide layer, which prevents further
+| reaction.
+Metals such as copper oxidize slowly, often forming a patina over time.
+Metals like gold, platinum do not react with oxygen under normal conditions.
+
+
+
+--- PAGE 90 ---
+[ “Unit 72 Nitrogen) Sulphur and/Metals) © ) + Nitrogen, Sulphur and Metals
+
+7.5.1 Reactivity series
+
+Metals can be arranged into a reactivity series based on their observed reactions with acids,
+cold water, and steam. Metals can be grouped into four groups.
+
+1, Highly Reactive Metals
+These metals react vigorously with cold water, steam, and acids, releasing hydrogen gas.
+Examples: Potassium (K), Sodium (Na), Calcium (Ca)
+« With cold water: Form hydroxides and hydrogen gas.
+2K) + 2H,O~ ————* 2KOHaaq) + Hyg)
+« With acids: Form salts and hydrogen gas.
+2Kis) + ZHCliagy) ————* 2KCliaq + Hye)
+2. Moderately Reactive Metals
+These metals react:
+
+« Slowly or not at all with cold water.
+« React with steam to form oxides and hydrogen gas.
++ React with acids to form salts and hydrogen gas.
+
+Examples: Magnesium (Mg), Aluminium (Al), Zinc (Zn), Iron (Fe)
+
+« With cold water: Limited or no reaction (e.g., Mg reacts very slowly).
+e With steam: Form oxides and hydrogen gas.
+
+Mgis) + H,Oc) ————> MgOys) + Hy)
+« With acids: React more slowly compared to highly reactive metals.
+Mgjs) + 2HCliaq) ————* MgClaq) + Hye)
+
+3. Less Reactive Metals
+These metals:
+« Do not react with cold water or steam.
++ React slowly or not at all with acids.
+Examples: Lead (Pb), Copper (Cu), Silver (Ag)
+
+* With cold water: No reaction.
+
+« With steam: No reaction.
+« With acids: Lead reacts slowly with strong acids, while copper and silver do not react.
+
+4. Unreactive Metals
+These metals are least reactive and do not react with cold water, steam, or acids under
+
+normal conditions.
+
+Examples: Gold (Au), Platinum (Pt)
+
+Reactivity Series (Simplified Order)
+
+Potassium > Sodium > Calcium > Magnesium > Aluminium > Zinc > Iron > Lead > Copper >
+
+Silver > Gold |
+
+This arrangement reflects their decreasing reactivity with acids, cold water, and steam. |
+'
+
+

@@ -5,10 +5,19 @@ export type ProposedCurriculumChapter = {
   contentText: string;
 };
 
-const chapterHeading = /^(?:chapter|unit)\s+([0-9]{1,2}|[IVXLC]+)\s*(?:[:.\-–—]\s*|\s+)([^\r\n]{2,160})$/gim;
+const chapterHeading = /^\s*[\[({<|]?\s*(?:chapter|unit)\s+([0-9]{1,2}|[IVXLC]+)\s*(?:[:.\-–—]\s*|\s+)([^\r\n]{2,160}?)(?:\s*[\]})>])?\s*$/gim;
 
 function cleanTitle(value: string) {
-  return value.replace(/\s+/g, " ").replace(/\s+\d{1,3}\s*$/, "").trim();
+  let title = value.replace(/\s+/g, " ").replace(/\s+\d{1,3}\s*$/, "").replace(/^[\[({<|]+\s*|\s*[\]})>]+$/g, "").trim();
+  const repeatedHeader = title.match(/^(.*?)\s+\d{1,2}\s*:\s*(.+)$/);
+  if (repeatedHeader) {
+    const leftLetters = repeatedHeader[1].replace(/[^a-z]+/gi, "").toLowerCase();
+    const rightLetters = repeatedHeader[2].replace(/[^a-z]+/gi, "").toLowerCase();
+    if (leftLetters && rightLetters && (leftLetters.includes(rightLetters) || rightLetters.includes(leftLetters))) {
+      title = repeatedHeader[2].trim();
+    }
+  }
+  return title.replace(/^[\[({<|]+\s*|\s*[\]})>]+$/g, "").trim();
 }
 
 /**
@@ -28,7 +37,7 @@ export function proposeChaptersFromExtractedText(extractedText: string): Propose
     title: cleanTitle(match[2]),
   })).filter((match) => match.title.length >= 2);
 
-  const uniqueMatches = matches.filter((match, index) => index === 0 || match.index > matches[index - 1].index && `${match.code}|${match.title}` !== `${matches[index - 1].code}|${matches[index - 1].title}`);
+  const uniqueMatches = matches.filter((match, index) => !matches.slice(0, index).some((previous) => previous.title.toLowerCase() === match.title.toLowerCase()));
   const proposals = uniqueMatches.map((match, index) => {
     const nextBoundary = uniqueMatches[index + 1]?.index ?? text.length;
     const contentText = text.slice(match.index, nextBoundary).trim();

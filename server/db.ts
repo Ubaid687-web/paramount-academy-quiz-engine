@@ -27,12 +27,10 @@ import {
   assessmentDrafts,
   assessmentPatternSources,
   assessmentPatternProfiles,
-  programmeEvidenceRecords,
   programmeCatalogues,
   InsertAssessmentDraft,
   InsertAssessmentPatternSource,
   InsertAssessmentPatternProfile,
-  InsertProgrammeEvidenceRecord,
   InsertProgrammeCatalogue,
   AssessmentDraft,
 } from "../drizzle/schema";
@@ -252,7 +250,12 @@ export async function listProgrammeCatalogues() {
 export async function listReadyProgrammes() {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  return db.select().from(programmeCatalogues).where(eq(programmeCatalogues.status, "ready")).orderBy(asc(programmeCatalogues.board), asc(programmeCatalogues.grade), asc(programmeCatalogues.subject));
+  const catalogues = await db.select().from(programmeCatalogues).where(eq(programmeCatalogues.status, "ready")).orderBy(asc(programmeCatalogues.board), asc(programmeCatalogues.grade), asc(programmeCatalogues.subject));
+  const readiness = await Promise.all(catalogues.map(async (programme) => ({
+    programme,
+    catalog: await getActiveCurriculumScopeCatalog({ board: programme.board, grade: programme.grade, subject: programme.subject }),
+  })));
+  return readiness.filter(({ catalog }) => Boolean(catalog?.chapters.length)).map(({ programme }) => programme);
 }
 
 export async function getProgrammeCatalogue(programmeId: number) {
@@ -398,16 +401,6 @@ export async function createCurriculumSource(values: InsertCurriculumSource) {
   return rows[0];
 }
 
-export async function findCurriculumSourceByContentHash(curriculumSetId: number, contentHash: string) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const rows = await db.select().from(curriculumSources).where(and(
-    eq(curriculumSources.curriculumSetId, curriculumSetId),
-    eq(curriculumSources.contentHash, contentHash),
-  )).limit(1);
-  return rows[0];
-}
-
 export async function listCurriculumChapters(curriculumSetId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
@@ -522,61 +515,6 @@ export async function createAssessmentPatternSource(values: InsertAssessmentPatt
   return rows[0];
 }
 
-export async function findAssessmentPatternSourceByContentHash(programme: ProgrammeKey, contentHash: string) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const rows = await db.select().from(assessmentPatternSources).where(and(
-    eq(assessmentPatternSources.board, programme.board),
-    eq(assessmentPatternSources.grade, programme.grade),
-    eq(assessmentPatternSources.subject, programme.subject),
-    eq(assessmentPatternSources.contentHash, contentHash),
-  )).limit(1);
-  return rows[0];
-}
-
-export async function listProgrammeEvidenceRecords(programmeId: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return db.select().from(programmeEvidenceRecords).where(eq(programmeEvidenceRecords.programmeId, programmeId)).orderBy(asc(programmeEvidenceRecords.id));
-}
-
-export async function getProgrammeEvidenceRecord(recordId: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const rows = await db.select().from(programmeEvidenceRecords).where(eq(programmeEvidenceRecords.id, recordId)).limit(1);
-  return rows[0];
-}
-
-export async function findProgrammeEvidenceRecordByContentHash(programmeId: number, contentHash: string) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const rows = await db.select().from(programmeEvidenceRecords).where(and(
-    eq(programmeEvidenceRecords.programmeId, programmeId),
-    eq(programmeEvidenceRecords.contentHash, contentHash),
-  )).limit(1);
-  return rows[0];
-}
-
-export async function createProgrammeEvidenceRecord(values: InsertProgrammeEvidenceRecord) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.insert(programmeEvidenceRecords).values(values);
-  const rows = await db.select().from(programmeEvidenceRecords).where(eq(programmeEvidenceRecords.id, result[0].insertId as number)).limit(1);
-  return rows[0];
-}
-
-export async function updateProgrammeEvidenceRecordStatus(recordId: number, status: "draft" | "reviewed" | "archived", reviewerId?: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.update(programmeEvidenceRecords).set({
-    status,
-    reviewedBy: status === "reviewed" ? reviewerId ?? null : null,
-    reviewedAt: status === "reviewed" ? new Date() : null,
-  }).where(eq(programmeEvidenceRecords.id, recordId));
-  const rows = await db.select().from(programmeEvidenceRecords).where(eq(programmeEvidenceRecords.id, recordId)).limit(1);
-  return rows[0];
-}
-
 export async function getAssessmentPatternSource(sourceId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
@@ -632,35 +570,6 @@ export async function listActiveAssessmentPatternSources(programme: ProgrammeKey
     eq(assessmentPatternSources.subject, programme.subject),
     eq(assessmentPatternSources.status, "active"),
     eq(assessmentPatternSources.extractionStatus, "extracted"),
-  )).orderBy(asc(assessmentPatternSources.id));
-}
-
-export async function listActiveReviewedPatternGuidance(programme: ProgrammeKey) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return db.select({
-    sourceId: assessmentPatternSources.id,
-    sourceKind: assessmentPatternSources.sourceKind,
-    academicYear: assessmentPatternSources.academicYear,
-    mcqCount: assessmentPatternProfiles.mcqCount,
-    mcqMarksEach: assessmentPatternProfiles.mcqMarksEach,
-    shortOrPairCount: assessmentPatternProfiles.shortOrPairCount,
-    shortMarksEach: assessmentPatternProfiles.shortMarksEach,
-    longOrPairCount: assessmentPatternProfiles.longOrPairCount,
-    longMarksEach: assessmentPatternProfiles.longMarksEach,
-    totalMarks: assessmentPatternProfiles.totalMarks,
-    durationMinutes: assessmentPatternProfiles.durationMinutes,
-    orRule: assessmentPatternProfiles.orRule,
-  }).from(assessmentPatternSources).innerJoin(
-    assessmentPatternProfiles,
-    eq(assessmentPatternProfiles.patternSourceId, assessmentPatternSources.id),
-  ).where(and(
-    eq(assessmentPatternSources.board, programme.board),
-    eq(assessmentPatternSources.grade, programme.grade),
-    eq(assessmentPatternSources.subject, programme.subject),
-    eq(assessmentPatternSources.status, "active"),
-    eq(assessmentPatternSources.extractionStatus, "extracted"),
-    eq(assessmentPatternProfiles.reviewStatus, "reviewed"),
   )).orderBy(asc(assessmentPatternSources.id));
 }
 

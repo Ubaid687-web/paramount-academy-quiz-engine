@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { classifySolutionKeyPoint, printableOrRowLayout, printableSectionInstruction, printableTotalMarks, renderPrintablePaperPdf, renderPrintableSolutionPdf } from "./printablePaperExport";
+import { classifySolutionKeyPoint, renderPrintablePaperPdf, renderPrintableSolutionPdf } from "./printablePaperExport";
 
 const shortPaper = {
   mode: "short" as const,
@@ -44,25 +44,6 @@ describe("printable paper PDF export", () => {
     const pdf = await renderPrintablePaperPdf(shortPaper);
     expect(pdf.subarray(0, 5).toString()).toBe("%PDF-");
     expect(pdf.length).toBeGreaterThan(800);
-  });
-
-  it("counts one attemptable alternative per OR pair and uses the verified 11 × 2 Section B instruction only for that exact structure", () => {
-    expect(printableTotalMarks(shortPaper)).toBe(3);
-    const elevenPairs = Array.from({ length: 11 }, (_, index) => [{ ...shortPaper.items[0], orGroup: index + 1, marks: 2 }]);
-    expect(printableSectionInstruction("short", elevenPairs)).toContain("Q.2 Answer any ELEVEN parts briefly. (11 × 2 = 22)");
-    expect(printableSectionInstruction("short", [[shortPaper.items[0], shortPaper.items[1]]])).toMatch(/Practice-set draft/);
-  });
-
-  it("uses a single bordered left-question, marks, OR, right-question, marks row rather than stacked alternatives", () => {
-    expect(printableOrRowLayout()).toEqual({
-      x: 52,
-      width: 491,
-      leftQuestionWidth: 202,
-      leftMarksWidth: 28,
-      orWidth: 31,
-      rightQuestionWidth: 202,
-      rightMarksWidth: 28,
-    });
   });
 
   it("renders a separate PDF solution key with source-traceable marking guidance", async () => {

@@ -22,10 +22,8 @@ export function classifySolutionKeyPoint(point: string): SolutionKeyPointPresent
   return { kind: "bullet", text: point };
 }
 
-export function printableTotalMarks(payload: PrintablePayload) {
-  // Each printed OR pair offers two alternatives for the same marks. Count the
-  // attemptable first alternative, never both prompts, in the paper total.
-  return pairItems(payload.items).reduce((total, group) => total + (group[0]?.marks || 0), 0);
+function printableTotalMarks(payload: PrintablePayload) {
+  return payload.items.reduce((total, item) => total + item.marks, 0);
 }
 
 function pdfBuffer(build: (doc: PDFKit.PDFDocument) => void) {
@@ -104,77 +102,21 @@ function pairItems(items: PrintableItem[]) {
   return [...Array.from(paired.entries()).sort(([a], [b]) => a - b).map(([, group]) => group), ...standalone.map((item) => [item])];
 }
 
-export function printableSectionInstruction(mode: PrintablePayload["mode"], groups: PrintableItem[][]) {
-  const marksEach = groups[0]?.[0]?.marks || 0;
-  if (mode === "short" && groups.length === 11 && marksEach === 2) {
-    return "Q.2 Answer any ELEVEN parts briefly. (11 × 2 = 22) Attempt one alternative from each part.";
-  }
-  if (mode === "long" && groups.length === 4 && marksEach === 5) {
-    return "Attempt all the following questions. Attempt one alternative from each numbered pair.";
-  }
-  return "Practice-set draft: attempt one alternative from each numbered pair. Write clear, relevant answers. Use a labelled sketch where it improves your explanation.";
-}
-
-function toRoman(index: number) {
-  const values: Array<[number, string]> = [[10, "x"], [9, "ix"], [5, "v"], [4, "iv"], [1, "i"]];
-  let remaining = index;
-  let result = "";
-  for (const [value, symbol] of values) {
-    while (remaining >= value) {
-      result += symbol;
-      remaining -= value;
-    }
-  }
-  return result;
-}
-
-export function printableOrRowLayout() {
-  return {
-    x: 52,
-    width: 491,
-    leftQuestionWidth: 202,
-    leftMarksWidth: 28,
-    orWidth: 31,
-    rightQuestionWidth: 202,
-    rightMarksWidth: 28,
-  } as const;
-}
-
-function questionText(doc: PDFKit.PDFDocument, index: number, group: PrintableItem[], mode: PrintablePayload["mode"]) {
-  const left = group[0];
-  const right = group[1];
-  if (!left) return;
-  const layout = printableOrRowLayout();
-  const label = mode === "short" ? `(${toRoman(index)})` : `Q${index + 2}.`;
-
-  if (!right) {
-    ensureSpace(doc, 52);
-    doc.fillColor("#173F62").font("Helvetica-Bold").fontSize(9).text(label, layout.x, doc.y, { continued: true });
-    doc.fillColor("#111827").font("Helvetica").text(` ${left.question}`, { width: layout.width - 40 });
+function questionText(doc: PDFKit.PDFDocument, index: number, group: PrintableItem[]) {
+  const marks = group[0]?.marks || 0;
+  ensureSpace(doc, 74);
+  doc.fillColor("#173F62").font("Helvetica-Bold").fontSize(10).text(`Q${index}.`, 52, doc.y, { continued: true });
+  doc.fillColor("#111827").font("Helvetica").text(` ${group[0].question}`, 76, doc.y - 11, { width: 415 });
+  doc.fillColor("#173F62").font("Helvetica-Bold").fontSize(9).text(`[${marks} marks]`, 485, doc.y - 10, { width: 56, align: "right" });
+  if (group[1]) {
     doc.moveDown(0.5);
-    return;
+    doc.fillColor("#8C551A").font("Helvetica-Bold").fontSize(8.5).text("OR", { align: "center" });
+    doc.fillColor("#111827").font("Helvetica").fontSize(10).text(group[1].question, 76, doc.y + 2, { width: 415 });
+    doc.fillColor("#173F62").font("Helvetica-Bold").fontSize(9).text(`[${marks} marks]`, 485, doc.y - 10, { width: 56, align: "right" });
   }
-
-  doc.font("Helvetica").fontSize(8.3);
-  const leftQuestion = `${label} ${left.question}`;
-  const leftTextHeight = doc.heightOfString(leftQuestion, { width: layout.leftQuestionWidth - 10 });
-  const rightTextHeight = doc.heightOfString(right.question, { width: layout.rightQuestionWidth - 10 });
-  const rowHeight = Math.max(34, Math.ceil(Math.max(leftTextHeight, rightTextHeight)) + 16);
-  ensureSpace(doc, rowHeight + 10);
-
-  const y = doc.y;
-  const leftMarksX = layout.x + layout.leftQuestionWidth;
-  const orX = leftMarksX + layout.leftMarksWidth;
-  const rightQuestionX = orX + layout.orWidth;
-  const rightMarksX = rightQuestionX + layout.rightQuestionWidth;
-  doc.strokeColor("#8F99A5").lineWidth(0.6).rect(layout.x, y, layout.width, rowHeight).stroke();
-  [leftMarksX, orX, rightQuestionX, rightMarksX].forEach((dividerX) => doc.moveTo(dividerX, y).lineTo(dividerX, y + rowHeight).stroke());
-  doc.fillColor("#111827").font("Helvetica").fontSize(8.3).text(leftQuestion, layout.x + 5, y + 7, { width: layout.leftQuestionWidth - 10, height: rowHeight - 12 });
-  doc.fillColor("#173F62").font("Helvetica-Bold").fontSize(8).text(`${left.marks}`, leftMarksX + 2, y + Math.max(7, (rowHeight - 10) / 2), { width: layout.leftMarksWidth - 4, align: "center" });
-  doc.fillColor("#8C551A").font("Helvetica-Bold").fontSize(8).text("OR", orX + 1, y + Math.max(7, (rowHeight - 10) / 2), { width: layout.orWidth - 2, align: "center" });
-  doc.fillColor("#111827").font("Helvetica").fontSize(8.3).text(right.question, rightQuestionX + 5, y + 7, { width: layout.rightQuestionWidth - 10, height: rowHeight - 12 });
-  doc.fillColor("#173F62").font("Helvetica-Bold").fontSize(8).text(`${right.marks}`, rightMarksX + 2, y + Math.max(7, (rowHeight - 10) / 2), { width: layout.rightMarksWidth - 4, align: "center" });
-  doc.y = y + rowHeight + 8;
+  doc.moveDown(1.2);
+  doc.strokeColor("#D6DFE7").moveTo(52, doc.y).lineTo(543, doc.y).stroke();
+  doc.moveDown(0.6);
 }
 
 function footer(doc: PDFKit.PDFDocument) {
@@ -188,14 +130,11 @@ function footer(doc: PDFKit.PDFDocument) {
 export async function renderPrintablePaperPdf(payload: PrintablePayload) {
   return pdfBuffer((doc) => {
     const paperName = payload.mode === "short" ? "Short Question Paper" : "Long Question Paper";
-    const duration = payload.estimatedDurationMinutes ? ` · Suggested time: ${payload.estimatedDurationMinutes} minutes` : "";
-    pageHeader(doc, payload.title, `${paperName} · Attemptable marks: ${printableTotalMarks(payload)}${duration} · Draft for Portal Admin review`);
+    pageHeader(doc, payload.title, `${paperName} · Total marks: ${printableTotalMarks(payload)} · Suggested time: ${payload.estimatedDurationMinutes || "—"} minutes`);
     doc.fillColor("#173F62").font("Helvetica-Bold").fontSize(11).text(payload.mode === "short" ? "SECTION B — SHORT QUESTIONS" : "SECTION C — LONG QUESTIONS");
-    const groups = pairItems(payload.items);
-    const sectionInstruction = printableSectionInstruction(payload.mode, groups);
-    doc.fillColor("#374151").font("Helvetica").fontSize(9).text(sectionInstruction);
+    doc.fillColor("#374151").font("Helvetica").fontSize(9).text("Attempt one alternative from each numbered pair. Write clear, relevant answers. Use a labelled sketch where it improves your explanation.");
     doc.moveDown(1);
-    groups.forEach((group, index) => questionText(doc, index + 1, group, payload.mode));
+    pairItems(payload.items).forEach((group, index) => questionText(doc, index + 1, group));
     footer(doc);
   });
 }

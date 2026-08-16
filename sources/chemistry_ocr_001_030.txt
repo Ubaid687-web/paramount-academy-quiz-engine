@@ -1,0 +1,1528 @@
+
+--- PAGE 1 ---
+Based on National Curriculum of Pakistan 2022-23
+
+Textbook of
+
+CHEMISTRY
+
+3 Grade 10
+
+National Curriculum Council
+Ministry of Federal Education and Professional Training
+
+ad
+@
+SS
+
+National Book Foundation
+
+as
+
+Federal Textbook Board |
+Islamabad
+
+
+--- PAGE 2 ---
+Government Approval
+‘Approved by the National Curriculum Council (NCC), Ministry of Federal Education and Professional Training, Islamabad
+vide letter No. F.No.1-2/2024/NBF/chem, dated: December 02, 2024
+
+© 2025 National Book Foundation (NBF) as Federal Textbook Board
+
+All rights to this are strictly reserved. No part of this publication may be
+tebe pet may be reproduced, stored in a retrieval system, or
+‘ten consent ofthe publahe Unauthorised ne upleaticn or See ook ee ae te ra expres
+
+A Textbook of Chemistry for Grade 10
+based on National Curriculum of Pakistan (NCP) 2022-23
+
+Authors
+
+Prof (R) Muhammad Igtidar ud Din (Managing Author]
+Tahira Raut, Gule-2ehra, Or Sava Riss (Cosmsthon)
+
+Abdul Qadir (Designer)
+
+—_—.s
+
+‘Supervision of Curriculum and Review Process
+Or. Shafquat Ali Janjua
+Joint Educational Advisor, National Curriculum Council (NCC)
+Ministry of Federal Education and Professional Training, Government of Pakistan, Islamabad
+
+NCC Review Committee Members
+Ms. Afrah Harem Maraj (Assistant Professor, APS & College, 208 Humayun Road, Rawalpindi)
+Ms. iffat Tanveer (Assistant Professor, Bahria College, E-8, Islamabad)
+
+Desk Officer
+Mrs. Zehra Khushal, (Assistant Educational Advisor), National Curriculum Council (NCC)
+
+NBF Textbooks Development Supervision
+‘Murad Ali Mohmand
+Managing Director, National Book Foundation (N8F)
+
+tn-Charge, NBF Textbooks Development
+
+Mansoor Ahmad, Assistant Director
+Printed in Pakistan, Tes$
+First Edition: First Impression: February 2025 | Pages: 164 | Quantity: 100000 EDITION
+Price: PKR 240/-, Code: STE-721, ISBN: 978-969-37-1723-5
+Printer: Al-Fateh Pubtshens, Lahore
+
+For details on additional publications from the National Book Foundation, please visit our website at www.nbLorg.pk
+‘You can also reach us by phone at 051 9261125 or via email at books@nbt.org. pk
+For feedback or corrections, kindly send your comments to ‘nbftextbooks@gmail.com’ and ‘textbooks@snc.gov. pk’
+
+Note
+‘Ail illustrations, artwork, and images in this book are intended solely for educational
+and promotional purposes, benefiting the public interest.
+
+
+--- PAGE 3 ---
+PREFACE
+
+In a historic footstep, the national curriculum of Pakistan 2022-2023 has
+introduced a new era for schooling in the country, This is the first-ever core
+curriculum in the 75-year history of Pakistan. It is in line with the protected
+right to school education by Article 25-A.
+
+Chemistry might be a difficult subject for someone, but it holds
+significance for those who embrace a systematic approach to
+understanding its concepts.
+
+This new Textbook has been developed as a model Textbook for Pakistan.
+The book consolidates critical thinking methodologies, guiding scientific
+reasoning, and thinking abilities. The book incorporates problem-solving
+strategies, which will guide students toward analytical thinking and skills.
+These skills would be invaluable for both academic as well as practical life.
+
+The book also inspires concept assessment exercises in every unit, which
+have been designed to evaluate acquired knowledge and promote critical
+thinking and analysing data.
+
+One of the book's distinctive features is the key points at the end of each
+unit, which serve as a quick reference to reinforce the salient features of
+each unit. :
+
+Murad Ali Mohmand
+Managing Director
+
+
+--- PAGE 4 ---
+edt 3
+
+UTILITY OF CHEMISTRY IN EVERYDAY LIFE
+
+Chemistry is everywhere - it affects the food we eat, the air we breathe and the products
+we use. When we begin to study chemistry, it is important to see how it relates to
+everyday life. The concepts explored in this book, such as chemical change,
+stoichiometry, electrochemistry, and organic chemistry, all have practical applications.
+
+Changes in the form of matter are part of everyday life. Melting butter, boiling water,
+and solidifying chocolate all illustrate state changes that are central to daily life
+activities. Clothes dry due to evaporation, utilizing energy from the sun or air to convert
+water into vapour.
+
+Stoichiometry is applied in industrial gas production, ensuring accurate measurements
+of gases like oxygen or nitrogen used in medical and manufacturing sectors.
+Concentration units are important in pharmaceuticals, where precise solution
+concentrations are critical for safe and effective medications. Empirical and molecular
+formulas are vital in drug design to determine exact compositions of chemical
+compounds used in medications. Percentage yield is used in chemical industries to
+improve efficiency and reduce costs in the production of materials like fertilizers or
+plastics.
+
+Electrochemistry has a significant pole in technology, energy, and manufacturing.
+Electroplating is used to coat steel objects with metals like zinc, tin and chromium for
+protection from corrosion. Hydrogen produced via electrolysis is used in fuel cells for
+clean energy. Electrolysis of brine is critical for producing chlorine (used in
+disinfectants) and sodium hydroxide (used in soap manufacturing).
+
+Chemical kinetics deals with the applications of reaction rates and collision theory in
+daily life. Increasing the temperature while cooking speeds up reactions, such as
+browning meat or baking bread, due to more frequent and energetic particle collisions
+Crushing an antacid tablet increases its surface area, speeding up its reaction with
+stomach acid, providing faster relief from indigestion. Catalysts are widely used in the
+production of chemicals like ammonia (Haber process), increasing production efficiency
+and reducing energy costs. ,
+
+The principles of salt formation and purification are essential in industries like food,
+agriculture, healthcare, and domestic applications. Sodium chloride (NaCl) is produced
+by the reaction of hydrochloric acid with sodium hydroxide, which is essential for food
+
+_' seasoning and preservation. Ammonium nitrate and potassium nitrate, used as
+fertilizers, are made by reacting acids with bases, helping in agriculture to enhance crop
+
+growth.
+
+" This unit on nitrogen, sulphur and metals explains the relevance of. chemical processes in
+
+industries, agriculture, and pollution control. The Haber process is used to produce
+
+
+--- PAGE 5 ---
+ammonia, which is a key ingredient in fertilizers that help increase agricultural yields
+and feed the growing population. The Contact process is used to manufacture sulphuric
+acid, which is vital in producing detergents, fertilizers, and in battery production.
+Understanding the formation of photochemical smog (including PAN) is essential in
+developing strategies to reduce air pollution and improve public health in urban areas.
+
+Organic compounds have many applications in daily life. Alkanes (like butane and
+Propane) are used in liquefied petroleum gas (LPG) for cooking and heating. Alkenes,
+such as ethene and propene, are key monomers used in producing polyethylene and
+polypropylene plastics, widely used in packaging and containers. Hydrocarbons have
+daily-life practical applications. Alkenes like ethene and propene, produced from
+cracking large alkane molecules, are essential in manufacturing plastics (e.g.,
+polyethylene and polypropylene) which are widely used in packaging, bottles, and
+containers. Cracking larger hydrocarbons into smaller alkenes increases the production
+of gasoline, meeting the high demand for fuels in transportation. The bromine water test
+used to identify alkenes (unsaturated compounds), has applications in laboratories for
+chemical analysis and quality control.
+
+Ethanol is commonly used in disinfectants and sanitizers due to its effectiveness in killing
+germs and viruses. Alcohol is used as solvents in cosmetics and personal care products
+(e.g., perfumes, lotions), helping dissolve ingredients and enhancing applications.
+
+Esters, produced from alcohols and carboxylic acids, are used in food flavourings and
+fragrances, giving fruity scents to perfumes and flavoring sweets. Carboxylic acids (like
+acetic acid) are found in many pharmaceuticals, and their derivatives are used in the
+production of drugs like aspirin.
+
+Daily life practical applications related to proteins, nucleic acids, vitamins, are studied
+in biochemistry. Proteins, carbohydrates, and lipids are essential macronutrients found
+in foods like meat, vegetables, and dairy, providing energy and building blocks for the
+body. Vitamins (such as Vitamin C and D) are commonly found in supplements to promote
+immune health, skin health, and prevent deficiencies. Techniques such as gene therapy
+and cloning are important in treating genetic disorders, improving agricultural crops,
+and advancing medical research
+
+Addition polymers like polyethylene are used in plastic bags and packaging materials,
+providing lightweight and flexible options for protecting goods. Polyamides (e.g., nylon)
+and polyesters (e.g., PET) are widely used in fabrics for making clothing, sportswear, and
+home textiles due to their durability and flexibility. PET is commonly used in beverage
+bottles and food containers, offering strength and recyclability, making it an essential
+material in packaging.
+
+Managing Author
+
+
+--- PAGE 6 ---
+CONTENTS
+
+4 Electrochemistry
+= BiRekction kinebes SGA Gaia 8
+Salts
+— Lo Nitrogen, Sulphur and metas a
+8 Organic Chemistry oe
+10 Hydroxy Compounds 123
+
+12 Polymers 137
+
+Glossary 160
+
+
+--- PAGE 7 ---
+HISTORY
+OF CHEMISTRY
+
++ Justify, with examples, to do science is to be involved in a community of inquiry. (For
+context in chemistry: a. The community adheres to certain common principles,
+methodologies, and processes, such as the use of empirical evidence and logical reasoning
+to develop scientific theories, For example, chemist based their research on the
+assumption on conservation of mass and energy and use this to verify whether their
+calculations and findings are sensible, b. Scientists in different fields often share similar
+methodologies, such as the use of controlled experiments and the peer review process.
+The scientific community also values objectivity and scepticism, which are essential for
+ensuring accuracy and validity of scientific findings).
+
++ Explain with examples, that a scientific paradigm is a theoretical model of how nature
+
+works( some examples include: a. The belief that materials that burn do so because a
+material called “phlogiston” was the paradigm in chemistry in the 18th century, b.
+Historical models of the atom are paradigms, such as plum-pudding and the Rutherford
+model of atom, c. The periodic table of elements, and belief in the “ periodicity” of atoms
+based on the arrangements of their electrons is a paradigm.
+
+
+--- PAGE 8 ---
++ Scientific paradigms in chemistry provide a framework for understanding the properties
+of materials and developing new materials with specific properties. Overall, scientific
+paradigms:in chemistry guide research and development in the field, and help scientists
+to better understand the behaviour of chemicals and their interactions).
+
++ Explain with examples, how scientists speak of “ levels of confidence” (or uncertainty)
+
+when discussing experimental outcomes.
+
++ Explain the difference between repeatability and reproducibility in chemistry. (For
+context: a. Repeatability as the idea that scientific results from experiments should be
+possible to verify by conducting the experiment again under the same physical conditions,
+b. Reproducibility as the idea that the same or similar result is obtained when the
+measurement is made under either different conditions or by a different method or in a
+different experiment.)
+
+1.1 Principles and Methods in Chemistry
+
+To do science, you need to work within a scientific community where people share ideas,
+methods, and practices to build knowledge. This is especially true for chemistry, where scientists
+follow set principles and techniques. Below are some key principles and methods in chemistry
+explained in simple terms:
+
+(a) Conservation of Mass and Energy
+
+In chemistry, we follow a rule called the conservation of mass and energy. This means that mass
+and energy cannot be created or destroyed in a closed system. For example, in a chemical
+reaction, the total mass of the reactants is always equal to the total mass of the products. This
+principle, first shown by Antoine Lavoisier in the 18th century, changed the way chemists do
+experiments by making them more accurate and reliable. If an experiment doesn't follow this
+rule, chemists check their procedures and calculations to find what went wrong.
+
+(b) Using Observations and Logical Thinking
+
+Chemists create theories and models based on what they observe in experiments. They use logical
+thinking to make sense of their findings. For example, Dmitri Mendeleev created the periodic
+table by observing patterns in the properties of elements. He even predicted elements that
+hadn't been discovered yet based on these patterns. This way of using evidence and reasoning is
+an important part of how science works.
+
+(c) Controlled Experiments
+
+Chemists, like other scientists, use controlled experiments to test their ideas. They change one
+variable at a time while keeping others constant to see what happens. For example, in
+pharmaceutical chemistry, controlled experiments are used to test if new medicines work and are
+safe. This method is also used in other sciences, like biology and physics, to find cause-and-effect
+relationships.
+
+(d) Peer Review
+
+Before scientific work is published, it is reviewed by other scientists to make sure it is correct and
+reliable. Chemists share their results in journals, where experts check the experiments, data,
+and conclusions for mistakes or unclear parts. For example, if a chemist discovers a new catalyst,
+
+it must be reviewed and tested by other scientists to confirm the findings. This process ensures
+the quality of scientific research.
+
+
+
+--- PAGE 9 ---
+[Unit 1: History of Chemistry J 1: History of Chemistry
+
+(e) Being Objective
+
+In science, results must come from facts, not opinions or biases. Chemists aim to be objective
+when performing experiments and analyzing data. For example, when identifying the
+structure of a molecule using spectrometry, they rely on precise measurements and standard
+methods instead of guesses or personal beliefs.
+
+(f) Skepticism and Proof }
+Scientists are naturally skeptical and always double-check new discoveries. They repeat
+experiments and have others test their work before accepting it. For example, if someone claims
+
+| to discover a new element or reaction, other scientists will conduct many tests to verify it. This
+skepticism helps ensure that only trustworthy information becomes part of science.
+|
+
+1.2 Evolution of Scientific Ideas (Paradigms)
+
+What is a Scientific Paradigm?
+
+Ascientific paradigm is a set of ideas, methods, and rules that guide scientists in their research. It
+helps scientists understand the natural world and explain their discoveries. Paradigms give
+scientists a consistent way to study and share knowledge. However, when new evidence
+challenges an existing paradigm, it may be replaced with a better one. Here are some examples
+of scientific paradigms and how they changed over time:
+
+| 1. The Phlogiston Theory
+
+In the 1700s, scientists believed in the phlogiston theory to explain burning (combustion) and
+rusting. According to this idea, materials that could burn contained a substance called
+“phlogiston,” which was released during burning. For example, when metals rusted, people
+thought they absorbed “deflogisticated air.”
+
+Later, Antoine Lavoisier proved that combustion happens because of oxygen combining with
+substances, not because of phlogiston. His work introduced a new way of thinking about chemical
+reactions, replacing the phlogiston theory with the modern concepts of oxidation and reduction.
+
+2. Historical Models of the Atom
+
+Scientists have changed their ideas about what atoms look like as they learned more through
+experiments:
+
+* The Plum Pudding Model (1904): J.J. Thomson suggested that atoms are like a “pudding” with
+| negatively charged electrons (the “plums”) scattered ina Positively charged “soup.”
+
+* Rutherford’s Model (1911): Ernest Rutherford's gold foil experiment showed that atoms have
+asmall, dense, positively charged centre called a nucleus, with electrons orbiting around it.
+
+* Bohr'’s Model and Quantum Model: Later, scientists improved Rutherford’s model by adding
+ideas about energy levels (Bohr’s model) and quantum mechanics, which is the current way we
+understand atoms.
+
+* These changes happened because new experiments provided better evidence.
+3. The Periodic Table
+
+Dmitri Mendeleev created the periodic table in 1869 to organize elements based on their atomic
+
+masses and properties. His table was powerful because it predicted the existence of elements
+that had not been discovered yet.
+
+i? ———
+
+
+--- PAGE 10 ---
+[Unit 4: History of Chemistry History of Chemis’
+
+Modern Periodic Table
+
+As scientists learned about atomic structure and quantum mechanics, they updated the periodic
+table. Today, elements are arranged based on their atomic numbers and electron configurations.
+This modern version explains why elements show similar chemical properties at regular intervals
+(periodicity) and helps us understand their behaviour in reactions. {
+
+1.3 Scientific Paradigms in Chemistry
+
+Scientific paradigms in chemistry are ideas and rules that help us understand how substances
+
+behave and interact. These paradigms guide scientists in creating experiments, testing ideas, ]
+and interpreting results. They help us learn more about the materials we already know, and they j
+also inspire the creation of new materials and technologies. This is important for progress in fields }
+like medicine, materials science, and environmental protection.
+
+1.4 Confidence and Uncertainty in Chemistry
+
+Chemistry, like other sciences, involves both confidence and uncertainty when analyzing
+experimental results. Scientists use tools to measure how precise or reliable their data is:
+
+1. Confidence Intervals
+
+Confidence intervals show how precise a measurement is. For example, if a pharmacist measures
+the concentration of a solution to be 0.50 molar with a 95% confidence interval (0.48-0.52
+molar), it means they are 95% sure that the true value is within this range.
+
+2. P-Values
+
+P-values help scientists check if experimental results are meaningful. For example, if a chemist
+
+tests whether a new catalyst works faster than an old one and finds a p-value of 0.01, it means |
+there's only a 1% chance that the result is random. This shows the new catalyst is almost certainly }
+better.
+
+3. Standard Error and Standard Deviation
+
+These tools measure how much data varies. For example, if a chemist measures the melting point
+
+of a substance and finds the average is 120°C with a standard deviation of 0.5°C, it means the F
+results are consistent. A small standard error (e.g., 0.1°C) shows that the average value is I
+accurate.
+
+4. Bayesian Probability
+
+This method updates our confidence in an idea based on new evidence. For example, if a chemist
+first believes there's a 60% chance a reaction happens in a certain way, but new data raises their
+confidence to 80%, they've used Bayesian probability to update their understanding.
+
+5. Quantifying Uncertainty
+
+Uncertainty tells us how reliable a measurement is. For example, if a chemist measures the
+concentration of a solution as 0.250 molar + 0.005 molar, the uncertainty is +0.005 molar,
+meaning the true value is close to 0.250 molar.
+
+
+
+--- PAGE 11 ---
+[Unit 4: History of Chemistry 1: History of Chemistry
+
+1.5 Repeatability and Reproducibility
+
+In chemistry, repeatability and reproducibility are important for proving that experimental
+results are reliable.
+
+Repeatability
+
+This means getting the same result when repeating an experiment under the same conditions,
+using the same tools and procedures. For example, if a chemist measures the melting point of a
+
+substance several times in the same lab and gets the same result each time, the experiment is
+repeatable.
+
+Reproducibility
+
+This means getting the same result even when the experiment is done in different labs, with
+different tools, methods, and scientists. For example, if different chemists in different labs |
+
+measure the same substance’s melting point and get, similar results, the experiment is
+reproducible.
+
+Why Are These Important?
++ Repeatability shows that the experiment is well-controlled and consistent in one setting.
+
++ Reproducibility shows that the findings are reliable and not limited to one lab or method.
+Both help scientists ensure their discoveries are accurate and accepted by others.
+
+ws
+” KEY POINTS
+
+Chemists generally follow the principle of conservation of mass and energy.
+Skepticism drives scientists to consistently challenge and validate new discoveries.
+
+According to this theory, all combustible materials contained a substance called
+“phlogiston” that was released. when burned.
+
+Chemical paradigms are frameworks that explain chemical properties.
+
+In chemistry, Bayesian methods involve updating the likelihood of a hypothesis by
+combining previous data with new evidence.
+
+Uncertainty is a measure used by chemists to indicate how reliable their measurements
+and predictions are.
+
+Repeatability is the ability to repeat an experiment under the same conditions, such as
+using the same equipment, processes, location, time frame, and (if applicable) operator.
+The reproducibility of a measurement is the ability to produce same or similar results
+
+when the measurements are made in different environments, with different equipment,
+with different methods, and at different times.
+
+
+
+--- PAGE 12 ---
+ea
+
+. [Unit 1: History of Chemistry 1: History of Chemistry
+
+EXERCISE
+
+1. Multiple Choice Questions (MCQs)
+i. Whatis the principle of conservation of mass?
+a) Mass is created during a chemical reaction
+b) Mass is destroyed during a chemical reaction
+¢) Mass remains constant during a chemical reaction
+d) Mass can be converted into energy .
+ii. What does the peer review process ensure in scientific research?
+
+a) Faster publication b) Accuracy and validity of findings
+c) Higher funding d) Reduced experimentation
+iii, Which of the following was an 18th-century chemical paradigm?
+a) Atomic theory b) Phlogiston theory
+c) Quantum mechanics d) Periodic table
+
+iv. What does the periodic table of elements organize?
+a) Elements by alphabeticalorder _b) Elements by their properties and atomic number
+
+c) Elements by colour d) Elements by discovery date .
+v. What does a 95% confidence level mean in scientific reporting?
+
+a) Results are 95% accurate b) There is a 5% chance the results are incorrect
+
+Cc) 95% of scientists agree d) The experiment is repeated 95 times
+vi. Which model of the atom includes a central nucleus?
+
+a) Plum-pudding model b) Rutherford model
+
+c) Bohr model d) Quantum mechanical model
+
+vii. What does repeatability in scientific experiments refer to?
+a) Different results under the same conditions b) Same results under the same conditions
+c) Different methods d) Multiple publications
+
+viii. What is reproducibility in scientific experiments?
+a) Different results under the same conditions b) Same results using different methods
+
+c) Results not verified d) Repetition by the same scientist
+ix. What paradigm replaced the phlogiston theory?
+a) Atomic theory b) Theory of combustion *
+c) Quantum mechanics d) Periodic table
+x. Which property does the periodic table help to predict?
+a) Colour of elements b) Properties of elements
+c) Weight of elements d) Discovery date of elements
+
+ay
+
+
+--- PAGE 13 ---
+U mr
+a
+2. Short Answer Questions
+i. Explain the principle of conservation of mass in chemical reactions.
+fi. What is the role of empirical evidence in scientific research?
+iii. Describe the peer review process and its importance in science,
+iv. How did the phlogiston theory explain combustion?
+v. What is the significance of Rutherford’s model of the atom?
+vi. How does the periodic table organize elements?
+| vii. Define scientific paradigm with an example.
+viii. What does a confidence level in scientific research indicate?
+ix. Differentiate between repeatability and reproducibility in experiments.
+x. Why is skepticism important in the scientific community?
+
+3. LongAnswer Questions
+
+i. Discuss the transition from the phlogiston theory to the oxygen theory of combustion and
+its impact on chemistry.
+
+ii. Explain the development of atomic models from the plum-pudding model to the quantum
+mechanical model.
+
+Analyze how the periodic table serves as a Paradigm in chemistry, guiding research and
+discovery of new elements.
+
+iv. Evaluate the importance of repeatability and reproducibility in maintaining scientific
+integrity and progress.
+
+Describe how levels of confidence and uncertainty are expressed and interpreted in
+scientific research, providing examples from chemistry experiments.
+
+iti.
+
+
+
+--- PAGE 14 ---
+Explain changes of state and internal energy without change in temperature (melting,
+boiling, freezing, condensation, sublimation and deposition) in terms of kinetic particle
+theory.
+
+Distinguish between evaporation and boiling
+
+Interpret heating and cooling curves in terms of kinetic theory.
+
+Interpret heating in terms of kinetic particle theory the effects of changing pressure,
+temperature and volume of a gas on the other two with regards to Boyle's law, Charles*
+law, and Avogadro's law.
+
+Explain qualitatively the effect of external pressure on the rate of boiling and
+evaporation.
+
+Explain diffusion of gasses in terms of kinetic particle theory.
+
+Examine qualitatively the effect of molecular mass and temperature on the rate of
+diffusion.
+
+Discuss applications of sublimation around us. (examples may include: solid air fresheners
+and 3D printing).
+
+Explain, with the help of kinetic particle theory, the importance of rates of diffusion of _
+medicines in the body.
+
+
+
+--- PAGE 15 ---
+__—
+
+2.1 Changes of states of matter
+
+Astate change (or phase transition) is the transition of matter from one state to another, such asa
+solid state to a liquid state, a liquid state to a gas state, or a state of matter directly between a
+solid state and a gas state. These transitions occur without a temperature change and can be
+understood through kinetic particle theory and the internal energy. Internal energy is composed
+of kinetic energy (temperature-related) potential energy (particle positions and interactions)
+during phase transitions. During phase transitions, the temperature remains constant (and hence
+the kinetic energy), however, the potential energy significantly changes. This shift in potential
+energy causes the overcoming or generation of inter-particle forces during phase transitions.
+
+1. Melting (Solid to Liquid)
+
+When a solid melts, it becomes a liquid. In a solid, the particles are tightly packed in a stable,
+well-ordered state and vibrate in fixed positions. When energy (usually heat) is added to the
+solid, it causes the particles to vibrate more strongly. When energy is added to a solid at the
+melting point, it increases its potential energy. This weakens the forces that hold the particles in
+place without increasing their kinetic energy, so the temperature stays the same. When the
+energy is strong enough to overcome the forces holding the particles in place, the solid melts into
+aliquid where the particles are in a stable state but can move freely around one another.
+
+2. Boiling (Liquid to Gas)
+When a liquid boils, it turns into a gas.
+
+According to the Kinetic Particle Theory in a liquid, particles are closely packed but can move past
+each other. As energy is added, particles move faster and eventually have enough energy to break
+free from the liquid’s surface into the gas phase.
+
+The added energy increases the potential energy of the particles, allowing them to overcome the
+attractive forces holding them in the liquid. This occurs at the boiling point, where the
+temperature remains constant as the liquid turns into gas.
+
+3. Freezing (Liquid to Solid)
+
+When a liquid freezes, it turns into a solid.
+
+According to the Kinetic Particle Theory in a liquid, particles have enough energy to move around
+each other. As the liquid loses energy, particle motion slows down, and the forces of attraction
+pull the particles into a fixed, orderly arrangement characteristic of a solid.
+
+Energy is released during freezing, decreasing the potential energy of the particles. The
+temperature remains constant during this process as the energy released is used to form the solid
+structure.
+
+4. Condensation (Gas to Liquid)
+
+When a gas condenses, it turns into a liquid.
+
+According to the Kinetic Particle Theory in a gas, particles move away rapidly and are far apart. As
+the gas loses energy, particle motion slows down, and attractive forces pull the particles closer
+together, forming a liquid. A
+
+Energy is released during condensation, reducing the potential energy of the particles. The
+temperature remains constant as the gas turns into a liquid.
+
+5. Sublimation (Solid to Gas)
+
+When a solid sublimates, it turns directly into a gas without passing through the liquid phase.
+According to the Kinetic Particle Theory in a solid, particles are tightly packed in fixed positions.
+
+
+
+--- PAGE 16 ---
+When the solid gains enough energy, the particles gain sufficient energy to break free directly
+into the gas phase.
+
+Energy is added, significantly increasing the potential energy of the particles to overcome the
+forces holding them in the solid structure. This occurs without a change in temperature during the
+sublimation process.
+
+6. Deposition (Gas to Solid)
+
+When a gas undergoes deposition, it turns directly into a solid without ey through the liquid
+phase.
+
+According to the Kinetic Particle Theory in a gas, particles are far apart and move freely. When
+the gas loses energy, the particle motion slows significantly, and attractive forces pull the
+particles directly into a solid arrangement.
+
+Energy is released, greatly reducing the potential energy of the particles. This happens without a
+change in temperature during the deposition process.
+
+2.2 Heating and cooling curves
+
+Heating and cooling curves are shown in figure. These curves show how the energy of particles ‘
+
+changes durin: ion.
+9g g phase transition. afore
+
+2.2.1 Heating Curve cc) .
+A heating curve typically shows temperature
+change over time as a substance is heated. It
+consists of several distinct regions (Figure 2.1).
+Solid Phase (Ato B)
+
+Segment A to B: The temperature of the solid
+increases as it absorbs heat. According to kinetic
+theory, the kinetic energy of the particles (atoms
+‘or molecules) increases, causing the particles to
+vibrate more vigorously.
+
+Melting (B to C)
+
+Segment B to C: The temperature remains constant as the solid melts into a liquid. Here, the
+
+absorbed heat energy is used to overcome the intermolecular forces holding the solid together, |
+rather than increasing kinetic energy. This is known as the latent heat of fusion.
+Liquid Phase (C to D)
+
+Segment C to D: The temperature of the liquid increases as it continues to absorb heat. The '
+kinetic energy of the particles increases, causing them to move more rapidly.
+Boiling (D to E)
+
+Segment D to E: The temperature remains constant as the liquid changes into a gas. The absorbed
+heat energy is used to overcome the intermolecular forces in the liquid, a process that requires
+
+latent heat of vaporization.
+
+Gas Phase (E onward) ;
+
+Segment E onward: The temperature of the gas increases as it absorbs more heat. The kinetic
+
+energy of the gas particles increases, causing them to move even more rapidly.
+
+
+
+--- PAGE 17 ---
+2.2.2 Cooling Curve
+
+A cooling curve shows the reverse process as a
+substance is cooled. It consists of similar distinct
+regions, but in reverse order (Figure 2.2).
+
+Gas Phase (Higher Temperature to E)
+Segment higher temperature to E: The
+temperature of the gas decreases as it loses heat.
+The kinetic energy of the gas particles decreases,
+causing them to move less rapidly.
+
+Condensation (E to D)
+Segment E to D: The temperature remains
+constant as the gas condenses into a liquid. The
+
+lost heat energy is released as the intermolecular forces bring the particles closer together,
+resulting in the latent heat of vaporization being released.
+
+Liquid Phase (D to C)
+
+Segment D to C: The temperature of the liquid decreases as it loses more heat. The kinetic energy
+of the particles decreases, causing them to move more slowly.
+
+Freezing (C to B)
+
+Segment C to B: The temperature remains constant as the liquid freezes into a solid. The lost heat
+energy is released as the intermolecular forces arrange the particles into a solid structure,
+resulting in the latent heat of fusion being released.
+
+Solid Phase (B toAand below)
+
+Segment B to A and below: The temperature of the solid decreases as it continues to lose heat.
+The kinetic energy of the particles decreases, causing them to vibrate less.
+
+2.2.3 Kinetic Theory Interpretation
+Kinetic Energy and Temperature
+
+In the regions where the temperature is changing (A to B, C to D, and E onward for heating) the
+kinetic energy and potential energy increase. E to D, C to B for cooling, KE of the particle is
+constant but PE is decreasing.
+
+Potential Energy and Phase Changes
+
+In the regions where the temperature remains constant (B to C and D to E for heating; D toC andB
+to A for cooling), the energy absorbed or released is used to change the phase of the substance.
+This involves changing the potential energy associated with intermolecular forces, rather than
+changing the kinetic energy of the particles.
+
+2.3 Evaporation and Boiling
+
+Evaporation is the process by which molecules at the surface of a liquid gain enough kinetic
+energy to escape into the gaseous phase. Only molecules at the liquid’s surface participate in
+evaporation. These molecules must have sufficient kinetic energy to overcome intermolecular
+forces, Energy for evaporation comes from the surrounding environment. This absorption makes
+surroundings cooler than before. Evaporation can occur at any temperature below the liquid's
+boiling point. Higher temperatures increase the rate of evaporation since more molecules have
+sufficient energy to escape.
+
+
+
+--- PAGE 18 ---
+_—_ (7
+
+As high-energy molecules leave the liquid, the average kinetic energy of the remaining molecules
+decreases, leading to a cooling effect. This is why sweating helps cool the body.
+
+Examples:
+
+« Drying of clothes ona line.
+
+« Evaporation of water from lakes and oceans contributing to the water cycle.
+
+« Sweat evaporating from the skin, providing a cooling effect.
+
+Boiling is the process in which a liquid turns into vapor when it is heated to its boiling point,
+resulting in the formation of vapour bubbles within the liquid. Boiling occurs throughout the
+entire liquid, not just at the surface. Vapour bubbles form within the liquid, rise to the surface,
+and burst, releasing gas.
+
+Boiling occurs at a specific temperature known as the boiling point. This temperature varies
+depending on the liquid and the external pressure. For water at sea level, the boiling point is
+100°C (212°F). ‘
+
+Continuous heat input is required to maintain the liquid at its boiling point. The temperature of
+the liquid remains constant during boiling, as the added energy is used to convert the liquid into
+gas. Boiling is characterized by the vigorous formation of bubbles and steam, making it a highly
+visible process.
+
+The boiling point changes with external pressure. Higher pressure increases the boiling point,
+while lower pressure decreases it. This is why water boils at lower temperatures at high altitudes.
+
+2.3.1 Effect of pressure on evaporation and boiling
+
+The effect of pressure on evaporation and boiling is primarily related to how it influences the
+rate at which molecules escape from the liquid's surface into the gas phase. Here are the key
+points regarding the effect of pressure on evaporation:
+
+Effect of Lower Pressure
+
+At lower atmospheric pressures, the rate of evaporation increases. This is because there is less
+external pressure exerted on the liquid surface, making it easier for molecules to escape into the
+vapor phase.
+
+For example, water will evaporate more quickly at high altitudes where the atmospheric pressure
+is lower than at sea level.
+
+Lower pressure reduces the boiling point of a liquid, which means the liquid can transition to the
+gas phase at a lower temperature. This indirectly affects evaporation by facilitating the
+conditions under which it can occur more readily.
+
+Effect of Higher Pressure
+
+‘At higher atmospheric pressures, the rate of evaporation decreases. The increased external pressure
+on the liquid surface makes it more difficult for molecules to escape into the vapour phase.
+
+For example, in a pressure cooker, the high pressure suppresses evaporation until a higher
+temperature is reached, allowing food to cook faster.
+
+Higher pressure increases the boiling point of a liquid, which means the liquid requires a higher
+temperature to transition into the gas phase. This indirectly affects evaporation by making the
+conditions less favorable for it to occur
+
+For example, ina pressure cooker, the high pressure suppresses boiling until a higher temperature
+is reached allowing water to boil at a higher temperature. This allows food to cook faster. |!
+
+
+
+--- PAGE 19 ---
+Evaporation is a gradual process occurring at any temperature below the boiling point and at the
+surface of a liquid, while boiling is a rapid, vigorous process that occurs throughout the liquid at a
+specific boiling point.
+
+2.4 Kinetic Particle Theory and Gas Laws
+Asample of a gas can be characterized by four variables:
+1.The number of moles of a gas(n)
+2.Volume(V)
+3.Pressure(P)
+4.Temperature(T)
+The relationships that express the influence of one variable on another with two variables
+constant are called gas laws.
+2.4.1 Boyle's Law
+It states that for a fixed amount of gas at a constant temperature, the volume of a gas is inversely
+proportional to its pressure. Mathematically,
+1
+voc 5
+1
+Vv =k 5
+PV = constant
+
+Kinetic Particle Theory Interpretation ‘on the volume of a gas
+Effect of Volume on Pressure:
+
+When the volume of a gas decreases, the gas particles have less space to move around. This
+results in more frequent collisions with the walls of the container, thereby increasing the
+pressure. Conversely, if the volume increases, the particles collide with the walls less often,
+decreasing the pressure.
+
+Constant Temperature:
+
+The average kinetic energy of the particles remains constant since the temperature does not
+change. The speed of the particles does not change, but the frequency of collisions with the
+container walls changes due to the volume change.
+
+2.4.2 Charles's Law
+
+It states that for a fixed amount of gas at constant pressure, the volume of a gas is directly
+proportional to its absolute temperature. Mathematically,
+
+VaeT
+Ve=kT
+
+SLO CL
+v y  WSeestes)
+i
+
+Vv
+7 = constant Figure 2.4: Effect of temperature on the volume of a gas
+
+
+
+--- PAGE 20 ---
+Kinetic Particle Theory Interpretation:
+Effect of Temperature on Volume:
+
+When the temperature of a gas increases, the kinetic energy of the gas particles increases. This
+means the particles move faster. To maintain constant pressure, the volume of the container must
+increase to allow the particles to travel further between collisions with the container walls, thus
+keeping the pressure constant. Conversely, if the temperature decreases, the kinetic energy of
+the particles decreases, the particles move slower, and the volume must decrease to maintain
+constant pressure.
+
+Constant Pressure:
+
+The volume changes to balance the increased or decreased frequency and force of collisions due
+to temperature changes, maintaining constant pressure.
+
+2.4.3 Avogadro's Law
+
+It states that for a gas at constant temperature and pressure, the volume of the gas is directly
+proportional to the number of moles of gas. Mathematically,
+
+Von
+V=kn where k and n are constant
+
+v
+= constant
+n
+
+n=no. of moles
+
+Kinetic Particle Theory Interpretation iene patel sah dbiriiriemal
+
+Effect of Number of Particles (Moles) on Volume:
+
+When the number of gas particles (moles) increases, there are more particles colliding with the
+walls of the container. To keep the pressure constant, the volume of the container must increase
+to accommodate the additional particles and maintain the same number of collisions per unit
+area. Conversely, if the number of particles decreases, the volume must decrease to maintain
+constant pressure.
+
+Constant Temperature and Pressure:
+
+The temperature ensures the kinetic energy of each particle remains the same, and the pressure
+remains constant by adjusting the volume according to the number of particles.
+
+2.5 Diffusion of gases
+
+One of the simplest examples of diffusion in everyday use is when perfume is sprayed and
+dispersed across a room. At first, perfume molecules are concentrated in the sprayer and
+dispersed across the room. However, as the perfume particles travel and collide, they disperse
+across the room, allowing the perfume to be detected even at a distance from the source.
+
+2.5.1 Diffusion Process Explained by Kinetic Particle Theory
+
+When two different gases come into contact, their particles begin to move together. Because of
+their kinetic energy, each type of a gas particle moves randomly in all directions. The random
+motion of these particles ensures that the particles from each of the two gases move into the
+other gas’s space. This random and constant motion causes the gases to spread and mix up. The
+gas particles change direction as they move and collide with each other. As they change direction,
+
+
+
+--- PAGE 21 ---
+they spread out and move through the space available to them. As time goes on, this random
+motion causes the particles to spread out evenly across the space. Eventually, the concentration
+of both types of gas particles is uniform across the entire space, and equilibrium is achieved.
+
+Stopcock closed Stopcock open Some time after
+(a) (b) Stopcock open
+
+(c)
+
+Figure 2.6: Shows the diffusion of two gases
+
+2.5.2 Factors affecting diffusion
+
+The rate of diffusion, the process by which molecules spread from areas of high concentration, is
+affected by several factors, including molecular weight and temperature.
+Molecular weight
+According to Graham’s law of diffusion
+The rate of diffusion is inversely proportional to the square root of the molar mass of the gas
+particles.
+
+Rate of diffusion ro 7- at constant T and P
+
+This means that lighter molecules diffuse faster than heavier ones.
+
+According to kinetic particle theory, all molecules at the same temperature have the same
+average kinetic energy.
+
+Since kinetic energy (K.E) = 1/2mv’, where m is the molecular mass and v is the velocity, lighter
+molecules (smaller m) have a greater velocity (v) than heavier molecules with the same kinetics.
+Because lighter molecules move faster, they can travel greater distances in a given time than
+heavier molecules, resulting in a higher rate of diffusion.
+
+Temperature
+
+Diffusion rate increases with temperature. Higher temperatures give molecules more energy,
+which increases their kinetic energy. As the temperature increases, the average kinetic energy of
+the molecules increases. Since kinetic energy is proportional to the square of the velocity, this
+results in a higher molecular velocity. Higher molecular velocities at higher temperatures cause
+more frequent and energetic collisions between molecules, facilitating faster diffusion.
+
+CONCEPT ASSESSMENT EXERCISE 2.1:
+Explain why?
+
+(a) When you apply perfume to your pat, it makes you feel cold.
+(b) We all sweat. As our sweat evaporates, it cools us
+
+
+
+--- PAGE 22 ---
+2.6 Sublimation
+
+Sublimation is the process in which molecules of a substance in the solid state go to the vapor
+state directly, without going through the liquid state. According to the kinetic molecular theory,
+we know that molecules are in constant random motion, even when the substance is below the
+melting point. We also know that the average speed of the molecules (kinetic energy) is directly
+proportional to the absolute temperature. If the molecules are below the melting point and are
+kept in the solid state by relatively weak intermolecular forces (compared to the strength of the
+covalent bonds within the molecule) then sometimes a molecule will have enough energy to
+break those intermolecular bonds and go into the vapour state. There are many substances that
+undergo sublimation. Carbon dioxide, camphor, and naphthalene are material that easily
+undergoes sublimation.
+
+SUBLIMATIONIPROCESS
+» =
+
+_
+
+=
+
+Figure 2.7: Sublimation Figure 2.8: Sublimation of dry ice
+Application of Sublimation in our life
+
+« The solid air fresheners we often use in our cars and homes rely solely on the magic of
+sublimation. The solid fragrance within slowly transforms into a delightful vapour, filling
+the entire space with an enticing aroma that lingers in the air.
+
+« Inthe textile industry 3D printing uses a sublimation process. Dye sublimation printers are
+now widely used for the printing process for a reduced cost. Dye sublimation is used to
+print a variety of objects such as T-shirts, pens, coffee mugs, and bags.
+
+« Inthe food industry, freeze-drying food items for preservation for a longer duration is due
+to the process of sublimation.
+
+Simple examples of deposition in daily life. Did you get it.!!
++ The formation process of snow from water vapour.
++ Black Soot inside a Vehicle Exhaust.
+« The Making Process of Dry Ice Using Carbon Dioxide.
+
+2.6.1 Importance of Diffusion Rates in Medicine
+
+Kinetic particle theory is one of the most important theories for understanding drug distribution
+rates in the human body. When you take a drug, whether it’s taken by mouth or injected, it needs
+to diffuse from the injection site into your bloodstream. The diffusion rate determines how
+quickly a drug reaches its target area in your body. Drug molecules need to spread through
+different tissues and organs to reach your body’s cells where they do their work. Higher levels of
+diffusion usually mean your drug will work faster. For example, a fast-acting drug like a pain
+relievers needs to dissolve quickly to provide immediate pain relief. Kinetic particles theory
+
+
+
+--- PAGE 23 ---
+____
+
+explains that drug diffusion rates are affected by a concentration gradient between your drug and
+your surrounding tissues. If your drug is at a high concentration at the time of administration, and
+your surrounding tissues are at a low concentration, then your drug diffusion rate will be faster.
+
+The rate of diffusion also depends on the composition of the drug (e.g. liquid, gel, tablet).
+Generally, liquid drugs move more quickly than solid drugs, as their particles have already
+dispersed. Controlled-release formulations are used to control the rate of drug diffusion so that
+the therapeutic effect remains consistent over time.
+
+KEY POINTS
+
+Solids, liquids and gases change state when they are heated or cooled.
+A state change (or phase transition) is the transition of matter from one state of
+matter to another.
+
+A heating curve typically shows temperature change over time as a substance is
+heated.
+
+The temperature remains constant as the solid melts into a liquid.
+The temperature remains constant as the liquid changes into a gas.
+The temperature remains constant as the gas condenses into a liquid.
+
+Evaporation is the process by which molecules at the surface of a liquid gain enough
+kinetic energy to escape into the gaseous phase.
+
+Boiling is the process in which a liquid turns into vapor when it is heated to its boiling
+point.
+
+Boyle's Law: It states that for a fixed amount of gas at a constant temperature, the
+volume of a gas is inversely proportional to its pressure.
+
+Charles's Law: It states that for a fixed amount of gas at constant pressure, the volume
+of agas is directly proportional to its absolute temperature.
+
+Avogadro's Law:It states that for a gas at constant temperature and pressure, the
+volume of the gas is directly proportional to the number of moles of gas.
+
+Graham’s law of diffusion: The rate of diffusion is inversely proportional to the square
+root of the molar mass of the gas particles.
+
+Sublimation is the process in which molecules of a substance in the solid state go to the
+vapor state directly, without going through the liquid state.
+
+References
+
+e Collins, Advanced Molecular Sciences Chemistry. (AS)
+
+e BobBerry, IGCSE, study guide for chemistry.
+
+e Lian Brand and Richard Grime Chemistry.
+
+« Text book of chemistry Grade 9 National Book foundation
+e Text book of chemistry Grade 11 National Book foundation
+
+
+
+--- PAGE 24 ---
+EXERCISE
+
+1. Multiple Choice Questions (MCQs)
+
+_“xx—
+
+i. What happens to the internal energy of a substance during melting?
+
+a) It decreases
+c) Itincreases
+
+b) It stays the same
+d) It fluctuates
+
+ii. Which process involves a solid turning directly intoa gas?
+
+a) Melting
+
+c) Sublimation
+
+Boiling occurs at:
+
+a) Any temperature
+
+c) Only at room temperature
+
+iv. During condensation, the particles ina gas:
+a) Gain energy and move faster
+c) Gain energy and move slower
+
+b) Freezing
+d) Condensation
+
+b) A fixed temperature
+d) Any pressure
+
+b) Lose energy and move slower
+d) Lose energy and move faster
+
+v. Which law states that the volume of a gas is directly Proportional to its temperature at
+
+constant pressure?
+
+a) Boyle's Law
+
+c) Avogadro's Law
+
+Evaporation differs from boiling because:
+
+vi.
+
+b) Charles's Law
+d) Dalton's Law
+
+a) Evaporation occurs at the surface of a liquid at any temperature
+
+b) Boiling occurs only at the surface
+c) Evaporation requires a fixed temperature
+d) Boiling occurs at any temperature
+
+vi
+
+a) The volume increases
+c) The number of particles decreases
+viii. Which factor affects the rate of diffusion of gases?
+a) Molecular mass
+c) Bothaandb
+ix. Solid air fresheners use the process of:
+a) Condensation
+c) Sublimation
+
+According to kinetic particle theory, the pressure of a gas increases when:
+
+b) The temperature decreases
+d) The temperature increases
+
+b) Temperature
+d) Neither anorb
+
+b) Deposition
+d) Freezing
+
+x. The diffusion of medicine in the body is important because:
+a) It controls the temperature of the medicine
+b) It ensures the medicine reaches all parts of the body
+c) It keeps the medicine in one place
+d) It increases the molecular mass of the medicine
+
+
+
+--- PAGE 25 ---
+___
+
+2. ShortAnswer Questions
+
+a
+
+ix.
+
+Explain why the temperature remains constant during the phase change from ice to
+water.
+
+What is the name given to the phase change when a solid is converted directly toa gas?
+
+. What is the difference between evaporation and boiling?
+
+Interpret a heating curve for water, identifying key phase changes.
+
+Explain the effect of increasing temperature on the pressure of a gas in a sealed
+container.
+
+How does increasing the external pressure affect the boiling point of a liquid?
+
+. Describe how molecular mass influences the rate of diffusion.
+viii.
+
+Give an example of sublimation and explain its practical application.
+Why is the diffusion of gases faster at higher temperatures?
+How does Avogadro’s law relate to the volume and number of moles of gas?
+
+3. LongAnswer Questions
+
+fii.
+
+Describe in detail the kinetic particle theory and how it explains the phase changes of
+melting, freezing, boiling, and condensation.
+
+. Interpret a cooling curve, identifying and explaining the significance of the flat regions on
+
+the curve.
+
+Explain how diffusion works in gases and discuss the factors affecting the rate of diffusion,
+including molecular mass and temperature.
+
+THINK TANK
+
+1. Analyze the impact of altitude on the boiling point of water and how it affects cooking times.
+Provide a detailed explanation based on kinetic particle theory and external pressure.
+
+2. Discuss the importance of understanding diffusion rates in the development of
+
+pharmaceuticals..
+
+3. Evaluate the environmental and practical implications of using sublimation in various
+industries, such as air fresheners and 3D printing, considering both benefits and potential
+drawbacks.
+
+
+
+--- PAGE 26 ---
+STOICHIOMETRY
+
+nt Learning Outcomes (SLOs)
+
+Use the molar gas volume, 24 dm’ at room temperature and pressure, in calculations
+involving gases.
+
+Define concentration, use both g/dm’ mol/dm’, and convert between them.
+
+Calculate stoichiometric relationships between substances( specially: reacting masses,
+limiting reactants, volume of gases at RTP., volumes of solutions and concentrations of
+solutions in g/dm’ or mol/dm’, including conversion between cm’and dm’).
+
+Calculate concentration of a solution in titration using empirical data.
+
+Calculate empirical formula and molecular formula from appropriate data.
+
+Calculate percentage yield, Percentage composition by mass and percentage purity from
+appropriate data.
+
+
+
+--- PAGE 27 ---
+[Unit 3: Stoichiometry 3: Stoichiometry
+
+Stoichiometry is an integral part of the chemical industry and has a wide range of practical
+applications. For example, the chemical composition of everyday products such as soap,
+detergent, toothpaste, shampoos, cosmetics, medicines, and fertilizers is determined by
+stoichiometry.
+
+Stoichiometry comes from the Greek word “Stoichen” meaning element and the word
+“Metron” which means measure. The study of relative amounts of the substances involved in
+the chemical reaction is known as stoichiometry. It helps in the application of balanced
+chemical equations for the calculation of the quantities of the reactants and the products. It
+is based on a balanced chemical equation that shows the mole-to-mole quantity of the
+reactant and products.
+
+3.1 Mole
+
+Recall that the atomic mass, formula mass, and molecular mass of a substance expressed
+in grams is called Mole.
+
+For Example,
+| One mole of O (atom) =16g One mole of O, (molecule) = 32g
+| One mole of H,O (molecule) =18g One mole of Na*(ion) =23g
+
+One mole of NaCl (Formula unit) = 58.5¢
+
+Mole ratios in Stoichiometric Calculations:
+Let's look at the following chemical reaction.
+
+2H, @ + Oy) ———> 2H,0q
+What does this chemical equation tell us? It tells us that 2 moles of hydrogen + 1 moles of
+oxygen will form 2 moles of water. Any chemical reaction can be interpreted in terms of a
+mole. Moles can easily be converted into the mass of reactants/products. A balanced
+chemical equation will tell you the ratio of the reactants/products to the mole. The mole is
+the unit of measurement used to express the amount of a substance.
+
+The mole is the SI unit to express the amount of a substance. It is symbolized as mol.
+
+Example 3.1
+Methanol burns according to the following equation.
+2CH,OH + 30,,, ———+ 2CO,,) + 4H,0,,,
+If 3.50 moles of methanol are burnt in oxygen, calculate
+(a) How many moles of oxygen are used?
+(b) | How many moles of water are produced?
+
+Solution
+(a) Moles of methanol = 3.50 moles
+Moles of oxygen =?
+
+| According to the balanced chemical equation”
+2 moles of CH,OH == 3 moles of O,
+1 moles of CH,OH = 3/2 moles of O,
+
+
+
+--- PAGE 28 ---
+| Unit's: Stoichiometry 3: Stoichiometry
+
+3.5 moles of CH,OH. oo moles of O,
+
+= 5.25 moles of O,
+So the number of moles of O, consumed = 5.25 moles
+(b) —_No. of Moles of CH,OH = 3.5 moles
+No. of Moles of H,O ==?
+According to the balanced chemical equation
+2 moles of CH,0H = 4 moles of H,O
+1 moles of CH,OH = = 4/2 moles of H,O
+
+3.5 moles of CH,OH = ane moles of H,0
+
+= 7.00 moles of H,O
+So the number of moles of H,O produced = 7.00 moles
+
+Concept Assessment Exercise 3.1
+
+NH, is an important raw material in the manufacture of fertilisers. It is obtained by the
+combination of N, and H, as shown by the following balanced equation.
+
+Na * 3Ha9) 2NHy)
+How many moles of the following are required to manufacture 8.0 moles of NH,?
+(a) Nitrogen (b) Hydrogen
+
+Example 3.2
+Iron can be produced from iron ore Fe,0, by reacting the ore with carbon monoxide (CO).
+What mass of iron can be formed from 425 g of iron ore?
+Solution
+The balanced equation can be written as
+Fe,0,; + 3c0 ———— 2Fe + 3C0,
+Mass of iron ore = 425 g (given mass)
+
+mass 425g
+No of moles of ii re = ——___ le
+en encase molecular mass 159.6 moles”
+
+= 2.66 moles of Fe20;
+According to the balanced chemical equation
+1 mole of Fe,0, = 2 moles of Fe
+
+2.66 moles of Fe,0, = 2.66 x 2Moles of Fe = 5.32Moles of Fe
+
+Mass of Fe produced = no. of moles of Fex Molar mass of iron
+= 5.32 x 55.9¢
+Mass of iron produced = 297.388
+
+
+
+--- PAGE 29 ---
+[Unit 3: Stoichiometry 3: Stoichiometry
+
+Concept Assessment Exercise 3.2
+
+1. Hydrogen burns with oxygen according to the following equation.
+2H + O2g, ——> 2H,O4)
+
+How many grams of oxygen are needed to burn 100 g of hydrogen completely?
+
+2. Calculate the mass of O, produced by thermal decomposition of 49 grams of KCIO;
+2KCLO, ,, — 2KCL,, + 30,,
+
+Molar Volume
+| One mole of any gas at RTP (room temperature and pressure) occupies a volume of 24
+: dm. This volume is called Molar volume. RTP stands for 25°C and 1 atm. With the help of
+| this relationship, we can convert the mass of a gas at RTP into its volume and vice versa.
+24 dm’ of any gas at RTP = = 1 mole
+| 24 dm’ of H, gas at RTP =2g =1mole
+24 dm’ of NH, gasatRTP = 17g = 1 mole
+
+Example 3.3
+Determine the volume that 2.5 moles of chlorine molecules occupy at RTP.
+Solution
+
+We know that
+
+24 dm’ of Cl, (Chlorine) at RTP = 1 mole
+
+Or 1 mole of Cl, occupies a volume of 24 dm’ at RTP.
+
+2.5 mole of Cl, occupy a volume of 24 dm?, 2.5 = 60 dm?
+
+Concept Assessment Exercise 3.3
+(a) How many moles of oxygen molecule are there in 50.0 d
+
+(b) What volume does 0.80 mole of N, gas occupy at RTP?
+(Ans: (a) 2.08moles, (b) 19.2. dm’)
+
+3.2 Percentage Composition
+
+The relative amounts of each element in a compound are expressed as the percentage
+
+composition. For example, the percentage composition by mass in MgO is as follows,
+
+To determine the percentage composition of a known compound,
+
+a) Calculate the molar mass of the compound
+
+b) Calculate the percentage of each element in one mole of the compound. This is done by
+dividing the mass of each element in one mole of the compound by the molar mass
+multiplied by 100.
+
+% ofanelement =
+
+mass of element inimole of compound 100
+molar mass of compound
+
+
+
+--- PAGE 30 ---
+Unit 3: Stoichiometry
+
+Molar mass of MgO = 24+16
+= 40 g/mol
+KofMg = x100
+
+= 60.3
+%ofO = * x100
+
+= 39.7
+The sum of percentages of all the elements in a compound must be equal to 100.
+
+Concept Assessment Exercise 3.4
+
+rmine the percentage Os if the following com
+. Water H,O
+
+. Sulphuric acid H,SO,
+. Glucose C,H,,0,
+. Ammonium nitrate NH,NO,
+
+3.3 Limiting and Non-Limiting Reactants
+
+A limiting reactant is the reactant that is completely consumed in a reaction. A limiting
+reactant can also be defined as the reactant that produces the lowest moles of products in a
+reaction. The reactant in excess is the reactant left unutilised or unreacted after the reaction
+is complete. It is also referred to as a Non-Limiting reactant.
+
+3.3.1 Identification of a Limiting Reactant in a Reaction
+
+A limiting reactant can be recognised by calculating the number of moles of products formed
+from data of the given amounts of the reactants, using a balanced chemical equation. The
+
+reactant, that produces the least number of moles of products, is the limiting reactant.
+For example, 10 moles of H, and 10 moles of O, were reacted to produce H,0. Which one of
+
+the reactants is the limiting reactant? We can calculate as follows:
+The reaction is 2Hyq + Oy ~ ———> 2H,
+According to the balanced chemical equation
+2H, = 2H,0
+2 moles of H, give = 2moles of H,O
+10 moles of H, will give =  3x10= 10moles of H,0
+0, = 2H,0
+1 mole of O, gives = 2 moles of H,O
+7 moles of O, = 2x7 = 14 moles of H,O
+Since H, gives the least number of moles of H,0, i.e. 10 moles, so H, is the limiting reactant,
+
+
