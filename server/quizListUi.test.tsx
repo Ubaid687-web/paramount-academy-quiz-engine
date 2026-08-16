@@ -63,7 +63,7 @@ describe("Quiz Centre entry experience", () => {
     setReadyGrade10();
     render(<QuizList />);
     expect(quizQueryOptions.mock.calls[0]?.[1]).toMatchObject({ enabled: false, staleTime: 300000, refetchOnWindowFocus: false });
-    fireEvent.click(screen.getByRole("button", { name: /Choose Grade 10/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Open draft library/i }));
     expect(quizQueryOptions.mock.calls.at(-1)?.[1]).toMatchObject({ enabled: true });
   });
 
@@ -71,7 +71,7 @@ describe("Quiz Centre entry experience", () => {
     programmesQuery.mockReturnValue({ data: grade10Programmes, isLoading: false, error: null });
     quizzesQuery.mockReturnValue({ data: undefined, isLoading: true, error: null, refetch: vi.fn() });
     render(<QuizList />);
-    fireEvent.click(screen.getByRole("button", { name: /Choose Grade 10/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Open draft library/i }));
     expect(screen.getByRole("status", { name: /loading recent mcq drafts/i }).getAttribute("aria-busy")).toBe("true");
     expect(document.querySelectorAll('[data-slot="skeleton"]').length).toBe(21);
   });
@@ -85,7 +85,7 @@ describe("Quiz Centre entry experience", () => {
     quizzesQuery.mockReturnValue({ data: [], isLoading: false, error: null, refetch: vi.fn() });
     render(<QuizList />);
     expect(screen.getByText("Grade 9")).toBeTruthy();
-    expect(screen.getByText(/kept separate/i)).toBeTruthy();
+    expect(screen.getByText(/remains separate/i)).toBeTruthy();
     expect(screen.getByRole("link", { name: /Open curriculum management/i })).toBeTruthy();
   });
 

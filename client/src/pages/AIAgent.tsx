@@ -94,7 +94,7 @@ export default function AIAgent() {
   const [fullPaperSections, setFullPaperSections] = useState<FullPaperSection[]>([{ id: "section-1", label: "Section A", instructions: "Attempt the following question.", items: [] }]);
   const [activeFullPaperSectionId, setActiveFullPaperSectionId] = useState("section-1");
   const [selectedPatternSourceIds, setSelectedPatternSourceIds] = useState<number[]>([]);
-  const [activeStep, setActiveStep] = useState<1 | 2 | 3>(1);
+  const [activeStep, setActiveStep] = useState<1 | 2 | 3 | 4>(1);
   const [showSavedDraftLoader, setShowSavedDraftLoader] = useState(false);
 
   const readyProgrammes = readyProgrammesQuery.data ?? [];
@@ -411,6 +411,7 @@ export default function AIAgent() {
     }
 
     setIsGenerating(true);
+    setActiveStep(4);
     setGeneratedMcqs([]);
     setGeneratedDraft(null);
     setGenerationProgress(8);
@@ -439,6 +440,7 @@ export default function AIAgent() {
         setJobId(result.jobId);
         setGenerationProgress(0);
         setIsGenerating(false);
+        setActiveStep(3);
         toast.error(`${result.draft.message} ${result.draft.safeRetryAdvice}`);
         return;
       }
@@ -457,6 +459,7 @@ export default function AIAgent() {
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to generate MCQs");
       setIsGenerating(false);
+      setActiveStep(3);
     }
   };
 
@@ -487,6 +490,7 @@ export default function AIAgent() {
     if (!hasGenerationSource) return toast.error("Please upload, paste, or select reviewed curriculum content first.");
     if (scopeType !== "uploaded_content" && !hasValidStoredScope) return toast.error("Complete the selected curriculum scope before generating a printable paper.");
     setIsGenerating(true);
+    setActiveStep(4);
     setGeneratedPrintablePaper(null);
     setGenerationProgress(20);
     try {
@@ -503,6 +507,7 @@ export default function AIAgent() {
       toast.success(`${assessmentMode === "short" ? "Short" : "Long"} question paper draft created for review.`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to generate the printable paper.");
+      setActiveStep(3);
     } finally {
       setIsGenerating(false);
     }
@@ -683,17 +688,18 @@ export default function AIAgent() {
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-primary"><GraduationCap className="h-4 w-4" />Assessment builder</p>
-              <h1 className="mt-2 text-3xl font-bold text-foreground sm:text-4xl">{!isContextEditing && isProgrammeReady ? `Grade ${gradeLevel} ${selectedReadyProgramme?.teacherLabel ?? formatSubjectLabel(subject)}` : "New assessment"}</h1>
+              <h1 className="mt-2 text-3xl font-bold text-foreground sm:text-4xl">{activeStep === 4 ? "Review your draft." : !isContextEditing && isProgrammeReady ? `Grade ${gradeLevel} ${selectedReadyProgramme?.teacherLabel ?? formatSubjectLabel(subject)}` : "New assessment"}</h1>
             </div>
             <div className="rounded-xl border border-primary/15 bg-primary/5 px-3 py-2 text-right">
-              <p className="text-xs font-semibold text-primary">Step {activeStep} / 3</p>
+              <p className="text-xs font-semibold text-primary">Step {activeStep} / 4</p>
             </div>
           </div>
-          <nav className="mt-6 grid gap-2 sm:grid-cols-3" aria-label="Assessment preparation steps">
+          <nav className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-4" aria-label="Assessment preparation steps">
             {[
               { id: 1, label: "Quiz type" },
               { id: 2, label: "Source" },
               { id: 3, label: "Quiz settings" },
+              { id: 4, label: "Review" },
             ].map((step) => {
               const isCurrent = activeStep === step.id;
               const isCompleted = activeStep > step.id;
@@ -703,11 +709,11 @@ export default function AIAgent() {
                 aria-label={`Step ${step.id}: ${step.label}`}
                 aria-current={isCurrent ? "step" : undefined}
                 disabled={step.id > activeStep}
-                onClick={() => setActiveStep(step.id as 1 | 2 | 3)}
+                onClick={() => setActiveStep(step.id as 1 | 2 | 3 | 4)}
                 onKeyDown={(event) => {
                   if ((event.key === "Enter" || event.key === " ") && step.id <= activeStep) {
                     event.preventDefault();
-                    setActiveStep(step.id as 1 | 2 | 3);
+                    setActiveStep(step.id as 1 | 2 | 3 | 4);
                   }
                 }}
                 className={`group flex min-h-16 items-center gap-3 rounded-xl border px-3 py-2 text-left transition-[transform,background-color,border-color,box-shadow] duration-200 ease-out active:scale-[0.98] disabled:cursor-default disabled:opacity-55 ${isCurrent ? "border-primary bg-primary/[0.055] shadow-sm" : isCompleted ? "border-primary/20 bg-primary/[0.025] hover:border-primary/40" : "border-border bg-muted/30"}`}
@@ -968,7 +974,7 @@ export default function AIAgent() {
               </CardContent>
             </Card>}
 
-            {activeStep === 3 && isPrintablePaperMode && isSelectedModeAvailable && <Card className="border-primary/20 bg-card shadow-sm motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-200">
+            {activeStep === 3 && isPrintablePaperMode && isSelectedModeAvailable && !generatedPrintablePaper && <Card className="border-primary/20 bg-card shadow-sm motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-200">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-xl"><span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">3</span>{assessmentMode === "short" ? "Short question paper" : "Long question paper"}</CardTitle>
                 <CardDescription>Creates a source-grounded draft for printing only. It does not create an online student quiz.</CardDescription>
@@ -978,6 +984,18 @@ export default function AIAgent() {
                 <div><Label htmlFor="paper-pairs" className="mb-2 block text-sm font-medium">Numbered OR pairs</Label><Input id="paper-pairs" type="number" min={1} max={10} value={paperPairCount} onChange={(event) => setPaperPairCount(Math.min(10, Math.max(1, Number(event.target.value) || 1)))} /><p className="mt-1 text-xs text-muted-foreground">Each numbered question includes an alternative of equal marks.</p></div>
                 <Button type="button" onClick={handleGeneratePrintablePaper} disabled={isGenerating || generatePrintablePaperMutation.isPending || !canAdvanceToDraft} className="w-full bg-primary text-primary-foreground font-semibold shadow-sm hover:bg-primary/90">{isGenerating || generatePrintablePaperMutation.isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating paper draft…</> : "Generate printable paper draft"}</Button>
                 {generatedPrintablePaper && <div className="space-y-3 rounded-xl border border-accent/30 bg-accent/5 p-4"><div><p className="font-semibold text-foreground">Printable draft ready</p><p className="mt-1 text-sm text-muted-foreground">{generatedPrintablePaper.items?.length || 0} prompts across {paperPairCount} OR pairs. This is not an online quiz.</p></div><div className="flex flex-col gap-2 sm:flex-row"><Button type="button" variant="outline" className="flex-1" onClick={() => handlePrintableDownload("paper")}>Download paper PDF</Button><Button type="button" variant="outline" className="flex-1" onClick={() => handlePrintableDownload("solution")}>Download solution key</Button></div><p className="text-xs text-muted-foreground">Your browser will receive the PDF directly from this tap. If the paper needs regeneration, the browser will show a clear message.</p></div>}
+              </CardContent>
+            </Card>}
+
+            {activeStep === 4 && !isGenerating && generatedPrintablePaper && <Card className="border-accent/20 bg-card shadow-sm motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-200">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-accent" />Printable draft ready</CardTitle>
+                <CardDescription>Review the paper and solution key before printing.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="rounded-xl border border-accent/30 bg-accent/5 p-4 text-sm text-foreground"><strong>{generatedPrintablePaper.items?.length || 0} prompts</strong> across {paperPairCount} OR pairs.</div>
+                <div className="flex flex-col gap-2 sm:flex-row"><Button type="button" variant="outline" className="flex-1" onClick={() => handlePrintableDownload("paper")}>Download paper PDF</Button><Button type="button" variant="outline" className="flex-1" onClick={() => handlePrintableDownload("solution")}>Download solution key</Button></div>
+                <div className="flex flex-col gap-2 sm:flex-row"><Button type="button" variant="ghost" className="flex-1" onClick={() => setActiveStep(3)}><ChevronLeft className="mr-1 h-4 w-4" />Back to settings</Button><Button type="button" className="flex-1" onClick={() => { setGeneratedPrintablePaper(null); setActiveStep(3); }}>Create another draft</Button></div>
               </CardContent>
             </Card>}
 
@@ -1020,7 +1038,7 @@ export default function AIAgent() {
               </Card>
             )}
 
-            {isGenerating && (() => {
+            {activeStep === 4 && isGenerating && (() => {
               const activeStep = getGenerationStep(generationProgress);
               return (
                 <Card className="overflow-hidden border-accent/30 bg-card shadow-lg shadow-accent/10" aria-live="polite">
@@ -1075,7 +1093,7 @@ export default function AIAgent() {
             })()}
 
             {/* Generated MCQs Preview */}
-            {generatedMcqs.length > 0 && (
+            {activeStep === 4 && generatedMcqs.length > 0 && (
               <Card className="border-accent/20">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -1124,6 +1142,7 @@ export default function AIAgent() {
                     )}
                   </div>
                   <div className="mt-4 flex flex-col gap-2 sm:flex-row"><Button type="button" variant="outline" className="flex-1" onClick={() => handleMcqDownload("paper")}>Download MCQ paper PDF</Button><Button type="button" variant="outline" className="flex-1" onClick={() => handleMcqDownload("solution")}>Download MCQ solution key</Button></div>
+                  <div className="mt-3 flex flex-col gap-2 sm:flex-row"><Button type="button" variant="ghost" className="flex-1" onClick={() => setActiveStep(3)}><ChevronLeft className="mr-1 h-4 w-4" />Back to settings</Button><Button type="button" className="flex-1" onClick={() => { setGeneratedMcqs([]); setGeneratedDraft(null); setActiveStep(3); }}>Create another draft</Button></div>
                 </CardContent>
               </Card>
             )}

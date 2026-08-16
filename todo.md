@@ -338,3 +338,9 @@
 - [x] Add regression fixtures from the supplied paper corpus and validate generated stems/options against verified physical-fit rules.
 - [x] Calibrate generation prompts, structural validation, and MCQ PDF rendering without distorting authentic paper content.
 - [x] Run full validation, save a checkpoint, and report the evidence and remaining review points.
+
+## Phase 59: Focused Wizard Workflow UX Redesign
+- [x] Audit current Quiz Centre and AIAgent step/state flow.
+- [x] Implement single-step conditional rendering with state-preserving Back navigation and top progress indicators.
+- [x] Separate Portal Admin curriculum addition and recent draft library into distinct views so steps never stack or scroll indefinitely.
+- [x] Walk through the complete workflow (grade → subject → generation → results) and verify state restoration and zero stacked UI.

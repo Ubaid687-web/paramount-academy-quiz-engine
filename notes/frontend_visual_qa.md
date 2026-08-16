@@ -21,3 +21,9 @@ The approved Chemistry selector exposes all thirteen source-bound units with pag
 ## OCR quality-review verification
 
 The public preview correctly protects Curriculum Library data behind the Portal Admin session, so live source-quality flags cannot be inspected without administrator authentication. The route presents the concise administrator-only notice rather than exposing book evidence. Quality-review display and review actions are covered in the Portal Admin UI regression, while source 90001 now has three persisted weak-page flags: pages 1, 6, and 56.
+
+## Phase 59 wizard walkthrough — 2026-08-16
+
+The Quiz Centre initial screen shows only Grade 9/10 selection, a three-step Grade/Subject/Builder progress indicator, Portal Admin curriculum entry, and a separate draft-library action. Selecting Grade 10 removes the grade cards and replaces them with only the approved subject cards plus Back to grades. Selecting Physics removes the subject cards and replaces them with only the selected-subject builder-entry panel plus Back to subjects. Opening the builder shows only assessment-type choices on Step 1 of 4; choosing MCQ removes that panel and shows only source selection on Step 2 of 4. The browser preview shows no stacked grade, subject, or source sections during these transitions.
+The browser walkthrough reached Source Step 2 / 4 with only source selection, upload/paste, title, and Back/Continue controls visible. After entering a temporary source and title, the page correctly reported Ready; the Continue control was below the compact viewport and required a downward scroll before interaction.
+The browser walkthrough advanced to Quiz settings Step 3 / 4. The Source panel disappeared; only Content Analysis and Draft setup were visible for the current settings stage, with Review source and Generate MCQ Draft controls. The fourth Review stage remained locked until generation.

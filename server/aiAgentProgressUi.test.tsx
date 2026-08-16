@@ -437,6 +437,33 @@ describe("AI quiz generation feedback", () => {
     window.history.pushState({}, "", "/ai-agent");
   });
 
+  it("moves generated MCQs to a dedicated review screen and restores settings with Back", async () => {
+    generateMutation.mockResolvedValue({
+      jobId: 81,
+      mcqs: [{ question: "Which quantity measures rate of change of velocity?", options: { A: "Speed", B: "Acceleration", C: "Momentum", D: "Displacement" }, answer: "B", explanation: "Acceleration is the rate of change of velocity.", difficulty: "medium" }],
+      analysis: { totalWords: 120, complexity: "moderate", recommendedQuestions: { minimum: 5, optimal: 10, maximum: 20 } },
+      draft: { quiz: { instructions: "Review every question before use." }, qualityChecks: { reviewWarnings: [] } },
+    });
+    render(<AIAgent />);
+
+    fireEvent.click(screen.getByRole("button", { name: /^MCQ/i }));
+    fireEvent.change(screen.getByLabelText("Or Paste Content"), { target: { value: "Source-grounded material for a focused MCQ draft. ".repeat(4) } });
+    fireEvent.change(screen.getByLabelText("Quiz Title"), { target: { value: "Focused review" } });
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    fireEvent.change(screen.getByRole("spinbutton"), { target: { value: "10" } });
+    fireEvent.click(screen.getByRole("button", { name: "Generate MCQs" }));
+
+    await waitFor(() => expect(screen.getByText("Generated MCQ Draft (1)")).toBeVisible());
+    expect(screen.getByRole("button", { name: "Step 4: Review" })).toHaveAttribute("aria-current", "step");
+    expect(screen.queryByText("Draft setup")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Generate MCQs" })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /Back to settings/i }));
+    expect(screen.getByRole("button", { name: "Step 3: Quiz settings" })).toHaveAttribute("aria-current", "step");
+    expect(screen.getByText("Draft setup")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Generate MCQs" })).toBeVisible();
+  });
+
   /* Deferred manual-assessment persistence coverage. These browser paths are intentionally unavailable while the product is MCQ-only.
   it("saves a source-grounded short-question draft through the assessment review workflow", async () => {
     scopeCatalogQuery.mockReturnValue({
