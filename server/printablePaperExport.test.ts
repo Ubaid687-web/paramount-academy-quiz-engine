@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { PDFParse } from "pdf-parse";
 import { classifySolutionKeyPoint, renderMcqPaperPdf, renderPrintablePaperPdf, renderPrintableSolutionPdf } from "./printablePaperExport";
 
 const shortPaper = {
@@ -50,6 +51,23 @@ describe("printable paper PDF export", () => {
     const pdf = await renderPrintableSolutionPdf(shortPaper);
     expect(pdf.subarray(0, 5).toString()).toBe("%PDF-");
     expect(pdf.length).toBeGreaterThan(800);
+  });
+
+  it("keeps every OR pair in one two-column row across a multipage paper", async () => {
+    const items = Array.from({ length: 14 }, (_, index) => [
+      { ...shortPaper.items[0], question: `Describe textbook concept ${index + 1} and its supported process.`, orGroup: index + 1 },
+      { ...shortPaper.items[1], question: `Explain the alternate textbook concept ${index + 1} and its supported application.`, orGroup: index + 1 },
+    ]).flat();
+    const pdf = await renderPrintablePaperPdf({ ...shortPaper, items });
+    const parser = new PDFParse({ data: pdf });
+    try {
+      const result = await parser.getText();
+      expect(result.total).toBeGreaterThan(1);
+      expect(result.text).toContain("Q1 · OR");
+      expect(result.text).toContain("Q14 · OR");
+    } finally {
+      await parser.destroy();
+    }
   });
 
   it("renders wrapped stems and answer-shaped options in a fixed Section A table", async () => {

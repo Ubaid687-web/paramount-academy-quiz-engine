@@ -102,21 +102,71 @@ function pairItems(items: PrintableItem[]) {
   return [...Array.from(paired.entries()).sort(([a], [b]) => a - b).map(([, group]) => group), ...standalone.map((item) => [item])];
 }
 
+const QUESTION_PAIR_LAYOUT = {
+  x: 52,
+  width: 491,
+  gap: 10,
+  padding: 8,
+  labelHeight: 15,
+};
+
+function questionCellHeight(doc: PDFKit.PDFDocument, item: PrintableItem | undefined, width: number) {
+  if (!item) return 0;
+  doc.font("Helvetica").fontSize(9.25);
+  const textHeight = doc.heightOfString(item.question || " ", {
+    width: Math.max(24, width - QUESTION_PAIR_LAYOUT.padding * 2),
+    lineGap: 1,
+  });
+  return QUESTION_PAIR_LAYOUT.padding + QUESTION_PAIR_LAYOUT.labelHeight + textHeight + QUESTION_PAIR_LAYOUT.padding;
+}
+
+function renderQuestionCell(
+  doc: PDFKit.PDFDocument,
+  item: PrintableItem | undefined,
+  number: number,
+  x: number,
+  y: number,
+  width: number,
+  alternative: boolean,
+  rowHeight: number,
+) {
+  doc.strokeColor("#C7D5E0").lineWidth(0.7).rect(x, y, width, rowHeight).stroke();
+  if (!item) return;
+
+  const label = alternative ? `Q${number} · OR` : `Q${number}`;
+  const labelColor = alternative ? "#8C551A" : "#173F62";
+  doc.fillColor(labelColor).font("Helvetica-Bold").fontSize(8.5).text(label, x + QUESTION_PAIR_LAYOUT.padding, y + QUESTION_PAIR_LAYOUT.padding, {
+    width: width - QUESTION_PAIR_LAYOUT.padding * 2 - 52,
+    lineBreak: false,
+  });
+  doc.fillColor("#173F62").font("Helvetica-Bold").fontSize(8.25).text(`[${item.marks} marks]`, x + width - 52 - QUESTION_PAIR_LAYOUT.padding, y + QUESTION_PAIR_LAYOUT.padding, {
+    width: 52,
+    align: "right",
+    lineBreak: false,
+  });
+  doc.fillColor("#111827").font("Helvetica").fontSize(9.25).text(item.question, x + QUESTION_PAIR_LAYOUT.padding, y + QUESTION_PAIR_LAYOUT.padding + QUESTION_PAIR_LAYOUT.labelHeight, {
+    width: width - QUESTION_PAIR_LAYOUT.padding * 2,
+    lineGap: 1,
+  });
+}
+
 function questionText(doc: PDFKit.PDFDocument, index: number, group: PrintableItem[]) {
-  const marks = group[0]?.marks || 0;
-  ensureSpace(doc, 74);
-  doc.fillColor("#173F62").font("Helvetica-Bold").fontSize(10).text(`Q${index}.`, 52, doc.y, { continued: true });
-  doc.fillColor("#111827").font("Helvetica").text(` ${group[0].question}`, 76, doc.y - 11, { width: 415 });
-  doc.fillColor("#173F62").font("Helvetica-Bold").fontSize(9).text(`[${marks} marks]`, 485, doc.y - 10, { width: 56, align: "right" });
-  if (group[1]) {
-    doc.moveDown(0.5);
-    doc.fillColor("#8C551A").font("Helvetica-Bold").fontSize(8.5).text("OR", { align: "center" });
-    doc.fillColor("#111827").font("Helvetica").fontSize(10).text(group[1].question, 76, doc.y + 2, { width: 415 });
-    doc.fillColor("#173F62").font("Helvetica-Bold").fontSize(9).text(`[${marks} marks]`, 485, doc.y - 10, { width: 56, align: "right" });
-  }
-  doc.moveDown(1.2);
-  doc.strokeColor("#D6DFE7").moveTo(52, doc.y).lineTo(543, doc.y).stroke();
-  doc.moveDown(0.6);
+  const left = group[0];
+  const right = group[1];
+  const columnWidth = (QUESTION_PAIR_LAYOUT.width - QUESTION_PAIR_LAYOUT.gap) / 2;
+  const rightX = QUESTION_PAIR_LAYOUT.x + columnWidth + QUESTION_PAIR_LAYOUT.gap;
+  const rowHeight = Math.max(
+    34,
+    questionCellHeight(doc, left, columnWidth),
+    questionCellHeight(doc, right, columnWidth),
+  );
+
+  ensureSpace(doc, rowHeight + 12);
+  const y = doc.y;
+  renderQuestionCell(doc, left, index, QUESTION_PAIR_LAYOUT.x, y, columnWidth, false, rowHeight);
+  renderQuestionCell(doc, right, index, rightX, y, columnWidth, true, rowHeight);
+  doc.strokeColor("#9EB6C8").lineWidth(0.8).moveTo(QUESTION_PAIR_LAYOUT.x + columnWidth + QUESTION_PAIR_LAYOUT.gap / 2, y).lineTo(QUESTION_PAIR_LAYOUT.x + columnWidth + QUESTION_PAIR_LAYOUT.gap / 2, y + rowHeight).stroke();
+  doc.y = y + rowHeight + 10;
 }
 
 function footer(doc: PDFKit.PDFDocument) {

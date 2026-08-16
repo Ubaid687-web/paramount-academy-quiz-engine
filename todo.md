@@ -358,3 +358,9 @@
 - [x] Apply only verified user-supplied model/past-paper wording and structural guidance, and exclude previous saved-paper concepts or near-duplicates for the same subject and source scope.
 - [x] Repair number entry so users can clear and type a valid custom count, with range validation deferred to blur or generation.
 - [x] Add regression coverage, validate the complete suite, checkpoint, and report the evidence-backed repair.
+
+## Phase 62: Two-Column Comparison PDF Layout
+- [x] Inspect the current printablePaperExport.ts renderer and PDF geometry tests.
+- [x] Implement side-by-side question-pair rows (left question, right OR alternative, vertical divider, horizontal row separator) with robust measured wrapping.
+- [x] Preserve all header, footer, marks, and draft labels unchanged.
+- [x] Add PDF geometry regressions, verify varied question counts, and save checkpoint.
