@@ -123,7 +123,7 @@ function footer(doc: PDFKit.PDFDocument) {
   const range = doc.bufferedPageRange();
   for (let index = 0; index < range.count; index += 1) {
     doc.switchToPage(index);
-    doc.fillColor("#607284").font("Helvetica").fontSize(7.5).text(`Paramount Academy · Draft for Portal Admin review · Page ${index + 1} of ${range.count}`, 48, doc.page.height - 34, { width: 499, align: "center" });
+    doc.fillColor("#607284").font("Helvetica").fontSize(7.5).text(`Paramount Academy · Draft for Portal Admin review · Page ${index + 1} of ${range.count}`, 48, doc.page.height - 60, { width: 499, align: "center", lineBreak: false });
   }
 }
 
@@ -182,21 +182,82 @@ type McqExportItem = {
   learningObjective: string;
 };
 
+const MCQ_TABLE = {
+  x: 52,
+  numberWidth: 24,
+  questionWidth: 140,
+  optionWidth: 65,
+  bubblesWidth: 67,
+};
+
+function mcqWrappedHeight(doc: PDFKit.PDFDocument, text: string, width: number, fontSize: number) {
+  doc.font("Helvetica").fontSize(fontSize);
+  return doc.heightOfString(text || " ", { width: Math.max(12, width - 8), lineGap: 0 });
+}
+
+function mcqRowHeight(doc: PDFKit.PDFDocument, mcq: McqExportItem) {
+  const questionHeight = mcqWrappedHeight(doc, mcq.question, MCQ_TABLE.questionWidth, 7.5);
+  const optionHeight = (["A", "B", "C", "D"] as const).reduce(
+    (height, letter) => Math.max(height, mcqWrappedHeight(doc, mcq.options[letter], MCQ_TABLE.optionWidth, 7.2)),
+    0,
+  );
+  return Math.max(28, Math.ceil(Math.max(questionHeight, optionHeight) + 10));
+}
+
+function drawMcqTableHeader(doc: PDFKit.PDFDocument) {
+  const y = doc.y;
+  const labels = ["Sr.", "Question", "A", "B", "C", "D", "Answer"];
+  const widths = [MCQ_TABLE.numberWidth, MCQ_TABLE.questionWidth, MCQ_TABLE.optionWidth, MCQ_TABLE.optionWidth, MCQ_TABLE.optionWidth, MCQ_TABLE.optionWidth, MCQ_TABLE.bubblesWidth];
+  let x = MCQ_TABLE.x;
+  doc.font("Helvetica-Bold").fontSize(7.5).fillColor("#EAF1F6");
+  labels.forEach((label, index) => {
+    doc.rect(x, y, widths[index], 22).fillAndStroke("#EAF1F6", "#AFC1CE");
+    doc.fillColor("#173F62").text(label, x + 3, y + 7, { width: widths[index] - 6, align: "center" });
+    x += widths[index];
+  });
+  doc.y = y + 22;
+}
+
+function drawMcqBubbles(doc: PDFKit.PDFDocument, x: number, y: number, rowHeight: number) {
+  const gap = MCQ_TABLE.bubblesWidth / 5;
+  doc.strokeColor("#374151").lineWidth(0.8);
+  ([0, 1, 2, 3] as const).forEach((index) => doc.circle(x + gap * (index + 1), y + rowHeight / 2, 3.2).stroke());
+}
+
 export async function renderMcqPaperPdf(title: string, mcqs: McqExportItem[]) {
   return pdfBuffer((doc) => {
-    pageHeader(doc, title, `MCQ Practice Paper · ${mcqs.length} marks · Draft for Portal Admin review`);
+    const subtitle = `MCQ Practice Paper · ${mcqs.length} marks · Draft for Portal Admin review`;
+    pageHeader(doc, title, subtitle);
     doc.fillColor("#173F62").font("Helvetica-Bold").fontSize(11).text("SECTION A — MULTIPLE-CHOICE QUESTIONS");
-    doc.fillColor("#374151").font("Helvetica").fontSize(9).text("Choose the best answer for each question. Mark only one option: A, B, C, or D.");
-    doc.moveDown(1);
+    doc.fillColor("#374151").font("Helvetica").fontSize(8.5).text("Fill one bubble for each question. Choose the best answer.");
+    doc.moveDown(0.8);
+    drawMcqTableHeader(doc);
+
     mcqs.forEach((mcq, index) => {
-      ensureSpace(doc, 112);
-      doc.fillColor("#173F62").font("Helvetica-Bold").fontSize(10).text(`${index + 1}.`, 52, doc.y, { continued: true });
-      doc.fillColor("#111827").font("Helvetica").text(` ${mcq.question}`, 76, doc.y - 11, { width: 458 });
-      doc.moveDown(0.35);
-      (["A", "B", "C", "D"] as const).forEach((letter) => doc.fillColor("#374151").fontSize(9).text(`○ ${letter}. ${mcq.options[letter]}`, 78));
-      doc.moveDown(0.45);
-      doc.strokeColor("#D6DFE7").moveTo(52, doc.y).lineTo(543, doc.y).stroke();
-      doc.moveDown(0.55);
+      const rowHeight = mcqRowHeight(doc, mcq);
+      if (doc.y + rowHeight > doc.page.height - 58) {
+        doc.addPage();
+        pageHeader(doc, title, subtitle);
+        doc.fillColor("#173F62").font("Helvetica-Bold").fontSize(11).text("SECTION A — MULTIPLE-CHOICE QUESTIONS (CONTINUED)");
+        doc.moveDown(0.8);
+        drawMcqTableHeader(doc);
+      }
+
+      const y = doc.y;
+      const widths = [MCQ_TABLE.numberWidth, MCQ_TABLE.questionWidth, MCQ_TABLE.optionWidth, MCQ_TABLE.optionWidth, MCQ_TABLE.optionWidth, MCQ_TABLE.optionWidth, MCQ_TABLE.bubblesWidth];
+      let x = MCQ_TABLE.x;
+      widths.forEach((width) => {
+        doc.rect(x, y, width, rowHeight).fillAndStroke("#FFFFFF", "#AFC1CE");
+        x += width;
+      });
+      doc.fillColor("#173F62").font("Helvetica-Bold").fontSize(7.5).text(`${index + 1}.`, MCQ_TABLE.x + 2, y + 6, { width: MCQ_TABLE.numberWidth - 4, align: "center" });
+      doc.fillColor("#111827").font("Helvetica").fontSize(7.5).text(mcq.question, MCQ_TABLE.x + MCQ_TABLE.numberWidth + 4, y + 5, { width: MCQ_TABLE.questionWidth - 8, height: rowHeight - 8, lineGap: 0 });
+      (["A", "B", "C", "D"] as const).forEach((letter, optionIndex) => {
+        const optionX = MCQ_TABLE.x + MCQ_TABLE.numberWidth + MCQ_TABLE.questionWidth + (optionIndex * MCQ_TABLE.optionWidth);
+        doc.fillColor("#374151").font("Helvetica").fontSize(7.2).text(mcq.options[letter], optionX + 4, y + 5, { width: MCQ_TABLE.optionWidth - 8, height: rowHeight - 8, lineGap: 0, align: "center" });
+      });
+      drawMcqBubbles(doc, MCQ_TABLE.x + MCQ_TABLE.numberWidth + MCQ_TABLE.questionWidth + (MCQ_TABLE.optionWidth * 4), y, rowHeight);
+      doc.y = y + rowHeight;
     });
     footer(doc);
   });

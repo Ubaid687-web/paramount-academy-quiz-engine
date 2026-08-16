@@ -1,3 +1,5 @@
+import { collectMcqLayoutWarnings, diagnoseMcqLayout } from "./mcqLayout";
+
 export type GeneratedMcq = {
   question: string;
   options: { A: string; B: string; C: string; D: string };
@@ -12,6 +14,7 @@ export type DraftQualityChecks = {
   duplicateQuestionRisk: "low" | "medium" | "high";
   hallucinationRisk: "low" | "medium" | "high";
   coverageNotes: string;
+  layoutWarnings: string[];
   reviewWarnings: string[];
 };
 
@@ -44,6 +47,9 @@ export function validateGeneratedMcqs(mcqs: unknown[], expectedCount: number) {
     if (!question.difficulty || !["easy", "medium", "hard"].includes(question.difficulty)) issues.push(`Question ${number} has an invalid difficulty value.`);
     if (!question.sourceReference?.trim()) issues.push(`Question ${number} has no source reference.`);
     if (!question.learningObjective?.trim()) issues.push(`Question ${number} has no learning objective.`);
+
+    const layout = diagnoseMcqLayout(question as GeneratedMcq, number);
+    layout.warnings.filter((warning) => /unusually long stem|paragraph-like option|multi-sentence option/i.test(warning)).forEach((warning) => issues.push(warning));
   });
 
   return { valid: issues.length === 0, issues };
@@ -54,9 +60,11 @@ export function buildDraftQualityChecks(mcqs: GeneratedMcq[], requestedCount: nu
     duplicateQuestionRisk: "low",
     hallucinationRisk: "medium",
     coverageNotes: `${mcqs.length} of ${requestedCount} requested source-grounded MCQs passed structural validation.`,
+    layoutWarnings: collectMcqLayoutWarnings(mcqs),
     reviewWarnings: [
       "Draft only: faculty review is required before assignment or publication.",
       "Verify each source reference against the uploaded material before approving the draft.",
+      "Review the printable Section A table preview for any wrapped row that exceeds the supplied paper geometry.",
     ],
   };
 }

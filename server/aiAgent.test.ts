@@ -110,6 +110,7 @@ describe("AI Agent - MCQ Generation", () => {
       ],
     });
 
+    const systemPrompt = mocks.invokeLLM.mock.calls[0][0].messages[0].content as string;
     const prompt = mocks.invokeLLM.mock.calls[0][0].messages[1].content as string;
     expect(prompt).toContain("VERIFIED BOARD-PATTERN GUIDANCE");
     expect(prompt).toContain("model paper");
@@ -117,6 +118,10 @@ describe("AI Agent - MCQ Generation", () => {
     expect(prompt).toContain("only examinable content boundary");
     expect(prompt).toContain("Do not use any analysis note as factual evidence");
     expect(prompt).toContain("concise FBISE-style wording");
+    expect(systemPrompt).toMatch(/direct paper-ready/i);
+    expect(systemPrompt).toContain("answer-shaped");
+    expect(systemPrompt).toContain("four narrow option columns");
+    expect(prompt).toContain("Do not write answer options as sentences of explanation");
   });
 
   it("returns a structured failure contract when a model response omits required source fields", async () => {

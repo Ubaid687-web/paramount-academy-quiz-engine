@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { classifySolutionKeyPoint, renderPrintablePaperPdf, renderPrintableSolutionPdf } from "./printablePaperExport";
+import { classifySolutionKeyPoint, renderMcqPaperPdf, renderPrintablePaperPdf, renderPrintableSolutionPdf } from "./printablePaperExport";
 
 const shortPaper = {
   mode: "short" as const,
@@ -50,5 +50,35 @@ describe("printable paper PDF export", () => {
     const pdf = await renderPrintableSolutionPdf(shortPaper);
     expect(pdf.subarray(0, 5).toString()).toBe("%PDF-");
     expect(pdf.length).toBeGreaterThan(800);
+  });
+
+  it("renders wrapped stems and answer-shaped options in a fixed Section A table", async () => {
+    const pdf = await renderMcqPaperPdf("Grade 10 Chemistry · Section A", [
+      {
+        question: "A student places dry ice in a sealed container and observes expansion; what is the best explanation?",
+        options: {
+          A: "It melted into liquid and increased volume.",
+          B: "It reacted with oxygen to form compounds.",
+          C: "It sublimed and increased pressure.",
+          D: "It absorbed heat and burst.",
+        },
+        answer: "C",
+        explanation: "Sublimation produces gas and raises pressure in the sealed container.",
+        difficulty: "medium",
+        sourceReference: "States of matter: sublimation",
+        learningObjective: "Explain sublimation in a sealed container.",
+      },
+      ...Array.from({ length: 12 }, (_, index) => ({
+        question: `Which textbook term describes process ${index + 1}?`,
+        options: { A: "Term A", B: "Term B", C: "Term C", D: "Term D" },
+        answer: "A" as const,
+        explanation: "The selected term matches the approved source.",
+        difficulty: "easy" as const,
+        sourceReference: "Approved textbook heading",
+        learningObjective: "Identify a source-supported term.",
+      })),
+    ]);
+    expect(pdf.subarray(0, 5).toString()).toBe("%PDF-");
+    expect(pdf.length).toBeGreaterThan(1200);
   });
 });

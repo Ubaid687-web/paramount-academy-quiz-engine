@@ -331,3 +331,10 @@
 - [x] Block curriculum activation while required page-quality reviews remain unresolved.
 - [x] Add concise Portal Admin quality flags, per-page review controls, and activation guidance.
 - [x] Add regressions and run full validation; checkpoint and report remain release actions.
+
+## Phase 58: Evidence-Grounded MCQ Physical Fit Audit
+- [x] Audit supplied Chemistry, Physics, and Computer Science papers for actual Section A stem, option, column, and row geometry; do not use guessed limits.
+- [x] Replace any provisional compactness policy statements with measured, source-specific observations and explicit unknowns.
+- [x] Add regression fixtures from the supplied paper corpus and validate generated stems/options against verified physical-fit rules.
+- [x] Calibrate generation prompts, structural validation, and MCQ PDF rendering without distorting authentic paper content.
+- [x] Run full validation, save a checkpoint, and report the evidence and remaining review points.
