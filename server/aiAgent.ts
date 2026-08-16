@@ -333,9 +333,13 @@ REQUIREMENTS:
       errorMessage,
     });
 
-    const isQuotaError = errorMessage.includes("412") || errorMessage.includes("exhausted") || errorMessage.includes("billing") || errorMessage.includes("quota") || errorMessage.includes("limit");
+    const normalizedErrorMessage = errorMessage.toLowerCase();
+    const isQuotaError = errorMessage.includes("412") || normalizedErrorMessage.includes("exhausted") || normalizedErrorMessage.includes("billing") || normalizedErrorMessage.includes("quota");
+    const isRateLimitError = errorMessage.includes("429") || normalizedErrorMessage.includes("rate limit") || normalizedErrorMessage.includes("too many requests");
     const errorType = isQuotaError
       ? "quota_exhaustion"
+      : isRateLimitError
+        ? "transient_rate_limit"
       : errorMessage.includes("validation") || errorMessage.includes("duplicate")
         ? "validation"
         : errorMessage.includes("source") || errorMessage.includes("content")
@@ -348,6 +352,8 @@ REQUIREMENTS:
 
     const safeRetryAdvice = isQuotaError
       ? "The connected AI generation service has hit a usage quota limit or billing pause. Please check account credits or try again later when usage resets. No quiz draft was saved."
+      : isRateLimitError
+        ? "The AI generation service is temporarily rate-limited. The system retried automatically; please wait a moment and try again. No quiz draft was saved."
       : "Check the source text for readability, reduce the requested question count if necessary, and try again. No quiz draft was saved.";
 
     return {

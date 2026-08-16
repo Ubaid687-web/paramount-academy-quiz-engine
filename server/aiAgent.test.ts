@@ -238,3 +238,13 @@ describe("AI Agent - MCQ Generation", () => {
     expect(result.draft.safeRetryAdvice).toContain("usage quota limit or billing pause");
     expect(result.draft.safeRetryAdvice).not.toContain("Check the source text for readability");
   });
+
+  it("keeps an exhausted transient rate limit distinct from account quota exhaustion", async () => {
+    mocks.invokeLLM.mockRejectedValue(new Error("LLM invoke failed: 429 Too Many Requests – temporary rate limit"));
+
+    const result = await generateMCQsFromContent(1, validContent, 5, "balanced");
+
+    expect(result.draft.errorType).toBe("transient_rate_limit");
+    expect(result.draft.safeRetryAdvice).toContain("retried automatically");
+    expect(result.draft.safeRetryAdvice).not.toContain("billing pause");
+  });

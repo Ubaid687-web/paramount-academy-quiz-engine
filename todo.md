@@ -388,6 +388,11 @@
 - [x] Implement accurate `quota_exhaustion` error type and professional teacher retry advice.
 - [x] Add unit test coverage, validate full test suite, checkpoint, and report.
 
+## Phase 67: Transient Rate-Limit Retry Resilience
+- [x] Define bounded retry eligibility for transient LLM rate-limit and service failures without retrying quota exhaustion, billing, invalid requests, or source errors.
+- [x] Implement exponential backoff with jitter in the shared LLM transport and preserve final error context.
+- [x] Add transport-level retry regressions, run full validation, checkpoint, and report.
+
 ## Phase 65: Source-Aware Question Capacity Guidance
 - [x] Add deterministic estimated topic counts to approved chapters and half-chapter segments in the catalog response.
 - [x] Show a non-blocking warning near the MCQ question-count input when requested coverage exceeds the selected source estimate.

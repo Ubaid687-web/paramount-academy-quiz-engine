@@ -110,6 +110,29 @@ export type ResponseFormat =
   | { type: "json_object" }
   | { type: "json_schema"; json_schema: JsonSchema };
 
+const MAX_TRANSIENT_RETRY_ATTEMPTS = 3;
+const INITIAL_RETRY_DELAY_MS = 400;
+const MAX_RETRY_DELAY_MS = 4_000;
+
+function isTransientResponseStatus(status: number): boolean {
+  return [408, 425, 429, 500, 502, 503, 504].includes(status);
+}
+
+function retryDelayMs(attempt: number, retryAfterHeader: string | null): number {
+  const retryAfterSeconds = Number.parseFloat(retryAfterHeader ?? "");
+  if (Number.isFinite(retryAfterSeconds) && retryAfterSeconds >= 0) {
+    return Math.min(MAX_RETRY_DELAY_MS, Math.ceil(retryAfterSeconds * 1_000));
+  }
+
+  const exponentialDelay = Math.min(MAX_RETRY_DELAY_MS, INITIAL_RETRY_DELAY_MS * 2 ** attempt);
+  const jitter = Math.floor(Math.random() * Math.max(1, Math.floor(exponentialDelay * 0.25)));
+  return exponentialDelay + jitter;
+}
+
+function waitForRetry(delayMs: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, delayMs));
+}
+
 const ensureArray = (
   value: MessageContent | MessageContent[]
 ): MessageContent[] => (Array.isArray(value) ? value : [value]);
@@ -312,21 +335,40 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     payload.response_format = normalizedResponseFormat;
   }
 
-  const response = await fetch(resolveApiUrl(), {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      authorization: `Bearer ${ENV.forgeApiKey}`,
-    },
-    body: JSON.stringify(payload),
-  });
+  for (let attempt = 0; attempt < MAX_TRANSIENT_RETRY_ATTEMPTS; attempt += 1) {
+    let response: Response;
+    try {
+      response = await fetch(resolveApiUrl(), {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          authorization: `Bearer ${ENV.forgeApiKey}`,
+        },
+        body: JSON.stringify(payload),
+      });
+    } catch (error) {
+      if (attempt === MAX_TRANSIENT_RETRY_ATTEMPTS - 1) {
+        const reason = error instanceof Error ? error.message : "Unknown network failure";
+        throw new Error(`LLM invoke failed after ${MAX_TRANSIENT_RETRY_ATTEMPTS} transient attempts: ${reason}`);
+      }
 
-  if (!response.ok) {
+      await waitForRetry(retryDelayMs(attempt, null));
+      continue;
+    }
+
+    if (response.ok) {
+      return (await response.json()) as InvokeResult;
+    }
+
     const errorText = await response.text();
-    throw new Error(
-      `LLM invoke failed: ${response.status} ${response.statusText} – ${errorText}`
-    );
+    const errorMessage = `LLM invoke failed: ${response.status} ${response.statusText} – ${errorText}`;
+    const canRetry = isTransientResponseStatus(response.status) && attempt < MAX_TRANSIENT_RETRY_ATTEMPTS - 1;
+    if (!canRetry) {
+      throw new Error(errorMessage);
+    }
+
+    await waitForRetry(retryDelayMs(attempt, response.headers.get("retry-after")));
   }
 
-  return (await response.json()) as InvokeResult;
+  throw new Error("LLM invoke failed after retry attempts were exhausted.");
 }
