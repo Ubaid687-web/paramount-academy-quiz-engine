@@ -388,6 +388,11 @@
 - [x] Implement accurate `quota_exhaustion` error type and professional teacher retry advice.
 - [x] Add unit test coverage, validate full test suite, checkpoint, and report.
 
+## Phase 68: Retry Attempt Telemetry & Monitoring
+- [x] Add `retryAttempts` column to `generationJobs` schema and persist count on completion.
+- [x] Pass `retryAttempts` telemetry from shared LLM transport.
+- [x] Add test coverage, validate full test suite, checkpoint, and report.
+
 ## Phase 67: Transient Rate-Limit Retry Resilience
 - [x] Define bounded retry eligibility for transient LLM rate-limit and service failures without retrying quota exhaustion, billing, invalid requests, or source errors.
 - [x] Implement exponential backoff with jitter in the shared LLM transport and preserve final error context.

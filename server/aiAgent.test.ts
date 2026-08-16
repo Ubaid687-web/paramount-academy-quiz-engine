@@ -248,3 +248,17 @@ describe("AI Agent - MCQ Generation", () => {
     expect(result.draft.safeRetryAdvice).toContain("retried automatically");
     expect(result.draft.safeRetryAdvice).not.toContain("billing pause");
   });
+
+  it("records retry attempts in the generation job telemetry when attempts occur", async () => {
+    mocks.invokeLLM.mockResolvedValueOnce({
+      choices: [{ message: { content: JSON.stringify({ mcqs: createValidMcqs(5) }) } }],
+      retryAttempts: 2,
+    });
+
+    await generateMCQsFromContent(1, validContent, 5, "balanced");
+
+    expect(mocks.updateGenerationJob).toHaveBeenCalledWith(
+      501,
+      expect.objectContaining({ retryAttempts: 2 })
+    );
+  });

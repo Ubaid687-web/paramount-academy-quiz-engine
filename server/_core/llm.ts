@@ -95,6 +95,7 @@ export type InvokeResult = {
     completion_tokens: number;
     total_tokens: number;
   };
+  retryAttempts?: number;
 };
 
 export type JsonSchema = {
@@ -357,7 +358,9 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     }
 
     if (response.ok) {
-      return (await response.json()) as InvokeResult;
+      const data = (await response.json()) as InvokeResult;
+      data.retryAttempts = attempt;
+      return data;
     }
 
     const errorText = await response.text();

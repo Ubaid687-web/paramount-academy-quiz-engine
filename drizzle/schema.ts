@@ -106,6 +106,7 @@ export const generationJobs = mysqlTable("generationJobs", {
   generatedQuizId: int("generatedQuizId"), // Reference to created quiz
   errorMessage: text("errorMessage"),
   progress: int("progress").default(0).notNull(), // 0-100
+  retryAttempts: int("retryAttempts").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   completedAt: timestamp("completedAt"),
 });

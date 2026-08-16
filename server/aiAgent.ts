@@ -266,7 +266,8 @@ REQUIREMENTS:
       },
     });
 
-    await updateGenerationJob(job.id, { progress: 80 });
+    const recordedRetryAttempts = response.retryAttempts ?? 0;
+    await updateGenerationJob(job.id, { progress: 80, retryAttempts: recordedRetryAttempts });
 
     // Parse the response
     const content = response.choices[0]?.message?.content;
