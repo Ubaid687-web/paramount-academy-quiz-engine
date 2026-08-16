@@ -26,7 +26,11 @@ export async function extractTextFromPdf(fileBuffer: Buffer, fileName: string) {
 
     validateExtractedPdfText(text, result.total, fileName);
 
-    return { text, pageCount: result.total };
+    return {
+      text,
+      pageCount: result.total,
+      pages: result.pages.map((page) => ({ pageNumber: page.num, text: page.text.replace(/\u0000/g, "").trim() })),
+    };
   } catch (error) {
     console.error(`PDF extraction error for ${fileName}:`, error);
     throw new Error(error instanceof Error ? error.message : `Failed to extract text from PDF: ${fileName}`);

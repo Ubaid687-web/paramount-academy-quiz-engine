@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import React from "react";
-import { BookMarked, CheckCircle2, FileText, FolderPlus, Loader2, Plus, Upload } from "lucide-react";
+import { AlertTriangle, BookMarked, CheckCircle2, FileText, FolderPlus, Loader2, Plus, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -111,6 +111,7 @@ export default function CurriculumManagement() {
   const saveSegments = trpc.curriculum.saveHalfChapterSegments.useMutation();
   const createScope = trpc.curriculum.createScopeTemplate.useMutation();
   const activateSet = trpc.curriculum.activateSet.useMutation();
+  const reviewSourcePage = trpc.curriculum.reviewSourcePage.useMutation();
   const createProgramme = trpc.curriculum.createProgramme.useMutation();
   const activateProgramme = trpc.curriculum.activateProgramme.useMutation();
 
@@ -427,6 +428,17 @@ export default function CurriculumManagement() {
     }
   };
 
+  const handleReviewSourcePage = async (sourceId: number, pageNumber: number) => {
+    if (!selectedSetId) return;
+    try {
+      await reviewSourcePage.mutateAsync({ curriculumSetId: selectedSetId, sourceId, pageNumber });
+      await utils.curriculum.getManagementDetails.invalidate({ curriculumSetId: selectedSetId });
+      toast.success(`Page ${pageNumber} marked as reviewed.`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "The OCR page review could not be saved.");
+    }
+  };
+
   return (
     <AcademyShell eyebrow="Portal Admin" showAdministration>
       <main className="container py-8 sm:py-10">
@@ -489,7 +501,7 @@ export default function CurriculumManagement() {
               <Card className={details.readiness.sourceExtracted && details.readiness.reviewedActiveChapters > 0 ? "border-emerald-300/70 bg-emerald-50/50" : "border-amber-300/70 bg-amber-50/50"}>
                 <CardHeader><CardTitle className="text-base">Edition readiness checklist</CardTitle><CardDescription>Activation remains a deliberate admin action. This list only shows what has been verified for the selected book.</CardDescription></CardHeader>
                 <CardContent className="grid gap-2 text-sm sm:grid-cols-2">
-                  {[{ label: "Textbook source stored", done: details.readiness.sourceStored }, { label: "Textbook extraction completed", done: details.readiness.sourceExtracted }, { label: "At least one reviewed active chapter", done: details.readiness.reviewedActiveChapters > 0 }, { label: "Pattern profile reviewed (optional for book activation)", done: details.readiness.patternProfilesReviewed > 0 }].map((item) => <div key={item.label} className="flex items-center gap-2 rounded-lg border border-border/60 bg-background/70 px-3 py-2"><CheckCircle2 className={`h-4 w-4 shrink-0 ${item.done ? "text-emerald-600" : "text-muted-foreground"}`} /><span className={item.done ? "text-foreground" : "text-muted-foreground"}>{item.label}</span></div>)}
+                  {[{ label: "Textbook source stored", done: details.readiness.sourceStored }, { label: "Textbook extraction completed", done: details.readiness.sourceExtracted }, { label: "OCR page-quality review complete", done: details.readiness.ocrReviewComplete }, { label: "At least one reviewed active chapter", done: details.readiness.reviewedActiveChapters > 0 }, { label: "Pattern profile reviewed (optional for book activation)", done: details.readiness.patternProfilesReviewed > 0 }].map((item) => <div key={item.label} className="flex items-center gap-2 rounded-lg border border-border/60 bg-background/70 px-3 py-2"><CheckCircle2 className={`h-4 w-4 shrink-0 ${item.done ? "text-emerald-600" : "text-muted-foreground"}`} /><span className={item.done ? "text-foreground" : "text-muted-foreground"}>{item.label}</span></div>)}
                 </CardContent>
               </Card>
               {details.curriculumSet.status === "active" && <Card className="border-amber-400/35 bg-amber-50/60"><CardHeader><CardTitle className="text-base">Replace this active book safely</CardTitle><CardDescription>Creates a linked draft edition. Teachers keep using the active book until the replacement has been reviewed and deliberately activated.</CardDescription></CardHeader><CardContent className="grid gap-3 sm:grid-cols-[1fr_1fr_auto]"><Input aria-label="Replacement curriculum label" value={replacementLabel} onChange={(event) => setReplacementLabel(event.target.value)} placeholder="Replacement book title" /><Input aria-label="Replacement edition label" value={replacementEditionLabel} onChange={(event) => setReplacementEditionLabel(event.target.value)} placeholder="e.g. 2027 edition" /><Button type="button" variant="outline" onClick={handleCreateReplacement} disabled={replaceActiveSet.isPending}>Create replacement draft</Button></CardContent></Card>}
@@ -501,6 +513,13 @@ export default function CurriculumManagement() {
                   <div className="space-y-2">{details.sources.map((source) => <button key={source.id} onClick={() => loadSourceForReview(source.id)} className="flex w-full items-center justify-between rounded-lg border border-border/60 p-3 text-left hover:border-accent/50"><span className="flex min-w-0 items-center gap-2"><FileText className="h-4 w-4 shrink-0 text-accent" /><span className="truncate text-sm">{source.originalFileName}</span></span><span className="text-xs text-muted-foreground">{source.extractionStatus}{source.pageCount ? ` • ${source.pageCount} pages` : ""}</span></button>)}</div>
                 </CardContent>
               </Card>
+              {details.readiness.weakOcrPages > 0 && <Card className="border-amber-300/80 bg-amber-50/60">
+                <CardHeader><CardTitle className="flex items-center gap-2 text-base"><AlertTriangle className="h-5 w-5 text-amber-700" />OCR pages need review</CardTitle><CardDescription>{details.readiness.weakOcrPages} page{details.readiness.weakOcrPages === 1 ? "" : "s"} had limited readable text. Confirm each against the stored PDF before activating this edition.</CardDescription></CardHeader>
+                <CardContent className="space-y-2">{details.sourcePageReviews.filter((page) => page.reviewStatus === "needs_review").map((page) => {
+                  const source = details.sources.find((candidate) => candidate.id === page.sourceId);
+                  return <div key={`${page.sourceId}-${page.pageNumber}`} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-200 bg-background/80 p-3"><div><p className="text-sm font-semibold text-foreground">{source?.originalFileName ?? "Textbook source"} · page {page.pageNumber}</p><p className="mt-1 text-xs text-muted-foreground">Quality signal {page.qualityScore}/100{page.reviewReasons ? ` · ${page.reviewReasons}` : ""}</p></div><Button type="button" size="sm" variant="outline" onClick={() => handleReviewSourcePage(page.sourceId, page.pageNumber)} disabled={reviewSourcePage.isPending}>Mark reviewed</Button></div>;
+                })}</CardContent>
+              </Card>}
 
               <Card>
                 <CardHeader><CardTitle className="flex items-center gap-2"><BookMarked className="h-5 w-5 text-accent" />2. Propose Chapters from Extracted Text</CardTitle><CardDescription>For a new textbook edition, this reads only explicit <strong>CHAPTER</strong> or <strong>UNIT</strong> headings in the supplied extracted file. It never saves or activates chapters automatically.</CardDescription></CardHeader>

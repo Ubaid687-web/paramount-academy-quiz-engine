@@ -9,6 +9,8 @@ const mocks = vi.hoisted(() => ({
   activateProgrammeCatalogue: vi.fn(),
   getCurriculumSet: vi.fn(),
   getCurriculumSource: vi.fn(),
+  activateCurriculumSet: vi.fn(),
+  markCurriculumSourcePageReviewed: vi.fn(),
   proposeChaptersFromExtractedText: vi.fn(),
 }));
 
@@ -21,6 +23,8 @@ vi.mock("./db", () => ({
   activateProgrammeCatalogue: mocks.activateProgrammeCatalogue,
   getCurriculumSet: mocks.getCurriculumSet,
   getCurriculumSource: mocks.getCurriculumSource,
+  activateCurriculumSet: mocks.activateCurriculumSet,
+  markCurriculumSourcePageReviewed: mocks.markCurriculumSourcePageReviewed,
 }));
 
 vi.mock("./chapterProposal", () => ({ proposeChaptersFromExtractedText: mocks.proposeChaptersFromExtractedText }));
@@ -86,6 +90,22 @@ describe("curriculum lifecycle administration", () => {
     const caller = appRouter.createCaller(createContext("user"));
     await expect(caller.curriculum.activatePaperPatternSource({ sourceId: 41 })).rejects.toMatchObject({ code: "FORBIDDEN" });
     expect(mocks.activateAssessmentPatternSource).not.toHaveBeenCalled();
+  });
+
+  it("surfaces the weak-OCR-page activation block without bypassing the review safeguard", async () => {
+    mocks.activateCurriculumSet.mockRejectedValue(new Error("Review 2 weak OCR pages before activating this curriculum edition."));
+    const caller = appRouter.createCaller(createContext("admin"));
+
+    await expect(caller.curriculum.activateSet({ curriculumSetId: 901 })).rejects.toThrow("Review 2 weak OCR pages");
+  });
+
+  it("allows an administrator to mark only a source-bound OCR page as reviewed", async () => {
+    mocks.getCurriculumSource.mockResolvedValue({ id: 41, curriculumSetId: 901 });
+    mocks.markCurriculumSourcePageReviewed.mockResolvedValue({ sourceId: 41, pageNumber: 7, reviewStatus: "reviewed" });
+    const caller = appRouter.createCaller(createContext("admin"));
+
+    await expect(caller.curriculum.reviewSourcePage({ curriculumSetId: 901, sourceId: 41, pageNumber: 7 })).resolves.toMatchObject({ reviewStatus: "reviewed" });
+    expect(mocks.markCurriculumSourcePageReviewed).toHaveBeenCalledWith(41, 7, 77);
   });
 
   it("records a reviewed profile only for an extracted supplied paper and stamps the admin reviewer", async () => {

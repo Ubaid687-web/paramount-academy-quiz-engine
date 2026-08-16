@@ -19,6 +19,7 @@ import {
   curriculumScopeTemplates,
   curriculumSets,
   curriculumSources,
+  curriculumSourcePageReviews,
   InsertCurriculumSet,
   InsertCurriculumSource,
   InsertCurriculumChapter,
@@ -35,6 +36,7 @@ import {
   AssessmentDraft,
 } from "../drizzle/schema";
 import type { FbiseSubject, ProgrammeKey, ScopeCatalog } from "./curriculumScope";
+import { assertNoUnresolvedOcrPages } from "./ocrQuality";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -401,6 +403,49 @@ export async function createCurriculumSource(values: InsertCurriculumSource) {
   return rows[0];
 }
 
+export async function replaceCurriculumSourcePageReviews(sourceId: number, pages: Array<{
+  pageNumber: number;
+  textCharacters: number;
+  meaningfulWords: number;
+  qualityScore: number;
+  reviewStatus: "clear" | "needs_review";
+  reviewReasons: string | null;
+}>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(curriculumSourcePageReviews).where(eq(curriculumSourcePageReviews.sourceId, sourceId));
+  if (pages.length) {
+    await db.insert(curriculumSourcePageReviews).values(pages.map((page) => ({ ...page, sourceId })));
+  }
+  return listCurriculumSourcePageReviews([sourceId]);
+}
+
+export async function listCurriculumSourcePageReviews(sourceIds: number[]) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  if (!sourceIds.length) return [];
+  return db.select().from(curriculumSourcePageReviews).where(inArray(curriculumSourcePageReviews.sourceId, sourceIds)).orderBy(asc(curriculumSourcePageReviews.sourceId), asc(curriculumSourcePageReviews.pageNumber));
+}
+
+export async function markCurriculumSourcePageReviewed(sourceId: number, pageNumber: number, reviewedBy: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(curriculumSourcePageReviews).set({ reviewStatus: "reviewed", reviewedBy, reviewedAt: new Date() }).where(and(
+    eq(curriculumSourcePageReviews.sourceId, sourceId),
+    eq(curriculumSourcePageReviews.pageNumber, pageNumber),
+  ));
+  const rows = await db.select().from(curriculumSourcePageReviews).where(and(
+    eq(curriculumSourcePageReviews.sourceId, sourceId),
+    eq(curriculumSourcePageReviews.pageNumber, pageNumber),
+  )).limit(1);
+  return rows[0];
+}
+
+export async function listCurriculumSetPageReviews(curriculumSetId: number) {
+  const sources = await listCurriculumSources(curriculumSetId);
+  return listCurriculumSourcePageReviews(sources.map((source) => source.id));
+}
+
 export async function listCurriculumChapters(curriculumSetId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
@@ -470,6 +515,8 @@ export async function activateCurriculumSet(curriculumSetId: number) {
   if (!chapters.some((chapter) => chapter.isActive === 1)) {
     throw new Error("Add at least one reviewed chapter before activating a curriculum set.");
   }
+
+  assertNoUnresolvedOcrPages(await listCurriculumSetPageReviews(curriculumSetId));
 
   await db.update(curriculumSets).set({ status: "archived", archivedAt: new Date() }).where(and(
     eq(curriculumSets.subject, set.subject),

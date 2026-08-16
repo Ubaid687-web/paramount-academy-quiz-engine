@@ -78,6 +78,13 @@
       "when": 1786700997880,
       "tag": "0010_warm_toad",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "5",
+      "when": 1786857676896,
+      "tag": "0011_curved_william_stryker",
+      "breakpoints": true
     }
   ]
 }

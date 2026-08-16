@@ -17,3 +17,7 @@ After activating Chemistry edition 120001, the builder refreshes with “Grade 1
 Selecting MCQ advances to Step 2 / 3, “Select source.” The layout separates “Approved textbook chapters” from “My custom lesson material”; the approved path is available for the active Chemistry edition, while the custom path retains one file upload and paste-text option. The step includes an explicit Back action and keeps the Quiz settings rail locked until a source and title are valid.
 
 The approved Chemistry selector exposes all thirteen source-bound units with page spans: Unit 01 History of Chemistry (7–13), Unit 02 Matter (14–25), Unit 03 Stoichiometry (26–45), Unit 04 Electrochemistry (46–63), Unit 05 Reaction Kinetics (64–73), Unit 06 Salts (74–81), Unit 07 Nitrogen, Sulphur and Metals (82–94), Unit 08 Organic Chemistry (95–108), Unit 09 Hydrocarbons (109–122), Unit 10 Hydroxy Compounds (123–129), Unit 11 Carboxylic Compounds (130–136), Unit 12 Polymers (137–149), and Unit 13 Biochemistry (150–164). The active source label identifies the National Book Foundation 2025 edition and NCP 2022–23.
+
+## OCR quality-review verification
+
+The public preview correctly protects Curriculum Library data behind the Portal Admin session, so live source-quality flags cannot be inspected without administrator authentication. The route presents the concise administrator-only notice rather than exposing book evidence. Quality-review display and review actions are covered in the Portal Admin UI regression, while source 90001 now has three persisted weak-page flags: pages 1, 6, and 56.

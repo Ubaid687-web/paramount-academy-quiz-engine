@@ -257,6 +257,30 @@ export const curriculumSources = mysqlTable("curriculumSources", {
 export type CurriculumSource = typeof curriculumSources.$inferSelect;
 export type InsertCurriculumSource = typeof curriculumSources.$inferInsert;
 
+// Each extracted PDF page receives a deterministic text-quality assessment. Pages that appear
+// weak remain visible to Portal Admin and must be explicitly reviewed before a draft edition
+// can be activated. The page text itself remains in the source transcript; this table stores
+// only quality signals and the human review decision.
+export const curriculumSourcePageReviews = mysqlTable("curriculumSourcePageReviews", {
+  id: int("id").autoincrement().primaryKey(),
+  sourceId: int("sourceId").notNull(),
+  pageNumber: int("pageNumber").notNull(),
+  textCharacters: int("textCharacters").notNull(),
+  meaningfulWords: int("meaningfulWords").notNull(),
+  qualityScore: int("qualityScore").notNull(),
+  reviewStatus: mysqlEnum("reviewStatus", ["clear", "needs_review", "reviewed"]).notNull(),
+  reviewReasons: text("reviewReasons"),
+  reviewedBy: int("reviewedBy"),
+  reviewedAt: timestamp("reviewedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => [
+  uniqueIndex("curriculumSourcePageReviews_source_page_unique").on(table.sourceId, table.pageNumber),
+]);
+
+export type CurriculumSourcePageReview = typeof curriculumSourcePageReviews.$inferSelect;
+export type InsertCurriculumSourcePageReview = typeof curriculumSourcePageReviews.$inferInsert;
+
 // Admin-reviewed chapter evidence, ordered within a versioned curriculum set.
 export const curriculumChapters = mysqlTable("curriculumChapters", {
   id: int("id").autoincrement().primaryKey(),

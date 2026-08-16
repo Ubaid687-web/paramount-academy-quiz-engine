@@ -151,11 +151,12 @@ export const appRouter = router({
     getManagementDetails: adminProcedure
       .input(z.object({ curriculumSetId: z.number().int().positive() }))
       .query(async ({ input }) => {
-        const { getCurriculumSet, listCurriculumSources, listCurriculumChapters, listChapterSegments, listScopeTemplates, listAssessmentPatternSources, listAssessmentPatternProfilesBySourceIds } = await import("./db");
+        const { getCurriculumSet, listCurriculumSources, listCurriculumChapters, listChapterSegments, listScopeTemplates, listAssessmentPatternSources, listAssessmentPatternProfilesBySourceIds, listCurriculumSetPageReviews } = await import("./db");
         const curriculumSet = await getCurriculumSet(input.curriculumSetId);
         if (!curriculumSet) throw new Error("Curriculum set not found");
         const chapters = await listCurriculumChapters(input.curriculumSetId);
         const sources = await listCurriculumSources(input.curriculumSetId);
+        const sourcePageReviews = await listCurriculumSetPageReviews(input.curriculumSetId);
         const paperPatternSources = await listAssessmentPatternSources({ board: curriculumSet.board, grade: curriculumSet.grade, subject: curriculumSet.subject });
         const paperPatternProfiles = await listAssessmentPatternProfilesBySourceIds(paperPatternSources.map((source) => source.id));
         const chapterSegments = await Promise.all(chapters.map(async (chapter) => ({
@@ -165,6 +166,7 @@ export const appRouter = router({
         return {
           curriculumSet,
           sources,
+          sourcePageReviews,
           paperPatternSources,
           paperPatternProfiles,
           chapters,
@@ -174,6 +176,8 @@ export const appRouter = router({
             sourceStored: sources.length > 0,
             sourceExtracted: sources.some((source) => source.extractionStatus === "extracted" && Boolean(source.extractedText?.trim())),
             reviewedActiveChapters: chapters.filter((chapter) => chapter.isActive === 1).length,
+            weakOcrPages: sourcePageReviews.filter((page) => page.reviewStatus === "needs_review").length,
+            ocrReviewComplete: !sourcePageReviews.some((page) => page.reviewStatus === "needs_review"),
             patternSourcesExtracted: paperPatternSources.filter((source) => source.extractionStatus === "extracted").length,
             patternProfilesReviewed: paperPatternProfiles.filter((profile) => profile.reviewStatus === "reviewed").length,
           },
@@ -226,8 +230,9 @@ export const appRouter = router({
         fileBuffer: z.string().min(1),
       }))
       .mutation(async ({ ctx, input }) => {
-        const { getCurriculumSet, createCurriculumSource } = await import("./db");
+        const { getCurriculumSet, createCurriculumSource, replaceCurriculumSourcePageReviews } = await import("./db");
         const { extractCurriculumSourceText } = await import("./curriculumIngestion");
+        const { assessExtractedSourceQuality } = await import("./ocrQuality");
         const { storagePut } = await import("./storage");
         const curriculumSet = await getCurriculumSet(input.curriculumSetId);
         if (!curriculumSet) throw new Error("Curriculum set not found");
@@ -243,7 +248,7 @@ export const appRouter = router({
           fileBuffer,
           input.mimeType,
         );
-        return createCurriculumSource({
+        const source = await createCurriculumSource({
           curriculumSetId: input.curriculumSetId,
           storageKey: stored.key,
           storageUrl: stored.url,
@@ -256,6 +261,8 @@ export const appRouter = router({
           uploadedBy: ctx.user.id,
           extractedAt: new Date(),
         });
+        await replaceCurriculumSourcePageReviews(source.id, assessExtractedSourceQuality(extracted.pages));
+        return source;
       }),
 
     proposeChaptersFromSource: adminProcedure
@@ -452,6 +459,19 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const { activateCurriculumSet } = await import("./db");
         return activateCurriculumSet(input.curriculumSetId);
+      }),
+
+    reviewSourcePage: adminProcedure
+      .input(z.object({ curriculumSetId: z.number().int().positive(), sourceId: z.number().int().positive(), pageNumber: z.number().int().positive() }))
+      .mutation(async ({ ctx, input }) => {
+        const { getCurriculumSource, markCurriculumSourcePageReviewed } = await import("./db");
+        const source = await getCurriculumSource(input.sourceId);
+        if (!source || source.curriculumSetId !== input.curriculumSetId) {
+          throw new Error("The selected OCR page does not belong to this curriculum edition.");
+        }
+        const reviewed = await markCurriculumSourcePageReviewed(input.sourceId, input.pageNumber, ctx.user.id);
+        if (!reviewed) throw new Error("The selected OCR page quality record was not found.");
+        return reviewed;
       }),
 
     getActiveScopeCatalog: publicProcedure

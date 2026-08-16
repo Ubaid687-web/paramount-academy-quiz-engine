@@ -6,15 +6,15 @@ export async function extractCurriculumSourceText(input: {
   fileBuffer: Buffer;
   fileName: string;
   mimeType: SupportedCurriculumMimeType;
-}): Promise<{ text: string; pageCount: number | null }> {
+}): Promise<{ text: string; pageCount: number | null; pages: Array<{ pageNumber: number; text: string }> }> {
   if (input.mimeType === "application/pdf") {
     const extracted = await extractTextFromPdf(input.fileBuffer, input.fileName);
-    return { text: extracted.text.trim(), pageCount: extracted.pageCount };
+    return { text: extracted.text.trim(), pageCount: extracted.pageCount, pages: extracted.pages };
   }
 
   const text = input.fileBuffer.toString("utf8").trim();
   if (text.length < 100) {
     throw new Error("The text source is too short to create reviewable chapter material. Upload a fuller file or paste more source text.");
   }
-  return { text, pageCount: null };
+  return { text, pageCount: null, pages: [{ pageNumber: 1, text }] };
 }

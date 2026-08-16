@@ -324,3 +324,10 @@
 - [x] Run regression tests and TypeScript validation; checkpoint and delivery remain as release actions.
 - [x] Fix Quiz Centre readiness mismatch so a programme is teacher-ready only when an active reviewed curriculum set with active chapters exists.
 - [x] Extend chapter proposal parsing for the scanned Chemistry textbook’s bracketed and repeated unit headers without inventing boundaries.
+
+## Phase 57: OCR Confidence and Pre-Activation Review
+- [x] Define deterministic page-quality signals and the rule for requiring administrator review of weak OCR pages.
+- [x] Persist source-bound page-quality records and calculate review status during textbook ingestion.
+- [x] Block curriculum activation while required page-quality reviews remain unresolved.
+- [x] Add concise Portal Admin quality flags, per-page review controls, and activation guidance.
+- [x] Add regressions and run full validation; checkpoint and report remain release actions.
