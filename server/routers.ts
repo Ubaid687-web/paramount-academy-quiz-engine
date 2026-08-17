@@ -868,14 +868,52 @@ export const appRouter = router({
           };
         }
         if (!contentText || !sourceContext) throw new Error("Upload or paste at least 100 characters of material, or choose a reviewed curriculum scope.");
-        const payload = await generatePrintablePaperFromContent({
-          paperType: input.paperType,
-          title: input.title,
+        const { getCachedGenerationResponse, getOpenGenerationCircuit, openGenerationCircuit, closeGenerationCircuit, putCachedGenerationResponse } = await import("./db");
+        const { buildGenerationRequestFingerprint, circuitOpenMessage, classifyCircuitOpen } = await import("./generationOptimization");
+        const requestFingerprint = buildGenerationRequestFingerprint({
+          mode: input.paperType,
+          sourceSnapshot: sourceContext.scopeSnapshot,
           contentText,
-          pairCount: input.pairCount,
           difficulty: input.difficulty,
-          sourceContext,
+          requestedCount: input.pairCount,
+          title: input.title,
+          priorQuestionHistory: sourceContext.priorQuestionHistory,
         });
+        const cached = await getCachedGenerationResponse(ctx.user.id, requestFingerprint);
+        const openCircuit = await getOpenGenerationCircuit();
+        if (!cached && openCircuit?.openUntil && openCircuit.failureType) {
+          throw new Error(circuitOpenMessage(openCircuit.failureType, openCircuit.openUntil));
+        }
+        let payload: Awaited<ReturnType<typeof generatePrintablePaperFromContent>>;
+        let cacheReused = false;
+        if (cached) {
+          payload = JSON.parse(cached.payload) as Awaited<ReturnType<typeof generatePrintablePaperFromContent>>;
+          cacheReused = true;
+        } else {
+          try {
+            payload = await generatePrintablePaperFromContent({
+              paperType: input.paperType,
+              title: input.title,
+              contentText,
+              pairCount: input.pairCount,
+              difficulty: input.difficulty,
+              sourceContext,
+            });
+            await closeGenerationCircuit();
+            await putCachedGenerationResponse({
+              userId: ctx.user.id,
+              requestFingerprint,
+              generationMode: input.paperType,
+              payload: JSON.stringify(payload),
+              expiresAt: new Date(Date.now() + 15 * 60_000),
+            });
+          } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            const policy = classifyCircuitOpen(message);
+            if (policy) await openGenerationCircuit(policy);
+            throw error;
+          }
+        }
         let assessmentDraftId: number | undefined;
         if ((payload.mode === "short" || payload.mode === "long") && sourceContext.sourceType === "curriculum_scope" && sourceContext.curriculumSetId && sourceContext.scopeSnapshot) {
           const { createAssessmentDraft } = await import("./db");
@@ -903,7 +941,7 @@ export const appRouter = router({
           });
           assessmentDraftId = draft.id;
         }
-        return { payload, assessmentDraftId, reviewWarning: "Draft only: Portal Admin review and source verification are required before issuing this paper." };
+        return { payload, assessmentDraftId, cacheReused, reviewWarning: cacheReused ? "Reused an exact recent draft; no new AI call was made. Portal Admin review and source verification are still required before issuing this paper." : "Draft only: Portal Admin review and source verification are required before issuing this paper." };
       }),
 
     saveGeneratedQuiz: adminProcedure

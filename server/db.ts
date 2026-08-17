@@ -34,11 +34,16 @@ import {
   InsertAssessmentPatternProfile,
   InsertProgrammeCatalogue,
   AssessmentDraft,
+  generationResponseCaches,
+  generationCircuitStates,
+  GenerationResponseCache,
+  GenerationCircuitState,
 } from "../drizzle/schema";
 import type { FbiseSubject, ProgrammeKey, ScopeCatalog } from "./curriculumScope";
 import { assertNoUnresolvedOcrPages } from "./ocrQuality";
 import { ENV } from './_core/env';
 import type { PriorQuestionHistory } from "./generationDiversity";
+import type { GenerationMode } from "./generationOptimization";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -296,6 +301,81 @@ export async function getUserGenerationJobs(userId: number) {
   if (!db) throw new Error("Database not available");
   
   return db.select().from(generationJobs).where(eq(generationJobs.userId, userId));
+}
+
+export async function getCachedGenerationResponse(userId: number, requestFingerprint: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db.select().from(generationResponseCaches).where(and(
+    eq(generationResponseCaches.userId, userId),
+    eq(generationResponseCaches.requestFingerprint, requestFingerprint),
+  )).limit(1);
+  const cached = rows[0];
+  if (!cached) return undefined;
+  if (cached.expiresAt.getTime() <= Date.now()) {
+    await db.delete(generationResponseCaches).where(eq(generationResponseCaches.id, cached.id));
+    return undefined;
+  }
+  await db.update(generationResponseCaches).set({ hitCount: cached.hitCount + 1 }).where(eq(generationResponseCaches.id, cached.id));
+  return cached;
+}
+
+export async function putCachedGenerationResponse(values: {
+  userId: number;
+  requestFingerprint: string;
+  generationMode: GenerationMode;
+  payload: string;
+  expiresAt: Date;
+}) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const existing = await db.select().from(generationResponseCaches).where(and(
+    eq(generationResponseCaches.userId, values.userId),
+    eq(generationResponseCaches.requestFingerprint, values.requestFingerprint),
+  )).limit(1);
+  if (existing[0]) {
+    await db.update(generationResponseCaches).set({
+      generationMode: values.generationMode,
+      payload: values.payload,
+      expiresAt: values.expiresAt,
+      hitCount: 0,
+    }).where(eq(generationResponseCaches.id, existing[0].id));
+    return existing[0];
+  }
+  const result = await db.insert(generationResponseCaches).values(values);
+  const created = await db.select().from(generationResponseCaches).where(eq(generationResponseCaches.id, result[0].insertId as number)).limit(1);
+  return created[0];
+}
+
+export async function getOpenGenerationCircuit(serviceKey = "managed_llm") {
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db.select().from(generationCircuitStates).where(eq(generationCircuitStates.serviceKey, serviceKey)).limit(1);
+  const circuit = rows[0];
+  if (!circuit || circuit.state !== "open" || !circuit.openUntil) return undefined;
+  if (circuit.openUntil.getTime() > Date.now()) return circuit;
+  await db.update(generationCircuitStates).set({ state: "closed", failureType: null, openUntil: null }).where(eq(generationCircuitStates.id, circuit.id));
+  return undefined;
+}
+
+export async function openGenerationCircuit(params: { failureType: string; holdMinutes: number; serviceKey?: string }) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const serviceKey = params.serviceKey ?? "managed_llm";
+  const openUntil = new Date(Date.now() + params.holdMinutes * 60_000);
+  const existing = await db.select().from(generationCircuitStates).where(eq(generationCircuitStates.serviceKey, serviceKey)).limit(1);
+  if (existing[0]) {
+    await db.update(generationCircuitStates).set({ state: "open", failureType: params.failureType, openUntil, lastFailureAt: new Date() }).where(eq(generationCircuitStates.id, existing[0].id));
+  } else {
+    await db.insert(generationCircuitStates).values({ serviceKey, state: "open", failureType: params.failureType, openUntil, lastFailureAt: new Date() });
+  }
+  return { serviceKey, failureType: params.failureType, openUntil };
+}
+
+export async function closeGenerationCircuit(serviceKey = "managed_llm") {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(generationCircuitStates).set({ state: "closed", failureType: null, openUntil: null }).where(eq(generationCircuitStates.serviceKey, serviceKey));
 }
 
 /**

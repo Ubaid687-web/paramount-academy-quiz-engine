@@ -75,6 +75,7 @@ export default function AIAgent() {
   const [generatedMcqs, setGeneratedMcqs] = useState<any[]>([]);
   const [generatedDraft, setGeneratedDraft] = useState<any>(null);
   const [generatedPrintablePaper, setGeneratedPrintablePaper] = useState<any>(null);
+  const [printableCacheReused, setPrintableCacheReused] = useState(false);
   const [paperPairCount, setPaperPairCount] = useState(5);
   const [paperPairCountInput, setPaperPairCountInput] = useState("5");
   const [paperPairCountError, setPaperPairCountError] = useState<string | null>(null);
@@ -555,6 +556,7 @@ export default function AIAgent() {
     setIsGenerating(true);
     setActiveStep(4);
     setGeneratedPrintablePaper(null);
+    setPrintableCacheReused(false);
     setGenerationProgress(20);
     try {
       const result = await generatePrintablePaperMutation.mutateAsync({
@@ -567,7 +569,8 @@ export default function AIAgent() {
       });
       setGenerationProgress(100);
       setGeneratedPrintablePaper(result.payload);
-      toast.success(`${assessmentMode === "short" ? "Short" : "Long"} question paper draft created for review.`);
+      setPrintableCacheReused(Boolean(result.cacheReused));
+      toast.success(result.cacheReused ? "Reused an exact recent paper draft; no new AI call was made." : `${assessmentMode === "short" ? "Short" : "Long"} question paper draft created for review.`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to generate the printable paper.");
       setActiveStep(3);
@@ -887,6 +890,7 @@ export default function AIAgent() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="rounded-xl border border-accent/30 bg-accent/5 p-4 text-sm text-foreground"><strong>{generatedPrintablePaper.items?.length || 0} prompts</strong> across {paperPairCount} OR pairs.</div>
+                {printableCacheReused && <p className="rounded-lg border border-sky-500/30 bg-sky-500/10 px-3 py-2 text-xs leading-5 text-foreground" data-testid="cached-draft-notice">Reused an exact recent draft. No new AI call was made; source review is still required before printing.</p>}
                 <div className="flex flex-col gap-2 sm:flex-row"><Button type="button" variant="outline" className="flex-1" onClick={() => handlePrintableDownload("paper")}>Download paper PDF</Button><Button type="button" variant="outline" className="flex-1" onClick={() => handlePrintableDownload("solution")}>Download solution key</Button></div>
                 <div className="flex flex-col gap-2 sm:flex-row"><Button type="button" variant="ghost" className="flex-1" onClick={() => setActiveStep(3)}><ChevronLeft className="mr-1 h-4 w-4" />Back to settings</Button><Button type="button" className="flex-1" onClick={() => { setGeneratedPrintablePaper(null); setActiveStep(3); }}>Create another draft</Button></div>
               </CardContent>
@@ -963,6 +967,7 @@ export default function AIAgent() {
                         <span className="rounded-full bg-background/70 px-2.5 py-1 text-xs font-medium text-amber-600 dark:text-amber-300">Draft</span>
                       </div>
                       <p className="mt-1 text-muted-foreground">{generatedDraft.quiz?.instructions}</p>
+                      {generatedDraft.cache?.reused && <p className="mt-3 rounded-lg border border-sky-500/30 bg-sky-500/10 px-3 py-2 text-xs leading-5 text-foreground" data-testid="cached-draft-notice">{generatedDraft.cache.message ?? "Reused an exact recent draft; no new AI call was made."}</p>}
                       {generatedDraft.qualityChecks?.reviewWarnings?.length > 0 && (
                         <ul className="mt-3 space-y-1 text-xs text-muted-foreground">
                           {generatedDraft.qualityChecks.reviewWarnings.map((warning: string) => <li key={warning}>• {warning}</li>)}

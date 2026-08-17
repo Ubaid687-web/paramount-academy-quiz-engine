@@ -186,6 +186,7 @@ describe("AI quiz generation feedback", () => {
       draft: {
         quiz: { instructions: "Review every question before use." },
         qualityChecks: { reviewWarnings: ["Faculty review is required before publication."] },
+        cache: { reused: true, message: "Reused an exact recent draft; no new AI call was made." },
       },
     });
     render(<AIAgent />);
@@ -210,6 +211,7 @@ describe("AI quiz generation feedback", () => {
     expect(screen.getByText("Admin review required before assignment or publication")).toBeVisible();
     expect(screen.getByText(/Which quantity measures rate of change of velocity/)).toBeVisible();
     expect(screen.getByText(/Kinematics: acceleration/)).toBeVisible();
+    expect(screen.getByTestId("cached-draft-notice")).toHaveTextContent("no new AI call was made");
   });
 
   it("analyzes supplied content while leaving the question count under teacher control", async () => {

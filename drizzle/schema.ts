@@ -108,12 +108,51 @@ export const generationJobs = mysqlTable("generationJobs", {
   errorMessage: text("errorMessage"),
   progress: int("progress").default(0).notNull(), // 0-100
   retryAttempts: int("retryAttempts").default(0).notNull(),
+  requestFingerprint: varchar("requestFingerprint", { length: 64 }),
+  cacheHit: int("cacheHit").default(0).notNull(),
+  promptSourceChars: int("promptSourceChars").default(0).notNull(),
+  promptInputChars: int("promptInputChars").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   completedAt: timestamp("completedAt"),
 });
 
 export type GenerationJob = typeof generationJobs.$inferSelect;
 export type InsertGenerationJob = typeof generationJobs.$inferInsert;
+
+// Private exact-request cache. Payloads never cross user boundaries and expire quickly so a
+// teacher can recover an interrupted/repeated request without treating a prior paper as a new one.
+export const generationResponseCaches = mysqlTable("generationResponseCaches", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  requestFingerprint: varchar("requestFingerprint", { length: 64 }).notNull(),
+  generationMode: mysqlEnum("generationMode", ["mcq", "short", "long"]).notNull(),
+  payload: longtext("payload").notNull(),
+  expiresAt: timestamp("expiresAt").notNull(),
+  hitCount: int("hitCount").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => [
+  uniqueIndex("generationResponseCaches_user_request_unique").on(table.userId, table.requestFingerprint),
+]);
+
+export type GenerationResponseCache = typeof generationResponseCaches.$inferSelect;
+export type InsertGenerationResponseCache = typeof generationResponseCaches.$inferInsert;
+
+// Provider-level state is persisted because autoscaled instances cannot safely share in-memory
+// circuit state. It suppresses known-wasteful calls during provider quota or rate-limit outages.
+export const generationCircuitStates = mysqlTable("generationCircuitStates", {
+  id: int("id").autoincrement().primaryKey(),
+  serviceKey: varchar("serviceKey", { length: 100 }).notNull().unique(),
+  state: mysqlEnum("state", ["closed", "open"]).default("closed").notNull(),
+  failureType: varchar("failureType", { length: 80 }),
+  openUntil: timestamp("openUntil"),
+  lastFailureAt: timestamp("lastFailureAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type GenerationCircuitState = typeof generationCircuitStates.$inferSelect;
+export type InsertGenerationCircuitState = typeof generationCircuitStates.$inferInsert;
 
 // Assessment drafts support all approved question modes while keeping their source and paper-pattern
 // provenance separate from the legacy MCQ-only quiz-attempt tables.

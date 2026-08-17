@@ -7,6 +7,11 @@ const mocks = vi.hoisted(() => ({
   createAiGeneratedQuiz: vi.fn(),
   addQuestionsToQuiz: vi.fn(),
   getGenerationJob: vi.fn(),
+  getCachedGenerationResponse: vi.fn(),
+  getOpenGenerationCircuit: vi.fn(),
+  openGenerationCircuit: vi.fn(),
+  closeGenerationCircuit: vi.fn(),
+  putCachedGenerationResponse: vi.fn(),
 }));
 
 vi.mock("./_core/llm", () => ({ invokeLLM: mocks.invokeLLM }));
@@ -16,6 +21,11 @@ vi.mock("./db", () => ({
   createAiGeneratedQuiz: mocks.createAiGeneratedQuiz,
   addQuestionsToQuiz: mocks.addQuestionsToQuiz,
   getGenerationJob: mocks.getGenerationJob,
+  getCachedGenerationResponse: mocks.getCachedGenerationResponse,
+  getOpenGenerationCircuit: mocks.getOpenGenerationCircuit,
+  openGenerationCircuit: mocks.openGenerationCircuit,
+  closeGenerationCircuit: mocks.closeGenerationCircuit,
+  putCachedGenerationResponse: mocks.putCachedGenerationResponse,
 }));
 
 import { generateMCQsFromContent, saveGeneratedQuizToDatabase } from "./aiAgent";
@@ -51,9 +61,19 @@ describe("AI Agent - MCQ Generation", () => {
     mocks.createAiGeneratedQuiz.mockReset();
     mocks.addQuestionsToQuiz.mockReset();
     mocks.getGenerationJob.mockReset();
+    mocks.getCachedGenerationResponse.mockReset();
+    mocks.getOpenGenerationCircuit.mockReset();
+    mocks.openGenerationCircuit.mockReset();
+    mocks.closeGenerationCircuit.mockReset();
+    mocks.putCachedGenerationResponse.mockReset();
     mocks.invokeLLM.mockReset();
     mocks.createGenerationJob.mockResolvedValue({ id: 501 });
     mocks.updateGenerationJob.mockResolvedValue(undefined);
+    mocks.getCachedGenerationResponse.mockResolvedValue(undefined);
+    mocks.getOpenGenerationCircuit.mockResolvedValue(undefined);
+    mocks.openGenerationCircuit.mockResolvedValue(undefined);
+    mocks.closeGenerationCircuit.mockResolvedValue(undefined);
+    mocks.putCachedGenerationResponse.mockResolvedValue(undefined);
     mocks.invokeLLM.mockResolvedValue({
       choices: [{ message: { content: JSON.stringify({ mcqs: createValidMcqs(10) }) } }],
     });
@@ -77,6 +97,36 @@ describe("AI Agent - MCQ Generation", () => {
       sourceReference: "Kinematics — displacement",
       learningObjective: "Explain the textbook meaning of displacement.",
     });
+  });
+
+  it("reuses an exact recent private draft without calling the model again", async () => {
+    mocks.getCachedGenerationResponse.mockResolvedValue({
+      payload: JSON.stringify({
+        mcqs: createValidMcqs(2),
+        analysis: { totalWords: 20, complexity: "moderate", recommendedQuestions: { minimum: 1, optimal: 2, maximum: 5 }, generatedQuestions: 2, keyTopics: ["motion"] },
+        draft: { status: "success", quiz: { title: "Cached draft" }, qualityChecks: {} },
+      }),
+    });
+    mocks.createGenerationJob.mockResolvedValue({ id: 502 });
+
+    const result = await generateMCQsFromContent(1, validContent, 2, "balanced");
+
+    expect(result.jobId).toBe(502);
+    expect(result.mcqs).toHaveLength(2);
+    expect(result.draft.cache).toMatchObject({ reused: true });
+    expect(mocks.invokeLLM).not.toHaveBeenCalled();
+  });
+
+  it("stops before a new model call while the shared provider circuit is open", async () => {
+    mocks.getOpenGenerationCircuit.mockResolvedValue({ failureType: "quota_exhaustion", openUntil: new Date(Date.now() + 60_000) });
+    mocks.createGenerationJob.mockResolvedValue({ id: 503 });
+
+    const result = await generateMCQsFromContent(1, validContent, 5, "balanced");
+
+    expect(result.jobId).toBe(503);
+    expect(result.draft.errorType).toBe("circuit_open");
+    expect(result.draft.message).toContain("No new model call was made");
+    expect(mocks.invokeLLM).not.toHaveBeenCalled();
   });
 
   it("persists the immutable chapter-scope selection on the generation job", async () => {

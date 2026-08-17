@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { TrpcContext } from "./_core/context";
 
 const mocks = vi.hoisted(() => ({
@@ -8,6 +8,11 @@ const mocks = vi.hoisted(() => ({
   listPriorGeneratedQuestionHistory: vi.fn(),
   createAssessmentDraft: vi.fn(),
   generatePrintablePaperFromContent: vi.fn(),
+  getCachedGenerationResponse: vi.fn(),
+  getOpenGenerationCircuit: vi.fn(),
+  openGenerationCircuit: vi.fn(),
+  closeGenerationCircuit: vi.fn(),
+  putCachedGenerationResponse: vi.fn(),
 }));
 
 vi.mock("./db", () => ({
@@ -16,6 +21,11 @@ vi.mock("./db", () => ({
   listReviewedAssessmentPatternGuidance: mocks.listReviewedAssessmentPatternGuidance,
   listPriorGeneratedQuestionHistory: mocks.listPriorGeneratedQuestionHistory,
   createAssessmentDraft: mocks.createAssessmentDraft,
+  getCachedGenerationResponse: mocks.getCachedGenerationResponse,
+  getOpenGenerationCircuit: mocks.getOpenGenerationCircuit,
+  openGenerationCircuit: mocks.openGenerationCircuit,
+  closeGenerationCircuit: mocks.closeGenerationCircuit,
+  putCachedGenerationResponse: mocks.putCachedGenerationResponse,
 }));
 vi.mock("./printablePaper", () => ({ generatePrintablePaperFromContent: mocks.generatePrintablePaperFromContent }));
 
@@ -30,6 +40,18 @@ function createAdminContext(): TrpcContext {
 }
 
 describe("printable paper history persistence", () => {
+  beforeEach(() => {
+    mocks.getCachedGenerationResponse.mockReset();
+    mocks.getOpenGenerationCircuit.mockReset();
+    mocks.openGenerationCircuit.mockReset();
+    mocks.closeGenerationCircuit.mockReset();
+    mocks.putCachedGenerationResponse.mockReset();
+    mocks.getCachedGenerationResponse.mockResolvedValue(undefined);
+    mocks.getOpenGenerationCircuit.mockResolvedValue(undefined);
+    mocks.openGenerationCircuit.mockResolvedValue(undefined);
+    mocks.closeGenerationCircuit.mockResolvedValue(undefined);
+    mocks.putCachedGenerationResponse.mockResolvedValue(undefined);
+  });
   it("stores an approved-scope generated paper with its concept keys for future exclusion", async () => {
     mocks.getActiveCurriculumScopeCatalog.mockResolvedValue({
       curriculumSet: { id: 77, grade: "10", subject: "physics", label: "FBISE Grade 10 Physics", editionLabel: "2026" },

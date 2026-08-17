@@ -408,6 +408,12 @@
 - [x] Correct any printable failure-message gap without retrying permanent quota or billing errors.
 - [x] Add regression coverage, validate, and report the external-service root cause and safe recovery path.
 
+## Phase 72: Source-Safe Generation Optimization
+- [x] Audit current prompt volume and identify reductions that preserve selected-scope coverage, citations, diversity, and paper-style rules.
+- [x] Implement deterministic request fingerprinting, exact successful-result reuse, and prompt budgets without sharing custom sources across teachers.
+- [x] Add persisted circuit-breaker guards for upstream failures and record optimization metadata for monitoring.
+- [x] Integrate MCQ and printable generation paths, add regressions, validate, checkpoint, and report.
+
 ## Phase 67: Transient Rate-Limit Retry Resilience
 - [x] Define bounded retry eligibility for transient LLM rate-limit and service failures without retrying quota exhaustion, billing, invalid requests, or source errors.
 - [x] Implement exponential backoff with jitter in the shared LLM transport and preserve final error context.
