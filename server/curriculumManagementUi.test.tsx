@@ -34,6 +34,9 @@ vi.mock("@/lib/trpc", () => ({
     staff: {
       listRoleDirectory: { useQuery: (_input?: unknown, options?: { enabled?: boolean }) => { queryOptions.staffDirectory.push(Boolean(options?.enabled)); return { data: [{ id: 1, name: "Portal Admin", email: "admin@example.com", role: "admin" }, { id: 2, name: "Teacher", email: "teacher@example.com", role: "teacher" }], isLoading: false, error: null, refetch: vi.fn() }; } },
       updateRole: { useMutation: () => noOpMutation },
+      listTeacherProvisionRules: { useQuery: () => ({ data: [{ id: 5, email: "teacher@example.com", addedBy: 1, createdAt: new Date() }], isLoading: false, error: null, refetch: vi.fn() }) },
+      approveTeacherEmail: { useMutation: () => noOpMutation },
+      removeTeacherEmailApproval: { useMutation: () => noOpMutation },
     },
   },
 }));
@@ -51,6 +54,8 @@ describe("Curriculum Library Release 1", () => {
     expect(screen.getByText("Add another grade or subject")).toBeTruthy();
     expect(screen.getByRole("link", { name: "Add another grade" }).getAttribute("href")).toBe("#programme-catalogue");
     expect(screen.getByText("Staff access")).toBeTruthy();
+    expect(screen.getByText("Automatic teacher sign-in")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Approve teacher email" })).toBeTruthy();
     expect(screen.getByText("Edition readiness checklist")).toBeTruthy();
     expect(screen.getByText("Textbook extraction completed")).toBeTruthy();
     expect(screen.getByText("At least one reviewed active chapter")).toBeTruthy();

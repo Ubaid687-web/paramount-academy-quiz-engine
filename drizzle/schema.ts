@@ -25,6 +25,17 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
+/** Explicit Portal Admin-approved email addresses that receive Teacher access at first successful sign-in. */
+export const teacherProvisionRules = mysqlTable("teacherProvisionRules", {
+  id: int("id").autoincrement().primaryKey(),
+  email: varchar("email", { length: 320 }).notNull().unique(),
+  addedBy: int("addedBy").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type TeacherProvisionRule = typeof teacherProvisionRules.$inferSelect;
+export type InsertTeacherProvisionRule = typeof teacherProvisionRules.$inferInsert;
+
 export const quizzes = mysqlTable("quizzes", {
   id: int("id").autoincrement().primaryKey(),
   title: varchar("title", { length: 255 }).notNull(),

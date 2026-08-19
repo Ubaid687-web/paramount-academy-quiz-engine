@@ -41,12 +41,14 @@ import {
   ocrExtractionJobs,
   ocrSchedulerStates,
   InsertOcrExtractionJob,
+  teacherProvisionRules,
 } from "../drizzle/schema";
 import type { FbiseSubject, ProgrammeKey, ScopeCatalog } from "./curriculumScope";
 import { assertNoUnresolvedOcrPages } from "./ocrQuality";
 import { ENV } from './_core/env';
 import type { PriorQuestionHistory } from "./generationDiversity";
 import type { GenerationMode } from "./generationOptimization";
+import { normalizeProvisionEmail, selectAutomaticSignInRole } from "./staffProvisioning";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -100,9 +102,21 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     if (user.role !== undefined) {
       values.role = user.role;
       updateSet.role = user.role;
-    } else if (user.openId === ENV.ownerOpenId) {
-      values.role = 'admin';
-      updateSet.role = 'admin';
+    } else {
+      const normalizedEmail = normalizeProvisionEmail(user.email);
+      const approvedRule = normalizedEmail
+        ? await db.select({ id: teacherProvisionRules.id }).from(teacherProvisionRules).where(eq(teacherProvisionRules.email, normalizedEmail)).limit(1)
+        : [];
+      const automaticRole = selectAutomaticSignInRole({
+        openId: user.openId,
+        ownerOpenId: ENV.ownerOpenId,
+        email: normalizedEmail,
+        emailIsTeacherApproved: approvedRule.length > 0,
+      });
+      if (automaticRole) {
+        values.role = automaticRole;
+        if (automaticRole === "admin") updateSet.role = automaticRole;
+      }
     }
 
     if (!values.lastSignedIn) {
@@ -134,6 +148,18 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
+export async function promoteApprovedTeacherOnSignIn(openId: string, email: string | null | undefined) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  if (openId === ENV.ownerOpenId) return false;
+  const normalizedEmail = normalizeProvisionEmail(email);
+  if (!normalizedEmail) return false;
+  const approvedRule = await db.select({ id: teacherProvisionRules.id }).from(teacherProvisionRules).where(eq(teacherProvisionRules.email, normalizedEmail)).limit(1);
+  if (approvedRule.length === 0) return false;
+  const result = await db.update(users).set({ role: "teacher" }).where(and(eq(users.openId, openId), eq(users.role, "user")));
+  return result[0].affectedRows > 0;
+}
+
 export type StaffRole = "teacher" | "admin";
 
 export async function listStaffRoleDirectory() {
@@ -159,6 +185,28 @@ export async function updateStaffRole(userId: number, role: StaffRole) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.update(users).set({ role }).where(eq(users.id, userId));
+}
+
+export async function listTeacherProvisionRules() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.select().from(teacherProvisionRules).orderBy(asc(teacherProvisionRules.email));
+}
+
+export async function createTeacherProvisionRule(email: string, addedBy: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const normalizedEmail = normalizeProvisionEmail(email);
+  if (!normalizedEmail) throw new Error("A teacher email is required.");
+  await db.insert(teacherProvisionRules).values({ email: normalizedEmail, addedBy }).onDuplicateKeyUpdate({ set: { email: normalizedEmail } });
+  const rules = await db.select().from(teacherProvisionRules).where(eq(teacherProvisionRules.email, normalizedEmail)).limit(1);
+  return rules[0];
+}
+
+export async function removeTeacherProvisionRule(ruleId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(teacherProvisionRules).where(eq(teacherProvisionRules.id, ruleId));
 }
 
 export async function createQuiz(quiz: InsertQuiz): Promise<number> {

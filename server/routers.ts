@@ -29,6 +29,24 @@ export const appRouter = router({
       const { listStaffRoleDirectory } = await import("./db");
       return listStaffRoleDirectory();
     }),
+    listTeacherProvisionRules: adminProcedure.query(async () => {
+      const { listTeacherProvisionRules } = await import("./db");
+      return listTeacherProvisionRules();
+    }),
+    approveTeacherEmail: adminProcedure
+      .input(z.object({ email: z.string().trim().email().max(320) }))
+      .mutation(async ({ ctx, input }) => {
+        const { createTeacherProvisionRule } = await import("./db");
+        const rule = await createTeacherProvisionRule(input.email, ctx.user.id);
+        return { success: true, rule };
+      }),
+    removeTeacherEmailApproval: adminProcedure
+      .input(z.object({ ruleId: z.number().int().positive() }))
+      .mutation(async ({ input }) => {
+        const { removeTeacherProvisionRule } = await import("./db");
+        await removeTeacherProvisionRule(input.ruleId);
+        return { success: true };
+      }),
     updateRole: adminProcedure
       .input(z.object({ userId: z.number().int().positive(), role: z.enum(["teacher", "admin"]) }))
       .mutation(async ({ ctx, input }) => {

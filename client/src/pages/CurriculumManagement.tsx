@@ -99,6 +99,7 @@ export default function CurriculumManagement() {
   const [scopeLabel, setScopeLabel] = useState("");
   const [scopeChapterIds, setScopeChapterIds] = useState<number[]>([]);
   const [focusedIntakeSetId, setFocusedIntakeSetId] = useState<number | null>(null);
+  const [teacherApprovalEmail, setTeacherApprovalEmail] = useState("");
 
   const setsQuery = trpc.curriculum.listSets.useQuery(undefined, { enabled: isPortalAdmin });
   const programmesQuery = trpc.curriculum.listProgrammes.useQuery(undefined, { enabled: isPortalAdmin });
@@ -125,6 +126,9 @@ export default function CurriculumManagement() {
   const activateProgramme = trpc.curriculum.activateProgramme.useMutation();
   const staffDirectoryQuery = trpc.staff.listRoleDirectory.useQuery(undefined, { enabled: isPortalAdmin });
   const updateStaffRole = trpc.staff.updateRole.useMutation();
+  const teacherProvisionRulesQuery = trpc.staff.listTeacherProvisionRules.useQuery(undefined, { enabled: isPortalAdmin });
+  const approveTeacherEmail = trpc.staff.approveTeacherEmail.useMutation();
+  const removeTeacherEmailApproval = trpc.staff.removeTeacherEmailApproval.useMutation();
 
   useEffect(() => {
     if (selectedSetId !== null || !setsQuery.data?.length) return;
@@ -483,6 +487,29 @@ export default function CurriculumManagement() {
     }
   };
 
+  const handleApproveTeacherEmail = async () => {
+    const email = teacherApprovalEmail.trim();
+    if (!email) return;
+    try {
+      await approveTeacherEmail.mutateAsync({ email });
+      setTeacherApprovalEmail("");
+      await teacherProvisionRulesQuery.refetch();
+      toast.success("Teacher email approved. It will receive Teacher access after the next sign-in.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "The teacher email could not be approved.");
+    }
+  };
+
+  const handleRemoveTeacherEmailApproval = async (ruleId: number) => {
+    try {
+      await removeTeacherEmailApproval.mutateAsync({ ruleId });
+      await teacherProvisionRulesQuery.refetch();
+      toast.success("Automatic teacher access removed for this email.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "The teacher email approval could not be removed.");
+    }
+  };
+
   const handleReviewSourcePage = async (sourceId: number, pageNumber: number) => {
     if (!selectedSetId) return;
     try {
@@ -552,7 +579,26 @@ export default function CurriculumManagement() {
             </CardContent>
         </Card></section>
 
-        <section className="mb-6" aria-label="Staff access"><Card className="border-primary/15 bg-card"><CardHeader><CardTitle>Staff access</CardTitle><CardDescription>Only Portal Admin can manage books, OCR review, subject intake, activation, and staff roles. Teachers can build and export assessments from approved curricula.</CardDescription></CardHeader><CardContent className="space-y-3">{staffDirectoryQuery.isLoading ? <p className="text-sm text-muted-foreground">Loading staff access…</p> : staffDirectoryQuery.error ? <p className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">Staff roles could not be loaded.</p> : <div className="space-y-2">{(staffDirectoryQuery.data ?? []).map((staffMember) => <div key={staffMember.id} className="flex flex-col gap-3 rounded-xl border border-border/60 p-3 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="truncate text-sm font-bold text-foreground">{staffMember.name || staffMember.email || "Unlabelled account"}</p><p className="mt-1 text-xs text-muted-foreground">{staffMember.email || "No email available"} · {staffMember.role === "admin" ? "Portal Admin" : staffMember.role === "teacher" ? "Teacher" : "No staff role"}</p></div><Select value={staffMember.role} onValueChange={(value) => { if (value === "teacher" || value === "admin") void handleStaffRoleChange(staffMember.id, value); }} disabled={updateStaffRole.isPending}><SelectTrigger aria-label={`Role for ${staffMember.name || staffMember.email || `account ${staffMember.id}`}`} className="w-full sm:w-44"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="user" disabled>No staff access</SelectItem><SelectItem value="teacher">Teacher</SelectItem><SelectItem value="admin">Portal Admin</SelectItem></SelectContent></Select></div>)}</div>}</CardContent></Card></section>
+        <section className="mb-6" aria-label="Staff access">
+          <Card className="border-primary/15 bg-card">
+            <CardHeader>
+              <CardTitle>Staff access</CardTitle>
+              <CardDescription>Only Portal Admin can manage books, OCR review, subject intake, activation, and staff roles. Teachers can build and export assessments from approved curricula.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <div className="rounded-xl border border-primary/15 bg-primary/[0.03] p-4">
+                <Label htmlFor="teacher-approval-email" className="font-semibold text-foreground">Automatic teacher sign-in</Label>
+                <p className="mt-1 text-sm text-muted-foreground">Add a teacher’s exact sign-in email before they log in. A matching successful sign-in receives Teacher access automatically; this never grants Portal Admin access.</p>
+                <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                  <Input id="teacher-approval-email" type="email" value={teacherApprovalEmail} onChange={(event) => setTeacherApprovalEmail(event.target.value)} placeholder="teacher@example.com" />
+                  <Button type="button" onClick={handleApproveTeacherEmail} disabled={!teacherApprovalEmail.trim() || approveTeacherEmail.isPending}>Approve teacher email</Button>
+                </div>
+                {teacherProvisionRulesQuery.isLoading ? <p className="mt-3 text-sm text-muted-foreground">Loading approved teacher emails…</p> : teacherProvisionRulesQuery.error ? <p className="mt-3 text-sm text-destructive">Teacher email approvals could not be loaded.</p> : (teacherProvisionRulesQuery.data ?? []).length === 0 ? <p className="mt-3 text-sm text-muted-foreground">No teacher emails are approved for automatic access yet.</p> : <div className="mt-3 space-y-2">{(teacherProvisionRulesQuery.data ?? []).map((rule) => <div key={rule.id} className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-background/70 px-3 py-2"><span className="min-w-0 truncate text-sm font-medium text-foreground">{rule.email}</span><Button type="button" size="sm" variant="outline" onClick={() => handleRemoveTeacherEmailApproval(rule.id)} disabled={removeTeacherEmailApproval.isPending}>Remove</Button></div>)}</div>}
+              </div>
+              {staffDirectoryQuery.isLoading ? <p className="text-sm text-muted-foreground">Loading staff access…</p> : staffDirectoryQuery.error ? <p className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">Staff roles could not be loaded.</p> : <div className="space-y-2">{(staffDirectoryQuery.data ?? []).map((staffMember) => <div key={staffMember.id} className="flex flex-col gap-3 rounded-xl border border-border/60 p-3 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="truncate text-sm font-bold text-foreground">{staffMember.name || staffMember.email || "Unlabelled account"}</p><p className="mt-1 text-xs text-muted-foreground">{staffMember.email || "No email available"} · {staffMember.role === "admin" ? "Portal Admin" : staffMember.role === "teacher" ? "Teacher" : "No staff role"}</p></div><Select value={staffMember.role} onValueChange={(value) => { if (value === "teacher" || value === "admin") void handleStaffRoleChange(staffMember.id, value); }} disabled={updateStaffRole.isPending}><SelectTrigger aria-label={`Role for ${staffMember.name || staffMember.email || `account ${staffMember.id}`}`} className="w-full sm:w-44"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="user" disabled>No staff access</SelectItem><SelectItem value="teacher">Teacher</SelectItem><SelectItem value="admin">Portal Admin</SelectItem></SelectContent></Select></div>)}</div>}
+            </CardContent>
+          </Card>
+        </section>
 
         <section className="mb-6" aria-label="Curriculum Library overview">
           <div className="grid gap-3 sm:grid-cols-3">

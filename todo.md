@@ -463,3 +463,9 @@
 - [x] Exercise teacher and Portal Admin workflows that operate without paid AI generation.
 - [x] Repair verified low-risk functional issues and add focused regression coverage.
 - [x] Validate reviewed workflows and document remaining external-service limitations.
+
+## Phase 80: Automatic Teacher Provisioning
+- [x] Audit sign-in provisioning and determine the safe identity fields available for staff assignment.
+- [x] Add an explicit allowlist-based automatic teacher role assignment that cannot elevate Portal Admin access.
+- [x] Surface pending staff accounts for Portal Admin review and preserve manual role management.
+- [x] Add provisioning regressions, validate sign-in behavior, checkpoint, and report required onboarding steps.

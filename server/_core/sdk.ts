@@ -319,6 +319,14 @@ class SDKServer {
       lastSignedIn: signedInAt,
     });
 
+    if (await db.promoteApprovedTeacherOnSignIn(user.openId, user.email)) {
+      user = await db.getUserByOpenId(user.openId);
+    }
+
+    if (!user) {
+      throw ForbiddenError("User not found after role refresh");
+    }
+
     return user;
   }
 }
