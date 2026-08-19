@@ -511,3 +511,16 @@
 - [x] Repair any evidenced setting, environment, circuit, or routing defect without weakening source-safety safeguards.
 - [x] Add regression coverage and validate the corrected fallback behavior with the configured provider.
 - [x] Checkpoint and report the exact enablement path and remaining external limitations.
+
+## Phase 87: Billing-Era Portal Visibility and Role-Separation Audit
+- [ ] Reconstruct each billing-era change and map its intended user, route, Portal control, and current visible state.
+- [ ] Verify owner, Portal Admin, Teacher, and ordinary-user role state plus published sign-in and route behavior.
+- [ ] Identify and repair every evidenced case where a completed capability is hidden, unreachable, unclear, or wrongly shown to a role.
+- [ ] Add visible role/status feedback and regressions for the corrected Portal access paths.
+- [ ] Validate the published Portal walkthrough, checkpoint, and report the actual teacher/admin separation.
+
+## Phase 88: Published Revision Recovery
+- [x] Reconcile the older local workspace and live public UI against the later database schema and verified checkpoint history.
+- [x] Recover the latest verified source release locally without rewriting project history.
+- [ ] Restore the recovered release to the published project before making further Portal visibility changes.
+- [ ] Verify the restored published build exposes the intended role-gated controls and maintains Gemini fallback generation.
