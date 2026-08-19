@@ -45,4 +45,32 @@ describe("Gemini fallback credential", () => {
     expect(outputText, responseText).toBeTruthy();
     expect(JSON.parse(outputText ?? "{}")).toEqual({ ok: true });
   }, 40_000);
+
+  it.skipIf(!runLiveCredentialValidation)("routes an eligible managed quota outage through the configured Gemini fallback", async () => {
+    const { invokeGenerationProvider } = await import("./generationProvider");
+    const result = await invokeGenerationProvider({
+      messages: [{ role: "user", content: "Return only the JSON object {\"ok\":true}." }],
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: "fallback_smoke",
+          strict: true,
+          schema: {
+            type: "object",
+            properties: { ok: { type: "boolean" } },
+            required: ["ok"],
+            additionalProperties: false,
+          },
+        },
+      },
+    });
+
+    expect(result.telemetry).toMatchObject({
+      provider: "gemini_byok",
+      fallbackUsed: true,
+      primaryFailureType: "quota_exhaustion",
+    });
+    const output = result.response.choices[0]?.message.content;
+    expect(JSON.parse(typeof output === "string" ? output : "{}")).toEqual({ ok: true });
+  }, 45_000);
 });

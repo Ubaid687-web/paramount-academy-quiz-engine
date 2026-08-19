@@ -9,9 +9,6 @@ const mocks = vi.hoisted(() => ({
   addQuestionsToQuiz: vi.fn(),
   getGenerationJob: vi.fn(),
   getCachedGenerationResponse: vi.fn(),
-  getOpenGenerationCircuit: vi.fn(),
-  openGenerationCircuit: vi.fn(),
-  closeGenerationCircuit: vi.fn(),
   putCachedGenerationResponse: vi.fn(),
 }));
 
@@ -24,9 +21,6 @@ vi.mock("./db", () => ({
   addQuestionsToQuiz: mocks.addQuestionsToQuiz,
   getGenerationJob: mocks.getGenerationJob,
   getCachedGenerationResponse: mocks.getCachedGenerationResponse,
-  getOpenGenerationCircuit: mocks.getOpenGenerationCircuit,
-  openGenerationCircuit: mocks.openGenerationCircuit,
-  closeGenerationCircuit: mocks.closeGenerationCircuit,
   putCachedGenerationResponse: mocks.putCachedGenerationResponse,
 }));
 
@@ -64,18 +58,12 @@ describe("AI Agent - MCQ Generation", () => {
     mocks.addQuestionsToQuiz.mockReset();
     mocks.getGenerationJob.mockReset();
     mocks.getCachedGenerationResponse.mockReset();
-    mocks.getOpenGenerationCircuit.mockReset();
-    mocks.openGenerationCircuit.mockReset();
-    mocks.closeGenerationCircuit.mockReset();
     mocks.putCachedGenerationResponse.mockReset();
     mocks.invokeLLM.mockReset();
     mocks.invokeGenerationProvider.mockReset();
     mocks.createGenerationJob.mockResolvedValue({ id: 501 });
     mocks.updateGenerationJob.mockResolvedValue(undefined);
     mocks.getCachedGenerationResponse.mockResolvedValue(undefined);
-    mocks.getOpenGenerationCircuit.mockResolvedValue(undefined);
-    mocks.openGenerationCircuit.mockResolvedValue(undefined);
-    mocks.closeGenerationCircuit.mockResolvedValue(undefined);
     mocks.putCachedGenerationResponse.mockResolvedValue(undefined);
     mocks.invokeLLM.mockResolvedValue({
       choices: [{ message: { content: JSON.stringify({ mcqs: createValidMcqs(10) }) } }],
@@ -136,16 +124,19 @@ describe("AI Agent - MCQ Generation", () => {
     expect(mocks.invokeGenerationProvider).not.toHaveBeenCalled();
   });
 
-  it("stops before a new model call while the shared provider circuit is open", async () => {
-    mocks.getOpenGenerationCircuit.mockResolvedValue({ failureType: "quota_exhaustion", openUntil: new Date(Date.now() + 60_000) });
+  it("delegates an open managed quota circuit to the provider router so Gemini can take over", async () => {
     mocks.createGenerationJob.mockResolvedValue({ id: 503 });
+    mocks.invokeGenerationProvider.mockResolvedValue({
+      response: { choices: [{ message: { content: JSON.stringify({ mcqs: createValidMcqs(10) }) } }] },
+      telemetry: { provider: "gemini_byok", fallbackUsed: true, primaryFailureType: "quota_exhaustion", managedRetryAttempts: 0, geminiRetryAttempts: 0 },
+    });
 
     const result = await generateMCQsFromContent(1, validContent, 5, "balanced");
 
     expect(result.jobId).toBe(503);
-    expect(result.draft.errorType).toBe("circuit_open");
-    expect(result.draft.message).toContain("No new model call was made");
-    expect(mocks.invokeGenerationProvider).not.toHaveBeenCalled();
+    expect(result.draft.status).toBe("success");
+    expect(result.providerTelemetry).toMatchObject({ provider: "gemini_byok", fallbackUsed: true, primaryFailureType: "quota_exhaustion" });
+    expect(mocks.invokeGenerationProvider).toHaveBeenCalledTimes(1);
   });
 
   it("persists the immutable chapter-scope selection on the generation job", async () => {
@@ -357,6 +348,7 @@ describe("AI Agent - MCQ Generation", () => {
     expect(result.draft.errorType).toBe("quota_exhaustion");
     expect(result.draft.safeRetryAdvice).toContain("usage quota limit or billing pause");
     expect(result.draft.safeRetryAdvice).not.toContain("Check the source text for readability");
+    expect(mocks.updateGenerationJob).toHaveBeenCalledWith(501, expect.objectContaining({ primaryFailureType: "quota_exhaustion" }));
   });
 
   it("keeps an exhausted transient rate limit distinct from account quota exhaustion", async () => {

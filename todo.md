@@ -504,3 +504,10 @@
 - [x] Diagnose whether a real navigation or role-visibility gap prevents Portal Admin from reaching curriculum controls.
 - [x] Implement and validate a minimal navigation correction only if evidence identifies an app-level gap.
 - [x] Clearly distinguish the app access path from the external account-status banner and report the result.
+
+## Phase 86: Gemini Fallback Routing Regression
+- [x] Inspect the persisted Gemini fallback setting, provider telemetry, circuit state, and the reported generation failure.
+- [x] Trace managed-provider quota classification through the MCQ and printable fallback routing paths.
+- [x] Repair any evidenced setting, environment, circuit, or routing defect without weakening source-safety safeguards.
+- [x] Add regression coverage and validate the corrected fallback behavior with the configured provider.
+- [x] Checkpoint and report the exact enablement path and remaining external limitations.

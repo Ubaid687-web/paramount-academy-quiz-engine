@@ -1,11 +1,11 @@
 import { z } from "zod";
-import { createGenerationJob, updateGenerationJob, createAiGeneratedQuiz, addQuestionsToQuiz, getGenerationJob, getCachedGenerationResponse, getOpenGenerationCircuit, putCachedGenerationResponse } from "./db";
+import { createGenerationJob, updateGenerationJob, createAiGeneratedQuiz, addQuestionsToQuiz, getGenerationJob, getCachedGenerationResponse, putCachedGenerationResponse } from "./db";
 import { analyzeContent } from "./contentAnalyzer";
 import { buildDraftQualityChecks, validateGeneratedMcqs, type GeneratedMcq } from "./quizDraftValidator";
 import type { InsertGenerationJob } from "../drizzle/schema";
 import type { FbiseSubject, ScopeType, TextbookCitationCandidate } from "./curriculumScope";
 import { buildPriorHistoryExclusion, type PriorQuestionHistory } from "./generationDiversity";
-import { buildBudgetedSourceText, buildGenerationRequestFingerprint, circuitOpenMessage, classifyCircuitOpen } from "./generationOptimization";
+import { buildBudgetedSourceText, buildGenerationRequestFingerprint } from "./generationOptimization";
 import { invokeGenerationProvider, type GenerationProviderTelemetry } from "./generationProvider";
 import { buildSharedStyleAnchor, type SharedStyleAnchor } from "./styleAnchor";
 
@@ -218,30 +218,6 @@ export async function generateMCQsFromContent(
       jobId: cacheJob.id,
       draft: { ...cachedPayload.draft, cache: { reused: true, message: "Reused an exact recent draft; no new AI call was made." } },
     };
-  }
-
-  const openCircuit = await getOpenGenerationCircuit();
-  if (openCircuit?.openUntil && openCircuit.failureType) {
-    const message = circuitOpenMessage(openCircuit.failureType, openCircuit.openUntil);
-    const blockedJob = await createGenerationJob({
-      userId,
-      contentText,
-      numQuestions: finalNumQuestions,
-      difficulty,
-      curriculumSetId: sourceContext.curriculumSetId,
-      scopeTemplateId: sourceContext.scopeTemplateId ?? undefined,
-      scopeType: sourceContext.scopeType ?? "ad_hoc",
-      selectedChapterIds: sourceContext.selectedChapterIds?.length ? JSON.stringify(sourceContext.selectedChapterIds) : undefined,
-      selectedSegmentIds: sourceContext.selectedSegmentIds?.length ? JSON.stringify(sourceContext.selectedSegmentIds) : undefined,
-      sourceSnapshot: sourceContext.scopeSnapshot ? JSON.stringify(sourceContext.scopeSnapshot) : undefined,
-      requestFingerprint,
-      promptSourceChars: budgetedSource.sourceChars,
-      promptInputChars: 0,
-      status: "failed",
-      progress: 0,
-      errorMessage: message,
-    });
-    return { jobId: blockedJob.id, mcqs: [], analysis: { ...analysis, generatedQuestions: 0 }, draft: { status: "error", errorType: "circuit_open", message, safeRetryAdvice: "The system did not contact the AI service. Use the exact cached draft when available or wait for the provider hold to end." } };
   }
 
   // Create a generation job record
@@ -462,14 +438,15 @@ REQUIREMENTS:
     return result;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    await updateGenerationJob(job.id, {
-      status: "failed",
-      errorMessage,
-    });
-
     const normalizedErrorMessage = errorMessage.toLowerCase();
     const isQuotaError = errorMessage.includes("412") || normalizedErrorMessage.includes("exhausted") || normalizedErrorMessage.includes("billing") || normalizedErrorMessage.includes("quota");
     const isRateLimitError = errorMessage.includes("429") || normalizedErrorMessage.includes("rate limit") || normalizedErrorMessage.includes("too many requests");
+    await updateGenerationJob(job.id, {
+      status: "failed",
+      errorMessage,
+      primaryFailureType: isQuotaError ? "quota_exhaustion" : undefined,
+    });
+
     const errorType = isQuotaError
       ? "quota_exhaustion"
       : isRateLimitError
