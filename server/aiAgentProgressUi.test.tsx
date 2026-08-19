@@ -21,6 +21,7 @@ Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
 });
 
 const generateMutation = vi.fn();
+const navigate = vi.fn();
 const generatePrintablePaperMutation = vi.fn();
 const saveMutation = vi.fn();
 const renderPrintablePaperMutation = vi.fn();
@@ -90,7 +91,7 @@ vi.mock("@/lib/trpc", () => ({
 }));
 
 vi.mock("wouter", () => ({
-  useLocation: () => ["/ai-agent", vi.fn()],
+  useLocation: () => ["/ai-agent", navigate],
   Link: ({ href, children, ...props }: { href: string; children: React.ReactNode }) => <a href={href} {...props}>{children}</a>,
 }));
 
@@ -102,6 +103,7 @@ describe("AI quiz generation feedback", () => {
   afterEach(() => {
     cleanup();
     generateMutation.mockReset();
+    navigate.mockReset();
     generatePrintablePaperMutation.mockReset();
     saveMutation.mockReset();
     renderPrintablePaperMutation.mockReset();
@@ -166,6 +168,41 @@ describe("AI quiz generation feedback", () => {
     expect(progressbar).toHaveAttribute("aria-valuenow", "8");
     expect(screen.getByText("Preparing your quiz request")).toBeVisible();
     expect(screen.getByText("Checking your selected content and settings.")).toBeVisible();
+  });
+
+  it("confirms before leaving the builder while MCQ generation is active", async () => {
+    generateMutation.mockImplementation(() => new Promise(() => undefined));
+    render(<AIAgent />);
+
+    chooseMcqOutput();
+    chooseCustomPasteSource();
+    fireEvent.change(screen.getByLabelText("Paste source text"), {
+      target: { value: "Source content for a guarded active generation request. ".repeat(3) },
+    });
+    fireEvent.change(screen.getByLabelText("Quiz title"), { target: { value: "Guarded Physics revision" } });
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    fireEvent.change(screen.getByRole("spinbutton"), { target: { value: "10" } });
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    fireEvent.click(screen.getByRole("button", { name: "Generate MCQs" }));
+
+    await screen.findByRole("progressbar", { name: "Quiz generation progress" });
+    fireEvent.click(screen.getByRole("button", { name: "Back to Quiz Centre" }));
+
+    expect(screen.getByRole("alertdialog")).toHaveTextContent("Leave while MCQs are generating?");
+    fireEvent.click(screen.getByRole("button", { name: "Keep generating" }));
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    expect(navigate).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Back to Quiz Centre" }));
+    fireEvent.click(screen.getByRole("button", { name: "Leave generation" }));
+    expect(navigate).toHaveBeenCalledWith("/");
+  });
+
+  it("returns to Quiz Centre without confirmation when no MCQ generation is active", () => {
+    render(<AIAgent />);
+    fireEvent.click(screen.getByRole("button", { name: "Back to Quiz Centre" }));
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    expect(navigate).toHaveBeenCalledWith("/");
   });
 
   it("removes the loading panel and presents the generated-quiz preview after completion", async () => {

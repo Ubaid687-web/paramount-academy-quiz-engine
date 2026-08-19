@@ -556,3 +556,9 @@
 - [x] Verify mobile touch targets, labels, destinations, and state restoration in each active workflow.
 - [x] Repair any evidenced mobile navigation gap and add focused regression coverage.
 - [x] Validate and report the intuitive mobile navigation result.
+
+## Phase 94: Active MCQ Generation Navigation Guard
+- [x] Inspect active MCQ generation state and all assessment-builder Back navigation handlers.
+- [x] Add an accessible confirmation that appears only while MCQ generation is active.
+- [x] Ensure stay preserves the active request and leave returns safely to Quiz Centre.
+- [x] Add regression coverage for guarded and ordinary Back navigation, validate, and publish.

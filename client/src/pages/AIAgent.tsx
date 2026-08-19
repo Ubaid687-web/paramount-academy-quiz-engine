@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { AcademyShell } from "@/components/AcademyShell";
 import { trpc } from "@/lib/trpc";
 import { GENERATION_STEPS, getGenerationStep, getNextSimulatedProgress } from "@/lib/generation-progress";
@@ -109,6 +110,7 @@ export default function AIAgent() {
   const [customInputMode, setCustomInputMode] = useState<CustomInputMode>("upload");
   const [settingsView, setSettingsView] = useState<"count" | "difficulty">("count");
   const [showSavedDraftLoader, setShowSavedDraftLoader] = useState(false);
+  const [showLeaveGenerationConfirm, setShowLeaveGenerationConfirm] = useState(false);
 
   const readyProgrammes = readyProgrammesQuery.data ?? [];
   const programmeBoard = readyProgrammes.find((programme) => programme.board === (requestedBoard || "FBISE") && programme.grade === gradeLevel && programme.subject === subject)?.board ?? requestedBoard ?? "FBISE";
@@ -747,6 +749,14 @@ export default function AIAgent() {
     setRequestedReviewDraftId(reviewDraftId);
   };
 
+  const handleReturnToQuizCentre = () => {
+    if (isGenerating && assessmentMode === "mcq") {
+      setShowLeaveGenerationConfirm(true);
+      return;
+    }
+    navigate("/");
+  };
+
   return (
     <AcademyShell eyebrow="Assessment Draft Studio">
       <main className="container py-8 sm:py-10">
@@ -756,7 +766,7 @@ export default function AIAgent() {
               <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-primary"><GraduationCap className="h-4 w-4" />Assessment builder</p>
               <h1 className="mt-2 text-3xl font-bold text-foreground sm:text-4xl">{activeStep === 4 ? "Review your draft." : !isContextEditing && isProgrammeReady ? `Grade ${gradeLevel} ${selectedReadyProgramme?.teacherLabel ?? formatSubjectLabel(subject)}` : "New assessment"}</h1>
             </div>
-            <Button type="button" variant="outline" size="sm" className="academy-back-button" onClick={() => navigate("/")}><ChevronLeft className="h-4 w-4" />Back to Quiz Centre</Button>
+            <Button type="button" variant="outline" size="sm" className="academy-back-button" onClick={handleReturnToQuizCentre}><ChevronLeft className="h-4 w-4" />Back to Quiz Centre</Button>
           </div>
           <div className="mt-5" aria-label="Assessment preparation progress" aria-live="polite">
             <div className="flex items-center justify-between gap-3"><p className="text-xs font-bold uppercase tracking-[0.12em] text-primary">Step {activeStep} of 4</p><p className="text-xs font-medium text-muted-foreground">{builderStepLabel}</p></div>
@@ -1301,6 +1311,20 @@ export default function AIAgent() {
           </div>
         </div>
       </main>
+      <AlertDialog open={showLeaveGenerationConfirm} onOpenChange={setShowLeaveGenerationConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave while MCQs are generating?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your request is still being prepared. Leaving now will remove this in-progress draft from this screen before you can review or save it.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep generating</AlertDialogCancel>
+            <AlertDialogAction onClick={() => navigate("/")}>Leave generation</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AcademyShell>
   );
 }
