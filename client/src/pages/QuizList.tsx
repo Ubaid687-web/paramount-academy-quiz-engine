@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { getLoginUrl } from "@/const";
 
 type ReadyProgramme = { id: number; board: string; grade: string; subject: string; teacherLabel: string; status?: string };
 type SubjectPresentation = { eyebrow: string; Icon: typeof Atom; iconTone: string; cardTone: string; accentTone: string };
@@ -44,6 +46,7 @@ function WizardProgress({ current }: { current: WizardStep }) {
 
 export default function QuizList() {
   const [, navigate] = useLocation();
+  const { user, loading: authLoading, isAuthenticated } = useAuth();
   const [selectedGrade, setSelectedGrade] = useState<string | null>(null);
   const [selectedProgramme, setSelectedProgramme] = useState<ReadyProgramme | null>(null);
   const [showLibrary, setShowLibrary] = useState(false);
@@ -112,7 +115,7 @@ export default function QuizList() {
   };
 
   return (
-    <AcademyShell eyebrow="Teacher MCQ Workspace">
+    <AcademyShell eyebrow="Teacher MCQ Workspace" showAdministration={user?.role === "admin"}>
       <main className="container py-6 sm:py-10">
         <section className="mx-auto max-w-5xl">
           {showLibrary ? (
@@ -137,7 +140,7 @@ export default function QuizList() {
                     <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-primary">Quiz preparation · Step {currentStep} of 3</p>
                     <h1 className="mt-3 text-[2rem] font-extrabold tracking-[-0.055em] text-foreground sm:text-5xl">{currentStep === 1 ? "Choose a grade." : currentStep === 2 ? (isGrade9 ? "Add a Grade 9 subject." : "Choose a subject.") : "Ready to build."}</h1>
                     <p className="mt-2 text-sm text-muted-foreground">{currentStep === 1 ? "Start with the class you teach." : currentStep === 2 ? (isGrade9 ? "Name the subject, then upload its textbook." : "Select one approved subject.") : "Open the focused assessment builder."}</p>
-                  </div>
+                  </div>{currentStep === 1 && !authLoading && !isAuthenticated && <Button type="button" variant="outline" size="sm" onClick={() => { window.location.href = getLoginUrl(); }}>Staff sign in</Button>}
                 </div>
                 <div className="mt-6"><WizardProgress current={currentStep} /></div>
               </div>

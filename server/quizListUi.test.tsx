@@ -7,6 +7,7 @@ const quizzesQuery = vi.fn();
 const programmesQuery = vi.fn();
 const quizQueryOptions = vi.fn();
 const deleteMutation = vi.fn();
+let authUser: { role: "admin" | "teacher" | "user" } | null = null;
 
 const grade10Programmes = [
   { id: 1, board: "FBISE", grade: "10", subject: "physics", teacherLabel: "Physics", status: "ready" },
@@ -33,6 +34,7 @@ vi.mock("wouter", () => ({
   Link: ({ href, children, ...props }: { href: string; children: React.ReactNode }) => <a href={href} {...props}>{children}</a>,
 }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+vi.mock("@/_core/hooks/useAuth", () => ({ useAuth: () => ({ user: authUser, loading: false, isAuthenticated: Boolean(authUser) }) }));
 
 describe("Quiz Centre entry experience", () => {
   afterEach(() => {
@@ -41,6 +43,7 @@ describe("Quiz Centre entry experience", () => {
     programmesQuery.mockReset();
     quizQueryOptions.mockReset();
     deleteMutation.mockReset();
+    authUser = null;
   });
 
   const setReadyGrade10 = () => {
@@ -101,6 +104,24 @@ describe("Quiz Centre entry experience", () => {
     setReadyGrade10();
     render(<QuizList />);
     expect(screen.queryByRole("link", { name: /add subject/i })).toBeNull();
+  });
+
+  it("shows the Curriculum Library navigation entry only to a signed-in Portal Admin", () => {
+    setReadyGrade10();
+    render(<QuizList />);
+    expect(screen.queryByRole("link", { name: "Curriculum" })).toBeNull();
+    cleanup();
+
+    authUser = { role: "admin" };
+    render(<QuizList />);
+    expect(screen.getByRole("link", { name: "Curriculum" }).getAttribute("href")).toBe("/curriculum");
+  });
+
+  it("shows a staff sign-in action before authentication without exposing Portal Admin controls", () => {
+    setReadyGrade10();
+    render(<QuizList />);
+    expect(screen.getByRole("button", { name: "Staff sign in" })).toBeTruthy();
+    expect(screen.queryByRole("link", { name: "Curriculum" })).toBeNull();
   });
 
   it("shows all existing ready Grade 10 programmes without a staff-detail selector", () => {

@@ -498,3 +498,9 @@
 - [x] Add a Portal Admin-only temporary chapter exclusion control and remove excluded chapters from all teacher generation scopes.
 - [x] Provide a safe interim path for inspecting flagged Chemistry page transcripts before the workspace is released.
 - [x] Add authorization, page-boundary, review-action, and UI regressions; validate, checkpoint, and report.
+
+## Phase 85: Published Portal Admin Access Visibility
+- [x] Verify the deployed public landing route, authentication state, and Portal Admin route availability.
+- [x] Diagnose whether a real navigation or role-visibility gap prevents Portal Admin from reaching curriculum controls.
+- [x] Implement and validate a minimal navigation correction only if evidence identifies an app-level gap.
+- [x] Clearly distinguish the app access path from the external account-status banner and report the result.
