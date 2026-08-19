@@ -587,3 +587,8 @@
 - [x] Preserve and honor a bounded Gemini retry-after window for transient request-limit responses.
 - [x] Keep transient Gemini circuits short and distinguish them from confirmed quota/billing outages in printable-paper feedback.
 - [x] Add regression coverage, validate the recovery path, and publish only the evidenced repair.
+
+## Phase 100: Token and API Usage Audit — Report Only
+- [x] Map static prompts, source budgeting, output limits, cache/retry paths, provider request shapes, and recorded usage telemetry.
+- [x] Assess all five proposed optimization areas without altering safeguards, provider settings, prompts, limits, or production behavior.
+- [x] Deliver evidence-based findings and a safeguard-preserving recommendation; implement nothing until Portal Admin review.
