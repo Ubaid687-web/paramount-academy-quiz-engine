@@ -47,6 +47,24 @@ export const generationProviderSettings = mysqlTable("generationProviderSettings
 export type GenerationProviderSettings = typeof generationProviderSettings.$inferSelect;
 export type InsertGenerationProviderSettings = typeof generationProviderSettings.$inferInsert;
 
+/**
+ * Explicit Portal Admin selections of previously published, textbook-cited questions that may
+ * guide phrasing and layout only for one FBISE programme. The question itself remains separate
+ * so an example never becomes new factual source material.
+ */
+export const generationStyleAnchorExamples = mysqlTable("generationStyleAnchorExamples", {
+  id: int("id").autoincrement().primaryKey(),
+  board: varchar("board", { length: 50 }).default("FBISE").notNull(),
+  grade: varchar("grade", { length: 20 }).notNull(),
+  subject: varchar("subject", { length: 100 }).notNull(),
+  questionId: int("questionId").notNull().unique(),
+  approvedBy: int("approvedBy").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type GenerationStyleAnchorExample = typeof generationStyleAnchorExamples.$inferSelect;
+export type InsertGenerationStyleAnchorExample = typeof generationStyleAnchorExamples.$inferInsert;
+
 export const quizzes = mysqlTable("quizzes", {
   id: int("id").autoincrement().primaryKey(),
   title: varchar("title", { length: 255 }).notNull(),

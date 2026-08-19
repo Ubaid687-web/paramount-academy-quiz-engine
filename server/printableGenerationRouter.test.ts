@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   getActiveCurriculumScopeCatalog: vi.fn(),
   listActiveAssessmentPatternSources: vi.fn(),
   listReviewedAssessmentPatternGuidance: vi.fn(),
+  listApprovedStyleAnchorExamples: vi.fn(),
   listPriorGeneratedQuestionHistory: vi.fn(),
   createAssessmentDraft: vi.fn(),
   generatePrintablePaperFromContent: vi.fn(),
@@ -21,6 +22,7 @@ vi.mock("./db", () => ({
   getActiveCurriculumScopeCatalog: mocks.getActiveCurriculumScopeCatalog,
   listActiveAssessmentPatternSources: mocks.listActiveAssessmentPatternSources,
   listReviewedAssessmentPatternGuidance: mocks.listReviewedAssessmentPatternGuidance,
+  listApprovedStyleAnchorExamples: mocks.listApprovedStyleAnchorExamples,
   listPriorGeneratedQuestionHistory: mocks.listPriorGeneratedQuestionHistory,
   createAssessmentDraft: mocks.createAssessmentDraft,
   getCachedGenerationResponse: mocks.getCachedGenerationResponse,
@@ -68,6 +70,7 @@ describe("printable paper history persistence", () => {
     });
     mocks.listActiveAssessmentPatternSources.mockResolvedValue([{ sourceKind: "past_paper", academicYear: "2025" }]);
     mocks.listReviewedAssessmentPatternGuidance.mockResolvedValue([]);
+    mocks.listApprovedStyleAnchorExamples.mockResolvedValue([]);
     mocks.listPriorGeneratedQuestionHistory.mockResolvedValue([{ conceptKey: "velocity", question: "Define velocity." }]);
     mocks.generatePrintablePaperFromContent.mockResolvedValue({
       payload: { mode: "long", title: "Kinematics revision", estimatedDurationMinutes: 10,

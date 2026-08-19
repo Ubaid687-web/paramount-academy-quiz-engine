@@ -3,6 +3,7 @@ import type { GenerationSourceContext } from "./aiAgent";
 import { chunkContent } from "./contentAnalyzer";
 import { buildPriorHistoryExclusion, validateDistinctOrPairCoverage, type QuestionCoverageRecord } from "./generationDiversity";
 import { invokeGenerationProvider, type GenerationProviderTelemetry } from "./generationProvider";
+import { buildSharedStyleAnchor } from "./styleAnchor";
 
 export type PrintablePaperType = "short" | "long";
 export type NormalizedPrintablePaperPayload = {
@@ -173,12 +174,18 @@ export async function generatePrintablePaperFromContent(params: {
   sourceContext: GenerationSourceContext;
 }): Promise<GeneratedPrintablePaperResult> {
   const { paperType, title, contentText, pairCount, difficulty, sourceContext } = params;
+  const sharedStyleAnchor = sourceContext.styleAnchor ?? buildSharedStyleAnchor({
+    board: "FBISE",
+    grade: sourceContext.classLevel ?? "Unspecified grade",
+    subject: sourceContext.subject ?? "Unspecified subject",
+    paperPatternGuidance: sourceContext.paperPatternGuidance ?? [],
+    approvedExamples: [],
+  });
   const safeSections = chunkContent(contentText, Math.min(6, Math.max(2, pairCount))).map((section, index) => `SOURCE SECTION ${index + 1}:\n${section.slice(0, 1500)}`).join("\n\n");
   const marksRule = paperType === "short"
     ? "Each short question is normally 3 marks unless the selected source requires another value."
     : "Each long question must be 5–8 marks; its rubric total must exactly match its marks.";
   const batchPlan = buildPrintablePairBatches(pairCount);
-  const paperPatternInstruction = buildPrintablePaperPatternInstruction(sourceContext);
   const items: Array<Record<string, unknown> & QuestionCoverageRecord & { kind: PrintablePaperType; marks: number }> = [];
   let completedGroups = 0;
   let diversityShortfall = false;
@@ -199,8 +206,8 @@ export async function generatePrintablePaperFromContent(params: {
         ]);
         const providerResult = await invokeGenerationProvider({
           messages: [
-            { role: "system", content: PRINTABLE_PAPER_PROMPT },
-            { role: "user", content: `This is batch ${batchIndex + 1} of ${batchPlan.length}. Create exactly ${batchPairs} numbered OR pairs (${batchPairs * 2} printed prompts) for a ${paperType}-question paper. Difficulty preference: ${difficulty}. ${marksRule}\n\nPaper title: ${title}\nSource title: ${sourceContext.sourceTitle}\n${paperPatternInstruction}\n\n${existingCoverage}\n\nUse the full source breadth. A concept may appear more than once only when every occurrence has a different source-supported facetKey and answerTarget. Do not repeat a definition as a reworded definition, a formula as the same formula task, or an application with the same answer target. Each OR pair must contain two genuinely different alternatives with different answer targets. Return the two alternatives consecutively.\n\n${safeSections}` },
+            { role: "system", content: PRINTABLE_PAPER_PROMPT + sharedStyleAnchor.instruction },
+            { role: "user", content: `This is batch ${batchIndex + 1} of ${batchPlan.length}. Create exactly ${batchPairs} numbered OR pairs (${batchPairs * 2} printed prompts) for a ${paperType}-question paper. Difficulty preference: ${difficulty}. ${marksRule}\n\nPaper title: ${title}\nSource title: ${sourceContext.sourceTitle}\n\n${existingCoverage}\n\nUse the full source breadth. A concept may appear more than once only when every occurrence has a different source-supported facetKey and answerTarget. Do not repeat a definition as a reworded definition, a formula as the same formula task, or an application with the same answer target. Each OR pair must contain two genuinely different alternatives with different answer targets. Return the two alternatives consecutively.\n\n${safeSections}` },
           ],
           response_format: {
             type: "json_schema",

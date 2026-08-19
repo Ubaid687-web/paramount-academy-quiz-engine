@@ -11,6 +11,7 @@ export function buildGenerationRequestFingerprint(params: {
   requestedCount: number;
   title?: string;
   priorQuestionHistory?: PriorQuestionHistory[];
+  styleAnchorFingerprint?: string;
 }) {
   const sourceFingerprint = fingerprintGenerationSource(params.sourceSnapshot, params.contentText);
   const historyFingerprint = createHash("sha256").update(JSON.stringify((params.priorQuestionHistory ?? []).map((item) => ({
@@ -26,6 +27,7 @@ export function buildGenerationRequestFingerprint(params: {
     difficulty: params.difficulty,
     requestedCount: params.requestedCount,
     title: params.title?.trim() ?? "",
+    styleAnchorFingerprint: params.styleAnchorFingerprint ?? "",
   })).digest("hex");
 }
 

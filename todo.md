@@ -482,3 +482,10 @@
 - [x] Record provider, primary failure type, fallback use, and provider-specific retry telemetry for every generation job.
 - [x] Add a concise Portal Admin AI generation controls card and visible generation history monitoring view.
 - [x] Add source-safety, routing, control, and telemetry regressions; validate before requesting the Gemini key securely.
+
+## Phase 83: Shared FBISE Style Anchor
+- [x] Audit approved paper-pattern profiles, current prompt construction, and saved-paper evidence for a source-safe style anchor.
+- [x] Define a shared anchor containing only approved FBISE wording, marks, and OR-pairing conventions, separate from textbook facts.
+- [x] Decide and implement a bounded refresh lifecycle for approved examples without allowing unreviewed generated content to influence future papers.
+- [x] Attach the exact same selected anchor to primary and Gemini fallback calls, with provider-neutral prompt accounting.
+- [x] Add source-boundary, refresh, and cross-provider consistency regressions; validate, checkpoint, and report.

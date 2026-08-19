@@ -106,6 +106,18 @@ describe("AI Agent - MCQ Generation", () => {
     });
   });
 
+  it("passes the same source-safe style anchor into the provider-neutral generation request", async () => {
+    await generateMCQsFromContent(1, validContent, 2, "balanced", {
+      sourceType: "raw_text",
+      sourceTitle: "Teacher material",
+      styleAnchor: { fingerprint: "style-v1", approvedExampleCount: 0, instruction: "\n\nSHARED FBISE STYLE ANCHOR — FORMAT ONLY\nNever copy an example." },
+    });
+
+    const request = mocks.invokeGenerationProvider.mock.calls[0]?.[0];
+    expect(request.messages[0].content).toContain("SHARED FBISE STYLE ANCHOR");
+    expect(request.messages[0].content).toContain("Never copy an example");
+  });
+
   it("reuses an exact recent private draft without calling the model again", async () => {
     mocks.getCachedGenerationResponse.mockResolvedValue({
       payload: JSON.stringify({
@@ -210,18 +222,16 @@ describe("AI Agent - MCQ Generation", () => {
 
     const systemPrompt = mocks.invokeGenerationProvider.mock.calls[0][0].messages[0].content as string;
     const prompt = mocks.invokeGenerationProvider.mock.calls[0][0].messages[1].content as string;
-    expect(prompt).toContain("VERIFIED BOARD-PATTERN GUIDANCE");
-    expect(prompt).toContain("model paper");
-    expect(prompt).toContain("past paper 2025");
-    expect(prompt).toContain("only examinable content boundary");
-    expect(prompt).toContain("Do not use any analysis note as factual evidence");
-    expect(prompt).toContain("concise FBISE-style wording");
+    expect(systemPrompt).toContain("SHARED FBISE STYLE ANCHOR");
+    expect(systemPrompt).toContain("model paper");
+    expect(systemPrompt).toContain("past paper 2025");
+    expect(systemPrompt).toContain("sole authority for every answer");
+    expect(systemPrompt).toContain("Never copy or paraphrase an example");
     expect(systemPrompt).toMatch(/direct paper-ready/i);
     expect(systemPrompt).toContain("answer-shaped");
     expect(systemPrompt).toContain("four narrow option columns");
     expect(prompt).toContain("Do not write answer options as sentences of explanation");
     expect(prompt).toContain("conceptKey");
-    expect(prompt).toContain("VERIFIED STYLE AND STRUCTURE EVIDENCE");
   });
 
   it("rejects a draft that rewords the same underlying concept within one paper", async () => {

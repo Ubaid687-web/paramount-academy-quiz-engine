@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, lt, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, lt, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser,
@@ -43,6 +43,7 @@ import {
   InsertOcrExtractionJob,
   teacherProvisionRules,
   generationProviderSettings,
+  generationStyleAnchorExamples,
 } from "../drizzle/schema";
 import type { FbiseSubject, ProgrammeKey, ScopeCatalog } from "./curriculumScope";
 import { assertNoUnresolvedOcrPages } from "./ocrQuality";
@@ -1025,6 +1026,108 @@ export async function listReviewedAssessmentPatternGuidance(programme: Programme
     eq(assessmentPatternSources.extractionStatus, "extracted"),
     eq(assessmentPatternProfiles.reviewStatus, "reviewed"),
   )).orderBy(asc(assessmentPatternSources.id));
+}
+
+export type StyleAnchorQuestion = {
+  questionId: number;
+  quizId: number;
+  quizTitle: string;
+  questionText: string;
+  optionA: string;
+  optionB: string;
+  optionC: string;
+  optionD: string;
+};
+
+function hasStructuredTextbookCitation(rawCitation: string | null) {
+  if (!rawCitation) return false;
+  try {
+    const citation = JSON.parse(rawCitation) as { curriculumSetId?: unknown; chapterId?: unknown; textAnchor?: unknown };
+    return typeof citation.curriculumSetId === "number" && typeof citation.chapterId === "number" && typeof citation.textAnchor === "string" && citation.textAnchor.trim().length > 0;
+  } catch {
+    return false;
+  }
+}
+
+/** Published, textbook-cited questions are eligible for explicit Portal Admin style-only approval. */
+export async function listEligibleStyleAnchorQuestions(programme: ProgrammeKey): Promise<StyleAnchorQuestion[]> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const rows = await db.select({
+    questionId: questions.id,
+    quizId: quizzes.id,
+    quizTitle: quizzes.title,
+    questionText: questions.questionText,
+    optionA: questions.optionA,
+    optionB: questions.optionB,
+    optionC: questions.optionC,
+    optionD: questions.optionD,
+    sourceCitation: questions.sourceCitation,
+  }).from(questions).innerJoin(quizzes, eq(questions.quizId, quizzes.id)).innerJoin(
+    curriculumSets,
+    eq(quizzes.curriculumSetId, curriculumSets.id),
+  ).where(and(
+    eq(curriculumSets.board, programme.board),
+    eq(curriculumSets.grade, programme.grade),
+    eq(curriculumSets.subject, programme.subject),
+    eq(quizzes.isAiGenerated, 1),
+    eq(quizzes.publicationStatus, "published"),
+  )).orderBy(desc(questions.id)).limit(60);
+  return rows.filter((row) => hasStructuredTextbookCitation(row.sourceCitation)).map(({ sourceCitation: _sourceCitation, ...question }) => question);
+}
+
+export async function listApprovedStyleAnchorExamples(programme: ProgrammeKey): Promise<StyleAnchorQuestion[]> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const rows = await db.select({
+    questionId: questions.id,
+    quizId: quizzes.id,
+    quizTitle: quizzes.title,
+    questionText: questions.questionText,
+    optionA: questions.optionA,
+    optionB: questions.optionB,
+    optionC: questions.optionC,
+    optionD: questions.optionD,
+    sourceCitation: questions.sourceCitation,
+  }).from(generationStyleAnchorExamples).innerJoin(
+    questions,
+    eq(generationStyleAnchorExamples.questionId, questions.id),
+  ).innerJoin(quizzes, eq(questions.quizId, quizzes.id)).innerJoin(
+    curriculumSets,
+    eq(quizzes.curriculumSetId, curriculumSets.id),
+  ).where(and(
+    eq(generationStyleAnchorExamples.board, programme.board),
+    eq(generationStyleAnchorExamples.grade, programme.grade),
+    eq(generationStyleAnchorExamples.subject, programme.subject),
+    eq(quizzes.publicationStatus, "published"),
+  )).orderBy(asc(generationStyleAnchorExamples.id));
+  return rows.filter((row) => hasStructuredTextbookCitation(row.sourceCitation)).slice(0, 4).map(({ sourceCitation: _sourceCitation, ...question }) => question);
+}
+
+export async function approveStyleAnchorExample(programme: ProgrammeKey, questionId: number, approvedBy: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const [eligible, approved] = await Promise.all([
+    listEligibleStyleAnchorQuestions(programme),
+    listApprovedStyleAnchorExamples(programme),
+  ]);
+  if (!eligible.some((question) => question.questionId === questionId)) throw new Error("Only published, textbook-cited questions from this exact FBISE grade and subject can be approved as style examples.");
+  if (approved.some((question) => question.questionId === questionId)) return approved;
+  if (approved.length >= 4) throw new Error("A programme can use at most four approved style examples. Remove one before approving another.");
+  await db.insert(generationStyleAnchorExamples).values({ board: programme.board, grade: programme.grade, subject: programme.subject, questionId, approvedBy });
+  return listApprovedStyleAnchorExamples(programme);
+}
+
+export async function removeStyleAnchorExample(programme: ProgrammeKey, questionId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(generationStyleAnchorExamples).where(and(
+    eq(generationStyleAnchorExamples.board, programme.board),
+    eq(generationStyleAnchorExamples.grade, programme.grade),
+    eq(generationStyleAnchorExamples.subject, programme.subject),
+    eq(generationStyleAnchorExamples.questionId, questionId),
+  ));
+  return listApprovedStyleAnchorExamples(programme);
 }
 
 export async function listAssessmentPatternSourcesByIds(programme: ProgrammeKey, sourceIds: number[]) {

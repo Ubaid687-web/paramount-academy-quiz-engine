@@ -7,6 +7,7 @@ import type { FbiseSubject, ScopeType, TextbookCitationCandidate } from "./curri
 import { buildPriorHistoryExclusion, type PriorQuestionHistory } from "./generationDiversity";
 import { buildBudgetedSourceText, buildGenerationRequestFingerprint, circuitOpenMessage, classifyCircuitOpen } from "./generationOptimization";
 import { invokeGenerationProvider, type GenerationProviderTelemetry } from "./generationProvider";
+import { buildSharedStyleAnchor, type SharedStyleAnchor } from "./styleAnchor";
 
 export type GenerationSourceContext = {
   sourceType: "raw_text" | "curriculum_scope";
@@ -28,6 +29,7 @@ export type GenerationSourceContext = {
     orRule?: string | null;
     profileEvidenceNotes?: string | null;
   }>;
+  styleAnchor?: SharedStyleAnchor;
   priorQuestionHistory?: PriorQuestionHistory[];
   citationCandidates?: TextbookCitationCandidate[];
 };
@@ -165,6 +167,13 @@ export async function generateMCQsFromContent(
   // Analyze content to determine optimal MCQ count
   const analysis = analyzeContent(contentText);
   const finalNumQuestions = numQuestions || analysis.recommendedQuestions.optimal;
+  const sharedStyleAnchor = sourceContext.styleAnchor ?? buildSharedStyleAnchor({
+    board: "FBISE",
+    grade: sourceContext.classLevel ?? "Unspecified grade",
+    subject: sourceContext.subject ?? "Unspecified subject",
+    paperPatternGuidance: sourceContext.paperPatternGuidance ?? [],
+    approvedExamples: [],
+  });
   const requestFingerprint = buildGenerationRequestFingerprint({
     mode: "mcq",
     sourceSnapshot: sourceContext.scopeSnapshot,
@@ -172,6 +181,7 @@ export async function generateMCQsFromContent(
     difficulty,
     requestedCount: finalNumQuestions,
     priorQuestionHistory: sourceContext.priorQuestionHistory,
+    styleAnchorFingerprint: sharedStyleAnchor.fingerprint,
   });
   const budgetedSource = buildBudgetedSourceText(contentText);
   const cached = await getCachedGenerationResponse(userId, requestFingerprint);
@@ -246,9 +256,9 @@ export async function generateMCQsFromContent(
     selectedChapterIds: sourceContext.selectedChapterIds?.length ? JSON.stringify(sourceContext.selectedChapterIds) : undefined,
     selectedSegmentIds: sourceContext.selectedSegmentIds?.length ? JSON.stringify(sourceContext.selectedSegmentIds) : undefined,
     sourceSnapshot: sourceContext.scopeSnapshot ? JSON.stringify(sourceContext.scopeSnapshot) : undefined,
-    requestFingerprint,
-    promptSourceChars: budgetedSource.sourceChars,
-    promptInputChars: budgetedSource.sentChars,
+      requestFingerprint,
+      promptSourceChars: budgetedSource.sourceChars,
+      promptInputChars: budgetedSource.sentChars + sharedStyleAnchor.instruction.length,
     status: "processing",
     progress: 10,
   });
@@ -271,25 +281,7 @@ export async function generateMCQsFromContent(
     const citationInstruction = sourceContext.sourceType === "curriculum_scope"
       ? `\n\nSTRUCTURED TEXTBOOK CITATION RULE:\nFor every question, return a sourceCitation object with exactly a citationKey selected from the approved list below and a short exact textAnchor copied from the supporting textbook section. Never invent a chapter, page, heading, or citation key.\n${citationCandidates.map((candidate) => `- ${candidate.citationKey}: ${candidate.chapterCode ? `${candidate.chapterCode}: ` : ""}${candidate.chapterTitle}${candidate.segmentLabel ? ` — ${candidate.segmentLabel}` : ""}${candidate.startPage && candidate.endPage ? ` (pages ${candidate.startPage}-${candidate.endPage})` : ""}`).join("\n")}`
       : "\n\nCUSTOM MATERIAL RULE:\nDo not return a sourceCitation object. Custom material is not an approved textbook source.";
-    const systemPrompt = MCQ_GENERATION_PROMPT + difficultyInstruction + citationInstruction;
-
-    const paperPatternInstruction = sourceContext.paperPatternGuidance?.length
-      ? `
-
-VERIFIED BOARD-PATTERN GUIDANCE (NOT CONTENT EVIDENCE):
-- Active supplied pattern evidence: ${sourceContext.paperPatternGuidance.map((source) => `${source.sourceKind.replace("_", " ")}${source.academicYear ? ` ${source.academicYear}` : ""}`).join(", ")}.
-- Use this evidence only for concise FBISE-style wording, familiar command phrasing, and the K/U/A balance above.
-- Do not copy, paraphrase, or treat paper questions as source content. Do not use any analysis note as factual evidence. The supplied textbook material below remains the only examinable content boundary.`
-      : "";
-    const styleEvidenceInstruction = sourceContext.paperPatternGuidance?.length
-      ? `\n\nVERIFIED STYLE AND STRUCTURE EVIDENCE (FORMAT ONLY):\n${sourceContext.paperPatternGuidance.map((source) => {
-        const evidence = [source.sectionAInstruction, source.sectionBInstruction, source.sectionCInstruction, source.orRule, source.profileEvidenceNotes]
-          .filter((value): value is string => Boolean(value?.trim()))
-          .join(" ")
-          .slice(0, 900);
-        return `- ${source.sourceKind.replace("_", " ")}${source.academicYear ? ` ${source.academicYear}` : ""}: ${evidence}`;
-      }).join("\n")}\nUse this observed direct command register and structure only. Do not copy a historical question or treat it as answer evidence.`
-      : "";
+    const systemPrompt = MCQ_GENERATION_PROMPT + difficultyInstruction + citationInstruction + sharedStyleAnchor.instruction;
     const priorHistoryInstruction = buildPriorHistoryExclusion(sourceContext.priorQuestionHistory ?? []);
 
     const userPrompt = `Generate exactly ${finalNumQuestions} high-quality MCQs based on this content. Analyze the ENTIRE content thoroughly to extract key concepts and principles.
@@ -318,7 +310,7 @@ REQUIREMENTS:
 - Keep explanations and source references as metadata for teacher review; they are not part of the printed MCQ row.
 - Explain the correct option in one short, easy-to-memorise textbook-faithful sentence.
 - Generate questions that span the entire content, not just the beginning.
-- The printed paper will render each question in the supplied FBISE four-option table geometry; generate a direct row-fit item rather than relying on a later truncation step.${paperPatternInstruction}${styleEvidenceInstruction}`;
+- The printed paper will render each question in the supplied FBISE four-option table geometry; generate a direct row-fit item rather than relying on a later truncation step.`;
 
     // Call LLM once with a bounded source representation. Full content was still analyzed
     // deterministically above; the source payload is compacted only when it exceeds the safe cap.
@@ -443,6 +435,8 @@ REQUIREMENTS:
           language: "",
           difficultyProfile: difficulty,
           paperPatternEvidence: sourceContext.paperPatternGuidance ?? [],
+          styleAnchorFingerprint: sharedStyleAnchor.fingerprint,
+          approvedStyleExampleCount: sharedStyleAnchor.approvedExampleCount,
           generatedAt: new Date().toISOString(),
           notes: "Draft only. Review before publication or assignment.",
         },

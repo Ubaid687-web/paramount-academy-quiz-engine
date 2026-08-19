@@ -5,12 +5,22 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { ENV } from "./_core/env";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, publicProcedure, protectedProcedure, router, teacherProcedure } from "./_core/trpc";
+import { buildSharedStyleAnchor, type ReviewedPaperPatternGuidance } from "./styleAnchor";
 
 const programmeKeySchema = z.object({
   board: z.string().trim().min(2).max(50).default("FBISE"),
   grade: z.string().trim().min(1).max(20).default("10"),
   subject: z.string().trim().min(2).max(100),
 });
+
+async function buildStyleAnchorForProgramme(
+  programme: { board: string; grade: string; subject: string },
+  paperPatternGuidance: ReviewedPaperPatternGuidance[],
+) {
+  const { listApprovedStyleAnchorExamples } = await import("./db");
+  const approvedExamples = await listApprovedStyleAnchorExamples(programme);
+  return buildSharedStyleAnchor({ ...programme, paperPatternGuidance, approvedExamples });
+}
 
 export const appRouter = router({
   system: systemRouter,
@@ -77,6 +87,30 @@ export const appRouter = router({
       .query(async ({ input }) => {
         const { listAdminGenerationHistory } = await import("./db");
         return listAdminGenerationHistory(input?.limit ?? 30);
+      }),
+    getStyleAnchor: adminProcedure
+      .input(z.object({ programme: programmeKeySchema }))
+      .query(async ({ input }) => {
+        const { listApprovedStyleAnchorExamples, listEligibleStyleAnchorQuestions, listReviewedAssessmentPatternGuidance } = await import("./db");
+        const [paperPatternGuidance, approvedExamples, eligibleExamples] = await Promise.all([
+          listReviewedAssessmentPatternGuidance(input.programme),
+          listApprovedStyleAnchorExamples(input.programme),
+          listEligibleStyleAnchorQuestions(input.programme),
+        ]);
+        const anchor = buildSharedStyleAnchor({ ...input.programme, paperPatternGuidance, approvedExamples });
+        return { anchor: { fingerprint: anchor.fingerprint, approvedExampleCount: anchor.approvedExampleCount, hasReviewedPatternRules: paperPatternGuidance.length > 0 }, approvedExamples, eligibleExamples };
+      }),
+    approveStyleAnchorExample: adminProcedure
+      .input(z.object({ programme: programmeKeySchema, questionId: z.number().int().positive() }))
+      .mutation(async ({ ctx, input }) => {
+        const { approveStyleAnchorExample } = await import("./db");
+        return approveStyleAnchorExample(input.programme, input.questionId, ctx.user.id);
+      }),
+    removeStyleAnchorExample: adminProcedure
+      .input(z.object({ programme: programmeKeySchema, questionId: z.number().int().positive() }))
+      .mutation(async ({ input }) => {
+        const { removeStyleAnchorExample } = await import("./db");
+        return removeStyleAnchorExample(input.programme, input.questionId);
       }),
   }),
 
@@ -839,6 +873,7 @@ export const appRouter = router({
           if (!catalog) {
             throw new Error("No active reviewed curriculum is available for the selected subject.");
           }
+          const styleAnchor = await buildStyleAnchorForProgramme(input.scope, paperPatternGuidance);
           const resolvedScope = resolveCurriculumScope(catalog, input.scope);
           const priorQuestionHistory = await listPriorGeneratedQuestionHistory({
             userId: ctx.user.id,
@@ -849,6 +884,7 @@ export const appRouter = router({
           sourceContext = {
             sourceType: "curriculum_scope" as const,
             sourceTitle: resolvedScope.displayLabel,
+            styleAnchor,
             subject: catalog.curriculumSet.subject,
             classLevel: catalog.curriculumSet.grade,
             curriculumSetId: catalog.curriculumSet.id,
@@ -868,9 +904,11 @@ export const appRouter = router({
             listReviewedAssessmentPatternGuidance(patternProgramme),
             listPriorGeneratedQuestionHistory({ userId: ctx.user.id, contentText: input.contentText }),
           ]);
+          const styleAnchor = await buildStyleAnchorForProgramme(patternProgramme, paperPatternGuidance);
           sourceContext = {
             sourceType: "raw_text" as const,
             sourceTitle: "Teacher-provided custom source",
+            styleAnchor,
             subject: patternProgramme.subject,
             classLevel: patternProgramme.grade,
             paperPatternGuidance: paperPatternGuidance.length ? paperPatternGuidance : paperPatternSources.map((source) => ({ sourceKind: source.sourceKind, academicYear: source.academicYear })),
@@ -921,6 +959,7 @@ export const appRouter = router({
             listReviewedAssessmentPatternGuidance(input.scope),
           ]);
           if (!catalog) throw new Error("No active reviewed textbook source is available for the selected subject.");
+          const styleAnchor = await buildStyleAnchorForProgramme(input.scope, paperPatternGuidance);
           const resolvedScope = resolveCurriculumScope(catalog, input.scope);
           const priorQuestionHistory = await listPriorGeneratedQuestionHistory({
             userId: ctx.user.id,
@@ -931,6 +970,7 @@ export const appRouter = router({
           sourceContext = {
             sourceType: "curriculum_scope",
             sourceTitle: resolvedScope.displayLabel,
+            styleAnchor,
             subject: catalog.curriculumSet.subject,
             classLevel: catalog.curriculumSet.grade,
             curriculumSetId: catalog.curriculumSet.id,
@@ -949,9 +989,11 @@ export const appRouter = router({
             listReviewedAssessmentPatternGuidance(input.patternProgramme),
             listPriorGeneratedQuestionHistory({ userId: ctx.user.id, contentText: input.contentText }),
           ]);
+          const styleAnchor = await buildStyleAnchorForProgramme(input.patternProgramme, paperPatternGuidance);
           sourceContext = {
             sourceType: "raw_text",
             sourceTitle: "Teacher-provided custom source",
+            styleAnchor,
             subject: input.patternProgramme.subject,
             classLevel: input.patternProgramme.grade,
             paperPatternGuidance: paperPatternGuidance.length ? paperPatternGuidance : paperSources.map((source) => ({ sourceKind: source.sourceKind, academicYear: source.academicYear })),
@@ -969,6 +1011,7 @@ export const appRouter = router({
           requestedCount: input.pairCount,
           title: input.title,
           priorQuestionHistory: sourceContext.priorQuestionHistory,
+          styleAnchorFingerprint: sourceContext.styleAnchor?.fingerprint,
         });
         const cached = await getCachedGenerationResponse(ctx.user.id, requestFingerprint);
         const generationJob = await createGenerationJob({
@@ -984,7 +1027,7 @@ export const appRouter = router({
           sourceSnapshot: sourceContext.scopeSnapshot ? JSON.stringify(sourceContext.scopeSnapshot) : undefined,
           requestFingerprint,
           promptSourceChars: contentText.length,
-          promptInputChars: Math.min(contentText.length, Math.max(3_000, input.pairCount * 3_000)),
+          promptInputChars: Math.min(contentText.length, Math.max(3_000, input.pairCount * 3_000)) + (sourceContext.styleAnchor?.instruction.length ?? 0),
           status: "processing",
           progress: 10,
         });

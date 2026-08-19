@@ -100,6 +100,7 @@ export default function CurriculumManagement() {
   const [scopeChapterIds, setScopeChapterIds] = useState<number[]>([]);
   const [focusedIntakeSetId, setFocusedIntakeSetId] = useState<number | null>(null);
   const [teacherApprovalEmail, setTeacherApprovalEmail] = useState("");
+  const [styleAnchorProgrammeKey, setStyleAnchorProgrammeKey] = useState("");
 
   const setsQuery = trpc.curriculum.listSets.useQuery(undefined, { enabled: isPortalAdmin });
   const programmesQuery = trpc.curriculum.listProgrammes.useQuery(undefined, { enabled: isPortalAdmin });
@@ -132,6 +133,13 @@ export default function CurriculumManagement() {
   const generationSettingsQuery = trpc.generation.getProviderSettings.useQuery(undefined, { enabled: isPortalAdmin });
   const generationHistoryQuery = trpc.generation.listHistory.useQuery({ limit: 30 }, { enabled: isPortalAdmin });
   const setGeminiFallbackEnabled = trpc.generation.setGeminiFallbackEnabled.useMutation();
+  const styleAnchorProgramme = (programmesQuery.data ?? []).find((programme) => `${programme.board}|${programme.grade}|${programme.subject}` === styleAnchorProgrammeKey);
+  const styleAnchorQuery = trpc.generation.getStyleAnchor.useQuery(
+    { programme: styleAnchorProgramme ? { board: styleAnchorProgramme.board, grade: styleAnchorProgramme.grade, subject: styleAnchorProgramme.subject } : { board: "FBISE", grade: "10", subject: "physics" } },
+    { enabled: isPortalAdmin && Boolean(styleAnchorProgramme) },
+  );
+  const approveStyleAnchorExample = trpc.generation.approveStyleAnchorExample.useMutation();
+  const removeStyleAnchorExample = trpc.generation.removeStyleAnchorExample.useMutation();
 
   useEffect(() => {
     if (selectedSetId !== null || !setsQuery.data?.length) return;
@@ -146,6 +154,12 @@ export default function CurriculumManagement() {
   useEffect(() => {
     if (setProgrammeId === null && programmesQuery.data?.length) setSetProgrammeId(programmesQuery.data[0].id);
   }, [setProgrammeId, programmesQuery.data]);
+
+  useEffect(() => {
+    if (styleAnchorProgrammeKey || !programmesQuery.data?.length) return;
+    const firstProgramme = programmesQuery.data[0];
+    setStyleAnchorProgrammeKey(`${firstProgramme.board}|${firstProgramme.grade}|${firstProgramme.subject}`);
+  }, [styleAnchorProgrammeKey, programmesQuery.data]);
 
   const details = detailsQuery.data;
   const curriculumSets = setsQuery.data ?? [];
@@ -526,6 +540,28 @@ export default function CurriculumManagement() {
     }
   };
 
+  const handleApproveStyleAnchorExample = async (questionId: number) => {
+    if (!styleAnchorProgramme) return;
+    try {
+      await approveStyleAnchorExample.mutateAsync({ programme: { board: styleAnchorProgramme.board, grade: styleAnchorProgramme.grade, subject: styleAnchorProgramme.subject }, questionId });
+      await utils.generation.getStyleAnchor.invalidate();
+      toast.success("Style-only example approved. The next generation request will use the refreshed shared anchor.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "The style example could not be approved.");
+    }
+  };
+
+  const handleRemoveStyleAnchorExample = async (questionId: number) => {
+    if (!styleAnchorProgramme) return;
+    try {
+      await removeStyleAnchorExample.mutateAsync({ programme: { board: styleAnchorProgramme.board, grade: styleAnchorProgramme.grade, subject: styleAnchorProgramme.subject }, questionId });
+      await utils.generation.getStyleAnchor.invalidate();
+      toast.success("Style example removed. The next generation request will use the refreshed shared anchor.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "The style example could not be removed.");
+    }
+  };
+
   const handleReviewSourcePage = async (sourceId: number, pageNumber: number) => {
     if (!selectedSetId) return;
     try {
@@ -626,6 +662,11 @@ export default function CurriculumManagement() {
               <div className="flex items-start gap-3 rounded-xl border border-primary/15 bg-primary/[0.03] p-4">
                 <Checkbox id="gemini-fallback-enabled" checked={generationSettingsQuery.data?.geminiFallbackEnabled === 1} onCheckedChange={(checked) => void handleGeminiFallbackChange(checked === true)} disabled={generationSettingsQuery.isLoading || setGeminiFallbackEnabled.isPending || !generationSettingsQuery.data?.geminiCredentialConfigured} />
                 <div className="min-w-0"><Label htmlFor="gemini-fallback-enabled" className="font-semibold text-foreground">Enable Gemini fallback after managed-provider quota exhaustion</Label><p className="mt-1 text-sm text-muted-foreground">Credential status: {generationSettingsQuery.isLoading ? "checking…" : generationSettingsQuery.data?.geminiCredentialConfigured ? "configured securely" : "not configured"}. {generationSettingsQuery.data?.geminiCredentialConfigured ? "Disable this at any time to keep generation on the managed provider only." : "The switch remains unavailable until a server-side credential is configured."}</p></div>
+              </div>
+              <div className="rounded-xl border border-border/70 bg-background/50 p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><p className="font-semibold text-foreground">Shared FBISE style anchor</p><p className="mt-1 text-sm text-muted-foreground">Applied to both providers on every generation request. Reviewed paper profiles set the rules; optional examples guide phrasing and layout only, never facts or answers.</p></div><span className="rounded-full bg-primary/10 px-2 py-1 text-[11px] font-bold uppercase tracking-[0.1em] text-primary">{styleAnchorQuery.data?.anchor.approvedExampleCount ?? 0}/4 examples</span></div>
+                <div className="mt-3"><Label htmlFor="style-anchor-programme" className="text-xs font-semibold">Programme</Label><Select value={styleAnchorProgrammeKey || "__none__"} onValueChange={setStyleAnchorProgrammeKey} disabled={!programmes.length}><SelectTrigger id="style-anchor-programme" className="mt-1"><SelectValue placeholder="Select a programme" /></SelectTrigger><SelectContent>{programmes.map((programme) => <SelectItem key={programme.id} value={`${programme.board}|${programme.grade}|${programme.subject}`}>Grade {programme.grade} · {formatSubjectLabel(programme.subject)}</SelectItem>)}</SelectContent></Select></div>
+                {!styleAnchorProgramme ? <p className="mt-3 text-sm text-muted-foreground">Create a programme first to review its style anchor.</p> : styleAnchorQuery.isLoading ? <p className="mt-3 text-sm text-muted-foreground">Loading style-anchor evidence…</p> : styleAnchorQuery.error ? <p className="mt-3 text-sm text-destructive">Style-anchor evidence could not be loaded.</p> : <><p className="mt-3 text-xs text-muted-foreground">Reviewed structure rules: {styleAnchorQuery.data?.anchor.hasReviewedPatternRules ? "available" : "not yet available"}. Generation still works without examples.</p><div className="mt-3 space-y-2">{(styleAnchorQuery.data?.approvedExamples ?? []).map((example) => <div key={example.questionId} className="flex flex-col gap-2 rounded-lg border border-primary/15 bg-primary/[0.025] p-3 sm:flex-row sm:items-center sm:justify-between"><p className="min-w-0 text-sm font-medium text-foreground">{example.questionText}</p><Button type="button" size="sm" variant="outline" onClick={() => void handleRemoveStyleAnchorExample(example.questionId)} disabled={removeStyleAnchorExample.isPending}>Remove</Button></div>)}{(styleAnchorQuery.data?.approvedExamples ?? []).length === 0 && <p className="rounded-lg border border-dashed border-border p-3 text-sm text-muted-foreground">No approved examples yet. This is normal for first use; reviewed style rules remain active.</p>}</div>{(styleAnchorQuery.data?.anchor.approvedExampleCount ?? 0) < 4 && <div className="mt-3"><p className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">Eligible published, textbook-cited questions</p><div className="mt-2 space-y-2">{(styleAnchorQuery.data?.eligibleExamples ?? []).filter((example) => !(styleAnchorQuery.data?.approvedExamples ?? []).some((approved) => approved.questionId === example.questionId)).slice(0, 8).map((example) => <div key={example.questionId} className="flex flex-col gap-2 rounded-lg border border-border/60 p-3 sm:flex-row sm:items-center sm:justify-between"><p className="min-w-0 text-sm text-foreground">{example.questionText}</p><Button type="button" size="sm" onClick={() => void handleApproveStyleAnchorExample(example.questionId)} disabled={approveStyleAnchorExample.isPending}>Use as style example</Button></div>)}{(styleAnchorQuery.data?.eligibleExamples ?? []).length === 0 && <p className="text-sm text-muted-foreground">No published, textbook-cited questions are available yet for this programme.</p>}</div></div>}</>}
               </div>
               <div>
                 <div className="flex flex-wrap items-baseline justify-between gap-2"><div><p className="font-semibold text-foreground">AI generation history</p><p className="mt-1 text-sm text-muted-foreground">Recent generation outcomes, provider routing, cache reuse, retries, and bounded prompt sizes. This stores operational metadata, not a Gemini credential.</p></div><span className="text-xs font-bold uppercase tracking-[0.12em] text-primary">Latest 30</span></div>

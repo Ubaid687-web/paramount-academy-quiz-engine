@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   getActiveCurriculumScopeCatalog: vi.fn(),
   listActiveAssessmentPatternSources: vi.fn(),
   listReviewedAssessmentPatternGuidance: vi.fn(),
+  listApprovedStyleAnchorExamples: vi.fn(),
   listPriorGeneratedQuestionHistory: vi.fn(),
   generateMCQsFromContent: vi.fn(),
 }));
@@ -13,6 +14,7 @@ vi.mock("./db", () => ({
   getActiveCurriculumScopeCatalog: mocks.getActiveCurriculumScopeCatalog,
   listActiveAssessmentPatternSources: mocks.listActiveAssessmentPatternSources,
   listReviewedAssessmentPatternGuidance: mocks.listReviewedAssessmentPatternGuidance,
+  listApprovedStyleAnchorExamples: mocks.listApprovedStyleAnchorExamples,
   listPriorGeneratedQuestionHistory: mocks.listPriorGeneratedQuestionHistory,
 }));
 vi.mock("./aiAgent", () => ({ generateMCQsFromContent: mocks.generateMCQsFromContent }));
@@ -39,6 +41,7 @@ function createAdminContext(): TrpcContext {
 
 describe("scoped curriculum draft generation", () => {
   it("resolves the reviewed chapter server-side and passes its immutable provenance to the draft engine", async () => {
+    mocks.listApprovedStyleAnchorExamples.mockResolvedValue([]);
     mocks.listActiveAssessmentPatternSources.mockResolvedValue([{ sourceKind: "past_paper", academicYear: "2025" }]);
     mocks.listReviewedAssessmentPatternGuidance.mockResolvedValue([{
       sourceKind: "past_paper",

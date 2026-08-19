@@ -127,6 +127,13 @@
       "when": 1787128866304,
       "tag": "0017_regular_azazel",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "5",
+      "when": 1787131659756,
+      "tag": "0018_young_silver_centurion",
+      "breakpoints": true
     }
   ]
 }

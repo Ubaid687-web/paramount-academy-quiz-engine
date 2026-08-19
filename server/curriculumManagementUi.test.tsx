@@ -23,7 +23,7 @@ const managementDetails = {
 
 vi.mock("@/lib/trpc", () => ({
   trpc: {
-    useUtils: () => ({ curriculum: { listSets: { invalidate }, listProgrammes: { invalidate }, getManagementDetails: { invalidate } }, generation: { getProviderSettings: { invalidate }, listHistory: { invalidate } } }),
+    useUtils: () => ({ curriculum: { listSets: { invalidate }, listProgrammes: { invalidate }, getManagementDetails: { invalidate } }, generation: { getProviderSettings: { invalidate }, listHistory: { invalidate }, getStyleAnchor: { invalidate } } }),
     curriculum: {
       listSets: { useQuery: (_input?: unknown, options?: { enabled?: boolean }) => { queryOptions.listSets.push(Boolean(options?.enabled)); return { data: [managementDetails.curriculumSet], isLoading: false, error: null }; } },
       listProgrammes: { useQuery: (_input?: unknown, options?: { enabled?: boolean }) => { queryOptions.listProgrammes.push(Boolean(options?.enabled)); return { data: [{ id: 11, board: "FBISE", grade: "10", subject: "physics", teacherLabel: "Physics", status: "ready" }], isLoading: false, error: null }; } },
@@ -42,6 +42,9 @@ vi.mock("@/lib/trpc", () => ({
       getProviderSettings: { useQuery: () => ({ data: { id: 1, geminiFallbackEnabled: 0, geminiCredentialConfigured: true }, isLoading: false, error: null }) },
       setGeminiFallbackEnabled: { useMutation: () => noOpMutation },
       listHistory: { useQuery: () => ({ data: [{ id: 99, status: "completed", createdAt: new Date("2026-08-19T00:00:00.000Z"), completedAt: new Date("2026-08-19T00:00:02.000Z"), generationProvider: "gemini_byok", fallbackUsed: 1, primaryFailureType: "quota_exhaustion", retryAttempts: 2, managedRetryAttempts: 0, geminiRetryAttempts: 2, cacheHit: 0, promptSourceChars: 24000, promptInputChars: 12000, errorMessage: null, staffName: "Teacher", staffEmail: "teacher@example.com" }], isLoading: false, error: null }) },
+      getStyleAnchor: { useQuery: () => ({ data: { anchor: { fingerprint: "anchor-v1", approvedExampleCount: 0, hasReviewedPatternRules: true }, approvedExamples: [], eligibleExamples: [] }, isLoading: false, error: null }) },
+      approveStyleAnchorExample: { useMutation: () => noOpMutation },
+      removeStyleAnchorExample: { useMutation: () => noOpMutation },
     },
   },
 }));

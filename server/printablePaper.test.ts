@@ -51,6 +51,25 @@ describe("printable paper payload normalization", () => {
     expect(failure?.message).not.toMatch(/source|narrower scope/i);
   });
 
+  it("passes the shared style anchor into printable generation before provider routing", async () => {
+    const pair = [
+      { ...shortGenerated.items[0], question: "State the speed relationship.", conceptKey: "speed", facetKey: "formula", answerTarget: "speed equals distance divided by time" },
+      { ...shortGenerated.items[0], question: "State the SI unit of speed.", conceptKey: "speed", facetKey: "unit", answerTarget: "metre per second" },
+    ];
+    mocks.invokeGenerationProvider.mockResolvedValue({ response: { choices: [{ message: { content: JSON.stringify({ estimatedDurationMinutes: 10, items: pair }) } }] }, telemetry: { provider: "managed_llm", fallbackUsed: false, primaryFailureType: null, managedRetryAttempts: 0, geminiRetryAttempts: 0 } });
+
+    await generatePrintablePaperFromContent({
+      paperType: "short",
+      title: "Motion short paper",
+      contentText: "Speed is the distance travelled per unit time. The SI unit of speed is metre per second.".repeat(4),
+      pairCount: 1,
+      difficulty: "balanced",
+      sourceContext: { sourceType: "curriculum_scope", sourceTitle: "Motion", styleAnchor: { fingerprint: "style-v1", approvedExampleCount: 0, instruction: "\n\nSHARED FBISE STYLE ANCHOR — FORMAT ONLY\nUse concise approved wording." } },
+    });
+
+    expect(mocks.invokeGenerationProvider.mock.calls[0]?.[0].messages[0].content).toContain("SHARED FBISE STYLE ANCHOR");
+  });
+
   it("keeps one shared concept inside an OR pair while presenting two different assessment angles", async () => {
     const sameConceptPair = [
       { ...longGenerated.items[0], question: "Describe the construction of a Daniel cell.", conceptKey: "daniel cell", facetKey: "construction", answerTarget: "zinc and copper electrodes in electrolyte solutions", sourceReference: "Daniel cell", learningObjective: "Describe the construction of a Daniel cell." },
