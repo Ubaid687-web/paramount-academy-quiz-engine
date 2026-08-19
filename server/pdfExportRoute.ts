@@ -52,23 +52,23 @@ function parseNativeFormExport(body: unknown) {
   return exportRequestSchema.parse(JSON.parse(raw));
 }
 
-async function requireAdmin(req: Request, res: Response) {
+async function requireTeacherOrAdmin(req: Request, res: Response) {
   try {
     const user = await sdk.authenticateRequest(req);
-    if (!user || user.role !== "admin") {
-      res.status(403).json({ message: "Portal Admin access is required for assessment exports." });
+    if (!user || (user.role !== "teacher" && user.role !== "admin")) {
+      res.status(403).json({ message: "Teacher or Portal Admin access is required for assessment exports." });
       return null;
     }
     return user;
   } catch {
-    res.status(403).json({ message: "Portal Admin access is required for assessment exports." });
+    res.status(403).json({ message: "Teacher or Portal Admin access is required for assessment exports." });
     return null;
   }
 }
 
 export function registerPdfExportRoutes(app: Express) {
   app.post("/api/pdf-export/download", async (req, res) => {
-    const user = await requireAdmin(req, res);
+    const user = await requireTeacherOrAdmin(req, res);
     if (!user) return;
     console.info(`[pdf-export] native request received user=${user.id} destination=${req.get("sec-fetch-dest") || "unknown"} origin=${req.get("origin") || "none"}`);
     try {
@@ -87,7 +87,7 @@ export function registerPdfExportRoutes(app: Express) {
   });
 
   app.post("/api/pdf-export", async (req, res) => {
-    const user = await requireAdmin(req, res);
+    const user = await requireTeacherOrAdmin(req, res);
     if (!user) return;
     try {
       const input = exportRequestSchema.parse(req.body);
@@ -101,7 +101,7 @@ export function registerPdfExportRoutes(app: Express) {
   });
 
   app.get("/api/pdf-export/:exportId", async (req, res) => {
-    const user = await requireAdmin(req, res);
+    const user = await requireTeacherOrAdmin(req, res);
     if (!user) return;
     const prepared = preparedExports.get(req.params.exportId);
     if (!prepared || prepared.expiresAt < Date.now() || prepared.ownerId !== user.id) {

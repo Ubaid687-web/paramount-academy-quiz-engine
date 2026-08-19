@@ -5,6 +5,7 @@ import CurriculumManagement from "../client/src/pages/CurriculumManagement";
 
 const noOpMutation = { mutateAsync: vi.fn(), isPending: false };
 const invalidate = vi.fn();
+const authMock = vi.hoisted(() => ({ role: "admin" as "admin" | "teacher" }));
 
 const managementDetails = {
   curriculumSet: { id: 1, board: "FBISE", grade: "10", subject: "physics", label: "FBISE Grade 10 Physics", editionLabel: "2026 edition", status: "draft" },
@@ -29,20 +30,26 @@ vi.mock("@/lib/trpc", () => ({
       proposeChaptersFromSource: { useQuery: () => ({ data: undefined, isLoading: false, isFetching: false, error: null, refetch: vi.fn() }) },
       createProgramme: { useMutation: () => noOpMutation }, activateProgramme: { useMutation: () => noOpMutation }, createSet: { useMutation: () => noOpMutation }, replaceActiveSet: { useMutation: () => noOpMutation }, ingestSource: { useMutation: () => noOpMutation }, ingestPaperPatternSource: { useMutation: () => noOpMutation }, activatePaperPatternSource: { useMutation: () => noOpMutation }, savePaperPatternProfile: { useMutation: () => noOpMutation }, createChapter: { useMutation: () => noOpMutation }, saveHalfChapterSegments: { useMutation: () => noOpMutation }, createScopeTemplate: { useMutation: () => noOpMutation }, activateSet: { useMutation: () => noOpMutation }, reviewSourcePage: { useMutation: () => noOpMutation },
     },
+    staff: {
+      listRoleDirectory: { useQuery: () => ({ data: [{ id: 1, name: "Portal Admin", email: "admin@example.com", role: "admin" }, { id: 2, name: "Teacher", email: "teacher@example.com", role: "teacher" }], isLoading: false, error: null, refetch: vi.fn() }) },
+      updateRole: { useMutation: () => noOpMutation },
+    },
   },
 }));
 
 vi.mock("@/components/AcademyShell", () => ({ AcademyShell: ({ children }: { children: React.ReactNode }) => <>{children}</> }));
+vi.mock("@/_core/hooks/useAuth", () => ({ useAuth: () => ({ user: { id: 1, role: authMock.role }, loading: false }) }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 describe("Curriculum Library Release 1", () => {
-  afterEach(() => { cleanup(); invalidate.mockReset(); window.history.pushState({}, "", "/"); });
+  afterEach(() => { cleanup(); invalidate.mockReset(); authMock.role = "admin"; window.history.pushState({}, "", "/"); });
 
   it("shows evidence-based edition readiness and the linked reviewed paper-pattern profile", () => {
     render(<CurriculumManagement />);
 
     expect(screen.getByText("Add another grade or subject")).toBeTruthy();
     expect(screen.getByRole("link", { name: "Add another grade" }).getAttribute("href")).toBe("#programme-catalogue");
+    expect(screen.getByText("Staff access")).toBeTruthy();
     expect(screen.getByText("Edition readiness checklist")).toBeTruthy();
     expect(screen.getByText("Textbook extraction completed")).toBeTruthy();
     expect(screen.getByText("At least one reviewed active chapter")).toBeTruthy();
@@ -53,6 +60,14 @@ describe("Curriculum Library Release 1", () => {
     expect(screen.getByText("Review Paper-Pattern Profile")).toBeTruthy();
     expect((screen.getByLabelText("MCQ count") as HTMLInputElement).value).toBe("12");
     expect(screen.getByDisplayValue("Page 1 confirms the MCQ section.")).toBeTruthy();
+  });
+
+  it("keeps a teacher out of the Portal Admin curriculum route", () => {
+    authMock.role = "teacher";
+    render(<CurriculumManagement />);
+
+    expect(screen.getByText("Portal Admin access required")).toBeTruthy();
+    expect(screen.queryByText("Add another grade or subject")).toBeNull();
   });
 
   it("shows only subject naming for the focused Grade 9 intake handoff", () => {

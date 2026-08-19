@@ -2,8 +2,9 @@ import { z } from "zod";
 import { createHash, randomUUID } from "node:crypto";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
+import { ENV } from "./_core/env";
 import { systemRouter } from "./_core/systemRouter";
-import { adminProcedure, publicProcedure, protectedProcedure, router } from "./_core/trpc";
+import { adminProcedure, publicProcedure, protectedProcedure, router, teacherProcedure } from "./_core/trpc";
 
 const programmeKeySchema = z.object({
   board: z.string().trim().min(2).max(50).default("FBISE"),
@@ -22,6 +23,23 @@ export const appRouter = router({
         success: true,
       } as const;
     }),
+  }),
+  staff: router({
+    listRoleDirectory: adminProcedure.query(async () => {
+      const { listStaffRoleDirectory } = await import("./db");
+      return listStaffRoleDirectory();
+    }),
+    updateRole: adminProcedure
+      .input(z.object({ userId: z.number().int().positive(), role: z.enum(["teacher", "admin"]) }))
+      .mutation(async ({ ctx, input }) => {
+        if (input.userId === ctx.user.id) throw new Error("You cannot change your own Portal Admin role.");
+        const { getStaffMemberById, updateStaffRole } = await import("./db");
+        const staffMember = await getStaffMemberById(input.userId);
+        if (!staffMember) throw new Error("Staff account not found.");
+        if (staffMember.openId === ENV.ownerOpenId) throw new Error("The project owner's Portal Admin role cannot be changed here.");
+        await updateStaffRole(input.userId, input.role);
+        return { success: true };
+      }),
   }),
 
   quiz: router({
@@ -587,7 +605,7 @@ export const appRouter = router({
         };
       }),
 
-    saveDraft: adminProcedure
+    saveDraft: teacherProcedure
       .input(z.object({
           assessmentMode: z.enum(["mcq", "short", "long", "full_paper"]),
           scope: z.object({
@@ -658,7 +676,7 @@ export const appRouter = router({
         return { success: true, assessmentDraftId: draft.id, reviewWarnings };
       }),
 
-    getDraft: adminProcedure
+    getDraft: teacherProcedure
       .input(z.object({ assessmentDraftId: z.number().int().positive() }))
       .query(async ({ ctx, input }) => {
         const { getAssessmentDraft } = await import("./db");
@@ -669,7 +687,7 @@ export const appRouter = router({
         return draft;
       }),
 
-    reviseDraft: adminProcedure
+    reviseDraft: teacherProcedure
       .input(z.object({
         assessmentDraftId: z.number().int().positive(),
         payload: z.unknown(),
@@ -705,17 +723,17 @@ export const appRouter = router({
   }),
 
   printablePaper: router({
-    renderMcqPaper: adminProcedure.input(z.object({ title: z.string().min(1), mcqs: z.array(z.object({ question: z.string().min(1), options: z.object({ A: z.string().min(1), B: z.string().min(1), C: z.string().min(1), D: z.string().min(1) }), answer: z.enum(["A", "B", "C", "D"]), explanation: z.string().min(1), sourceReference: z.string().min(1), learningObjective: z.string().min(1) })).min(1) })).mutation(async ({ input }) => {
+    renderMcqPaper: teacherProcedure.input(z.object({ title: z.string().min(1), mcqs: z.array(z.object({ question: z.string().min(1), options: z.object({ A: z.string().min(1), B: z.string().min(1), C: z.string().min(1), D: z.string().min(1) }), answer: z.enum(["A", "B", "C", "D"]), explanation: z.string().min(1), sourceReference: z.string().min(1), learningObjective: z.string().min(1) })).min(1) })).mutation(async ({ input }) => {
       const { renderMcqPaperPdf } = await import("./printablePaperExport");
       const pdf = await renderMcqPaperPdf(input.title, input.mcqs);
       return { fileName: `${input.title.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-mcq-paper.pdf`, data: pdf.toString("base64") };
     }),
-    renderMcqSolutionKey: adminProcedure.input(z.object({ title: z.string().min(1), mcqs: z.array(z.object({ question: z.string().min(1), options: z.object({ A: z.string().min(1), B: z.string().min(1), C: z.string().min(1), D: z.string().min(1) }), answer: z.enum(["A", "B", "C", "D"]), explanation: z.string().min(1), sourceReference: z.string().min(1), learningObjective: z.string().min(1) })).min(1) })).mutation(async ({ input }) => {
+    renderMcqSolutionKey: teacherProcedure.input(z.object({ title: z.string().min(1), mcqs: z.array(z.object({ question: z.string().min(1), options: z.object({ A: z.string().min(1), B: z.string().min(1), C: z.string().min(1), D: z.string().min(1) }), answer: z.enum(["A", "B", "C", "D"]), explanation: z.string().min(1), sourceReference: z.string().min(1), learningObjective: z.string().min(1) })).min(1) })).mutation(async ({ input }) => {
       const { renderMcqSolutionPdf } = await import("./printablePaperExport");
       const pdf = await renderMcqSolutionPdf(input.title, input.mcqs);
       return { fileName: `${input.title.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-mcq-solution-key.pdf`, data: pdf.toString("base64") };
     }),
-    renderPaper: adminProcedure
+    renderPaper: teacherProcedure
       .input(z.object({ payload: z.unknown() }))
       .mutation(async ({ input }) => {
         const { validateAssessmentDraftPayload } = await import("@shared/assessmentDraftContract");
@@ -730,7 +748,7 @@ export const appRouter = router({
           data: pdf.toString("base64"),
         };
       }),
-    renderSolutionKey: adminProcedure
+    renderSolutionKey: teacherProcedure
       .input(z.object({ payload: z.unknown() }))
       .mutation(async ({ input }) => {
         const { validateAssessmentDraftPayload } = await import("@shared/assessmentDraftContract");
@@ -748,7 +766,7 @@ export const appRouter = router({
   }),
 
   aiAgent: router({
-    generateMCQs: adminProcedure
+    generateMCQs: teacherProcedure
       .input(
         z.object({
           contentText: z.string().min(100, "Content must be at least 100 characters").optional(),
@@ -834,7 +852,7 @@ export const appRouter = router({
         );
       }),
 
-    generatePrintablePaper: adminProcedure
+    generatePrintablePaper: teacherProcedure
       .input(z.object({
         paperType: z.enum(["short", "long"]),
         title: z.string().trim().min(3).max(160),
@@ -979,7 +997,7 @@ export const appRouter = router({
         return { payload, assessmentDraftId, cacheReused, reviewWarning: cacheReused ? "Reused an exact recent draft; no new AI call was made. Portal Admin review and source verification are still required before issuing this paper." : "Draft only: Portal Admin review and source verification are required before issuing this paper." };
       }),
 
-    saveGeneratedQuiz: adminProcedure
+    saveGeneratedQuiz: teacherProcedure
       .input(
         z.object({
           jobId: z.number(),

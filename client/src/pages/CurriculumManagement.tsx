@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
 import { AcademyShell } from "@/components/AcademyShell";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { useLocation } from "wouter";
 
 type Subject = string;
@@ -63,6 +64,7 @@ function fileToBase64(file: File): Promise<string> {
 
 export default function CurriculumManagement() {
   const [, navigate] = useLocation();
+  const { user, loading: authLoading } = useAuth();
   const requestedGrade = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("grade") : null;
   const requestedSetId = typeof window !== "undefined" ? Number(new URLSearchParams(window.location.search).get("set")) || null : null;
   const isFocusedSubjectIntake = requestedGrade !== null && new URLSearchParams(window.location.search).get("intake") === "subject";
@@ -120,6 +122,8 @@ export default function CurriculumManagement() {
   const reviewSourcePage = trpc.curriculum.reviewSourcePage.useMutation();
   const createProgramme = trpc.curriculum.createProgramme.useMutation();
   const activateProgramme = trpc.curriculum.activateProgramme.useMutation();
+  const staffDirectoryQuery = trpc.staff.listRoleDirectory.useQuery();
+  const updateStaffRole = trpc.staff.updateRole.useMutation();
 
   useEffect(() => {
     if (selectedSetId !== null || !setsQuery.data?.length) return;
@@ -468,6 +472,16 @@ export default function CurriculumManagement() {
     }
   };
 
+  const handleStaffRoleChange = async (userId: number, role: "teacher" | "admin") => {
+    try {
+      await updateStaffRole.mutateAsync({ userId, role });
+      await staffDirectoryQuery.refetch();
+      toast.success(role === "teacher" ? "Teacher access granted." : "Portal Admin access granted.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "The staff role could not be updated.");
+    }
+  };
+
   const handleReviewSourcePage = async (sourceId: number, pageNumber: number) => {
     if (!selectedSetId) return;
     try {
@@ -480,6 +494,10 @@ export default function CurriculumManagement() {
   };
 
   const focusedStep = !focusedIntakeSetId ? 1 : !details?.sources.length ? 2 : 3;
+
+  if (!authLoading && user?.role !== "admin") {
+    return <AcademyShell eyebrow="Teacher MCQ Workspace"><main className="container py-8 sm:py-10"><Card className="mx-auto max-w-xl border-amber-300/60 bg-amber-50/40"><CardHeader><CardTitle>Portal Admin access required</CardTitle><CardDescription>Teachers can build and export assessments from approved curricula. Textbook intake, OCR review, activation, and staff access are managed only by Portal Admin.</CardDescription></CardHeader><CardContent><Button type="button" onClick={() => navigate("/")}>Return to Quiz Centre</Button></CardContent></Card></main></AcademyShell>;
+  }
 
   if (isFocusedSubjectIntake && requestedGrade) {
     return (
@@ -532,6 +550,8 @@ export default function CurriculumManagement() {
               {!programmes.length && !programmesQuery.isLoading && <p className="rounded-lg border border-dashed border-border p-3 text-sm text-muted-foreground">No programmes exist yet. Create one above before creating its first curriculum edition.</p>}
             </CardContent>
         </Card></section>
+
+        <section className="mb-6" aria-label="Staff access"><Card className="border-primary/15 bg-card"><CardHeader><CardTitle>Staff access</CardTitle><CardDescription>Only Portal Admin can manage books, OCR review, subject intake, activation, and staff roles. Teachers can build and export assessments from approved curricula.</CardDescription></CardHeader><CardContent className="space-y-3">{staffDirectoryQuery.isLoading ? <p className="text-sm text-muted-foreground">Loading staff access…</p> : staffDirectoryQuery.error ? <p className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">Staff roles could not be loaded.</p> : <div className="space-y-2">{(staffDirectoryQuery.data ?? []).map((staffMember) => <div key={staffMember.id} className="flex flex-col gap-3 rounded-xl border border-border/60 p-3 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="truncate text-sm font-bold text-foreground">{staffMember.name || staffMember.email || "Unlabelled account"}</p><p className="mt-1 text-xs text-muted-foreground">{staffMember.email || "No email available"} · {staffMember.role === "admin" ? "Portal Admin" : staffMember.role === "teacher" ? "Teacher" : "No staff role"}</p></div><Select value={staffMember.role} onValueChange={(value) => { if (value === "teacher" || value === "admin") void handleStaffRoleChange(staffMember.id, value); }} disabled={updateStaffRole.isPending}><SelectTrigger aria-label={`Role for ${staffMember.name || staffMember.email || `account ${staffMember.id}`}`} className="w-full sm:w-44"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="user" disabled>No staff access</SelectItem><SelectItem value="teacher">Teacher</SelectItem><SelectItem value="admin">Portal Admin</SelectItem></SelectContent></Select></div>)}</div>}</CardContent></Card></section>
 
         <section className="mb-6" aria-label="Curriculum Library overview">
           <div className="grid gap-3 sm:grid-cols-3">

@@ -134,6 +134,33 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
+export type StaffRole = "teacher" | "admin";
+
+export async function listStaffRoleDirectory() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.select({
+    id: users.id,
+    name: users.name,
+    email: users.email,
+    role: users.role,
+    lastSignedIn: users.lastSignedIn,
+  }).from(users).orderBy(asc(users.name), asc(users.id));
+}
+
+export async function getStaffMemberById(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const rows = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  return rows[0];
+}
+
+export async function updateStaffRole(userId: number, role: StaffRole) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(users).set({ role }).where(eq(users.id, userId));
+}
+
 export async function createQuiz(quiz: InsertQuiz): Promise<number> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");

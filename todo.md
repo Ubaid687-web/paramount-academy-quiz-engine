@@ -446,3 +446,9 @@
 - [x] Add a controlled Portal Admin entry point for future grades without cluttering teacher-facing Grade 9/10 preparation.
 - [x] Implement only verified, low-risk security or reliability fixes and record any remaining risks.
 - [x] Add regression coverage, validate source/build/security checks, checkpoint, and report the completed audit.
+
+## Phase 77: Teacher and Portal Admin Role Separation
+- [x] Audit role storage, current admin-only procedures, teacher workflows, navigation, and staff assignment controls.
+- [x] Add a safe teacher role migration and preserve Portal Admin ownership during the transition.
+- [x] Enforce Portal Admin-only curriculum/OCR/activation access while allowing teachers to build and use approved assessments.
+- [x] Add role-boundary regressions, validate, checkpoint, and report the completed access-control release.
