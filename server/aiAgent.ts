@@ -439,8 +439,8 @@ REQUIREMENTS:
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     const normalizedErrorMessage = errorMessage.toLowerCase();
-    const isQuotaError = errorMessage.includes("412") || normalizedErrorMessage.includes("exhausted") || normalizedErrorMessage.includes("billing") || normalizedErrorMessage.includes("quota");
     const isRateLimitError = errorMessage.includes("429") || normalizedErrorMessage.includes("rate limit") || normalizedErrorMessage.includes("too many requests");
+    const isQuotaError = !isRateLimitError && (errorMessage.includes("412") || normalizedErrorMessage.includes("exhausted") || normalizedErrorMessage.includes("billing") || normalizedErrorMessage.includes("quota"));
     await updateGenerationJob(job.id, {
       status: "failed",
       errorMessage,

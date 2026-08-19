@@ -40,15 +40,22 @@ describe("printable paper payload normalization", () => {
     expect(payload.items[0]?.kind).toBe("long");
   });
 
-  it("splits a large paper into small complete OR-pair batches", () => {
-    expect(buildPrintablePairBatches(10)).toEqual([2, 2, 2, 2, 2]);
-    expect(buildPrintablePairBatches(5)).toEqual([2, 2, 1]);
+  it("splits a large paper into bounded OR-pair batches that reduce provider calls", () => {
+    expect(buildPrintablePairBatches(10)).toEqual([4, 4, 2]);
+    expect(buildPrintablePairBatches(5)).toEqual([4, 1]);
+    expect(buildPrintablePairBatches(9).every((batch) => batch <= 4)).toBe(true);
   });
 
   it("classifies an upstream quota or billing failure without blaming the selected source", () => {
     const failure = buildPrintableUpstreamFailure(new Error('LLM invoke failed: 412 Precondition Failed – {"code":9,"message":"your account has hit a usage exhausted"}'));
     expect(failure?.message).toMatch(/usage quota limit or billing pause/i);
     expect(failure?.message).not.toMatch(/source|narrower scope/i);
+  });
+
+  it("keeps a Gemini 429 resource-exhaustion response distinct from a long quota pause", () => {
+    const failure = buildPrintableUpstreamFailure(new Error("Gemini fallback invoke failed: 429 Too Many Requests – RESOURCE_EXHAUSTED quota temporarily exceeded"));
+    expect(failure?.message).toMatch(/temporarily rate-limited/i);
+    expect(failure?.message).not.toMatch(/billing pause/i);
   });
 
   it("passes the shared style anchor into printable generation before provider routing", async () => {

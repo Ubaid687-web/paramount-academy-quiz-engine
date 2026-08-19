@@ -31,6 +31,7 @@ describe("generation optimization controls", () => {
   it("opens a long hold for quota/billing failures and a short hold for transient rate limits", () => {
     expect(classifyCircuitOpen("LLM invoke failed: 412 usage exhausted")).toEqual({ failureType: "quota_exhaustion", holdMinutes: 30 });
     expect(classifyCircuitOpen("HTTP 429 Too Many Requests")).toEqual({ failureType: "transient_rate_limit", holdMinutes: 2 });
+    expect(classifyCircuitOpen("Gemini 429 RESOURCE_EXHAUSTED: quota temporarily exceeded")).toEqual({ failureType: "transient_rate_limit", holdMinutes: 2 });
     expect(classifyCircuitOpen("source validation failed")).toBeNull();
   });
 

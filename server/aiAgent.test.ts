@@ -361,6 +361,16 @@ describe("AI Agent - MCQ Generation", () => {
     expect(result.draft.safeRetryAdvice).not.toContain("billing pause");
   });
 
+  it("keeps a Gemini 429 resource-exhaustion response distinct from account quota exhaustion", async () => {
+    mocks.invokeGenerationProvider.mockRejectedValue(new Error("Gemini fallback invoke failed: 429 Too Many Requests – RESOURCE_EXHAUSTED quota temporarily exceeded"));
+
+    const result = await generateMCQsFromContent(1, validContent, 5, "balanced");
+
+    expect(result.draft.errorType).toBe("transient_rate_limit");
+    expect(result.draft.safeRetryAdvice).toContain("retried automatically");
+    expect(result.draft.safeRetryAdvice).not.toContain("billing pause");
+  });
+
   it("records retry attempts in the generation job telemetry when attempts occur", async () => {
     mocks.invokeGenerationProvider.mockResolvedValueOnce({
       response: { choices: [{ message: { content: JSON.stringify({ mcqs: createValidMcqs(5) }) } }] },

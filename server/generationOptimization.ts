@@ -50,11 +50,11 @@ export function buildBudgetedSourceText(contentText: string, maxChars = 24_000) 
 
 export function classifyCircuitOpen(errorMessage: string) {
   const normalized = errorMessage.toLowerCase();
-  if (errorMessage.includes("412") || normalized.includes("exhausted") || normalized.includes("billing") || normalized.includes("quota")) {
-    return { failureType: "quota_exhaustion", holdMinutes: 30 };
-  }
   if (errorMessage.includes("429") || normalized.includes("rate limit") || normalized.includes("too many requests")) {
     return { failureType: "transient_rate_limit", holdMinutes: 2 };
+  }
+  if (errorMessage.includes("412") || normalized.includes("exhausted") || normalized.includes("billing") || normalized.includes("quota")) {
+    return { failureType: "quota_exhaustion", holdMinutes: 30 };
   }
   return null;
 }

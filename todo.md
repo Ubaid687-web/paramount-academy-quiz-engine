@@ -577,3 +577,8 @@
 - [x] Establish bundle, route-loading, and rendering baselines for the Quiz Centre and assessment-builder workflow.
 - [x] Inspect grade selection, source selection, settings, active generation, and review states at a 390px viewport for responsive or performance bottlenecks.
 - [x] Implement only evidenced low-risk improvements, add regressions, validate, and publish.
+
+## Phase 98: Printable Generation Gemini Fallback Investigation
+- [x] Inspect short-question printable-generation provider routing, Portal Admin setting, circuit state, and recent job telemetry.
+- [x] Trace the managed-quota failure path and identify any concrete reason Gemini fallback is not selected.
+- [x] Repair only an evidenced routing or configuration defect, add focused regression coverage, validate, and publish.
