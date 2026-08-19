@@ -13,28 +13,29 @@ export function validateExtractedPdfText(text: string, pageCount: number, fileNa
   }
 }
 
-export async function extractTextFromPdf(fileBuffer: Buffer, fileName: string) {
+export async function readPdfTextCandidate(fileBuffer: Buffer, fileName: string) {
   const parser = new PDFParse({ data: fileBuffer });
 
   try {
     const result = await parser.getText();
-    const text = result.text.replace(/\u0000/g, "").trim();
-
-    if (!text) {
-      throw new Error(`No selectable text was found in ${fileName}. If this is a scanned PDF, use an OCR-enabled copy.`);
-    }
-
-    validateExtractedPdfText(text, result.total, fileName);
-
     return {
-      text,
+      text: result.text.replace(/\u0000/g, "").trim(),
       pageCount: result.total,
       pages: result.pages.map((page) => ({ pageNumber: page.num, text: page.text.replace(/\u0000/g, "").trim() })),
     };
   } catch (error) {
     console.error(`PDF extraction error for ${fileName}:`, error);
-    throw new Error(error instanceof Error ? error.message : `Failed to extract text from PDF: ${fileName}`);
+    throw new Error(error instanceof Error ? error.message : `Failed to inspect PDF: ${fileName}`);
   } finally {
     await parser.destroy();
   }
+}
+
+export async function extractTextFromPdf(fileBuffer: Buffer, fileName: string) {
+  const extracted = await readPdfTextCandidate(fileBuffer, fileName);
+  if (!extracted.text) {
+    throw new Error(`No selectable text was found in ${fileName}. If this is a scanned PDF, use an OCR-enabled copy.`);
+  }
+  validateExtractedPdfText(extracted.text, extracted.pageCount, fileName);
+  return extracted;
 }

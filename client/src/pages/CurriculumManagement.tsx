@@ -101,7 +101,7 @@ export default function CurriculumManagement() {
   const programmesQuery = trpc.curriculum.listProgrammes.useQuery();
   const detailsQuery = trpc.curriculum.getManagementDetails.useQuery(
     { curriculumSetId: selectedSetId ?? 0 },
-    { enabled: selectedSetId !== null }
+    { enabled: selectedSetId !== null, refetchInterval: 5000 }
   );
   const chapterProposalsQuery = trpc.curriculum.proposeChaptersFromSource.useQuery(
     { curriculumSetId: selectedSetId ?? 0, sourceId: proposalSourceId ?? 0 },
@@ -156,6 +156,8 @@ export default function CurriculumManagement() {
     && programme.grade === details.curriculumSet.grade
     && programme.subject === details.curriculumSet.subject
   )) : undefined, [details, programmes]);
+  const hasPendingTextbookOcr = Boolean(details?.sources.some((source) => source.extractionStatus === "pending"));
+  const hasFailedTextbookOcr = Boolean(details?.sources.some((source) => source.extractionStatus === "failed"));
 
   useEffect(() => {
     if (!details?.paperPatternSources.length) {
@@ -262,8 +264,8 @@ export default function CurriculumManagement() {
   const handleSourceUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !selectedSetId) return;
-    if (!["application/pdf", "text/plain"].includes(file.type)) {
-      toast.error("Only text-based PDF and TXT sources are supported.");
+    if (!["application/pdf", "text/plain", "image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      toast.error("Upload a PDF, TXT, JPG, PNG, or WEBP textbook source.");
       return;
     }
     if (file.size > 30 * 1024 * 1024) {
@@ -276,13 +278,13 @@ export default function CurriculumManagement() {
       const source = await ingestSource.mutateAsync({
         curriculumSetId: selectedSetId,
         fileName: file.name,
-        mimeType: file.type as "application/pdf" | "text/plain",
+        mimeType: file.type as "application/pdf" | "text/plain" | "image/jpeg" | "image/png" | "image/webp",
         fileBuffer,
       });
       setChapterSourceId(source.id);
       setChapterText(source.extractedText ?? "");
       await utils.curriculum.getManagementDetails.invalidate({ curriculumSetId: selectedSetId });
-      toast.success("Source stored and extracted. Review it before saving a chapter.");
+      toast.success(source.extractionStatus === "pending" ? "Scanned source stored. OCR is queued and this screen will update as pages are processed." : "Source stored and extracted. Review it before saving a chapter.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "The source could not be stored or extracted.");
     } finally {
@@ -494,9 +496,9 @@ export default function CurriculumManagement() {
 
             {focusedStep === 1 && <Card className="border-primary/15"><CardHeader><CardTitle>What subject are you adding?</CardTitle><CardDescription>Enter one clear subject name. Grade and board are already set to Grade {requestedGrade} and FBISE.</CardDescription></CardHeader><CardContent className="space-y-4"><div><Label htmlFor="focused-subject-name">Subject name</Label><Input id="focused-subject-name" value={programmeSubject} onChange={(event) => setProgrammeSubject(event.target.value)} placeholder="e.g. Biology" autoFocus /></div><Button type="button" className="w-full" onClick={handleCreateFocusedProgramme} disabled={createProgramme.isPending || createSet.isPending}>{createProgramme.isPending || createSet.isPending ? "Creating subject…" : "Continue to textbook upload"}</Button></CardContent></Card>}
 
-            {focusedStep === 2 && <Card className="border-primary/15"><CardHeader><CardTitle className="flex items-center gap-2"><Upload className="h-5 w-5 text-primary" />Upload the textbook</CardTitle><CardDescription>Upload the official book as a PDF or TXT file. Text extraction and scan-quality checks run before review.</CardDescription></CardHeader><CardContent className="space-y-4"><Input aria-label="Focused curriculum source upload" type="file" accept=".pdf,.txt" onChange={handleSourceUpload} disabled={isUploading} />{isUploading && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Storing and extracting the textbook…</p>}<p className="text-xs leading-5 text-muted-foreground">Use a searchable/OCR-enabled PDF for scan-based books. Weak pages are flagged for review before the book can be used.</p></CardContent></Card>}
+            {focusedStep === 2 && <Card className="border-primary/15"><CardHeader><CardTitle className="flex items-center gap-2"><Upload className="h-5 w-5 text-primary" />Upload the textbook</CardTitle><CardDescription>Upload the official book as a PDF, TXT, JPG, PNG, or WEBP file. Scanned pages are queued for OCR before review.</CardDescription></CardHeader><CardContent className="space-y-4"><Input aria-label="Focused curriculum source upload" type="file" accept=".pdf,.txt,.jpg,.jpeg,.png,.webp" onChange={handleSourceUpload} disabled={isUploading} />{isUploading && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Storing the textbook and preparing extraction…</p>}<p className="text-xs leading-5 text-muted-foreground">Scanned PDFs and photographed pages are read in small OCR batches. Weak pages remain blocked for Portal Admin review before activation.</p></CardContent></Card>}
 
-            {focusedStep === 3 && <Card className={details?.readiness.ocrReviewComplete ? "border-emerald-300/60 bg-emerald-50/40" : "border-amber-300/70 bg-amber-50/40"}><CardHeader><CardTitle>{details?.readiness.ocrReviewComplete ? "Textbook intake complete" : "Textbook quality review"}</CardTitle><CardDescription>{details?.readiness.ocrReviewComplete ? "The source was stored and extraction checks completed. Continue to the controlled chapter-review workspace." : "Some pages need review before this book can be activated for teachers."}</CardDescription></CardHeader><CardContent className="space-y-4"><div className="rounded-xl border border-border/60 bg-background/70 p-3 text-sm text-foreground"><strong>{details?.sources.length ?? 0} textbook file</strong> stored for this subject.{details?.readiness.weakOcrPages ? ` ${details.readiness.weakOcrPages} page${details.readiness.weakOcrPages === 1 ? "" : "s"} still need review.` : ""}</div><Button type="button" className="w-full" onClick={() => navigate(`/curriculum?set=${focusedIntakeSetId}`)}>Continue to book review</Button></CardContent></Card>}
+            {focusedStep === 3 && <Card className={hasPendingTextbookOcr ? "border-primary/30 bg-primary/[0.04]" : hasFailedTextbookOcr || !details?.readiness.ocrReviewComplete ? "border-amber-300/70 bg-amber-50/40" : "border-emerald-300/60 bg-emerald-50/40"}><CardHeader><CardTitle>{hasPendingTextbookOcr ? "Textbook OCR in progress" : hasFailedTextbookOcr ? "Textbook extraction needs attention" : details?.readiness.ocrReviewComplete ? "Textbook intake complete" : "Textbook quality review"}</CardTitle><CardDescription>{hasPendingTextbookOcr ? "The stored scan is being read in small batches. This page refreshes automatically; chapter review remains unavailable until extraction finishes." : hasFailedTextbookOcr ? "Extraction did not complete. Open the detailed review workspace to see the recorded failure before re-uploading or correcting the source." : details?.readiness.ocrReviewComplete ? "The source was stored and extraction checks completed. Continue to the controlled chapter-review workspace." : "Some pages need review before this book can be activated for teachers."}</CardDescription></CardHeader><CardContent className="space-y-4"><div className="rounded-xl border border-border/60 bg-background/70 p-3 text-sm text-foreground"><strong>{details?.sources.length ?? 0} textbook file</strong> stored for this subject.{hasPendingTextbookOcr && details?.ocrJobs?.length ? ` OCR progress: page ${details.ocrJobs[0].nextPage} of ${details.ocrJobs[0].totalPages}.` : details?.readiness.weakOcrPages ? ` ${details.readiness.weakOcrPages} page${details.readiness.weakOcrPages === 1 ? "" : "s"} still need review.` : ""}</div><Button type="button" className="w-full" onClick={() => navigate(`/curriculum?set=${focusedIntakeSetId}`)} disabled={hasPendingTextbookOcr}>{hasPendingTextbookOcr ? "OCR in progress" : "Continue to book review"}</Button></CardContent></Card>}
           </section>
         </main>
       </AcademyShell>
@@ -570,11 +572,11 @@ export default function CurriculumManagement() {
               </Card>
               {details.curriculumSet.status === "active" && <Card className="border-amber-400/35 bg-amber-50/60"><CardHeader><CardTitle className="text-base">Replace this active book safely</CardTitle><CardDescription>Creates a linked draft edition. Teachers keep using the active book until the replacement has been reviewed and deliberately activated.</CardDescription></CardHeader><CardContent className="grid gap-3 sm:grid-cols-[1fr_1fr_auto]"><Input aria-label="Replacement curriculum label" value={replacementLabel} onChange={(event) => setReplacementLabel(event.target.value)} placeholder="Replacement book title" /><Input aria-label="Replacement edition label" value={replacementEditionLabel} onChange={(event) => setReplacementEditionLabel(event.target.value)} placeholder="e.g. 2027 edition" /><Button type="button" variant="outline" onClick={handleCreateReplacement} disabled={replaceActiveSet.isPending}>Create replacement draft</Button></CardContent></Card>}
               <Card>
-                <CardHeader><CardTitle className="flex items-center gap-2"><Upload className="h-5 w-5 text-accent" />1. Add One Source File</CardTitle><CardDescription>{details.curriculumSet.label} is currently <strong>{details.curriculumSet.status}</strong>. PDF and TXT files are stored and extracted server-side.</CardDescription></CardHeader>
+                <CardHeader><CardTitle className="flex items-center gap-2"><Upload className="h-5 w-5 text-accent" />1. Add One Source File</CardTitle><CardDescription>{details.curriculumSet.label} is currently <strong>{details.curriculumSet.status}</strong>. PDF, TXT, and photographed textbook pages are stored securely; scans enter OCR review before activation.</CardDescription></CardHeader>
                 <CardContent className="space-y-4">
-                  <Input aria-label="Curriculum source upload" type="file" accept=".pdf,.txt" onChange={handleSourceUpload} disabled={isUploading} />
-                  {isUploading && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Storing and extracting source text…</p>}
-                  <div className="space-y-2">{details.sources.map((source) => <button key={source.id} onClick={() => loadSourceForReview(source.id)} className="flex w-full items-center justify-between rounded-lg border border-border/60 p-3 text-left hover:border-accent/50"><span className="flex min-w-0 items-center gap-2"><FileText className="h-4 w-4 shrink-0 text-accent" /><span className="truncate text-sm">{source.originalFileName}</span></span><span className="text-xs text-muted-foreground">{source.extractionStatus}{source.pageCount ? ` • ${source.pageCount} pages` : ""}</span></button>)}</div>
+                  <Input aria-label="Curriculum source upload" type="file" accept=".pdf,.txt,.jpg,.jpeg,.png,.webp" onChange={handleSourceUpload} disabled={isUploading} />
+                  {isUploading && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Storing source and preparing extraction…</p>}
+                  <div className="space-y-2">{details.sources.map((source) => { const ocrJob = details.ocrJobs?.find((job) => job.sourceId === source.id); return <button key={source.id} onClick={() => loadSourceForReview(source.id)} className="flex w-full items-center justify-between rounded-lg border border-border/60 p-3 text-left hover:border-accent/50"><span className="flex min-w-0 items-center gap-2"><FileText className="h-4 w-4 shrink-0 text-accent" /><span className="truncate text-sm">{source.originalFileName}</span></span><span className="text-right text-xs text-muted-foreground">{source.extractionStatus}{source.pageCount ? ` • ${source.pageCount} pages` : ""}{ocrJob && ocrJob.status !== "completed" ? ` • OCR page ${ocrJob.nextPage}/${ocrJob.totalPages}` : ""}</span></button>; })}</div>
                 </CardContent>
               </Card>
               {details.readiness.weakOcrPages > 0 && <Card className="border-amber-300/80 bg-amber-50/60">

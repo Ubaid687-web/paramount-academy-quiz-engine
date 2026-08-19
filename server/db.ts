@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray, lt, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser,
@@ -38,6 +38,9 @@ import {
   generationCircuitStates,
   GenerationResponseCache,
   GenerationCircuitState,
+  ocrExtractionJobs,
+  ocrSchedulerStates,
+  InsertOcrExtractionJob,
 } from "../drizzle/schema";
 import type { FbiseSubject, ProgrammeKey, ScopeCatalog } from "./curriculumScope";
 import { assertNoUnresolvedOcrPages } from "./ocrQuality";
@@ -542,6 +545,92 @@ export async function createCurriculumSource(values: InsertCurriculumSource) {
   return rows[0];
 }
 
+export async function updateCurriculumSourceExtraction(sourceId: number, values: Pick<InsertCurriculumSource, "extractionStatus"> & Partial<Pick<InsertCurriculumSource, "extractedText" | "extractionError" | "extractedAt">>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(curriculumSources).set(values).where(eq(curriculumSources.id, sourceId));
+  return getCurriculumSource(sourceId);
+}
+
+export async function createOcrExtractionJob(values: InsertOcrExtractionJob) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(ocrExtractionJobs).values(values);
+  const rows = await db.select().from(ocrExtractionJobs).where(eq(ocrExtractionJobs.id, result[0].insertId as number)).limit(1);
+  return rows[0];
+}
+
+export async function getOcrExtractionJobForSource(sourceId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const rows = await db.select().from(ocrExtractionJobs).where(eq(ocrExtractionJobs.sourceId, sourceId)).limit(1);
+  return rows[0];
+}
+
+export async function listOcrExtractionJobsForSources(sourceIds: number[]) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  if (!sourceIds.length) return [];
+  return db.select().from(ocrExtractionJobs).where(inArray(ocrExtractionJobs.sourceId, sourceIds)).orderBy(asc(ocrExtractionJobs.createdAt));
+}
+
+export async function claimNextOcrExtractionJob() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const candidates = await db.select().from(ocrExtractionJobs)
+    .where(eq(ocrExtractionJobs.status, "pending"))
+    .orderBy(asc(ocrExtractionJobs.createdAt), asc(ocrExtractionJobs.id))
+    .limit(5);
+
+  for (const candidate of candidates) {
+    const result = await db.update(ocrExtractionJobs).set({
+      status: "processing",
+      startedAt: candidate.startedAt ?? new Date(),
+      attemptCount: sql`${ocrExtractionJobs.attemptCount} + 1`,
+    }).where(and(
+      eq(ocrExtractionJobs.id, candidate.id),
+      eq(ocrExtractionJobs.status, "pending"),
+    ));
+    if (result[0].affectedRows) {
+      const rows = await db.select().from(ocrExtractionJobs).where(eq(ocrExtractionJobs.id, candidate.id)).limit(1);
+      return rows[0];
+    }
+  }
+  return null;
+}
+
+export async function requeueStaleOcrExtractionJobs() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const staleBefore = new Date(Date.now() - 10 * 60 * 1000);
+  await db.update(ocrExtractionJobs).set({ status: "pending", errorMessage: "OCR worker restarted after an interrupted batch." }).where(and(
+    eq(ocrExtractionJobs.status, "processing"),
+    lt(ocrExtractionJobs.updatedAt, staleBefore),
+  ));
+}
+
+export async function updateOcrExtractionJob(jobId: number, values: Partial<Pick<InsertOcrExtractionJob, "status" | "nextPage" | "errorMessage" | "completedAt">>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(ocrExtractionJobs).set(values).where(eq(ocrExtractionJobs.id, jobId));
+  const rows = await db.select().from(ocrExtractionJobs).where(eq(ocrExtractionJobs.id, jobId)).limit(1);
+  return rows[0];
+}
+
+export async function getOcrSchedulerState() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const rows = await db.select().from(ocrSchedulerStates).where(eq(ocrSchedulerStates.id, 1)).limit(1);
+  return rows[0];
+}
+
+export async function saveOcrSchedulerState(taskUid: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(ocrSchedulerStates).values({ id: 1, taskUid }).onDuplicateKeyUpdate({ set: { taskUid } });
+  return getOcrSchedulerState();
+}
+
 export async function replaceCurriculumSourcePageReviews(sourceId: number, pages: Array<{
   pageNumber: number;
   textCharacters: number;
@@ -653,6 +742,16 @@ export async function activateCurriculumSet(curriculumSetId: number) {
   const chapters = await listCurriculumChapters(curriculumSetId);
   if (!chapters.some((chapter) => chapter.isActive === 1)) {
     throw new Error("Add at least one reviewed chapter before activating a curriculum set.");
+  }
+
+  const sources = await listCurriculumSources(curriculumSetId);
+  const pendingSource = sources.find((source) => source.extractionStatus === "pending");
+  if (pendingSource) {
+    throw new Error(`Complete OCR extraction for ${pendingSource.originalFileName} before activating this curriculum edition.`);
+  }
+  const failedSource = sources.find((source) => source.extractionStatus === "failed");
+  if (failedSource) {
+    throw new Error(`Resolve the failed extraction for ${failedSource.originalFileName} before activating this curriculum edition.`);
   }
 
   assertNoUnresolvedOcrPages(await listCurriculumSetPageReviews(curriculumSetId));

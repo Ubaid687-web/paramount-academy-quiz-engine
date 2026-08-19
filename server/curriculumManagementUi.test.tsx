@@ -10,6 +10,7 @@ const managementDetails = {
   curriculumSet: { id: 1, board: "FBISE", grade: "10", subject: "physics", label: "FBISE Grade 10 Physics", editionLabel: "2026 edition", status: "draft" },
   sources: [{ id: 2, originalFileName: "physics.pdf", extractionStatus: "extracted", extractedText: "Approved textbook text", pageCount: 200 }],
   sourcePageReviews: [{ sourceId: 2, pageNumber: 7, qualityScore: 28, reviewStatus: "needs_review", reviewReasons: "very little extracted text" }],
+  ocrJobs: [],
   paperPatternSources: [{ id: 3, originalFileName: "physics-2025.pdf", sourceKind: "past_paper", academicYear: "2025", extractionStatus: "extracted", status: "draft" }],
   paperPatternProfiles: [{ patternSourceId: 3, sectionAInstruction: "Attempt all MCQs.", sectionBInstruction: null, sectionCInstruction: null, mcqCount: 12, mcqMarksEach: 1, shortOrPairCount: null, shortMarksEach: null, longOrPairCount: null, longMarksEach: null, totalMarks: 60, durationMinutes: 180, orRule: null, profileEvidenceNotes: "Page 1 confirms the MCQ section.", reviewStatus: "reviewed" }],
   chapters: [{ id: 4, code: "Ch. 1", title: "Motion", contentText: "A reviewed source chapter containing sufficient source content for the management interface." }],
@@ -63,5 +64,15 @@ describe("Curriculum Library Release 1", () => {
     expect(screen.getByRole("button", { name: "Continue to textbook upload" })).toBeTruthy();
     expect(screen.queryByText("Add a grade or subject")).toBeNull();
     expect(screen.queryByText("Edition readiness checklist")).toBeNull();
+  });
+
+  it("offers approved photographed textbook formats in the controlled upload control", () => {
+    render(<CurriculumManagement />);
+
+    const upload = screen.getByLabelText("Curriculum source upload") as HTMLInputElement;
+    expect(upload.accept).toContain(".pdf");
+    expect(upload.accept).toContain(".jpg");
+    expect(upload.accept).toContain(".png");
+    expect(upload.accept).toContain(".webp");
   });
 });

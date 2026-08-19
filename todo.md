@@ -428,3 +428,9 @@
 - [x] Add deterministic estimated topic counts to approved chapters and half-chapter segments in the catalog response.
 - [x] Show a non-blocking warning near the MCQ question-count input when requested coverage exceeds the selected source estimate.
 - [x] Add UI and analyzer regression coverage for approved and custom sources, then validate and checkpoint.
+
+## Phase 74: Production OCR for Scanned Textbooks
+- [x] Audit the existing source ingestion, storage, extraction, and review controls for scanned-image gaps.
+- [x] Add bounded server-side OCR for image-only PDF and photographed textbook inputs, preserving page-level quality evidence.
+- [x] Restrict activation until Portal Admin completes required page review and validate the deployed production runtime.
+- [x] Add OCR, ingestion, and UI regressions; validate, checkpoint, and report the completed pipeline.

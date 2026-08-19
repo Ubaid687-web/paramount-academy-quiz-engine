@@ -322,6 +322,37 @@ export const curriculumSourcePageReviews = mysqlTable("curriculumSourcePageRevie
 export type CurriculumSourcePageReview = typeof curriculumSourcePageReviews.$inferSelect;
 export type InsertCurriculumSourcePageReview = typeof curriculumSourcePageReviews.$inferInsert;
 
+// Scanned textbooks are processed in small, scheduled batches so an upload request is not held
+// open while every page is rasterised and read. The source remains unavailable for chapter work
+// until the linked job completes successfully.
+export const ocrExtractionJobs = mysqlTable("ocrExtractionJobs", {
+  id: int("id").autoincrement().primaryKey(),
+  sourceId: int("sourceId").notNull().unique(),
+  status: mysqlEnum("status", ["pending", "processing", "completed", "failed"]).default("pending").notNull(),
+  nextPage: int("nextPage").default(1).notNull(),
+  totalPages: int("totalPages").notNull(),
+  attemptCount: int("attemptCount").default(0).notNull(),
+  errorMessage: text("errorMessage"),
+  startedAt: timestamp("startedAt"),
+  completedAt: timestamp("completedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type OcrExtractionJob = typeof ocrExtractionJobs.$inferSelect;
+export type InsertOcrExtractionJob = typeof ocrExtractionJobs.$inferInsert;
+
+// One project-level heartbeat consumes queued OCR work. Its task UID is verified on every call;
+// the worker never trusts a request body to select a source job.
+export const ocrSchedulerStates = mysqlTable("ocrSchedulerStates", {
+  id: int("id").primaryKey(),
+  taskUid: varchar("taskUid", { length: 65 }).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type OcrSchedulerState = typeof ocrSchedulerStates.$inferSelect;
+
 // Admin-reviewed chapter evidence, ordered within a versioned curriculum set.
 export const curriculumChapters = mysqlTable("curriculumChapters", {
   id: int("id").autoincrement().primaryKey(),

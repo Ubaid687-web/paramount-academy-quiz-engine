@@ -151,12 +151,13 @@ export const appRouter = router({
     getManagementDetails: adminProcedure
       .input(z.object({ curriculumSetId: z.number().int().positive() }))
       .query(async ({ input }) => {
-        const { getCurriculumSet, listCurriculumSources, listCurriculumChapters, listChapterSegments, listScopeTemplates, listAssessmentPatternSources, listAssessmentPatternProfilesBySourceIds, listCurriculumSetPageReviews } = await import("./db");
+        const { getCurriculumSet, listCurriculumSources, listCurriculumChapters, listChapterSegments, listScopeTemplates, listAssessmentPatternSources, listAssessmentPatternProfilesBySourceIds, listCurriculumSetPageReviews, listOcrExtractionJobsForSources } = await import("./db");
         const curriculumSet = await getCurriculumSet(input.curriculumSetId);
         if (!curriculumSet) throw new Error("Curriculum set not found");
         const chapters = await listCurriculumChapters(input.curriculumSetId);
         const sources = await listCurriculumSources(input.curriculumSetId);
         const sourcePageReviews = await listCurriculumSetPageReviews(input.curriculumSetId);
+        const ocrJobs = await listOcrExtractionJobsForSources(sources.map((source) => source.id));
         const paperPatternSources = await listAssessmentPatternSources({ board: curriculumSet.board, grade: curriculumSet.grade, subject: curriculumSet.subject });
         const paperPatternProfiles = await listAssessmentPatternProfilesBySourceIds(paperPatternSources.map((source) => source.id));
         const chapterSegments = await Promise.all(chapters.map(async (chapter) => ({
@@ -167,6 +168,7 @@ export const appRouter = router({
           curriculumSet,
           sources,
           sourcePageReviews,
+          ocrJobs,
           paperPatternSources,
           paperPatternProfiles,
           chapters,
@@ -226,11 +228,11 @@ export const appRouter = router({
       .input(z.object({
         curriculumSetId: z.number().int().positive(),
         fileName: z.string().min(1).max(255),
-        mimeType: z.enum(["application/pdf", "text/plain"]),
+        mimeType: z.enum(["application/pdf", "text/plain", "image/jpeg", "image/png", "image/webp"]),
         fileBuffer: z.string().min(1),
       }))
       .mutation(async ({ ctx, input }) => {
-        const { getCurriculumSet, createCurriculumSource, replaceCurriculumSourcePageReviews } = await import("./db");
+        const { getCurriculumSet, createCurriculumSource, createOcrExtractionJob, replaceCurriculumSourcePageReviews } = await import("./db");
         const { extractCurriculumSourceText } = await import("./curriculumIngestion");
         const { assessExtractedSourceQuality } = await import("./ocrQuality");
         const { storagePut } = await import("./storage");
@@ -242,7 +244,7 @@ export const appRouter = router({
           throw new Error("Curriculum source must be between 1 byte and 30MB.");
         }
         const extracted = await extractCurriculumSourceText({ fileBuffer, fileName: input.fileName, mimeType: input.mimeType });
-        const extension = input.mimeType === "application/pdf" ? "pdf" : "txt";
+        const extension = input.mimeType === "application/pdf" ? "pdf" : input.mimeType === "text/plain" ? "txt" : input.mimeType === "image/png" ? "png" : input.mimeType === "image/webp" ? "webp" : "jpg";
         const stored = await storagePut(
           `curricula/${input.curriculumSetId}/${randomUUID()}.${extension}`,
           fileBuffer,
@@ -255,13 +257,19 @@ export const appRouter = router({
           originalFileName: input.fileName,
           mimeType: input.mimeType,
           contentHash: createHash("sha256").update(fileBuffer).digest("hex"),
-          extractionStatus: "extracted",
+          extractionStatus: extracted.mode === "ocr_required" ? "pending" : "extracted",
           pageCount: extracted.pageCount,
           extractedText: extracted.text,
           uploadedBy: ctx.user.id,
-          extractedAt: new Date(),
+          extractedAt: extracted.mode === "native_text" ? new Date() : null,
         });
-        await replaceCurriculumSourcePageReviews(source.id, assessExtractedSourceQuality(extracted.pages));
+        if (extracted.mode === "ocr_required") {
+          await createOcrExtractionJob({ sourceId: source.id, totalPages: extracted.pageCount ?? 1 });
+          const { ensureOcrScheduler } = await import("./ocrScheduler");
+          await ensureOcrScheduler(ctx.req.headers.cookie);
+        } else {
+          await replaceCurriculumSourcePageReviews(source.id, assessExtractedSourceQuality(extracted.pages));
+        }
         return source;
       }),
 
