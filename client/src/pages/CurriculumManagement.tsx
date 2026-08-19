@@ -65,6 +65,7 @@ function fileToBase64(file: File): Promise<string> {
 export default function CurriculumManagement() {
   const [, navigate] = useLocation();
   const { user, loading: authLoading } = useAuth();
+  const isPortalAdmin = user?.role === "admin";
   const requestedGrade = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("grade") : null;
   const requestedSetId = typeof window !== "undefined" ? Number(new URLSearchParams(window.location.search).get("set")) || null : null;
   const isFocusedSubjectIntake = requestedGrade !== null && new URLSearchParams(window.location.search).get("intake") === "subject";
@@ -99,15 +100,15 @@ export default function CurriculumManagement() {
   const [scopeChapterIds, setScopeChapterIds] = useState<number[]>([]);
   const [focusedIntakeSetId, setFocusedIntakeSetId] = useState<number | null>(null);
 
-  const setsQuery = trpc.curriculum.listSets.useQuery();
-  const programmesQuery = trpc.curriculum.listProgrammes.useQuery();
+  const setsQuery = trpc.curriculum.listSets.useQuery(undefined, { enabled: isPortalAdmin });
+  const programmesQuery = trpc.curriculum.listProgrammes.useQuery(undefined, { enabled: isPortalAdmin });
   const detailsQuery = trpc.curriculum.getManagementDetails.useQuery(
     { curriculumSetId: selectedSetId ?? 0 },
-    { enabled: selectedSetId !== null, refetchInterval: 5000 }
+    { enabled: isPortalAdmin && selectedSetId !== null, refetchInterval: 5000 }
   );
   const chapterProposalsQuery = trpc.curriculum.proposeChaptersFromSource.useQuery(
     { curriculumSetId: selectedSetId ?? 0, sourceId: proposalSourceId ?? 0 },
-    { enabled: selectedSetId !== null && proposalSourceId !== null }
+    { enabled: isPortalAdmin && selectedSetId !== null && proposalSourceId !== null }
   );
   const createSet = trpc.curriculum.createSet.useMutation();
   const replaceActiveSet = trpc.curriculum.replaceActiveSet.useMutation();
@@ -122,7 +123,7 @@ export default function CurriculumManagement() {
   const reviewSourcePage = trpc.curriculum.reviewSourcePage.useMutation();
   const createProgramme = trpc.curriculum.createProgramme.useMutation();
   const activateProgramme = trpc.curriculum.activateProgramme.useMutation();
-  const staffDirectoryQuery = trpc.staff.listRoleDirectory.useQuery();
+  const staffDirectoryQuery = trpc.staff.listRoleDirectory.useQuery(undefined, { enabled: isPortalAdmin });
   const updateStaffRole = trpc.staff.updateRole.useMutation();
 
   useEffect(() => {

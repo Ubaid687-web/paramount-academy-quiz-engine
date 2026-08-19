@@ -457,3 +457,9 @@
 - [x] Verify the Add another grade control, controlled programme creation, and focused subject-intake handoff as Portal Admin without activating a curriculum.
 - [x] Confirm the created programme remains intake-only until textbook review and explicit activation.
 - [x] Record the end-to-end result and any evidenced follow-up fixes.
+
+## Phase 79: Free and Open-Source Portal Functionality Review
+- [x] Inventory teacher and Portal Admin components, runtime dependencies, local processing paths, and external-service boundaries.
+- [x] Exercise teacher and Portal Admin workflows that operate without paid AI generation.
+- [x] Repair verified low-risk functional issues and add focused regression coverage.
+- [x] Validate reviewed workflows and document remaining external-service limitations.
