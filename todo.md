@@ -434,3 +434,9 @@
 - [x] Add bounded server-side OCR for image-only PDF and photographed textbook inputs, preserving page-level quality evidence.
 - [x] Restrict activation until Portal Admin completes required page review and validate the deployed production runtime.
 - [x] Add OCR, ingestion, and UI regressions; validate, checkpoint, and report the completed pipeline.
+
+## Phase 75: Urdu-Language OCR Support
+- [x] Audit the current OCR language configuration and text-quality thresholds for Urdu-script source pages.
+- [x] Add bilingual Urdu-and-English OCR language selection and production language data.
+- [x] Preserve page review safeguards for Urdu-only and mixed-script textbook pages.
+- [x] Add regression coverage, validate the production build, checkpoint, and report the enhanced pipeline.

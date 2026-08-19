@@ -4,7 +4,7 @@ import { PDFParse } from "pdf-parse";
 export function validateExtractedPdfText(text: string, pageCount: number, fileName: string) {
   const normalizedText = text.replace(/\s+/g, " ").trim();
   const readableCharactersPerPage = normalizedText.length / Math.max(pageCount, 1);
-  const meaningfulWords = normalizedText.match(/[A-Za-z]{3,}/g)?.length ?? 0;
+  const meaningfulWords = normalizedText.match(/[A-Za-z\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]{2,}/g)?.length ?? 0;
 
   if (readableCharactersPerPage < 120 || meaningfulWords < Math.max(40, pageCount * 4)) {
     throw new Error(

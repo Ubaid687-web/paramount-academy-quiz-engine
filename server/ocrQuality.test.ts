@@ -17,6 +17,22 @@ describe("OCR page-quality assessment", () => {
     expect(assessment.qualityScore).toBeGreaterThanOrEqual(60);
   });
 
+  it("treats readable Urdu script as meaningful text rather than weak symbols", () => {
+    const urduText = "قوت کسی جسم کی حرکت یا حالت کو تبدیل کر سکتی ہے۔ طالب علم کتاب کے مطابق تعریف، مثال اور اطلاق کو سمجھتے ہیں۔ ".repeat(6);
+    const [assessment] = assessExtractedSourceQuality([{ pageNumber: 11, text: urduText }]);
+
+    expect(assessment).toMatchObject({ pageNumber: 11, reviewStatus: "clear", reviewReasons: null });
+    expect(assessment.meaningfulWords).toBeGreaterThan(25);
+  });
+
+  it("retains a readable mixed Urdu-and-English textbook page", () => {
+    const mixedText = "رفتار (velocity) فاصلے اور وقت کے تعلق کو ظاہر کرتی ہے۔ Students use the supplied formula to solve a textbook example. ".repeat(6);
+    const [assessment] = assessExtractedSourceQuality([{ pageNumber: 12, text: mixedText }]);
+
+    expect(assessment.reviewStatus).toBe("clear");
+    expect(assessment.qualityScore).toBeGreaterThanOrEqual(60);
+  });
+
   it("blocks activation until every weak OCR page has an administrator review state", () => {
     expect(() => assertNoUnresolvedOcrPages([{ reviewStatus: "clear" }, { reviewStatus: "needs_review" }])).toThrow("Review 1 weak OCR page");
     expect(() => assertNoUnresolvedOcrPages([{ reviewStatus: "reviewed" }, { reviewStatus: "clear" }])).not.toThrow();

@@ -8,6 +8,7 @@ import type { SupportedCurriculumMimeType } from "./curriculumIngestion";
 
 const execFileAsync = promisify(execFile);
 export const OCR_PAGES_PER_RUN = 2;
+export const OCR_LANGUAGE = "urd+eng";
 
 export type OcrTextPage = { pageNumber: number; text: string };
 
@@ -48,7 +49,7 @@ async function downloadSource(storageKey: string) {
 }
 
 async function runTesseract(imagePath: string) {
-  const { stdout } = await execFileAsync("tesseract", [imagePath, "stdout", "-l", "eng", "--psm", "3"], {
+  const { stdout } = await execFileAsync("tesseract", [imagePath, "stdout", "-l", OCR_LANGUAGE, "--psm", "3"], {
     maxBuffer: 4 * 1024 * 1024,
     timeout: 50_000,
   });

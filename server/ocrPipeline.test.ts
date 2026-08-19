@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { buildOcrTranscript, mergeOcrTranscript, parseOcrTranscript } from "./ocrPipeline";
+import { buildOcrTranscript, mergeOcrTranscript, OCR_LANGUAGE, parseOcrTranscript } from "./ocrPipeline";
 
 describe("OCR transcript page evidence", () => {
+  it("uses the installed Urdu-and-English language models for every scanned page", () => {
+    expect(OCR_LANGUAGE).toBe("urd+eng");
+  });
+
   it("keeps OCR text explicitly separated and ordered by source page", () => {
     const transcript = buildOcrTranscript([
       { pageNumber: 3, text: "Third scanned page" },

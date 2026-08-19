@@ -12,7 +12,8 @@ export type PageQualityAssessment = {
   reviewReasons: string | null;
 };
 
-const meaningfulWordPattern = /[A-Za-z]{3,}/g;
+const readableScriptPattern = /[A-Za-z\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/g;
+const meaningfulWordPattern = /[A-Za-z\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]{2,}/g;
 
 /**
  * Scores only the readability of extracted page text. This is a deterministic review signal,
@@ -23,7 +24,7 @@ export function assessExtractedPageQuality(page: ExtractedSourcePage): PageQuali
   const textCharacters = normalized.length;
   const meaningfulWords = normalized.match(meaningfulWordPattern)?.length ?? 0;
   const visibleCharacters = normalized.replace(/\s/g, "");
-  const letters = normalized.match(/[A-Za-z]/g)?.length ?? 0;
+  const letters = normalized.match(readableScriptPattern)?.length ?? 0;
   const letterRatio = visibleCharacters.length ? letters / visibleCharacters.length : 0;
   const reasons: string[] = [];
   let qualityScore = 100;

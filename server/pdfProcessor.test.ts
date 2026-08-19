@@ -11,4 +11,9 @@ describe("PDF extraction quality validation", () => {
     const watermarkOnlyText = "www.example.com ".repeat(100);
     expect(() => validateExtractedPdfText(watermarkOnlyText, 120, "scanned-book.pdf")).toThrow(/scanned or image-based/i);
   });
+
+  it("accepts a text-rich Urdu PDF extraction as readable source material", () => {
+    const urduText = "حرکت، فاصلہ، وقت اور رفتار طبیعیات کے بنیادی تصورات ہیں۔ ".repeat(90);
+    expect(() => validateExtractedPdfText(urduText, 12, "urdu-physics.pdf")).not.toThrow();
+  });
 });
