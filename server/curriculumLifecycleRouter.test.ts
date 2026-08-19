@@ -11,6 +11,10 @@ const mocks = vi.hoisted(() => ({
   getCurriculumSource: vi.fn(),
   activateCurriculumSet: vi.fn(),
   markCurriculumSourcePageReviewed: vi.fn(),
+  getCurriculumChapter: vi.fn(),
+  listCurriculumSourcePageReviews: vi.fn(),
+  setCurriculumChapterGenerationAvailability: vi.fn(),
+  saveCorrectedCurriculumSourcePage: vi.fn(),
   proposeChaptersFromExtractedText: vi.fn(),
 }));
 
@@ -25,6 +29,10 @@ vi.mock("./db", () => ({
   getCurriculumSource: mocks.getCurriculumSource,
   activateCurriculumSet: mocks.activateCurriculumSet,
   markCurriculumSourcePageReviewed: mocks.markCurriculumSourcePageReviewed,
+  getCurriculumChapter: mocks.getCurriculumChapter,
+  listCurriculumSourcePageReviews: mocks.listCurriculumSourcePageReviews,
+  setCurriculumChapterGenerationAvailability: mocks.setCurriculumChapterGenerationAvailability,
+  saveCorrectedCurriculumSourcePage: mocks.saveCorrectedCurriculumSourcePage,
 }));
 
 vi.mock("./chapterProposal", () => ({ proposeChaptersFromExtractedText: mocks.proposeChaptersFromExtractedText }));
@@ -106,6 +114,34 @@ describe("curriculum lifecycle administration", () => {
 
     await expect(caller.curriculum.reviewSourcePage({ curriculumSetId: 901, sourceId: 41, pageNumber: 7 })).resolves.toMatchObject({ reviewStatus: "reviewed" });
     expect(mocks.markCurriculumSourcePageReviewed).toHaveBeenCalledWith(41, 7, 77);
+  });
+
+  it("allows Portal Admin to exclude a chapter, but prevents restoring it while an OCR page inside its range remains unresolved", async () => {
+    mocks.getCurriculumChapter.mockResolvedValue({ id: 90004, curriculumSetId: 120001, sourceId: 90001, title: "Electrochemistry", startPage: 46, endPage: 63 });
+    mocks.setCurriculumChapterGenerationAvailability.mockResolvedValue({ id: 90004, isActive: 0, title: "Electrochemistry" });
+    const admin = appRouter.createCaller(createContext("admin"));
+
+    await expect(admin.curriculum.setChapterGenerationAvailability({ curriculumSetId: 120001, chapterId: 90004, isActive: false })).resolves.toMatchObject({ isActive: 0 });
+    expect(mocks.setCurriculumChapterGenerationAvailability).toHaveBeenCalledWith({ curriculumSetId: 120001, chapterId: 90004, isActive: 0 });
+
+    mocks.listCurriculumSourcePageReviews.mockResolvedValue([{ sourceId: 90001, pageNumber: 56, reviewStatus: "needs_review" }]);
+    await expect(admin.curriculum.setChapterGenerationAvailability({ curriculumSetId: 120001, chapterId: 90004, isActive: true })).rejects.toThrow("Page 56 still needs OCR review");
+  });
+
+  it("keeps chapter exclusion controls unavailable to ordinary users", async () => {
+    const caller = appRouter.createCaller(createContext("user"));
+    await expect(caller.curriculum.setChapterGenerationAvailability({ curriculumSetId: 120001, chapterId: 90004, isActive: false })).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
+  it("saves an exact page correction as reviewed without restoring any excluded chapter", async () => {
+    mocks.setCurriculumChapterGenerationAvailability.mockReset();
+    mocks.getCurriculumSource.mockResolvedValue({ id: 90001, curriculumSetId: 120001, extractedText: "[OCR page 56]\nUnreadable table" });
+    mocks.saveCorrectedCurriculumSourcePage.mockResolvedValue({ pageReview: { sourceId: 90001, pageNumber: 56, reviewStatus: "reviewed" }, updatedChapterIds: [90004] });
+    const caller = appRouter.createCaller(createContext("admin"));
+
+    await expect(caller.curriculum.correctOcrReviewPage({ curriculumSetId: 120001, sourceId: 90001, pageNumber: 56, correctedText: "Li+ + e- -> Li | -3.05" })).resolves.toMatchObject({ pageNumber: 56, automaticallyRestoredForGeneration: false, updatedChapterIds: [90004] });
+    expect(mocks.saveCorrectedCurriculumSourcePage).toHaveBeenCalledWith(expect.objectContaining({ sourceId: 90001, pageNumber: 56, correctedText: "Li+ + e- -> Li | -3.05", reviewedBy: 77 }));
+    expect(mocks.setCurriculumChapterGenerationAvailability).not.toHaveBeenCalled();
   });
 
   it("records a reviewed profile only for an extracted supplied paper and stamps the admin reviewer", async () => {

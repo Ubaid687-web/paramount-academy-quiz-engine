@@ -41,6 +41,16 @@ export function mergeOcrTranscript(existingText: string | null | undefined, addi
   return buildOcrTranscript(Array.from(pages.entries()).map(([pageNumber, text]) => ({ pageNumber, text })));
 }
 
+export function replaceOcrTranscriptPage(existingText: string | null | undefined, pageNumber: number, correctedText: string) {
+  const pages = parseOcrTranscript(existingText);
+  if (!pages.some((page) => page.pageNumber === pageNumber)) {
+    throw new Error(`OCR page ${pageNumber} was not found in this stored transcript.`);
+  }
+  const normalized = correctedText.replace(/\u0000/g, "").replace(/\r\n/g, "\n").trim();
+  if (!normalized) throw new Error("The corrected OCR text cannot be empty.");
+  return buildOcrTranscript(pages.map((page) => page.pageNumber === pageNumber ? { ...page, text: normalized } : page));
+}
+
 async function downloadSource(storageKey: string) {
   const { url } = await storageGet(storageKey);
   const response = await fetch(url);

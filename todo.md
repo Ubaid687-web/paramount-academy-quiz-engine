@@ -489,3 +489,12 @@
 - [x] Decide and implement a bounded refresh lifecycle for approved examples without allowing unreviewed generated content to influence future papers.
 - [x] Attach the exact same selected anchor to primary and Gemini fallback calls, with provider-neutral prompt accounting.
 - [x] Add source-boundary, refresh, and cross-provider consistency regressions; validate, checkpoint, and report.
+
+## Phase 84: OCR Review Comparison Workspace
+- [x] Audit stored textbook-file access, page-image rendering, and page-bounded transcript availability for Portal Admin review.
+- [x] Add an admin-only OCR review workspace with original page image and extracted page text side by side.
+- [x] Add a controlled page-level correction action that updates only the reviewed page transcript, records who approved it, and never activates a source automatically.
+- [x] Preserve explicit per-page approve/re-upload decisions without allowing a review action to alter other source text or activate sources automatically.
+- [x] Add a Portal Admin-only temporary chapter exclusion control and remove excluded chapters from all teacher generation scopes.
+- [x] Provide a safe interim path for inspecting flagged Chemistry page transcripts before the workspace is released.
+- [x] Add authorization, page-boundary, review-action, and UI regressions; validate, checkpoint, and report.

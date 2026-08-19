@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, lt, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, lt, lte, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser,
@@ -622,16 +622,25 @@ export async function getActiveCurriculumScopeCatalog(programme: ProgrammeKey): 
       eq(curriculumChapterSegments.isActive, 1),
     )).orderBy(asc(curriculumChapterSegments.sequence))
     : [];
-  const templates = await db.select().from(curriculumScopeTemplates).where(and(
+  const configuredTemplates = await db.select().from(curriculumScopeTemplates).where(and(
     eq(curriculumScopeTemplates.curriculumSetId, curriculumSet.id),
     eq(curriculumScopeTemplates.isActive, 1),
   ));
-  const templateIds = templates.map((template) => template.id);
-  const templateMemberships = templateIds.length
+  const configuredTemplateIds = configuredTemplates.map((template) => template.id);
+  const configuredMemberships = configuredTemplateIds.length
     ? await db.select().from(curriculumScopeTemplateChapters).where(
-      inArray(curriculumScopeTemplateChapters.scopeTemplateId, templateIds)
+      inArray(curriculumScopeTemplateChapters.scopeTemplateId, configuredTemplateIds)
     ).orderBy(asc(curriculumScopeTemplateChapters.sequence))
     : [];
+  const activeChapterIds = new Set(chapterIds);
+  const eligibleTemplateIds = new Set(configuredTemplates
+    .filter((template) => {
+      const members = configuredMemberships.filter((membership) => membership.scopeTemplateId === template.id);
+      return members.length > 0 && members.every((membership) => activeChapterIds.has(membership.chapterId));
+    })
+    .map((template) => template.id));
+  const templates = configuredTemplates.filter((template) => eligibleTemplateIds.has(template.id));
+  const templateMemberships = configuredMemberships.filter((membership) => eligibleTemplateIds.has(membership.scopeTemplateId));
 
   return {
     curriculumSet: {
@@ -815,6 +824,74 @@ export async function markCurriculumSourcePageReviewed(sourceId: number, pageNum
   return rows[0];
 }
 
+function replaceMarkedChapterPageText(contentText: string, pageNumber: number, correctedText: string) {
+  const marker = `--- PAGE ${pageNumber} ---`;
+  const markerIndex = contentText.indexOf(marker);
+  if (markerIndex < 0) return null;
+  const textStart = markerIndex + marker.length;
+  const nextMarker = /\n--- PAGE \d+ ---/g;
+  nextMarker.lastIndex = textStart;
+  const next = nextMarker.exec(contentText);
+  const textEnd = next?.index ?? contentText.length;
+  return `${contentText.slice(0, textStart)}\n${correctedText.trim()}${contentText.slice(textEnd)}`;
+}
+
+export async function saveCorrectedCurriculumSourcePage(input: {
+  sourceId: number;
+  pageNumber: number;
+  correctedTranscript: string;
+  correctedText: string;
+  reviewedBy: number;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.transaction(async (tx) => {
+    const sourceRows = await tx.select().from(curriculumSources).where(eq(curriculumSources.id, input.sourceId)).limit(1);
+    const source = sourceRows[0];
+    if (!source) throw new Error("The selected source was not found.");
+
+    await tx.update(curriculumSources).set({ extractedText: input.correctedTranscript, extractedAt: new Date() }).where(eq(curriculumSources.id, input.sourceId));
+    const originalReviewRows = await tx.select().from(curriculumSourcePageReviews).where(and(
+      eq(curriculumSourcePageReviews.sourceId, input.sourceId),
+      eq(curriculumSourcePageReviews.pageNumber, input.pageNumber),
+    )).limit(1);
+    const originalReview = originalReviewRows[0];
+    if (!originalReview) throw new Error("The selected OCR page quality record was not found.");
+
+    const meaningfulWords = input.correctedText.trim().split(/\s+/).filter(Boolean).length;
+    await tx.update(curriculumSourcePageReviews).set({
+      textCharacters: input.correctedText.length,
+      meaningfulWords,
+      reviewStatus: "reviewed",
+      reviewReasons: `Manually corrected and reviewed by Portal Admin. Original OCR signal: ${originalReview.reviewReasons ?? `quality ${originalReview.qualityScore}/100`}.`,
+      reviewedBy: input.reviewedBy,
+      reviewedAt: new Date(),
+    }).where(and(
+      eq(curriculumSourcePageReviews.sourceId, input.sourceId),
+      eq(curriculumSourcePageReviews.pageNumber, input.pageNumber),
+    ));
+
+    const affectedChapters = await tx.select().from(curriculumChapters).where(and(
+      eq(curriculumChapters.sourceId, input.sourceId),
+      lte(curriculumChapters.startPage, input.pageNumber),
+      gte(curriculumChapters.endPage, input.pageNumber),
+    ));
+    const updatedChapterIds: number[] = [];
+    for (const chapter of affectedChapters) {
+      const updatedText = replaceMarkedChapterPageText(chapter.contentText, input.pageNumber, input.correctedText);
+      if (!updatedText) continue;
+      await tx.update(curriculumChapters).set({ contentText: updatedText }).where(eq(curriculumChapters.id, chapter.id));
+      updatedChapterIds.push(chapter.id);
+    }
+
+    const reviewRows = await tx.select().from(curriculumSourcePageReviews).where(and(
+      eq(curriculumSourcePageReviews.sourceId, input.sourceId),
+      eq(curriculumSourcePageReviews.pageNumber, input.pageNumber),
+    )).limit(1);
+    return { pageReview: reviewRows[0], updatedChapterIds };
+  });
+}
+
 export async function listCurriculumSetPageReviews(curriculumSetId: number) {
   const sources = await listCurriculumSources(curriculumSetId);
   return listCurriculumSourcePageReviews(sources.map((source) => source.id));
@@ -824,6 +901,23 @@ export async function listCurriculumChapters(curriculumSetId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   return db.select().from(curriculumChapters).where(eq(curriculumChapters.curriculumSetId, curriculumSetId)).orderBy(asc(curriculumChapters.sequence));
+}
+
+export async function getCurriculumChapter(chapterId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const rows = await db.select().from(curriculumChapters).where(eq(curriculumChapters.id, chapterId)).limit(1);
+  return rows[0];
+}
+
+export async function setCurriculumChapterGenerationAvailability(input: { curriculumSetId: number; chapterId: number; isActive: number }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(curriculumChapters).set({ isActive: input.isActive }).where(and(
+    eq(curriculumChapters.id, input.chapterId),
+    eq(curriculumChapters.curriculumSetId, input.curriculumSetId),
+  ));
+  return getCurriculumChapter(input.chapterId);
 }
 
 export async function createCurriculumChapter(values: InsertCurriculumChapter) {

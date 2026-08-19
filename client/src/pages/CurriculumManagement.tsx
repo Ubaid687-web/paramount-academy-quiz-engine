@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import React from "react";
-import { AlertTriangle, ArrowLeft, BookMarked, CheckCircle2, FileText, FolderPlus, Loader2, Plus, Upload } from "lucide-react";
+import { AlertTriangle, ArrowLeft, BookMarked, CheckCircle2, FileText, FolderPlus, Loader2, Plus, ShieldCheck, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -101,6 +101,8 @@ export default function CurriculumManagement() {
   const [focusedIntakeSetId, setFocusedIntakeSetId] = useState<number | null>(null);
   const [teacherApprovalEmail, setTeacherApprovalEmail] = useState("");
   const [styleAnchorProgrammeKey, setStyleAnchorProgrammeKey] = useState("");
+  const [ocrReviewTarget, setOcrReviewTarget] = useState<{ sourceId: number; pageNumber: number } | null>(null);
+  const [correctedOcrText, setCorrectedOcrText] = useState("");
 
   const setsQuery = trpc.curriculum.listSets.useQuery(undefined, { enabled: isPortalAdmin });
   const programmesQuery = trpc.curriculum.listProgrammes.useQuery(undefined, { enabled: isPortalAdmin });
@@ -123,6 +125,12 @@ export default function CurriculumManagement() {
   const createScope = trpc.curriculum.createScopeTemplate.useMutation();
   const activateSet = trpc.curriculum.activateSet.useMutation();
   const reviewSourcePage = trpc.curriculum.reviewSourcePage.useMutation();
+  const ocrReviewPageQuery = trpc.curriculum.getOcrReviewPage.useQuery(
+    { curriculumSetId: selectedSetId ?? 0, sourceId: ocrReviewTarget?.sourceId ?? 0, pageNumber: ocrReviewTarget?.pageNumber ?? 0 },
+    { enabled: isPortalAdmin && selectedSetId !== null && ocrReviewTarget !== null },
+  );
+  const correctOcrReviewPage = trpc.curriculum.correctOcrReviewPage.useMutation();
+  const setChapterGenerationAvailability = trpc.curriculum.setChapterGenerationAvailability.useMutation();
   const createProgramme = trpc.curriculum.createProgramme.useMutation();
   const activateProgramme = trpc.curriculum.activateProgramme.useMutation();
   const staffDirectoryQuery = trpc.staff.listRoleDirectory.useQuery(undefined, { enabled: isPortalAdmin });
@@ -160,6 +168,10 @@ export default function CurriculumManagement() {
     const firstProgramme = programmesQuery.data[0];
     setStyleAnchorProgrammeKey(`${firstProgramme.board}|${firstProgramme.grade}|${firstProgramme.subject}`);
   }, [styleAnchorProgrammeKey, programmesQuery.data]);
+
+  useEffect(() => {
+    if (ocrReviewPageQuery.data?.pageText !== undefined) setCorrectedOcrText(ocrReviewPageQuery.data.pageText);
+  }, [ocrReviewPageQuery.data?.pageText]);
 
   const details = detailsQuery.data;
   const curriculumSets = setsQuery.data ?? [];
@@ -573,6 +585,35 @@ export default function CurriculumManagement() {
     }
   };
 
+  const handleCorrectOcrReviewPage = async () => {
+    if (!selectedSetId || !ocrReviewTarget || correctedOcrText.trim().length < 10) return;
+    try {
+      const result = await correctOcrReviewPage.mutateAsync({
+        curriculumSetId: selectedSetId,
+        sourceId: ocrReviewTarget.sourceId,
+        pageNumber: ocrReviewTarget.pageNumber,
+        correctedText: correctedOcrText.trim(),
+      });
+      await utils.curriculum.getManagementDetails.invalidate({ curriculumSetId: selectedSetId });
+      toast.success(`Page ${result.pageNumber} corrected and marked reviewed. Generation availability was not restored automatically.`);
+      setOcrReviewTarget(null);
+      setCorrectedOcrText("");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "The corrected OCR page could not be saved.");
+    }
+  };
+
+  const handleSetChapterGenerationAvailability = async (chapterId: number, isActive: boolean) => {
+    if (!selectedSetId) return;
+    try {
+      const chapter = await setChapterGenerationAvailability.mutateAsync({ curriculumSetId: selectedSetId, chapterId, isActive });
+      await utils.curriculum.getManagementDetails.invalidate({ curriculumSetId: selectedSetId });
+      toast.success(isActive ? `${chapter.title} is available for generation again.` : `${chapter.title} is excluded from teacher generation.`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "The chapter availability could not be updated.");
+    }
+  };
+
   const focusedStep = !focusedIntakeSetId ? 1 : !details?.sources.length ? 2 : 3;
 
   if (!authLoading && user?.role !== "admin") {
@@ -713,7 +754,7 @@ export default function CurriculumManagement() {
                   {[{ label: "Textbook source stored", done: details.readiness.sourceStored }, { label: "Textbook extraction completed", done: details.readiness.sourceExtracted }, { label: "OCR page-quality review complete", done: details.readiness.ocrReviewComplete }, { label: "At least one reviewed active chapter", done: details.readiness.reviewedActiveChapters > 0 }, { label: "Pattern profile reviewed (optional for book activation)", done: details.readiness.patternProfilesReviewed > 0 }].map((item) => <div key={item.label} className="flex items-center gap-2 rounded-lg border border-border/60 bg-background/70 px-3 py-2"><CheckCircle2 className={`h-4 w-4 shrink-0 ${item.done ? "text-emerald-600" : "text-muted-foreground"}`} /><span className={item.done ? "text-foreground" : "text-muted-foreground"}>{item.label}</span></div>)}
                 </CardContent>
               </Card>
-              {details.curriculumSet.status === "active" && <Card className="border-amber-400/35 bg-amber-50/60"><CardHeader><CardTitle className="text-base">Replace this active book safely</CardTitle><CardDescription>Creates a linked draft edition. Teachers keep using the active book until the replacement has been reviewed and deliberately activated.</CardDescription></CardHeader><CardContent className="grid gap-3 sm:grid-cols-[1fr_1fr_auto]"><Input aria-label="Replacement curriculum label" value={replacementLabel} onChange={(event) => setReplacementLabel(event.target.value)} placeholder="Replacement book title" /><Input aria-label="Replacement edition label" value={replacementEditionLabel} onChange={(event) => setReplacementEditionLabel(event.target.value)} placeholder="e.g. 2027 edition" /><Button type="button" variant="outline" onClick={handleCreateReplacement} disabled={replaceActiveSet.isPending}>Create replacement draft</Button></CardContent></Card>}
+              {details.curriculumSet.status === "active" && <Card id="replace-active-book" className="border-amber-400/35 bg-amber-50/60"><CardHeader><CardTitle className="text-base">Replace this active book safely</CardTitle><CardDescription>Creates a linked draft edition. Teachers keep using the active book until the replacement has been reviewed and deliberately activated.</CardDescription></CardHeader><CardContent className="grid gap-3 sm:grid-cols-[1fr_1fr_auto]"><Input aria-label="Replacement curriculum label" value={replacementLabel} onChange={(event) => setReplacementLabel(event.target.value)} placeholder="Replacement book title" /><Input aria-label="Replacement edition label" value={replacementEditionLabel} onChange={(event) => setReplacementEditionLabel(event.target.value)} placeholder="e.g. 2027 edition" /><Button type="button" variant="outline" onClick={handleCreateReplacement} disabled={replaceActiveSet.isPending}>Create replacement draft</Button></CardContent></Card>}
               <Card>
                 <CardHeader><CardTitle className="flex items-center gap-2"><Upload className="h-5 w-5 text-accent" />1. Add One Source File</CardTitle><CardDescription>{details.curriculumSet.label} is currently <strong>{details.curriculumSet.status}</strong>. PDF, TXT, and photographed textbook pages are stored securely; scans enter Urdu-and-English OCR review before activation.</CardDescription></CardHeader>
                 <CardContent className="space-y-4">
@@ -726,9 +767,17 @@ export default function CurriculumManagement() {
                 <CardHeader><CardTitle className="flex items-center gap-2 text-base"><AlertTriangle className="h-5 w-5 text-amber-700" />OCR pages need review</CardTitle><CardDescription>{details.readiness.weakOcrPages} page{details.readiness.weakOcrPages === 1 ? "" : "s"} had limited readable text. Confirm each against the stored PDF before activating this edition.</CardDescription></CardHeader>
                 <CardContent className="space-y-2">{details.sourcePageReviews.filter((page) => page.reviewStatus === "needs_review").map((page) => {
                   const source = details.sources.find((candidate) => candidate.id === page.sourceId);
-                  return <div key={`${page.sourceId}-${page.pageNumber}`} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-200 bg-background/80 p-3"><div><p className="text-sm font-semibold text-foreground">{source?.originalFileName ?? "Textbook source"} · page {page.pageNumber}</p><p className="mt-1 text-xs text-muted-foreground">Quality signal {page.qualityScore}/100{page.reviewReasons ? ` · ${page.reviewReasons}` : ""}</p></div><Button type="button" size="sm" variant="outline" onClick={() => handleReviewSourcePage(page.sourceId, page.pageNumber)} disabled={reviewSourcePage.isPending}>Mark reviewed</Button></div>;
+                  return <div key={`${page.sourceId}-${page.pageNumber}`} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-200 bg-background/80 p-3"><div><p className="text-sm font-semibold text-foreground">{source?.originalFileName ?? "Textbook source"} · page {page.pageNumber}</p><p className="mt-1 text-xs text-muted-foreground">Quality signal {page.qualityScore}/100{page.reviewReasons ? ` · ${page.reviewReasons}` : ""}</p></div><div className="flex flex-wrap gap-2"><Button type="button" size="sm" onClick={() => setOcrReviewTarget({ sourceId: page.sourceId, pageNumber: page.pageNumber })}>Compare and correct</Button><Button type="button" size="sm" variant="outline" onClick={() => handleReviewSourcePage(page.sourceId, page.pageNumber)} disabled={reviewSourcePage.isPending}>Mark reviewed without changes</Button></div></div>;
                 })}</CardContent>
               </Card>}
+              {ocrReviewTarget && <Card className="border-accent/35">
+                <CardHeader><CardTitle className="flex items-center gap-2 text-base"><FileText className="h-5 w-5 text-accent" />OCR page comparison</CardTitle><CardDescription>Compare the original page with its stored extraction. Save a correction only after checking every value, charge, equation, table cell, and diagram label. Saving changes this page only, marks it reviewed, and never restores generation automatically.</CardDescription></CardHeader>
+                <CardContent className="space-y-4">{ocrReviewPageQuery.isLoading ? <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Loading original page and extraction…</p> : ocrReviewPageQuery.error ? <p className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{ocrReviewPageQuery.error.message}</p> : ocrReviewPageQuery.data && <><div className="grid gap-4 lg:grid-cols-2"><section className="space-y-2"><p className="text-sm font-semibold text-foreground">Original page {ocrReviewPageQuery.data.pageNumber}</p><div className="overflow-hidden rounded-lg border border-border bg-muted/30"><img src={ocrReviewPageQuery.data.previewUrl} alt={`Original source page ${ocrReviewPageQuery.data.pageNumber}`} className="max-h-[38rem] w-full object-contain" /></div></section><section className="space-y-2"><Label htmlFor="corrected-ocr-page" className="text-sm font-semibold">Extracted text — edit only if needed</Label><Textarea id="corrected-ocr-page" value={correctedOcrText} onChange={(event) => setCorrectedOcrText(event.target.value)} className="min-h-[38rem] font-mono text-xs leading-5" /><p className="text-xs text-muted-foreground">Plain text is acceptable. Preserve every number, sign, ion charge, electron count, table heading, and reaction direction exactly as printed.</p></section></div><div className="flex flex-wrap justify-end gap-2 border-t border-border pt-3"><Button type="button" variant="outline" onClick={() => { setOcrReviewTarget(null); setCorrectedOcrText(""); }}>Cancel</Button>{details.curriculumSet.status === "active" && <Button type="button" variant="outline" onClick={() => document.getElementById("replace-active-book")?.scrollIntoView({ behavior: "smooth", block: "center" })}>Use replacement edition instead</Button>}<Button type="button" onClick={handleCorrectOcrReviewPage} disabled={correctOcrReviewPage.isPending || correctedOcrText.trim().length < 10}>{correctOcrReviewPage.isPending ? "Saving correction…" : "Save correction and mark reviewed"}</Button></div></>}</CardContent>
+              </Card>}
+              <Card>
+                <CardHeader><CardTitle className="flex items-center gap-2 text-base"><ShieldCheck className="h-5 w-5 text-accent" />Generation availability</CardTitle><CardDescription>Temporarily exclude a chapter from every teacher generation scope when its source evidence needs correction. Restoring a chapter remains blocked while a page inside its range still needs OCR review.</CardDescription></CardHeader>
+                <CardContent className="space-y-2">{details.chapters.map((chapter) => <div key={chapter.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/60 p-3"><div><p className="text-sm font-semibold text-foreground">{chapter.code ? `${chapter.code}: ` : ""}{chapter.title}</p><p className="mt-1 text-xs text-muted-foreground">{chapter.startPage && chapter.endPage ? `Pages ${chapter.startPage}–${chapter.endPage}` : "No page range recorded"} · {chapter.isActive === 1 ? "Available to teachers" : "Excluded from generation"}</p></div><Button type="button" size="sm" variant={chapter.isActive === 1 ? "outline" : "default"} onClick={() => handleSetChapterGenerationAvailability(chapter.id, chapter.isActive !== 1)} disabled={setChapterGenerationAvailability.isPending}>{chapter.isActive === 1 ? "Exclude from generation" : "Restore generation"}</Button></div>)}</CardContent>
+              </Card>
 
               <Card>
                 <CardHeader><CardTitle className="flex items-center gap-2"><BookMarked className="h-5 w-5 text-accent" />2. Propose Chapters from Extracted Text</CardTitle><CardDescription>For a new textbook edition, this reads only explicit <strong>CHAPTER</strong> or <strong>UNIT</strong> headings in the supplied extracted file. It never saves or activates chapters automatically.</CardDescription></CardHeader>

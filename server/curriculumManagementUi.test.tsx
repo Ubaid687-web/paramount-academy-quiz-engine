@@ -1,6 +1,6 @@
 import React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import CurriculumManagement from "../client/src/pages/CurriculumManagement";
 
 const noOpMutation = { mutateAsync: vi.fn(), isPending: false };
@@ -15,7 +15,7 @@ const managementDetails = {
   ocrJobs: [],
   paperPatternSources: [{ id: 3, originalFileName: "physics-2025.pdf", sourceKind: "past_paper", academicYear: "2025", extractionStatus: "extracted", status: "draft" }],
   paperPatternProfiles: [{ patternSourceId: 3, sectionAInstruction: "Attempt all MCQs.", sectionBInstruction: null, sectionCInstruction: null, mcqCount: 12, mcqMarksEach: 1, shortOrPairCount: null, shortMarksEach: null, longOrPairCount: null, longMarksEach: null, totalMarks: 60, durationMinutes: 180, orRule: null, profileEvidenceNotes: "Page 1 confirms the MCQ section.", reviewStatus: "reviewed" }],
-  chapters: [{ id: 4, code: "Ch. 1", title: "Motion", contentText: "A reviewed source chapter containing sufficient source content for the management interface." }],
+  chapters: [{ id: 4, sourceId: 2, code: "Ch. 1", title: "Motion", startPage: 1, endPage: 12, isActive: 1, contentText: "A reviewed source chapter containing sufficient source content for the management interface." }],
   chapterSegments: [],
   scopeTemplates: [],
   readiness: { sourceStored: true, sourceExtracted: true, reviewedActiveChapters: 1, weakOcrPages: 1, ocrReviewComplete: false, patternSourcesExtracted: 1, patternProfilesReviewed: 1 },
@@ -29,7 +29,7 @@ vi.mock("@/lib/trpc", () => ({
       listProgrammes: { useQuery: (_input?: unknown, options?: { enabled?: boolean }) => { queryOptions.listProgrammes.push(Boolean(options?.enabled)); return { data: [{ id: 11, board: "FBISE", grade: "10", subject: "physics", teacherLabel: "Physics", status: "ready" }], isLoading: false, error: null }; } },
       getManagementDetails: { useQuery: () => ({ data: managementDetails, isLoading: false }) },
       proposeChaptersFromSource: { useQuery: () => ({ data: undefined, isLoading: false, isFetching: false, error: null, refetch: vi.fn() }) },
-      createProgramme: { useMutation: () => noOpMutation }, activateProgramme: { useMutation: () => noOpMutation }, createSet: { useMutation: () => noOpMutation }, replaceActiveSet: { useMutation: () => noOpMutation }, ingestSource: { useMutation: () => noOpMutation }, ingestPaperPatternSource: { useMutation: () => noOpMutation }, activatePaperPatternSource: { useMutation: () => noOpMutation }, savePaperPatternProfile: { useMutation: () => noOpMutation }, createChapter: { useMutation: () => noOpMutation }, saveHalfChapterSegments: { useMutation: () => noOpMutation }, createScopeTemplate: { useMutation: () => noOpMutation }, activateSet: { useMutation: () => noOpMutation }, reviewSourcePage: { useMutation: () => noOpMutation },
+      createProgramme: { useMutation: () => noOpMutation }, activateProgramme: { useMutation: () => noOpMutation }, createSet: { useMutation: () => noOpMutation }, replaceActiveSet: { useMutation: () => noOpMutation }, ingestSource: { useMutation: () => noOpMutation }, ingestPaperPatternSource: { useMutation: () => noOpMutation }, activatePaperPatternSource: { useMutation: () => noOpMutation }, savePaperPatternProfile: { useMutation: () => noOpMutation }, createChapter: { useMutation: () => noOpMutation }, saveHalfChapterSegments: { useMutation: () => noOpMutation }, createScopeTemplate: { useMutation: () => noOpMutation }, activateSet: { useMutation: () => noOpMutation }, reviewSourcePage: { useMutation: () => noOpMutation }, getOcrReviewPage: { useQuery: () => ({ data: { pageNumber: 7, pageText: "Extracted source text for review.", previewUrl: "/api/ocr-review/source/2/page/7" }, isLoading: false, error: null }) }, correctOcrReviewPage: { useMutation: () => noOpMutation }, setChapterGenerationAvailability: { useMutation: () => noOpMutation },
     },
     staff: {
       listRoleDirectory: { useQuery: (_input?: unknown, options?: { enabled?: boolean }) => { queryOptions.staffDirectory.push(Boolean(options?.enabled)); return { data: [{ id: 1, name: "Portal Admin", email: "admin@example.com", role: "admin" }, { id: 2, name: "Teacher", email: "teacher@example.com", role: "teacher" }], isLoading: false, error: null, refetch: vi.fn() }; } },
@@ -56,7 +56,7 @@ vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 describe("Curriculum Library Release 1", () => {
   afterEach(() => { cleanup(); invalidate.mockReset(); queryOptions.listSets.length = 0; queryOptions.listProgrammes.length = 0; queryOptions.staffDirectory.length = 0; authMock.role = "admin"; window.history.pushState({}, "", "/"); });
 
-  it("shows evidence-based edition readiness and the linked reviewed paper-pattern profile", () => {
+  it("shows evidence-based edition readiness, OCR comparison controls, and the linked reviewed paper-pattern profile", async () => {
     render(<CurriculumManagement />);
 
     expect(screen.getByText("Add another grade or subject")).toBeTruthy();
@@ -68,13 +68,21 @@ describe("Curriculum Library Release 1", () => {
     expect(screen.getByLabelText("Enable Gemini fallback after managed-provider quota exhaustion")).toBeTruthy();
     expect(screen.getByText("AI generation history")).toBeTruthy();
     expect(screen.getByText(/Gemini fallback · fallback used/)).toBeTruthy();
+    expect(screen.getByText("Generation availability")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Exclude from generation" })).toBeTruthy();
     expect(screen.getByText("Edition readiness checklist")).toBeTruthy();
     expect(screen.getByText("Textbook extraction completed")).toBeTruthy();
     expect(screen.getByText("At least one reviewed active chapter")).toBeTruthy();
     expect(screen.getByText("Pattern profile reviewed (optional for book activation)")).toBeTruthy();
     expect(screen.getByText("OCR pages need review")).toBeTruthy();
     expect(screen.getByText(/physics\.pdf · page 7/i)).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Mark reviewed" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Compare and correct" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Mark reviewed without changes" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Compare and correct" }));
+    expect(await screen.findByText("OCR page comparison")).toBeTruthy();
+    expect(screen.getByAltText("Original source page 7")).toBeTruthy();
+    expect(screen.getByDisplayValue("Extracted source text for review.")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Save correction and mark reviewed" })).toBeTruthy();
     expect(screen.getByText("Review Paper-Pattern Profile")).toBeTruthy();
     expect((screen.getByLabelText("MCQ count") as HTMLInputElement).value).toBe("12");
     expect(screen.getByDisplayValue("Page 1 confirms the MCQ section.")).toBeTruthy();

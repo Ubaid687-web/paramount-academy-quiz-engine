@@ -599,6 +599,78 @@ export const appRouter = router({
         return reviewed;
       }),
 
+    getOcrReviewPage: adminProcedure
+      .input(z.object({ curriculumSetId: z.number().int().positive(), sourceId: z.number().int().positive(), pageNumber: z.number().int().positive() }))
+      .query(async ({ input }) => {
+        const { getCurriculumSource, listCurriculumSourcePageReviews } = await import("./db");
+        const { parseOcrTranscript } = await import("./ocrPipeline");
+        const source = await getCurriculumSource(input.sourceId);
+        if (!source || source.curriculumSetId !== input.curriculumSetId) {
+          throw new Error("The selected OCR page does not belong to this curriculum edition.");
+        }
+        const pageText = parseOcrTranscript(source.extractedText).find((page) => page.pageNumber === input.pageNumber)?.text;
+        const pageReview = (await listCurriculumSourcePageReviews([source.id])).find((page) => page.pageNumber === input.pageNumber);
+        if (!pageReview || pageText === undefined) throw new Error("The selected source page is not available for OCR review.");
+        return {
+          sourceId: source.id,
+          sourceName: source.originalFileName,
+          pageNumber: input.pageNumber,
+          pageText,
+          pageReview,
+          previewUrl: `/api/ocr-review/source/${source.id}/page/${input.pageNumber}`,
+        };
+      }),
+
+    correctOcrReviewPage: adminProcedure
+      .input(z.object({ curriculumSetId: z.number().int().positive(), sourceId: z.number().int().positive(), pageNumber: z.number().int().positive(), correctedText: z.string().min(10).max(30_000) }))
+      .mutation(async ({ ctx, input }) => {
+        const { getCurriculumSource, saveCorrectedCurriculumSourcePage } = await import("./db");
+        const { parseOcrTranscript, replaceOcrTranscriptPage } = await import("./ocrPipeline");
+        const source = await getCurriculumSource(input.sourceId);
+        if (!source || source.curriculumSetId !== input.curriculumSetId) {
+          throw new Error("The selected OCR page does not belong to this curriculum edition.");
+        }
+        const priorPage = parseOcrTranscript(source.extractedText).find((page) => page.pageNumber === input.pageNumber);
+        if (!priorPage) throw new Error("The selected OCR page is not available for correction.");
+        const correctedText = input.correctedText.replace(/\u0000/g, "").replace(/\r\n/g, "\n").trim();
+        const correctedTranscript = replaceOcrTranscriptPage(source.extractedText, input.pageNumber, correctedText);
+        const saved = await saveCorrectedCurriculumSourcePage({
+          sourceId: source.id,
+          pageNumber: input.pageNumber,
+          correctedTranscript,
+          correctedText,
+          reviewedBy: ctx.user.id,
+        });
+        return { ...saved, sourceId: source.id, pageNumber: input.pageNumber, automaticallyRestoredForGeneration: false };
+      }),
+
+    setChapterGenerationAvailability: adminProcedure
+      .input(z.object({ curriculumSetId: z.number().int().positive(), chapterId: z.number().int().positive(), isActive: z.boolean() }))
+      .mutation(async ({ input }) => {
+        const { getCurriculumChapter, listCurriculumSourcePageReviews, setCurriculumChapterGenerationAvailability } = await import("./db");
+        const chapter = await getCurriculumChapter(input.chapterId);
+        if (!chapter || chapter.curriculumSetId !== input.curriculumSetId) {
+          throw new Error("The selected chapter does not belong to this curriculum edition.");
+        }
+        if (input.isActive && chapter.startPage && chapter.endPage) {
+          const unresolved = (await listCurriculumSourcePageReviews([chapter.sourceId])).find((page) => (
+            page.reviewStatus === "needs_review"
+            && page.pageNumber >= chapter.startPage!
+            && page.pageNumber <= chapter.endPage!
+          ));
+          if (unresolved) {
+            throw new Error(`Page ${unresolved.pageNumber} still needs OCR review before ${chapter.title} can be restored for generation.`);
+          }
+        }
+        const updated = await setCurriculumChapterGenerationAvailability({
+          curriculumSetId: input.curriculumSetId,
+          chapterId: input.chapterId,
+          isActive: input.isActive ? 1 : 0,
+        });
+        if (!updated) throw new Error("The chapter availability could not be updated.");
+        return updated;
+      }),
+
     getActiveScopeCatalog: publicProcedure
       .input(programmeKeySchema)
       .query(async ({ input }) => {
