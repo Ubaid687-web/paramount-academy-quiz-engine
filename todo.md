@@ -538,3 +538,8 @@
 - [x] Recheck remaining OCR flags and preserve manual control over Unit 04 generation availability.
 - [x] Validate the resulting curriculum state and report the single remaining Portal Admin action, if any.
 - [x] Checkpoint the reviewed OCR correction record.
+
+## Phase 91: Chemistry Non-Substantive OCR Pages
+- [x] Verify pages 1 and 6 are the only remaining Chemistry OCR flags and have no chapter-bound generation role.
+- [x] Record the user-confirmed pages as reviewed without changing source or chapter content.
+- [x] Verify Chemistry OCR readiness and unchanged generation availability, then checkpoint the review record.
