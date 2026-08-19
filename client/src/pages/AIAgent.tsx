@@ -110,7 +110,7 @@ export default function AIAgent() {
   const [customInputMode, setCustomInputMode] = useState<CustomInputMode>("upload");
   const [settingsView, setSettingsView] = useState<"count" | "difficulty">("count");
   const [showSavedDraftLoader, setShowSavedDraftLoader] = useState(false);
-  const [showLeaveGenerationConfirm, setShowLeaveGenerationConfirm] = useState(false);
+  const [showLeaveGenerationConfirm, setShowLeaveGenerationConfirm] = useState(() => new URLSearchParams(window.location.search).get("previewLeaveConfirm") === "1");
 
   const readyProgrammes = readyProgrammesQuery.data ?? [];
   const programmeBoard = readyProgrammes.find((programme) => programme.board === (requestedBoard || "FBISE") && programme.grade === gradeLevel && programme.subject === subject)?.board ?? requestedBoard ?? "FBISE";
@@ -1312,7 +1312,7 @@ export default function AIAgent() {
         </div>
       </main>
       <AlertDialog open={showLeaveGenerationConfirm} onOpenChange={setShowLeaveGenerationConfirm}>
-        <AlertDialogContent>
+        <AlertDialogContent className="leave-generation-dialog-motion">
           <AlertDialogHeader>
             <AlertDialogTitle>Leave while MCQs are generating?</AlertDialogTitle>
             <AlertDialogDescription>

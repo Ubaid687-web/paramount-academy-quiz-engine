@@ -189,6 +189,7 @@ describe("AI quiz generation feedback", () => {
     fireEvent.click(screen.getByRole("button", { name: "Back to Quiz Centre" }));
 
     expect(screen.getByRole("alertdialog")).toHaveTextContent("Leave while MCQs are generating?");
+    expect(screen.getByRole("alertdialog")).toHaveClass("leave-generation-dialog-motion");
     const leaveActions = screen.getByTestId("leave-generation-actions");
     expect(leaveActions).toHaveClass("flex-col");
     expect(leaveActions).not.toHaveClass("flex-col-reverse");

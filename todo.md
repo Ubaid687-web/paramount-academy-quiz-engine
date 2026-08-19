@@ -567,3 +567,8 @@
 - [x] Capture the active-generation leave confirmation at a mobile viewport and inspect its spacing, text wrapping, action hierarchy, and clipping.
 - [x] Refine the dialog only if the mobile review identifies an evidenced layout or usability issue.
 - [x] Add or update responsive dialog regression coverage, validate, and publish the reviewed result.
+
+## Phase 96: Leave-Confirmation Entrance Motion
+- [x] Review the shared dialog animation primitives and preserve the reduced-motion path.
+- [x] Add a short fade-and-scale entrance to the active-generation leave confirmation without changing its layout or behavior.
+- [x] Add regression coverage, validate the motion refinement, and publish.
