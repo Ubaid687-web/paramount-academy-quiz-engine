@@ -550,3 +550,9 @@
 - [x] Map navigation dead ends and add consistent Back and return paths across teacher and Portal Admin workflows.
 - [x] Define a professional sign-in and approval-first staff access flow within supported authentication capabilities; do not add unsupported Google/email/phone credentials superficially.
 - [x] Implement the approved safe improvements, add regressions, run production validation, checkpoint, and report the verified limitations and findings.
+
+## Phase 93: Mobile Back-Navigation Review
+- [x] Map every mobile Back and return path across Quiz Centre, assessment builder, Portal Admin, and staff sign-in.
+- [x] Verify mobile touch targets, labels, destinations, and state restoration in each active workflow.
+- [x] Repair any evidenced mobile navigation gap and add focused regression coverage.
+- [x] Validate and report the intuitive mobile navigation result.
