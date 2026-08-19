@@ -51,7 +51,7 @@ vi.mock("@/lib/trpc", () => ({
     generation: {
       getProviderSettings: { useQuery: () => ({ data: { id: 1, geminiFallbackEnabled: 0, geminiCredentialConfigured: true }, isLoading: false, error: null }) },
       setGeminiFallbackEnabled: { useMutation: () => noOpMutation },
-      listHistory: { useQuery: () => ({ data: [{ id: 99, status: "completed", createdAt: new Date("2026-08-19T00:00:00.000Z"), completedAt: new Date("2026-08-19T00:00:02.000Z"), generationProvider: "gemini_byok", fallbackUsed: 1, primaryFailureType: "quota_exhaustion", retryAttempts: 2, managedRetryAttempts: 0, geminiRetryAttempts: 2, cacheHit: 0, promptSourceChars: 24000, promptInputChars: 12000, errorMessage: null, staffName: "Teacher", staffEmail: "teacher@example.com" }], isLoading: false, error: null }) },
+      listHistory: { useQuery: () => ({ data: [{ id: 99, status: "completed", createdAt: new Date("2026-08-19T00:00:00.000Z"), completedAt: new Date("2026-08-19T00:00:02.000Z"), generationProvider: "gemini_byok", fallbackUsed: 1, primaryFailureType: "quota_exhaustion", retryAttempts: 2, managedRetryAttempts: 0, geminiRetryAttempts: 2, cacheHit: 0, promptSourceChars: 24000, promptInputChars: 12000, providerInputTokens: 1200, providerOutputTokens: 450, providerCachedTokens: 600, providerTotalTokens: 1650, generationMode: "short", errorMessage: null, staffName: "Teacher", staffEmail: "teacher@example.com" }], isLoading: false, error: null }) },
       getStyleAnchor: { useQuery: () => ({ data: { anchor: { fingerprint: "anchor-v1", approvedExampleCount: 0, hasReviewedPatternRules: true }, approvedExamples: [], eligibleExamples: [] }, isLoading: false, error: null }) },
       approveStyleAnchorExample: { useMutation: () => noOpMutation },
       removeStyleAnchorExample: { useMutation: () => noOpMutation },
@@ -87,6 +87,7 @@ describe("Curriculum Library Release 1", () => {
     fireEvent.click(screen.getByRole("tab", { name: "History" }));
     expect(screen.getByText("AI generation history")).toBeTruthy();
     expect(screen.getByText(/Gemini fallback · fallback used/)).toBeTruthy();
+    expect(screen.getByText(/Provider tokens — input: 1,200 · output: 450 · total: 1,650 · cache hits: 600/)).toBeTruthy();
 
     fireEvent.click(screen.getByRole("tab", { name: /^Review/i }));
     expect(screen.getByText("Generation availability")).toBeTruthy();

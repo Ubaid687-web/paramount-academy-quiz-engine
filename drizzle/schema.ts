@@ -157,6 +157,11 @@ export const generationJobs = mysqlTable("generationJobs", {
   cacheHit: int("cacheHit").default(0).notNull(),
   promptSourceChars: int("promptSourceChars").default(0).notNull(),
   promptInputChars: int("promptInputChars").default(0).notNull(),
+  providerInputTokens: int("providerInputTokens"),
+  providerOutputTokens: int("providerOutputTokens"),
+  providerCachedTokens: int("providerCachedTokens"),
+  providerTotalTokens: int("providerTotalTokens"),
+  generationMode: mysqlEnum("generationMode", ["mcq", "short", "long"]),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   completedAt: timestamp("completedAt"),
 });

@@ -139,6 +139,18 @@ describe("AI Agent - MCQ Generation", () => {
     expect(mocks.invokeGenerationProvider).toHaveBeenCalledTimes(1);
   });
 
+  it("persists provider-reported token telemetry without changing MCQ validation", async () => {
+    mocks.invokeGenerationProvider.mockResolvedValue({
+      response: { choices: [{ message: { content: JSON.stringify({ mcqs: createValidMcqs(5) }) } }] },
+      telemetry: { provider: "managed_llm", fallbackUsed: false, primaryFailureType: null, managedRetryAttempts: 0, geminiRetryAttempts: 0, usage: { inputTokens: 800, outputTokens: 300, cachedTokens: 120, totalTokens: 1_100 } },
+    });
+
+    const result = await generateMCQsFromContent(1, validContent, 5, "balanced");
+
+    expect(result.draft.status).toBe("success");
+    expect(mocks.updateGenerationJob).toHaveBeenCalledWith(501, expect.objectContaining({ providerInputTokens: 800, providerOutputTokens: 300, providerCachedTokens: 120, providerTotalTokens: 1_100 }));
+  });
+
   it("persists the immutable chapter-scope selection on the generation job", async () => {
     const snapshot = {
       curriculumSet: { id: 77, grade: "10", subject: "physics", label: "FBISE Grade 10 Physics" },

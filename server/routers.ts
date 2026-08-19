@@ -6,6 +6,7 @@ import { ENV } from "./_core/env";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, publicProcedure, protectedProcedure, router, teacherProcedure } from "./_core/trpc";
 import { buildSharedStyleAnchor, type ReviewedPaperPatternGuidance } from "./styleAnchor";
+import type { ProviderTokenUsage } from "./generationProvider";
 
 function toViewerSafeQuiz<T extends { sourceContent?: unknown; scopeSnapshot?: unknown; generationMetadata?: unknown }>(quiz: T) {
   const { sourceContent: _sourceContent, scopeSnapshot: _scopeSnapshot, generationMetadata: _generationMetadata, ...safeQuiz } = quiz;
@@ -1115,11 +1116,12 @@ export const appRouter = router({
           requestFingerprint,
           promptSourceChars: contentText.length,
           promptInputChars: Math.min(contentText.length, Math.max(3_000, input.pairCount * 3_000)) + (sourceContext.styleAnchor?.instruction.length ?? 0),
+          generationMode: input.paperType,
           status: "processing",
           progress: 10,
         });
         let payload: import("@shared/assessmentDraftContract").ModeDraftPayload;
-        let providerTelemetry: { provider: "managed_llm" | "gemini_byok" | "mixed"; fallbackUsed: boolean; primaryFailureType: string | null; managedRetryAttempts: number; geminiRetryAttempts: number } = {
+        let providerTelemetry: { provider: "managed_llm" | "gemini_byok" | "mixed"; fallbackUsed: boolean; primaryFailureType: string | null; managedRetryAttempts: number; geminiRetryAttempts: number; usage?: ProviderTokenUsage } = {
           provider: "managed_llm", fallbackUsed: false, primaryFailureType: null, managedRetryAttempts: 0, geminiRetryAttempts: 0,
         };
         let cacheReused = false;
@@ -1194,6 +1196,10 @@ export const appRouter = router({
           managedRetryAttempts: providerTelemetry.managedRetryAttempts,
           geminiRetryAttempts: providerTelemetry.geminiRetryAttempts,
           retryAttempts: providerTelemetry.managedRetryAttempts + providerTelemetry.geminiRetryAttempts,
+          providerInputTokens: providerTelemetry.usage?.inputTokens ?? undefined,
+          providerOutputTokens: providerTelemetry.usage?.outputTokens ?? undefined,
+          providerCachedTokens: providerTelemetry.usage?.cachedTokens ?? undefined,
+          providerTotalTokens: providerTelemetry.usage?.totalTokens ?? undefined,
         });
         return { payload, assessmentDraftId, cacheReused, providerTelemetry, reviewWarning: cacheReused ? "Reused an exact recent draft; no new AI call was made. Portal Admin review and source verification are still required before issuing this paper." : "Draft only: Portal Admin review and source verification are required before issuing this paper." };
       }),

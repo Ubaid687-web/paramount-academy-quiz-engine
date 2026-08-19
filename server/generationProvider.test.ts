@@ -48,11 +48,12 @@ describe("generation provider fallback", () => {
   it("uses Gemini only after a managed-provider quota exhaustion and records isolated provider telemetry", async () => {
     mocks.invokeLLM.mockRejectedValue(new Error("LLM invoke failed: 412 Precondition Failed – usage exhausted"));
     const fetchMock = vi.mocked(fetch);
-    fetchMock.mockResolvedValue(new Response(JSON.stringify({ created: "2026-08-19T00:00:00Z", model: "gemini-3.6-flash", steps: [{ type: "model_output", content: [{ type: "text", text: '{"mcqs":[]}' }] }] }), { status: 200 }));
+    fetchMock.mockResolvedValue(new Response(JSON.stringify({ created: "2026-08-19T00:00:00Z", model: "gemini-3.6-flash", steps: [{ type: "model_output", content: [{ type: "text", text: '{"mcqs":[]}' }] }], usage: { total_input_tokens: 100, total_output_tokens: 20, total_cached_tokens: 60, total_tokens: 120 } }), { status: 200 }));
 
     const result = await invokeGenerationProvider(request);
 
     expect(result.telemetry).toMatchObject({ provider: "gemini_byok", fallbackUsed: true, primaryFailureType: "quota_exhaustion" });
+    expect(result.telemetry.usage).toEqual({ inputTokens: 100, outputTokens: 20, cachedTokens: 60, totalTokens: 120 });
     expect(mocks.openGenerationCircuit).toHaveBeenCalledWith(expect.objectContaining({ serviceKey: "managed_llm", failureType: "quota_exhaustion" }));
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock.mock.calls[0]?.[0]).toContain("/interactions");
@@ -75,5 +76,13 @@ describe("generation provider fallback", () => {
 
     expect(mocks.invokeLLM).not.toHaveBeenCalled();
     expect(result.telemetry.provider).toBe("gemini_byok");
+  });
+
+  it("carries managed-provider usage into telemetry without affecting provider selection", async () => {
+    mocks.invokeLLM.mockResolvedValue({ id: "managed-1", created: 1, model: "gemini-2.5-flash", choices: [{ index: 0, message: { role: "assistant", content: '{"mcqs":[]}' }, finish_reason: "stop" }], usage: { prompt_tokens: 70, completion_tokens: 30, cached_tokens: 10, total_tokens: 100 } });
+
+    const result = await invokeGenerationProvider(request);
+
+    expect(result.telemetry).toMatchObject({ provider: "managed_llm", fallbackUsed: false, usage: { inputTokens: 70, outputTokens: 30, cachedTokens: 10, totalTokens: 100 } });
   });
 });

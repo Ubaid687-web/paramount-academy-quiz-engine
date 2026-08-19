@@ -78,7 +78,7 @@ describe("printable paper history persistence", () => {
         { kind: "long", question: "Explain displacement.", conceptKey: "displacement", sourceReference: "Kinematics — displacement", learningObjective: "Explain displacement.", cognitiveLevel: "U", orGroup: 1, marks: 5, difficulty: "medium", expectedKeyPoints: ["A verified point."], markingRubric: [{ criterion: "Explains displacement.", marks: 5 }] },
         { kind: "long", question: "Explain acceleration.", conceptKey: "acceleration", sourceReference: "Kinematics — acceleration", learningObjective: "Explain acceleration.", cognitiveLevel: "U", orGroup: 1, marks: 5, difficulty: "medium", expectedKeyPoints: ["A verified point."], markingRubric: [{ criterion: "Explains acceleration.", marks: 5 }] },
         ], },
-      providerTelemetry: { provider: "gemini_byok", fallbackUsed: true, primaryFailureType: "quota_exhaustion", managedRetryAttempts: 0, geminiRetryAttempts: 1 },
+      providerTelemetry: { provider: "gemini_byok", fallbackUsed: true, primaryFailureType: "quota_exhaustion", managedRetryAttempts: 0, geminiRetryAttempts: 1, usage: { inputTokens: 750, outputTokens: 280, cachedTokens: 120, totalTokens: 1_030 } },
     });
     mocks.createAssessmentDraft.mockResolvedValue({ id: 901 });
 
@@ -98,6 +98,6 @@ describe("printable paper history persistence", () => {
       totalMarks: 5,
       draftPayload: expect.stringContaining("acceleration"),
     }));
-    expect(mocks.updateGenerationJob).toHaveBeenCalledWith(700, expect.objectContaining({ generationProvider: "gemini_byok", fallbackUsed: 1, primaryFailureType: "quota_exhaustion" }));
+    expect(mocks.updateGenerationJob).toHaveBeenCalledWith(700, expect.objectContaining({ generationProvider: "gemini_byok", fallbackUsed: 1, primaryFailureType: "quota_exhaustion", providerInputTokens: 750, providerOutputTokens: 280, providerCachedTokens: 120, providerTotalTokens: 1_030 }));
   });
 });

@@ -94,6 +94,7 @@ export type InvokeResult = {
     prompt_tokens: number;
     completion_tokens: number;
     total_tokens: number;
+    cached_tokens?: number;
   };
   retryAttempts?: number;
 };

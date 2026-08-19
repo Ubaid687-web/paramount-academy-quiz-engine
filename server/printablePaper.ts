@@ -2,7 +2,7 @@ import { validateAssessmentDraftPayload, type ModeDraftPayload } from "@shared/a
 import type { GenerationSourceContext } from "./aiAgent";
 import { chunkContent } from "./contentAnalyzer";
 import { buildPriorHistoryExclusion, validateDistinctOrPairCoverage, type QuestionCoverageRecord } from "./generationDiversity";
-import { invokeGenerationProvider, type GenerationProviderTelemetry } from "./generationProvider";
+import { invokeGenerationProvider, type GenerationProviderTelemetry, type ProviderTokenUsage } from "./generationProvider";
 import { buildSharedStyleAnchor } from "./styleAnchor";
 
 export type PrintablePaperType = "short" | "long";
@@ -17,6 +17,22 @@ export type GeneratedPrintablePaperResult = {
   payload: ModeDraftPayload;
   providerTelemetry: Omit<GenerationProviderTelemetry, "provider"> & { provider: "managed_llm" | "gemini_byok" | "mixed" };
 };
+
+function addProviderUsage(current: ProviderTokenUsage | undefined, next: ProviderTokenUsage | undefined): ProviderTokenUsage | undefined {
+  if (!next) return current;
+  const sumReported = (left: number | null | undefined, right: number | null) =>
+    left === null || left === undefined
+      ? right
+      : right === null
+        ? left
+        : left + right;
+  return {
+    inputTokens: sumReported(current?.inputTokens, next.inputTokens),
+    outputTokens: sumReported(current?.outputTokens, next.outputTokens),
+    cachedTokens: sumReported(current?.cachedTokens, next.cachedTokens),
+    totalTokens: sumReported(current?.totalTokens, next.totalTokens),
+  };
+}
 
 export const PRINTABLE_PAPER_PROMPT = `You are a careful FBISE-style assessment designer. Create a PRINTABLE paper draft grounded strictly and exclusively in the supplied source material.
 
@@ -195,6 +211,7 @@ export async function generatePrintablePaperFromContent(params: {
   let fallbackUsed = false;
   let primaryFailureType: string | null = null;
   const providers = new Set<"managed_llm" | "gemini_byok">();
+  let providerUsage: ProviderTokenUsage | undefined;
 
   for (let batchIndex = 0; batchIndex < batchPlan.length; batchIndex += 1) {
     const batchPairs = batchPlan[batchIndex]!;
@@ -220,6 +237,7 @@ export async function generatePrintablePaperFromContent(params: {
         geminiRetryAttempts += providerResult.telemetry.geminiRetryAttempts;
         fallbackUsed ||= providerResult.telemetry.fallbackUsed;
         primaryFailureType ||= providerResult.telemetry.primaryFailureType;
+        providerUsage = addProviderUsage(providerUsage, providerResult.telemetry.usage);
         const responseContent = providerResult.response.choices[0]?.message?.content;
         if (typeof responseContent !== "string") throw new Error("No structured batch output.");
         const candidate = normalizePrintablePaperPayload(paperType, title, JSON.parse(responseContent || "{}"));
@@ -267,6 +285,6 @@ export async function generatePrintablePaperFromContent(params: {
   const provider = providers.size > 1 ? "mixed" : providers.has("gemini_byok") ? "gemini_byok" : "managed_llm";
   return {
     payload,
-    providerTelemetry: { provider, fallbackUsed, primaryFailureType, managedRetryAttempts, geminiRetryAttempts },
+    providerTelemetry: { provider, fallbackUsed, primaryFailureType, managedRetryAttempts, geminiRetryAttempts, usage: providerUsage },
   };
 }

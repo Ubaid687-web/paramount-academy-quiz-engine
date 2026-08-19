@@ -77,6 +77,27 @@ describe("printable paper payload normalization", () => {
     expect(mocks.invokeGenerationProvider.mock.calls[0]?.[0].messages[0].content).toContain("SHARED FBISE STYLE ANCHOR");
   });
 
+  it("aggregates provider-reported usage across printable batches without fabricating absent metrics", async () => {
+    const topics = ["velocity", "acceleration", "momentum", "force", "work", "power", "energy", "pressure", "density", "impulse"];
+    const makeItem = (index: number) => ({ ...shortGenerated.items[0], question: `State the verified relationship for ${topics[index - 1]}.`, conceptKey: topics[index - 1], facetKey: "definition", answerTarget: `${topics[index - 1]} verified outcome`, sourceReference: `Verified ${topics[index - 1]} topic`, learningObjective: `State the verified relationship for ${topics[index - 1]}.` });
+    const firstBatch = Array.from({ length: 8 }, (_, index) => makeItem(index + 1));
+    const secondBatch = Array.from({ length: 2 }, (_, index) => makeItem(index + 9));
+    mocks.invokeGenerationProvider
+      .mockResolvedValueOnce({ response: { choices: [{ message: { content: JSON.stringify({ estimatedDurationMinutes: 30, items: firstBatch }) } }] }, telemetry: { provider: "managed_llm", fallbackUsed: false, primaryFailureType: null, managedRetryAttempts: 0, geminiRetryAttempts: 0, usage: { inputTokens: 100, outputTokens: 40, cachedTokens: null, totalTokens: 140 } } })
+      .mockResolvedValueOnce({ response: { choices: [{ message: { content: JSON.stringify({ estimatedDurationMinutes: 10, items: secondBatch }) } }] }, telemetry: { provider: "managed_llm", fallbackUsed: false, primaryFailureType: null, managedRetryAttempts: 0, geminiRetryAttempts: 0, usage: { inputTokens: 120, outputTokens: 50, cachedTokens: 30, totalTokens: 170 } } });
+
+    const paper = await generatePrintablePaperFromContent({
+      paperType: "short",
+      title: "Motion short paper",
+      contentText: ["Velocity Relationship explains displacement per unit time.", "Acceleration Relationship explains change in velocity per unit time.", "Momentum Relationship explains mass multiplied by velocity.", "Force Relationship explains mass multiplied by acceleration.", "Work Relationship explains force multiplied by displacement.", "Power Relationship explains work per unit time.", "Energy Relationship explains the capacity to perform work.", "Pressure Relationship explains force per unit area.", "Density Relationship explains mass per unit volume.", "Impulse Relationship explains force multiplied by time."].join("\n\n").repeat(6),
+      pairCount: 5,
+      difficulty: "balanced",
+      sourceContext: { sourceType: "curriculum_scope", sourceTitle: "Motion" },
+    });
+
+    expect(paper.providerTelemetry.usage).toEqual({ inputTokens: 220, outputTokens: 90, cachedTokens: 30, totalTokens: 310 });
+  });
+
   it("keeps one shared concept inside an OR pair while presenting two different assessment angles", async () => {
     const sameConceptPair = [
       { ...longGenerated.items[0], question: "Describe the construction of a Daniel cell.", conceptKey: "daniel cell", facetKey: "construction", answerTarget: "zinc and copper electrodes in electrolyte solutions", sourceReference: "Daniel cell", learningObjective: "Describe the construction of a Daniel cell." },

@@ -5,12 +5,20 @@ import { closeGenerationCircuit, getGenerationProviderSettings, getOpenGeneratio
 
 export type GenerationProvider = "managed_llm" | "gemini_byok";
 
+export type ProviderTokenUsage = {
+  inputTokens: number | null;
+  outputTokens: number | null;
+  cachedTokens: number | null;
+  totalTokens: number | null;
+};
+
 export type GenerationProviderTelemetry = {
   provider: GenerationProvider;
   fallbackUsed: boolean;
   primaryFailureType: string | null;
   managedRetryAttempts: number;
   geminiRetryAttempts: number;
+  usage?: ProviderTokenUsage;
 };
 
 export type ProviderGenerationResult = {
@@ -46,6 +54,16 @@ function isTransientStatus(status: number) {
   return [408, 425, 429, 500, 502, 503, 504].includes(status);
 }
 
+function toProviderTokenUsage(usage: InvokeResult["usage"] | undefined): ProviderTokenUsage | undefined {
+  if (!usage) return undefined;
+  return {
+    inputTokens: usage.prompt_tokens ?? null,
+    outputTokens: usage.completion_tokens ?? null,
+    cachedTokens: usage.cached_tokens ?? null,
+    totalTokens: usage.total_tokens ?? null,
+  };
+}
+
 async function invokeGeminiFallback(params: InvokeParams): Promise<InvokeResult> {
   if (!ENV.geminiApiKey) throw new Error("Gemini fallback is enabled but its secure server credential is unavailable.");
   const systemText = params.messages.filter((message) => message.role === "system").map((message) => messageText(message.content)).filter(Boolean).join("\n\n");
@@ -72,7 +90,7 @@ async function invokeGeminiFallback(params: InvokeParams): Promise<InvokeResult>
       continue;
     }
     if (response.ok) {
-      const payload = await response.json() as { id?: string; created?: string | number; model?: string; output_text?: string; steps?: Array<{ type?: string; content?: Array<{ type?: string; text?: string }> }>; usage?: { total_input_tokens?: number; total_output_tokens?: number; total_tokens?: number } };
+      const payload = await response.json() as { id?: string; created?: string | number; model?: string; output_text?: string; steps?: Array<{ type?: string; content?: Array<{ type?: string; text?: string }> }>; usage?: { total_input_tokens?: number; total_output_tokens?: number; total_cached_tokens?: number; total_tokens?: number } };
       const outputText = payload.output_text ?? payload.steps?.filter((step) => step.type === "model_output").flatMap((step) => step.content ?? []).filter((content) => content.type === "text").map((content) => content.text ?? "").join("");
       if (!outputText) throw new Error("Gemini fallback returned no structured content.");
       return {
@@ -80,7 +98,7 @@ async function invokeGeminiFallback(params: InvokeParams): Promise<InvokeResult>
         created: typeof payload.created === "string" ? Math.floor(new Date(payload.created).getTime() / 1_000) : payload.created ?? Math.floor(Date.now() / 1_000),
         model: payload.model ?? GEMINI_MODEL,
         choices: [{ index: 0, message: { role: "assistant", content: outputText }, finish_reason: "stop" }],
-        usage: payload.usage ? { prompt_tokens: payload.usage.total_input_tokens ?? 0, completion_tokens: payload.usage.total_output_tokens ?? 0, total_tokens: payload.usage.total_tokens ?? 0 } : undefined,
+        usage: payload.usage ? { prompt_tokens: payload.usage.total_input_tokens ?? 0, completion_tokens: payload.usage.total_output_tokens ?? 0, cached_tokens: payload.usage.total_cached_tokens, total_tokens: payload.usage.total_tokens ?? 0 } : undefined,
         retryAttempts: attempt,
       };
     }
@@ -102,7 +120,7 @@ async function tryGeminiFallback(params: InvokeParams, primaryFailureType: strin
   try {
     const response = await invokeGeminiFallback(params);
     await closeGenerationCircuit("gemini_byok");
-    return { response, telemetry: { provider: "gemini_byok", fallbackUsed: true, primaryFailureType, managedRetryAttempts, geminiRetryAttempts: response.retryAttempts ?? 0 } };
+    return { response, telemetry: { provider: "gemini_byok", fallbackUsed: true, primaryFailureType, managedRetryAttempts, geminiRetryAttempts: response.retryAttempts ?? 0, usage: toProviderTokenUsage(response.usage) } };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     const policy = classifyCircuitOpen(message);
@@ -122,7 +140,7 @@ export async function invokeGenerationProvider(params: InvokeParams): Promise<Pr
   try {
     const response = await invokeLLM(params);
     await closeGenerationCircuit("managed_llm");
-    return { response, telemetry: { provider: "managed_llm", fallbackUsed: false, primaryFailureType: null, managedRetryAttempts: response.retryAttempts ?? 0, geminiRetryAttempts: 0 } };
+    return { response, telemetry: { provider: "managed_llm", fallbackUsed: false, primaryFailureType: null, managedRetryAttempts: response.retryAttempts ?? 0, geminiRetryAttempts: 0, usage: toProviderTokenUsage(response.usage) } };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     const policy = classifyCircuitOpen(message);

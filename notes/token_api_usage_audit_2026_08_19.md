@@ -30,6 +30,10 @@ The current Gemini request already begins with system text, so it may receive im
 
 The managed provider has no prompt-caching control exposed through the project’s `invokeLLM` request type. Therefore, there is **no verified, safe explicit-cache implementation to add today**. Migrating Gemini to another API family merely for explicit caching would add provider and data-retention complexity, so it is rejected for now.
 
+### Practical implicit-cache guidance
+
+Implicit caching means repeated content **may** be discounted when the provider identifies a qualifying shared prefix; it is not an application-controlled promise. The practical, safeguard-preserving approach is to keep a stable static prefix before request-specific material, keep the full style anchor intact, and avoid changing its wording or ordering unnecessarily. The current Gemini transport already assembles one stable system-text prefix before the request conversation, so no prompt reordering is justified now. Token telemetry will distinguish actual Gemini cache-hit tokens from requests where the provider did not report a hit. The app will not sacrifice the current stateless `store: false` boundary merely to chase potentially higher cache-hit rates.
+
 ## 2. Source excerpt selection
 
 The 24,000-character MCQ cap does **not** rank source passages by semantic relevance. When a source is oversized, the implementation splits it into paragraphs or approximate sections and samples evenly from beginning to end. This improves breadth over a blind prefix truncation, but it can still omit the passage that best supports a particular assessable concept.

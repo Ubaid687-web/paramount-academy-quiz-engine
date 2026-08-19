@@ -592,3 +592,9 @@
 - [x] Map static prompts, source budgeting, output limits, cache/retry paths, provider request shapes, and recorded usage telemetry.
 - [x] Assess all five proposed optimization areas without altering safeguards, provider settings, prompts, limits, or production behavior.
 - [x] Deliver evidence-based findings and a safeguard-preserving recommendation; implement nothing until Portal Admin review.
+
+## Phase 101: Safe Token Optimization Roadmap
+- [x] Add additive, provider-reported token and cache-hit telemetry to generation records and Portal Admin history without changing generation behavior.
+- [x] Validate telemetry through MCQ and printable paths while preserving source grounding, validation, diversity, exclusion, retries, and cache correctness.
+- [ ] Assess an approved-scope source-span selector only after telemetry is available; retain current source budgets until provenance and coverage are demonstrated.
+- [ ] Revisit output limits only after measured data and separate Portal Admin approval.

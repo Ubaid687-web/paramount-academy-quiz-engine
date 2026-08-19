@@ -210,6 +210,7 @@ export async function generateMCQsFromContent(
       retryAttempts: (cachedTelemetry?.managedRetryAttempts ?? 0) + (cachedTelemetry?.geminiRetryAttempts ?? 0),
       promptSourceChars: budgetedSource.sourceChars,
       promptInputChars: 0,
+      generationMode: "mcq",
       status: "completed",
       progress: 100,
     });
@@ -235,6 +236,7 @@ export async function generateMCQsFromContent(
       requestFingerprint,
       promptSourceChars: budgetedSource.sourceChars,
       promptInputChars: budgetedSource.sentChars + sharedStyleAnchor.instruction.length,
+      generationMode: "mcq",
     status: "processing",
     progress: 10,
   });
@@ -362,6 +364,10 @@ REQUIREMENTS:
       primaryFailureType: providerTelemetry.primaryFailureType ?? undefined,
       managedRetryAttempts: providerTelemetry.managedRetryAttempts,
       geminiRetryAttempts: providerTelemetry.geminiRetryAttempts,
+      providerInputTokens: providerTelemetry.usage?.inputTokens ?? undefined,
+      providerOutputTokens: providerTelemetry.usage?.outputTokens ?? undefined,
+      providerCachedTokens: providerTelemetry.usage?.cachedTokens ?? undefined,
+      providerTotalTokens: providerTelemetry.usage?.totalTokens ?? undefined,
     });
 
     // Parse the response
