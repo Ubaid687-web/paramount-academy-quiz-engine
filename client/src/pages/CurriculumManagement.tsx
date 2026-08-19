@@ -655,6 +655,7 @@ export default function CurriculumManagement() {
             <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">Manage the approved books, editions, reviewed chapters, and reusable scopes that teachers can use for source-grounded assessment drafts.</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            <a href="#staff-access" className="inline-flex items-center rounded-xl border border-primary/20 bg-background px-3 py-2 text-xs font-extrabold text-primary no-underline transition-colors hover:bg-primary/[0.05]">Staff access</a>
             <a href="#programme-catalogue" className="inline-flex items-center rounded-xl border border-primary/20 bg-primary/[0.04] px-3 py-2 text-xs font-extrabold text-primary no-underline transition-colors hover:bg-primary/[0.09]">Add another grade</a>
             {details && <Button className="bg-primary text-primary-foreground hover:bg-primary/90" onClick={handleActivate} disabled={activateSet.isPending || details.curriculumSet.status === "active"}><CheckCircle2 className="mr-2 h-4 w-4" />{details.curriculumSet.status === "active" ? "Active Curriculum" : "Activate Curriculum"}</Button>}
           </div>
@@ -672,7 +673,7 @@ export default function CurriculumManagement() {
             </CardContent>
         </Card></section>
 
-        <section className="mb-6" aria-label="Staff access">
+        <section id="staff-access" className="mb-6 scroll-mt-24" aria-label="Staff access">
           <Card className="border-primary/15 bg-card">
             <CardHeader>
               <CardTitle>Staff access</CardTitle>

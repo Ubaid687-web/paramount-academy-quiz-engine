@@ -115,6 +115,25 @@ describe("Quiz Centre entry experience", () => {
     authUser = { role: "admin" };
     render(<QuizList />);
     expect(screen.getByRole("link", { name: "Curriculum" }).getAttribute("href")).toBe("/curriculum");
+    expect(screen.getByText("Portal Admin")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Open Portal Admin" }).getAttribute("href")).toBe("/curriculum");
+    expect(screen.getByRole("link", { name: "Staff access & roles" }).getAttribute("href")).toBe("/curriculum#staff-access");
+  });
+
+  it("explains the teacher and ordinary-user access boundaries without exposing Portal Admin navigation", () => {
+    setReadyGrade10();
+    authUser = { role: "teacher" };
+    render(<QuizList />);
+    expect(screen.getByText("Teacher")).toBeTruthy();
+    expect(screen.getByText(/Portal configuration stays with Portal Admin/i)).toBeTruthy();
+    expect(screen.queryByRole("link", { name: "Open Portal Admin" })).toBeNull();
+    cleanup();
+
+    authUser = { role: "user" };
+    render(<QuizList />);
+    expect(screen.getByText("No staff role yet")).toBeTruthy();
+    expect(screen.getByText(/approve your exact sign-in email/i)).toBeTruthy();
+    expect(screen.queryByRole("link", { name: "Curriculum" })).toBeNull();
   });
 
   it("shows a staff sign-in action before authentication without exposing Portal Admin controls", () => {

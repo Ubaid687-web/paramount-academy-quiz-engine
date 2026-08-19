@@ -61,7 +61,8 @@ describe("Curriculum Library Release 1", () => {
 
     expect(screen.getByText("Add another grade or subject")).toBeTruthy();
     expect(screen.getByRole("link", { name: "Add another grade" }).getAttribute("href")).toBe("#programme-catalogue");
-    expect(screen.getByText("Staff access")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Staff access" }).getAttribute("href")).toBe("#staff-access");
+    expect(screen.getAllByText("Staff access").length).toBeGreaterThan(1);
     expect(screen.getByText("Automatic teacher sign-in")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Approve teacher email" })).toBeTruthy();
     expect(screen.getByText("AI generation controls")).toBeTruthy();
