@@ -100,4 +100,31 @@ describe("printable paper history persistence", () => {
     }));
     expect(mocks.updateGenerationJob).toHaveBeenCalledWith(700, expect.objectContaining({ generationProvider: "gemini_byok", fallbackUsed: 1, primaryFailureType: "quota_exhaustion", providerInputTokens: 750, providerOutputTokens: 280, providerCachedTokens: 120, providerTotalTokens: 1_030 }));
   });
+
+  it("records private provider failure evidence when a printable request is rate-limited", async () => {
+    mocks.getActiveCurriculumScopeCatalog.mockResolvedValue({
+      curriculumSet: { id: 77, grade: "10", subject: "physics", label: "FBISE Grade 10 Physics", editionLabel: "2026" },
+      chapters: [{ id: 10, curriculumSetId: 77, sequence: 1, code: "Ch. 10", title: "Kinematics", blockKey: null, partKey: null, startPage: 1, endPage: 20, contentText: "Kinematics explains displacement, velocity, acceleration, and their relationships. ".repeat(4), isActive: 1 }],
+      segments: [], templates: [], templateMemberships: [],
+    });
+    mocks.listActiveAssessmentPatternSources.mockResolvedValue([]);
+    mocks.listReviewedAssessmentPatternGuidance.mockResolvedValue([]);
+    mocks.listApprovedStyleAnchorExamples.mockResolvedValue([]);
+    mocks.listPriorGeneratedQuestionHistory.mockResolvedValue([]);
+    mocks.generatePrintablePaperFromContent.mockRejectedValue(new Error("Gemini fallback invoke failed: 429 Too Many Requests – RESOURCE_EXHAUSTED. Please retry in 39 seconds."));
+
+    const caller = appRouter.createCaller(createAdminContext());
+
+    await expect(caller.aiAgent.generatePrintablePaper({
+      paperType: "short", title: "Kinematics revision", pairCount: 2, difficulty: "balanced",
+      scope: { grade: "10", subject: "physics", scopeType: "single_chapter", chapterIds: [10] },
+    })).rejects.toThrow("429");
+
+    expect(mocks.updateGenerationJob).toHaveBeenCalledWith(700, expect.objectContaining({
+      status: "failed",
+      generationProvider: "gemini_byok",
+      fallbackUsed: 1,
+      providerFailure: expect.stringContaining('"httpStatus":429'),
+    }));
+  });
 });

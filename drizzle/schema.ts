@@ -162,6 +162,7 @@ export const generationJobs = mysqlTable("generationJobs", {
   providerCachedTokens: int("providerCachedTokens"),
   providerTotalTokens: int("providerTotalTokens"),
   generationMode: mysqlEnum("generationMode", ["mcq", "short", "long"]),
+  providerFailure: text("providerFailure"), // Private JSON: provider, status, classification, retry/circuit facts. Never shown to teachers.
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   completedAt: timestamp("completedAt"),
 });

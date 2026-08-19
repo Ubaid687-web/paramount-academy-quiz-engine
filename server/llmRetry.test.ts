@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { invokeLLM } from "./_core/llm";
+import { LlmInvokeError, invokeLLM } from "./_core/llm";
 
 function installImmediateTimers() {
   return vi.spyOn(globalThis, "setTimeout").mockImplementation(((callback: TimerHandler) => {
@@ -35,7 +35,11 @@ describe("LLM transient retry transport", () => {
     vi.stubGlobal("fetch", fetchMock);
     installImmediateTimers();
 
-    await expect(invokeLLM({ messages: [{ role: "user", content: "Generate one MCQ." }] })).rejects.toThrow("412 Precondition Failed");
+    const failure = await invokeLLM({ messages: [{ role: "user", content: "Generate one MCQ." }] }).catch((error) => error);
+
+    expect(failure).toBeInstanceOf(LlmInvokeError);
+    expect(failure).toMatchObject({ httpStatus: 412, retryAttempts: 0, retryAfterSeconds: null });
+    expect(failure.message).toContain("412 Precondition Failed");
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

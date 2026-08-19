@@ -472,6 +472,7 @@ export async function listAdminGenerationHistory(limit = 30) {
     providerTotalTokens: generationJobs.providerTotalTokens,
     generationMode: generationJobs.generationMode,
     errorMessage: generationJobs.errorMessage,
+    providerFailure: generationJobs.providerFailure,
     sourceTitle: generationJobs.scopeType,
     staffName: users.name,
     staffEmail: users.email,

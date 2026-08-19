@@ -1155,7 +1155,19 @@ export const appRouter = router({
             });
           } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
-            await updateGenerationJob(generationJob.id, { status: "failed", errorMessage: message });
+            const { getProviderFailureEvidence } = await import("./generationProvider");
+            const providerFailure = getProviderFailureEvidence(error);
+            await updateGenerationJob(generationJob.id, {
+              status: "failed",
+              errorMessage: message,
+              providerFailure: providerFailure ? JSON.stringify(providerFailure) : undefined,
+              generationProvider: providerFailure?.provider,
+              fallbackUsed: providerFailure?.provider === "gemini_byok" ? 1 : undefined,
+              primaryFailureType: providerFailure?.primaryFailureType ?? undefined,
+              managedRetryAttempts: providerFailure?.provider === "managed_llm" ? providerFailure.retryAttempts : undefined,
+              geminiRetryAttempts: providerFailure?.provider === "gemini_byok" ? providerFailure.retryAttempts : undefined,
+              retryAttempts: providerFailure?.retryAttempts ?? undefined,
+            });
             throw error;
           }
         }

@@ -2,7 +2,7 @@ import { validateAssessmentDraftPayload, type ModeDraftPayload } from "@shared/a
 import type { GenerationSourceContext } from "./aiAgent";
 import { chunkContent } from "./contentAnalyzer";
 import { buildPriorHistoryExclusion, validateDistinctOrPairCoverage, type QuestionCoverageRecord } from "./generationDiversity";
-import { invokeGenerationProvider, type GenerationProviderTelemetry, type ProviderTokenUsage } from "./generationProvider";
+import { getProviderFailureEvidence, invokeGenerationProvider, type GenerationProviderTelemetry, type ProviderFailureEvidence, type ProviderTokenUsage } from "./generationProvider";
 import { buildSharedStyleAnchor } from "./styleAnchor";
 
 export type PrintablePaperType = "short" | "long";
@@ -17,6 +17,15 @@ export type GeneratedPrintablePaperResult = {
   payload: ModeDraftPayload;
   providerTelemetry: Omit<GenerationProviderTelemetry, "provider"> & { provider: "managed_llm" | "gemini_byok" | "mixed" };
 };
+
+type PrintableFailureError = Error & { providerFailure?: ProviderFailureEvidence };
+
+function preserveProviderFailure(message: string, error: unknown) {
+  const printableError = new Error(message) as PrintableFailureError;
+  const providerFailure = getProviderFailureEvidence(error);
+  if (providerFailure) printableError.providerFailure = providerFailure;
+  return printableError;
+}
 
 function addProviderUsage(current: ProviderTokenUsage | undefined, next: ProviderTokenUsage | undefined): ProviderTokenUsage | undefined {
   if (!next) return current;
@@ -177,10 +186,10 @@ export function buildPrintableUpstreamFailure(error: unknown): Error | null {
     const noNewCall = normalized.includes("no new model call")
       ? " No new model call was made while the short safety pause is active."
       : " The system retried automatically.";
-    return new Error(`The AI generation service is temporarily rate-limited.${noNewCall} Please wait a moment and try again. No printable paper draft was saved.`);
+    return preserveProviderFailure(`The AI generation service is temporarily rate-limited.${noNewCall} Please wait a moment and try again. No printable paper draft was saved.`, error);
   }
   if (message.includes("412") || normalized.includes("exhausted") || normalized.includes("billing") || normalized.includes("quota")) {
-    return new Error("The connected AI generation service has hit a usage quota limit or billing pause. Please check account credits or try again later when usage resets. No printable paper draft was saved.");
+    return preserveProviderFailure("The connected AI generation service has hit a usage quota limit or billing pause. Please check account credits or try again later when usage resets. No printable paper draft was saved.", error);
   }
   return null;
 }

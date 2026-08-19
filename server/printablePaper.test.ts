@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ invokeGenerationProvider: vi.fn() }));
-vi.mock("./generationProvider", () => ({ invokeGenerationProvider: mocks.invokeGenerationProvider }));
+const mocks = vi.hoisted(() => ({ invokeGenerationProvider: vi.fn(), getProviderFailureEvidence: vi.fn() }));
+vi.mock("./generationProvider", () => ({ invokeGenerationProvider: mocks.invokeGenerationProvider, getProviderFailureEvidence: mocks.getProviderFailureEvidence }));
 
 import { buildPrintablePairBatches, buildPrintablePaperPatternInstruction, buildPrintableUpstreamFailure, generatePrintablePaperFromContent, normalizePrintablePaperPayload } from "./printablePaper";
 
@@ -16,7 +16,10 @@ const longGenerated = {
 };
 
 describe("printable paper payload normalization", () => {
-  beforeEach(() => mocks.invokeGenerationProvider.mockReset());
+  beforeEach(() => {
+    mocks.invokeGenerationProvider.mockReset();
+    mocks.getProviderFailureEvidence.mockReset().mockReturnValue(null);
+  });
   it("uses paper-pattern records for wording and K/U/A guidance only, not answer evidence", () => {
     const instruction = buildPrintablePaperPatternInstruction({
       sourceType: "curriculum_scope",
@@ -59,11 +62,13 @@ describe("printable paper payload normalization", () => {
   });
 
   it("preserves a short provider rate-limit circuit as a temporary service state instead of blaming the approved source", () => {
+    mocks.getProviderFailureEvidence.mockReturnValue({ provider: "gemini_byok", classification: "transient_rate_limit", httpStatus: 429, retryAttempts: 1, circuitOpen: false, retryAfterSeconds: 39, primaryFailureType: "quota_exhaustion" });
     const failure = buildPrintableUpstreamFailure(new Error("Generation is temporarily paused because the AI service is rate-limited. No new model call was made. Try again after 2026-08-19T17:45:00.000Z."));
 
     expect(failure?.message).toMatch(/temporarily rate-limited/i);
     expect(failure?.message).toMatch(/no new model call was made/i);
     expect(failure?.message).not.toMatch(/approved material|narrower scope/i);
+    expect((failure as Error & { providerFailure?: { provider?: string; httpStatus?: number | null } }).providerFailure).toMatchObject({ provider: "gemini_byok", httpStatus: 429 });
   });
 
   it("passes the shared style anchor into printable generation before provider routing", async () => {

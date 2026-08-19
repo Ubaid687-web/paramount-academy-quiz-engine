@@ -99,6 +99,20 @@ export type InvokeResult = {
   retryAttempts?: number;
 };
 
+export class LlmInvokeError extends Error {
+  readonly httpStatus: number | null;
+  readonly retryAttempts: number;
+  readonly retryAfterSeconds: number | null;
+
+  constructor(message: string, details: { httpStatus?: number | null; retryAttempts?: number; retryAfterSeconds?: number | null } = {}) {
+    super(message);
+    this.name = "LlmInvokeError";
+    this.httpStatus = details.httpStatus ?? null;
+    this.retryAttempts = details.retryAttempts ?? 0;
+    this.retryAfterSeconds = details.retryAfterSeconds ?? null;
+  }
+}
+
 export type JsonSchema = {
   name: string;
   schema: Record<string, unknown>;
@@ -129,6 +143,11 @@ function retryDelayMs(attempt: number, retryAfterHeader: string | null): number 
   const exponentialDelay = Math.min(MAX_RETRY_DELAY_MS, INITIAL_RETRY_DELAY_MS * 2 ** attempt);
   const jitter = Math.floor(Math.random() * Math.max(1, Math.floor(exponentialDelay * 0.25)));
   return exponentialDelay + jitter;
+}
+
+function parseRetryAfterSeconds(retryAfterHeader: string | null): number | null {
+  const retryAfterSeconds = Number.parseFloat(retryAfterHeader ?? "");
+  return Number.isFinite(retryAfterSeconds) && retryAfterSeconds >= 0 ? retryAfterSeconds : null;
 }
 
 function waitForRetry(delayMs: number): Promise<void> {
@@ -351,7 +370,7 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     } catch (error) {
       if (attempt === MAX_TRANSIENT_RETRY_ATTEMPTS - 1) {
         const reason = error instanceof Error ? error.message : "Unknown network failure";
-        throw new Error(`LLM invoke failed after ${MAX_TRANSIENT_RETRY_ATTEMPTS} transient attempts: ${reason}`);
+        throw new LlmInvokeError(`LLM invoke failed after ${MAX_TRANSIENT_RETRY_ATTEMPTS} transient attempts: ${reason}`, { retryAttempts: attempt });
       }
 
       await waitForRetry(retryDelayMs(attempt, null));
@@ -368,7 +387,7 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     const errorMessage = `LLM invoke failed: ${response.status} ${response.statusText} – ${errorText}`;
     const canRetry = isTransientResponseStatus(response.status) && attempt < MAX_TRANSIENT_RETRY_ATTEMPTS - 1;
     if (!canRetry) {
-      throw new Error(errorMessage);
+      throw new LlmInvokeError(errorMessage, { httpStatus: response.status, retryAttempts: attempt, retryAfterSeconds: parseRetryAfterSeconds(response.headers.get("retry-after")) });
     }
 
     await waitForRetry(retryDelayMs(attempt, response.headers.get("retry-after")));

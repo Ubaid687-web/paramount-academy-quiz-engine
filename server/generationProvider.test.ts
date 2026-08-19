@@ -17,7 +17,7 @@ vi.mock("./db", () => ({
   closeGenerationCircuit: mocks.closeGenerationCircuit,
 }));
 
-import { invokeGenerationProvider, retryDelayMs } from "./generationProvider";
+import { getProviderFailureEvidence, invokeGenerationProvider, retryDelayMs } from "./generationProvider";
 
 const request = {
   messages: [
@@ -62,8 +62,11 @@ describe("generation provider fallback", () => {
   it("does not route a transient managed-provider rate limit to Gemini", async () => {
     mocks.invokeLLM.mockRejectedValue(new Error("LLM invoke failed: 429 Too Many Requests – rate limit"));
 
-    await expect(invokeGenerationProvider(request)).rejects.toThrow("429");
+    const failure = await invokeGenerationProvider(request).catch((error) => error);
 
+    expect(failure).toBeInstanceOf(Error);
+    expect(failure.message).toContain("429");
+    expect(getProviderFailureEvidence(failure)).toMatchObject({ provider: "managed_llm", classification: "transient_rate_limit", httpStatus: 429, retryAttempts: 0, circuitOpen: false });
     expect(vi.mocked(fetch)).not.toHaveBeenCalled();
     expect(mocks.openGenerationCircuit).toHaveBeenCalledWith(expect.objectContaining({ serviceKey: "managed_llm", failureType: "transient_rate_limit" }));
   });

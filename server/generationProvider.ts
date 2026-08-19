@@ -26,6 +26,18 @@ export type ProviderGenerationResult = {
   telemetry: GenerationProviderTelemetry;
 };
 
+export type ProviderFailureEvidence = {
+  provider: GenerationProvider;
+  classification: "transient_rate_limit" | "quota_exhaustion" | "provider_error";
+  httpStatus: number | null;
+  retryAttempts: number;
+  circuitOpen: boolean;
+  retryAfterSeconds: number | null;
+  primaryFailureType: string | null;
+};
+
+type ProviderFailureCarrier = Error & { providerFailure?: ProviderFailureEvidence };
+
 // One provider-directed retry avoids repeated early calls while keeping the request within a practical server timeout.
 const MAX_TRANSIENT_RETRY_ATTEMPTS = 2;
 const GEMINI_MODEL = "gemini-3.6-flash";
@@ -52,6 +64,42 @@ export function retryDelayMs(attempt: number, retryAfterHeader: string | null, p
 
 function isTransientStatus(status: number) {
   return [408, 425, 429, 500, 502, 503, 504].includes(status);
+}
+
+function parseRetryAfterSeconds(message: string) {
+  const match = message.match(/retry\s+(?:in|after)\s+([0-9]+(?:\.[0-9]+)?)\s*(?:s|seconds?)/i);
+  if (!match?.[1]) return null;
+  const seconds = Number.parseFloat(match[1]);
+  return Number.isFinite(seconds) && seconds >= 0 ? seconds : null;
+}
+
+export function getProviderFailureEvidence(error: unknown): ProviderFailureEvidence | null {
+  if (error && typeof error === "object" && "providerFailure" in error) {
+    const evidence = (error as ProviderFailureCarrier).providerFailure;
+    if (evidence) return evidence;
+  }
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  if (!message) return null;
+  const normalized = message.toLowerCase();
+  const transportDetails = error && typeof error === "object" ? error as { httpStatus?: unknown; retryAttempts?: unknown; retryAfterSeconds?: unknown } : undefined;
+  const statusMatch = message.match(/\b(408|412|425|429|500|502|503|504)\b/);
+  const httpStatus = typeof transportDetails?.httpStatus === "number" ? transportDetails.httpStatus : statusMatch ? Number.parseInt(statusMatch[1]!, 10) : null;
+  const policy = classifyCircuitOpen(message);
+  return {
+    provider: normalized.includes("gemini fallback") ? "gemini_byok" : "managed_llm",
+    classification: policy?.failureType === "quota_exhaustion" ? "quota_exhaustion" : policy?.failureType === "transient_rate_limit" || httpStatus === 429 ? "transient_rate_limit" : "provider_error",
+    httpStatus,
+    retryAttempts: typeof transportDetails?.retryAttempts === "number" ? transportDetails.retryAttempts : 0,
+    circuitOpen: normalized.includes("temporarily paused") && normalized.includes("no new model call"),
+    retryAfterSeconds: typeof transportDetails?.retryAfterSeconds === "number" ? transportDetails.retryAfterSeconds : parseRetryAfterSeconds(message),
+    primaryFailureType: null,
+  };
+}
+
+function createProviderFailureError(message: string, providerFailure: ProviderFailureEvidence) {
+  const error = new Error(message) as ProviderFailureCarrier;
+  error.providerFailure = providerFailure;
+  return error;
 }
 
 function toProviderTokenUsage(usage: InvokeResult["usage"] | undefined): ProviderTokenUsage | undefined {
@@ -104,7 +152,18 @@ async function invokeGeminiFallback(params: InvokeParams): Promise<InvokeResult>
     }
     const text = await response.text();
     const message = `Gemini fallback invoke failed: ${response.status} ${response.statusText} – ${text}`;
-    if (!isTransientStatus(response.status) || attempt === MAX_TRANSIENT_RETRY_ATTEMPTS - 1) throw new Error(message);
+    if (!isTransientStatus(response.status) || attempt === MAX_TRANSIENT_RETRY_ATTEMPTS - 1) {
+      const policy = classifyCircuitOpen(message);
+      throw createProviderFailureError(message, {
+        provider: "gemini_byok",
+        classification: policy?.failureType === "quota_exhaustion" ? "quota_exhaustion" : policy?.failureType === "transient_rate_limit" || response.status === 429 ? "transient_rate_limit" : "provider_error",
+        httpStatus: response.status,
+        retryAttempts: attempt,
+        circuitOpen: false,
+        retryAfterSeconds: parseRetryAfterSeconds(text),
+        primaryFailureType: null,
+      });
+    }
     await new Promise((resolve) => setTimeout(resolve, retryDelayMs(attempt, response.headers.get("retry-after"), text)));
   }
   throw new Error("Gemini fallback invoke failed after retry attempts were exhausted.");
@@ -116,7 +175,17 @@ function quotaFailureType(message: string) {
 
 async function tryGeminiFallback(params: InvokeParams, primaryFailureType: string, managedRetryAttempts: number): Promise<ProviderGenerationResult> {
   const openGeminiCircuit = await getOpenGenerationCircuit("gemini_byok");
-  if (openGeminiCircuit?.openUntil && openGeminiCircuit.failureType) throw new Error(circuitOpenMessage(openGeminiCircuit.failureType, openGeminiCircuit.openUntil));
+  if (openGeminiCircuit?.openUntil && openGeminiCircuit.failureType) {
+    throw createProviderFailureError(circuitOpenMessage(openGeminiCircuit.failureType, openGeminiCircuit.openUntil), {
+      provider: "gemini_byok",
+      classification: openGeminiCircuit.failureType === "quota_exhaustion" ? "quota_exhaustion" : "transient_rate_limit",
+      httpStatus: null,
+      retryAttempts: 0,
+      circuitOpen: true,
+      retryAfterSeconds: Math.max(0, Math.ceil((openGeminiCircuit.openUntil.getTime() - Date.now()) / 1_000)),
+      primaryFailureType,
+    });
+  }
   try {
     const response = await invokeGeminiFallback(params);
     await closeGenerationCircuit("gemini_byok");
@@ -125,7 +194,16 @@ async function tryGeminiFallback(params: InvokeParams, primaryFailureType: strin
     const message = error instanceof Error ? error.message : String(error);
     const policy = classifyCircuitOpen(message);
     if (policy) await openGenerationCircuit({ ...policy, serviceKey: "gemini_byok" });
-    throw error;
+    const evidence = getProviderFailureEvidence(error) ?? {
+      provider: "gemini_byok" as const,
+      classification: policy?.failureType === "quota_exhaustion" ? "quota_exhaustion" as const : policy?.failureType === "transient_rate_limit" ? "transient_rate_limit" as const : "provider_error" as const,
+      httpStatus: null,
+      retryAttempts: 0,
+      circuitOpen: false,
+      retryAfterSeconds: null,
+      primaryFailureType: null,
+    };
+    throw createProviderFailureError(message, { ...evidence, provider: "gemini_byok", primaryFailureType });
   }
 }
 
@@ -134,7 +212,17 @@ export async function invokeGenerationProvider(params: InvokeParams): Promise<Pr
   const managedCircuit = await getOpenGenerationCircuit("managed_llm");
   const fallbackEligible = settings.geminiFallbackEnabled === 1 && Boolean(ENV.geminiApiKey);
   if (managedCircuit?.openUntil && managedCircuit.failureType) {
-    if (managedCircuit.failureType !== "quota_exhaustion" || !fallbackEligible) throw new Error(circuitOpenMessage(managedCircuit.failureType, managedCircuit.openUntil));
+    if (managedCircuit.failureType !== "quota_exhaustion" || !fallbackEligible) {
+      throw createProviderFailureError(circuitOpenMessage(managedCircuit.failureType, managedCircuit.openUntil), {
+        provider: "managed_llm",
+        classification: managedCircuit.failureType === "quota_exhaustion" ? "quota_exhaustion" : "transient_rate_limit",
+        httpStatus: null,
+        retryAttempts: 0,
+        circuitOpen: true,
+        retryAfterSeconds: Math.max(0, Math.ceil((managedCircuit.openUntil.getTime() - Date.now()) / 1_000)),
+        primaryFailureType: null,
+      });
+    }
     return tryGeminiFallback(params, "quota_exhaustion", 0);
   }
   try {
@@ -145,7 +233,18 @@ export async function invokeGenerationProvider(params: InvokeParams): Promise<Pr
     const message = error instanceof Error ? error.message : String(error);
     const policy = classifyCircuitOpen(message);
     if (policy) await openGenerationCircuit({ ...policy, serviceKey: "managed_llm" });
-    if (!fallbackEligible || !quotaFailureType(message)) throw error;
+    if (!fallbackEligible || !quotaFailureType(message)) {
+      const evidence = getProviderFailureEvidence(error) ?? {
+        provider: "managed_llm" as const,
+        classification: policy?.failureType === "quota_exhaustion" ? "quota_exhaustion" as const : policy?.failureType === "transient_rate_limit" ? "transient_rate_limit" as const : "provider_error" as const,
+        httpStatus: null,
+        retryAttempts: 0,
+        circuitOpen: false,
+        retryAfterSeconds: null,
+        primaryFailureType: null,
+      };
+      throw createProviderFailureError(message, { ...evidence, provider: "managed_llm" });
+    }
     return tryGeminiFallback(params, "quota_exhaustion", 0);
   }
 }

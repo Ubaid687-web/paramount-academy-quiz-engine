@@ -603,3 +603,8 @@
 - [x] Inspect the reported short-paper job, selected approved scope, provider telemetry, and exact server error.
 - [x] Reproduce the failure and identify the specific capacity, provider, validation, or routing condition causing the generic mobile message.
 - [x] Repair only the evidenced defect, add regressions, validate the mobile flow, and publish.
+
+## Phase 103: Provider-Level Printable Failure Evidence
+- [x] Correlate the latest failed Computer Science short-paper request with generation-job data, provider circuit state, retries, batching, source size, and production logs.
+- [x] Determine from recorded evidence whether the managed provider, Gemini fallback, provider request limits, or application routing caused the failure.
+- [x] Add durable Portal Admin-visible failure evidence and repair only a demonstrated application-side defect; validate and publish.
