@@ -452,3 +452,8 @@
 - [x] Add a safe teacher role migration and preserve Portal Admin ownership during the transition.
 - [x] Enforce Portal Admin-only curriculum/OCR/activation access while allowing teachers to build and use approved assessments.
 - [x] Add role-boundary regressions, validate, checkpoint, and report the completed access-control release.
+
+## Phase 78: Portal Admin Future-Grade Workflow Verification
+- [x] Verify the Add another grade control, controlled programme creation, and focused subject-intake handoff as Portal Admin without activating a curriculum.
+- [x] Confirm the created programme remains intake-only until textbook review and explicit activation.
+- [x] Record the end-to-end result and any evidenced follow-up fixes.
