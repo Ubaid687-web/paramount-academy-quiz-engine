@@ -596,5 +596,5 @@
 ## Phase 101: Safe Token Optimization Roadmap
 - [x] Add additive, provider-reported token and cache-hit telemetry to generation records and Portal Admin history without changing generation behavior.
 - [x] Validate telemetry through MCQ and printable paths while preserving source grounding, validation, diversity, exclusion, retries, and cache correctness.
-- [ ] Assess an approved-scope source-span selector only after telemetry is available; retain current source budgets until provenance and coverage are demonstrated.
+- [x] Assess an approved-scope source-span selector only after telemetry is available; retain current source budgets until provenance and coverage are demonstrated.
 - [ ] Revisit output limits only after measured data and separate Portal Admin approval.
