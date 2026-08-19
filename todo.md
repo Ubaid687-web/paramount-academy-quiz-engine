@@ -524,3 +524,10 @@
 - [x] Recover the latest verified source release locally without rewriting project history.
 - [x] Restore the recovered release to the published project before making further Portal visibility changes.
 - [x] Verify the restored published build exposes the intended role-gated controls and maintains Gemini fallback generation.
+
+## Phase 89: Focused Portal Admin Workflow
+- [x] Audit every current Portal Admin section and classify it by immediate staff task, dependency, and frequency of use.
+- [x] Replace the long single-page administration layout with compact task navigation and focused progressive-disclosure sections.
+- [x] Keep curriculum intake, staff access, OCR review, generation controls, and readiness work reachable without showing unrelated details together.
+- [x] Add responsive UI regressions for task navigation and closed-section states, then validate the full build.
+- [ ] Publish the focused Portal workflow and document the intended staff path.

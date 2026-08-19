@@ -18,6 +18,10 @@ type Subject = string;
 type ScopeKind = "half_syllabus" | "block";
 type PaperPatternKind = "model_paper" | "past_paper";
 type PatternReviewStatus = "draft" | "reviewed" | "needs_revision";
+type PortalAdminPanel = "home" | "curriculum" | "review" | "staff" | "ai";
+type CurriculumTask = "edition" | "content" | "scopes";
+type ReviewTask = "source" | "pattern";
+type AiTask = "routing" | "style" | "history";
 type PaperPatternProfileForm = {
   sectionAInstruction: string;
   sectionBInstruction: string;
@@ -103,6 +107,10 @@ export default function CurriculumManagement() {
   const [styleAnchorProgrammeKey, setStyleAnchorProgrammeKey] = useState("");
   const [ocrReviewTarget, setOcrReviewTarget] = useState<{ sourceId: number; pageNumber: number } | null>(null);
   const [correctedOcrText, setCorrectedOcrText] = useState("");
+  const [activePortalPanel, setActivePortalPanel] = useState<PortalAdminPanel>(() => requestedSetId ? "review" : "home");
+  const [activeCurriculumTask, setActiveCurriculumTask] = useState<CurriculumTask>("edition");
+  const [activeReviewTask, setActiveReviewTask] = useState<ReviewTask>("source");
+  const [activeAiTask, setActiveAiTask] = useState<AiTask>("routing");
 
   const setsQuery = trpc.curriculum.listSets.useQuery(undefined, { enabled: isPortalAdmin });
   const programmesQuery = trpc.curriculum.listProgrammes.useQuery(undefined, { enabled: isPortalAdmin });
@@ -172,6 +180,10 @@ export default function CurriculumManagement() {
   useEffect(() => {
     if (ocrReviewPageQuery.data?.pageText !== undefined) setCorrectedOcrText(ocrReviewPageQuery.data.pageText);
   }, [ocrReviewPageQuery.data?.pageText]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.location.hash === "#staff-access") setActivePortalPanel("staff");
+  }, []);
 
   const details = detailsQuery.data;
   const curriculumSets = setsQuery.data ?? [];
@@ -652,28 +664,40 @@ export default function CurriculumManagement() {
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">Portal Admin</p>
             <h1 className="mt-2 text-3xl font-bold text-foreground">Curriculum Library</h1>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">Manage the approved books, editions, reviewed chapters, and reusable scopes that teachers can use for source-grounded assessment drafts.</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <a href="#staff-access" className="inline-flex items-center rounded-xl border border-primary/20 bg-background px-3 py-2 text-xs font-extrabold text-primary no-underline transition-colors hover:bg-primary/[0.05]">Staff access</a>
-            <a href="#programme-catalogue" className="inline-flex items-center rounded-xl border border-primary/20 bg-primary/[0.04] px-3 py-2 text-xs font-extrabold text-primary no-underline transition-colors hover:bg-primary/[0.09]">Add another grade</a>
-            {details && <Button className="bg-primary text-primary-foreground hover:bg-primary/90" onClick={handleActivate} disabled={activateSet.isPending || details.curriculumSet.status === "active"}><CheckCircle2 className="mr-2 h-4 w-4" />{details.curriculumSet.status === "active" ? "Active Curriculum" : "Activate Curriculum"}</Button>}
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">Choose one task. Only the controls needed for that work are shown.</p>
           </div>
           </div>
         </div>
 
         {setsQuery.error && <Card className="mb-6 border-destructive/50"><CardContent className="py-4 text-sm text-destructive">Curriculum management is restricted to administrators. Sign in with the Paramount Academy administrator account, then return to this page.</CardContent></Card>}
 
-        <section id="programme-catalogue" className="mb-6 scroll-mt-24" aria-label="Add another grade"><Card className="border-primary/20 bg-primary/[0.025]">
+        <nav aria-label="Portal Admin tasks" role="tablist" className="mb-6 grid grid-cols-2 gap-2 rounded-2xl border border-border/80 bg-card p-2 shadow-sm sm:grid-cols-5">
+          {([
+            { id: "home", label: "Overview", hint: "Choose a task" },
+            { id: "curriculum", label: "Curriculum", hint: "Books & chapters" },
+            { id: "review", label: "Review", hint: "Quality & patterns" },
+            { id: "staff", label: "Staff", hint: "Teacher access" },
+            { id: "ai", label: "AI", hint: "Fallback & style" },
+          ] as const).map((item) => <button key={item.id} type="button" role="tab" aria-selected={activePortalPanel === item.id} onClick={() => setActivePortalPanel(item.id)} className={`rounded-xl px-3 py-2.5 text-left transition-colors ${activePortalPanel === item.id ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}><span className="block text-sm font-extrabold">{item.label}</span><span className={`mt-0.5 block text-[11px] ${activePortalPanel === item.id ? "text-primary-foreground/75" : "text-muted-foreground"}`}>{item.hint}</span></button>)}
+        </nav>
+
+        {activePortalPanel === "home" && <section aria-label="Portal Admin overview" className="mx-auto max-w-4xl space-y-4">
+          <div className="rounded-2xl border border-primary/15 bg-primary/[0.025] p-5 sm:p-6"><p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-primary">Start here</p><h2 className="mt-2 text-2xl font-extrabold tracking-[-0.04em] text-foreground">What do you need to manage?</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">Open one focused workspace. Unrelated forms stay out of view.</p></div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {[{ id: "curriculum", title: "Books and curriculum", body: "Create an edition, upload a book, review chapters, or create a reusable scope." }, { id: "review", title: "Quality review", body: "Resolve OCR pages, control chapter availability, and review paper patterns." }, { id: "staff", title: "Teacher access", body: "Approve teacher emails and manage the signed-in staff directory." }, { id: "ai", title: "AI generation", body: "Control Gemini fallback, style examples, and operational history." }].map((task) => <button key={task.id} type="button" onClick={() => setActivePortalPanel(task.id as PortalAdminPanel)} className="rounded-2xl border border-border/80 bg-card p-5 text-left shadow-sm transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-md active:scale-[0.98]"><p className="text-base font-extrabold text-foreground">{task.title}</p><p className="mt-2 text-sm leading-6 text-muted-foreground">{task.body}</p><p className="mt-4 text-sm font-extrabold text-primary">Open workspace →</p></button>)}
+          </div>
+        </section>}
+
+        {activePortalPanel === "curriculum" && <section id="programme-catalogue" className="mb-6 scroll-mt-24" aria-label="Add another grade"><Card className="border-primary/20 bg-primary/[0.025]">
           <CardHeader><CardTitle className="flex items-center gap-2"><BookMarked className="h-5 w-5 text-primary" />Add another grade or subject</CardTitle><CardDescription>Create one separate programme for each board, grade, and subject. Use this Portal Admin control for a future grade; it remains intake-only until its own textbook chapters are reviewed. Grade 9 never shares Grade 10 evidence.</CardDescription></CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[130px_100px_1fr_1fr_auto]"><Input aria-label="Programme board" value={programmeBoard} onChange={(event) => setProgrammeBoard(event.target.value)} placeholder="Board" /><Input aria-label="Programme grade" value={programmeGrade} onChange={(event) => setProgrammeGrade(event.target.value)} placeholder="Grade" /><Input aria-label="Programme subject identifier" value={programmeSubject} onChange={(event) => setProgrammeSubject(event.target.value)} placeholder="Subject identifier" /><Input aria-label="Programme teacher label" value={programmeTeacherLabel} onChange={(event) => setProgrammeTeacherLabel(event.target.value)} placeholder="Teacher-facing subject label" /><Button type="button" onClick={handleCreateProgramme} disabled={createProgramme.isPending}><Plus className="mr-2 h-4 w-4" />Add programme</Button></div>
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{programmes.map((programme) => { const hasActiveEdition = curriculumSets.some((set) => set.board === programme.board && set.grade === programme.grade && set.subject === programme.subject && set.status === "active"); return <div key={programme.id} className="rounded-xl border border-border/70 bg-background/75 p-4"><div className="flex items-start justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[0.12em] text-primary">{programme.board} · Grade {programme.grade}</p><p className="mt-1 font-semibold text-foreground">{programme.teacherLabel}</p><p className="mt-1 text-xs text-muted-foreground">{programme.subject}</p></div><span className={`rounded-full px-2 py-1 text-[11px] font-bold ${programme.status === "ready" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>{programme.status === "ready" ? "teacher-ready" : "intake only"}</span></div><p className="mt-3 text-xs text-muted-foreground">{hasActiveEdition ? "Reviewed active edition available" : "Requires an active reviewed edition"}</p>{programme.status === "intake_only" && <Button type="button" size="sm" variant="outline" className="mt-3" onClick={() => handleActivateProgramme(programme.id)} disabled={!hasActiveEdition || activateProgramme.isPending}>Activate programme</Button>}</div>; })}</div>
               {!programmes.length && !programmesQuery.isLoading && <p className="rounded-lg border border-dashed border-border p-3 text-sm text-muted-foreground">No programmes exist yet. Create one above before creating its first curriculum edition.</p>}
             </CardContent>
-        </Card></section>
+        </Card></section>}
 
-        <section id="staff-access" className="mb-6 scroll-mt-24" aria-label="Staff access">
+        {activePortalPanel === "staff" && <section id="staff-access" className="mb-6 scroll-mt-24" aria-label="Staff access">
           <Card className="border-primary/15 bg-card">
             <CardHeader>
               <CardTitle>Staff access</CardTitle>
@@ -692,32 +716,34 @@ export default function CurriculumManagement() {
               {staffDirectoryQuery.isLoading ? <p className="text-sm text-muted-foreground">Loading staff access…</p> : staffDirectoryQuery.error ? <p className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">Staff roles could not be loaded.</p> : <div className="space-y-2">{(staffDirectoryQuery.data ?? []).map((staffMember) => <div key={staffMember.id} className="flex flex-col gap-3 rounded-xl border border-border/60 p-3 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="truncate text-sm font-bold text-foreground">{staffMember.name || staffMember.email || "Unlabelled account"}</p><p className="mt-1 text-xs text-muted-foreground">{staffMember.email || "No email available"} · {staffMember.role === "admin" ? "Portal Admin" : staffMember.role === "teacher" ? "Teacher" : "No staff role"}</p></div><Select value={staffMember.role} onValueChange={(value) => { if (value === "teacher" || value === "admin") void handleStaffRoleChange(staffMember.id, value); }} disabled={updateStaffRole.isPending}><SelectTrigger aria-label={`Role for ${staffMember.name || staffMember.email || `account ${staffMember.id}`}`} className="w-full sm:w-44"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="user" disabled>No staff access</SelectItem><SelectItem value="teacher">Teacher</SelectItem><SelectItem value="admin">Portal Admin</SelectItem></SelectContent></Select></div>)}</div>}
             </CardContent>
           </Card>
-        </section>
+        </section>}
 
-        <section className="mb-6" aria-label="AI generation controls">
+        {activePortalPanel === "ai" && <section className="mb-6" aria-label="AI generation controls">
           <Card className="border-primary/15 bg-card">
             <CardHeader>
               <CardTitle>AI generation controls</CardTitle>
               <CardDescription>Control the secondary provider without exposing its credential. Gemini is attempted only after the managed provider reports a quota or usage-exhaustion condition; rate limits, source errors, validation failures, and ordinary provider errors do not switch providers.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
-              <div className="flex items-start gap-3 rounded-xl border border-primary/15 bg-primary/[0.03] p-4">
+              <div className="grid grid-cols-3 gap-2 rounded-xl border border-border/70 bg-muted/20 p-1.5" role="tablist" aria-label="AI generation tasks">{(["routing", "style", "history"] as const).map((task) => <button key={task} type="button" role="tab" aria-selected={activeAiTask === task} onClick={() => setActiveAiTask(task)} className={`rounded-lg px-2 py-2 text-xs font-extrabold transition-colors ${activeAiTask === task ? "bg-background text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>{task === "routing" ? "Fallback" : task === "style" ? "Style" : "History"}</button>)}</div>
+              {activeAiTask === "routing" && <div className="flex items-start gap-3 rounded-xl border border-primary/15 bg-primary/[0.03] p-4">
                 <Checkbox id="gemini-fallback-enabled" checked={generationSettingsQuery.data?.geminiFallbackEnabled === 1} onCheckedChange={(checked) => void handleGeminiFallbackChange(checked === true)} disabled={generationSettingsQuery.isLoading || setGeminiFallbackEnabled.isPending || !generationSettingsQuery.data?.geminiCredentialConfigured} />
                 <div className="min-w-0"><Label htmlFor="gemini-fallback-enabled" className="font-semibold text-foreground">Enable Gemini fallback after managed-provider quota exhaustion</Label><p className="mt-1 text-sm text-muted-foreground">Credential status: {generationSettingsQuery.isLoading ? "checking…" : generationSettingsQuery.data?.geminiCredentialConfigured ? "configured securely" : "not configured"}. {generationSettingsQuery.data?.geminiCredentialConfigured ? "Disable this at any time to keep generation on the managed provider only." : "The switch remains unavailable until a server-side credential is configured."}</p></div>
-              </div>
-              <div className="rounded-xl border border-border/70 bg-background/50 p-4">
+              </div>}
+              {activeAiTask === "style" && <div className="rounded-xl border border-border/70 bg-background/50 p-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><p className="font-semibold text-foreground">Shared FBISE style anchor</p><p className="mt-1 text-sm text-muted-foreground">Applied to both providers on every generation request. Reviewed paper profiles set the rules; optional examples guide phrasing and layout only, never facts or answers.</p></div><span className="rounded-full bg-primary/10 px-2 py-1 text-[11px] font-bold uppercase tracking-[0.1em] text-primary">{styleAnchorQuery.data?.anchor.approvedExampleCount ?? 0}/4 examples</span></div>
                 <div className="mt-3"><Label htmlFor="style-anchor-programme" className="text-xs font-semibold">Programme</Label><Select value={styleAnchorProgrammeKey || "__none__"} onValueChange={setStyleAnchorProgrammeKey} disabled={!programmes.length}><SelectTrigger id="style-anchor-programme" className="mt-1"><SelectValue placeholder="Select a programme" /></SelectTrigger><SelectContent>{programmes.map((programme) => <SelectItem key={programme.id} value={`${programme.board}|${programme.grade}|${programme.subject}`}>Grade {programme.grade} · {formatSubjectLabel(programme.subject)}</SelectItem>)}</SelectContent></Select></div>
                 {!styleAnchorProgramme ? <p className="mt-3 text-sm text-muted-foreground">Create a programme first to review its style anchor.</p> : styleAnchorQuery.isLoading ? <p className="mt-3 text-sm text-muted-foreground">Loading style-anchor evidence…</p> : styleAnchorQuery.error ? <p className="mt-3 text-sm text-destructive">Style-anchor evidence could not be loaded.</p> : <><p className="mt-3 text-xs text-muted-foreground">Reviewed structure rules: {styleAnchorQuery.data?.anchor.hasReviewedPatternRules ? "available" : "not yet available"}. Generation still works without examples.</p><div className="mt-3 space-y-2">{(styleAnchorQuery.data?.approvedExamples ?? []).map((example) => <div key={example.questionId} className="flex flex-col gap-2 rounded-lg border border-primary/15 bg-primary/[0.025] p-3 sm:flex-row sm:items-center sm:justify-between"><p className="min-w-0 text-sm font-medium text-foreground">{example.questionText}</p><Button type="button" size="sm" variant="outline" onClick={() => void handleRemoveStyleAnchorExample(example.questionId)} disabled={removeStyleAnchorExample.isPending}>Remove</Button></div>)}{(styleAnchorQuery.data?.approvedExamples ?? []).length === 0 && <p className="rounded-lg border border-dashed border-border p-3 text-sm text-muted-foreground">No approved examples yet. This is normal for first use; reviewed style rules remain active.</p>}</div>{(styleAnchorQuery.data?.anchor.approvedExampleCount ?? 0) < 4 && <div className="mt-3"><p className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">Eligible published, textbook-cited questions</p><div className="mt-2 space-y-2">{(styleAnchorQuery.data?.eligibleExamples ?? []).filter((example) => !(styleAnchorQuery.data?.approvedExamples ?? []).some((approved) => approved.questionId === example.questionId)).slice(0, 8).map((example) => <div key={example.questionId} className="flex flex-col gap-2 rounded-lg border border-border/60 p-3 sm:flex-row sm:items-center sm:justify-between"><p className="min-w-0 text-sm text-foreground">{example.questionText}</p><Button type="button" size="sm" onClick={() => void handleApproveStyleAnchorExample(example.questionId)} disabled={approveStyleAnchorExample.isPending}>Use as style example</Button></div>)}{(styleAnchorQuery.data?.eligibleExamples ?? []).length === 0 && <p className="text-sm text-muted-foreground">No published, textbook-cited questions are available yet for this programme.</p>}</div></div>}</>}
-              </div>
-              <div>
+              </div>}
+              {activeAiTask === "history" && <div>
                 <div className="flex flex-wrap items-baseline justify-between gap-2"><div><p className="font-semibold text-foreground">AI generation history</p><p className="mt-1 text-sm text-muted-foreground">Recent generation outcomes, provider routing, cache reuse, retries, and bounded prompt sizes. This stores operational metadata, not a Gemini credential.</p></div><span className="text-xs font-bold uppercase tracking-[0.12em] text-primary">Latest 30</span></div>
                 {generationHistoryQuery.isLoading ? <p className="mt-3 text-sm text-muted-foreground">Loading generation history…</p> : generationHistoryQuery.error ? <p className="mt-3 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">Generation history could not be loaded.</p> : (generationHistoryQuery.data ?? []).length === 0 ? <p className="mt-3 rounded-lg border border-dashed border-border p-3 text-sm text-muted-foreground">No generation jobs have been recorded yet.</p> : <div className="mt-3 space-y-2">{[...(generationHistoryQuery.data ?? [])].reverse().map((entry) => <div key={entry.id} className="rounded-xl border border-border/60 bg-background/70 p-3"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-sm font-bold text-foreground">{entry.generationProvider === "gemini_byok" ? "Gemini fallback" : entry.generationProvider === "mixed" ? "Managed + Gemini" : "Managed provider"}{entry.fallbackUsed ? " · fallback used" : ""}</p><p className="mt-1 text-xs text-muted-foreground">{entry.staffName || entry.staffEmail || "Teacher account"} · {new Date(entry.createdAt).toLocaleString()} · {entry.status}</p></div><span className={`rounded-full px-2 py-1 text-[11px] font-bold ${entry.status === "completed" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>{entry.cacheHit ? "cache reused" : "new generation"}</span></div><p className="mt-2 text-xs text-muted-foreground">Managed retries: {entry.managedRetryAttempts} · Gemini retries: {entry.geminiRetryAttempts} · Prompt: {entry.promptInputChars.toLocaleString()} / {entry.promptSourceChars.toLocaleString()} characters{entry.primaryFailureType ? ` · Primary: ${entry.primaryFailureType}` : ""}</p>{entry.errorMessage && <p className="mt-2 text-xs text-destructive">{entry.errorMessage}</p>}</div>)}</div>}
-              </div>
+              </div>}
             </CardContent>
           </Card>
-        </section>
+        </section>}
 
+        {(activePortalPanel === "curriculum" || activePortalPanel === "review") && <>
         <section className="mb-6" aria-label="Curriculum Library overview">
           <div className="grid gap-3 sm:grid-cols-3">
             {[{ label: "Active editions", value: statusCounts.active, tone: "border-emerald-200 bg-emerald-50 text-emerald-800" }, { label: "Draft editions", value: statusCounts.draft, tone: "border-amber-200 bg-amber-50 text-amber-800" }, { label: "Archived editions", value: statusCounts.archived, tone: "border-slate-200 bg-slate-50 text-slate-700" }].map((item) => <Card key={item.label} className={item.tone}><CardContent className="p-4"><p className="text-xs font-bold uppercase tracking-[0.12em]">{item.label}</p><p className="mt-1 text-2xl font-bold">{item.value}</p></CardContent></Card>)}
@@ -730,17 +756,17 @@ export default function CurriculumManagement() {
 
         <div className="grid gap-6 lg:grid-cols-3">
           <Card className="lg:col-span-1">
-            <CardHeader><CardTitle className="flex items-center gap-2"><FolderPlus className="h-5 w-5 text-accent" />Curriculum Sets</CardTitle><CardDescription>One versioned set per subject and textbook edition.</CardDescription></CardHeader>
+            <CardHeader><CardTitle className="flex items-center gap-2"><FolderPlus className="h-5 w-5 text-accent" />{activePortalPanel === "review" ? "Choose an edition" : "Curriculum sets"}</CardTitle><CardDescription>{activePortalPanel === "review" ? "Select the book you need to check." : "One versioned set per subject and textbook edition."}</CardDescription></CardHeader>
             <CardContent className="space-y-3">
               <Select value={selectedSetId?.toString() ?? "__none__"} onValueChange={(value) => setSelectedSetId(Number(value))}>
                 <SelectTrigger aria-label="Selected curriculum set"><SelectValue placeholder="Select a curriculum set" /></SelectTrigger>
                 <SelectContent>{setsQuery.data?.map((set) => <SelectItem key={set.id} value={set.id.toString()}>{formatSubjectLabel(set.subject)} — {set.label} ({set.status})</SelectItem>)}</SelectContent>
               </Select>
-              <Label htmlFor="set-programme">New set programme</Label>
+              {activePortalPanel === "curriculum" && <><Label htmlFor="set-programme">New set programme</Label>
               <Select value={setProgrammeId?.toString() ?? "__none__"} onValueChange={(value) => setSetProgrammeId(Number(value))}><SelectTrigger id="set-programme"><SelectValue placeholder="Select a programme" /></SelectTrigger><SelectContent>{programmes.map((programme) => <SelectItem key={programme.id} value={programme.id.toString()}>Grade {programme.grade} · {programme.teacherLabel} ({programme.status})</SelectItem>)}</SelectContent></Select>
               <Input aria-label="Curriculum set label" value={setLabel} onChange={(event) => setSetLabel(event.target.value)} placeholder="e.g. FBISE Grade 10 Physics" />
               <Input aria-label="Edition label" value={editionLabel} onChange={(event) => setEditionLabel(event.target.value)} placeholder="e.g. 2026 edition" />
-              <Button className="w-full" onClick={handleCreateSet} disabled={createSet.isPending}><Plus className="mr-2 h-4 w-4" />Create Draft Set</Button>
+              <Button className="w-full" onClick={handleCreateSet} disabled={createSet.isPending}><Plus className="mr-2 h-4 w-4" />Create Draft Set</Button></>}
             </CardContent>
           </Card>
 
@@ -749,48 +775,52 @@ export default function CurriculumManagement() {
             {selectedSetId && detailsQuery.isLoading && <Card><CardContent className="flex items-center gap-2 py-8 text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin" />Loading curriculum details…</CardContent></Card>}
             {details && <>
               <Card className="border-primary/15 bg-primary/[0.025]"><CardContent className="grid gap-3 p-4 sm:grid-cols-4"><div><p className="text-xs font-bold uppercase tracking-[0.12em] text-primary">Selected edition</p><p className="mt-1 text-sm font-bold text-foreground">{details.curriculumSet.editionLabel || details.curriculumSet.label}</p></div><div><p className="text-xs font-bold uppercase tracking-[0.12em] text-primary">Source files</p><p className="mt-1 text-sm font-bold text-foreground">{details.sources.length}</p></div><div><p className="text-xs font-bold uppercase tracking-[0.12em] text-primary">Reviewed chapters</p><p className="mt-1 text-sm font-bold text-foreground">{details.chapters.length}</p></div><div><p className="text-xs font-bold uppercase tracking-[0.12em] text-primary">Reusable scopes</p><p className="mt-1 text-sm font-bold text-foreground">{details.scopeTemplates.length}</p></div></CardContent></Card>
-              <Card className={details.readiness.sourceExtracted && details.readiness.reviewedActiveChapters > 0 ? "border-emerald-300/70 bg-emerald-50/50" : "border-amber-300/70 bg-amber-50/50"}>
+              {activePortalPanel === "curriculum" && <nav aria-label="Curriculum tasks" role="tablist" className="grid grid-cols-3 gap-2 rounded-xl border border-border/70 bg-muted/20 p-1.5">{(["edition", "content", "scopes"] as const).map((task) => <button key={task} type="button" role="tab" aria-selected={activeCurriculumTask === task} onClick={() => setActiveCurriculumTask(task)} className={`rounded-lg px-2 py-2 text-xs font-extrabold transition-colors ${activeCurriculumTask === task ? "bg-background text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>{task === "edition" ? "Edition" : task === "content" ? "Chapters" : "Scopes"}</button>)}</nav>}
+              {activePortalPanel === "review" && <nav aria-label="Review tasks" role="tablist" className="grid grid-cols-2 gap-2 rounded-xl border border-border/70 bg-muted/20 p-1.5">{(["source", "pattern"] as const).map((task) => <button key={task} type="button" role="tab" aria-selected={activeReviewTask === task} onClick={() => setActiveReviewTask(task)} className={`rounded-lg px-3 py-2 text-xs font-extrabold transition-colors ${activeReviewTask === task ? "bg-background text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>{task === "source" ? "Source quality" : "Paper pattern"}</button>)}</nav>}
+              {((activePortalPanel === "curriculum" && activeCurriculumTask === "edition") || (activePortalPanel === "review" && activeReviewTask === "source")) && <Card className={details.readiness.sourceExtracted && details.readiness.reviewedActiveChapters > 0 ? "border-emerald-300/70 bg-emerald-50/50" : "border-amber-300/70 bg-amber-50/50"}>
                 <CardHeader><CardTitle className="text-base">Edition readiness checklist</CardTitle><CardDescription>Activation remains a deliberate admin action. This list only shows what has been verified for the selected book.</CardDescription></CardHeader>
                 <CardContent className="grid gap-2 text-sm sm:grid-cols-2">
                   {[{ label: "Textbook source stored", done: details.readiness.sourceStored }, { label: "Textbook extraction completed", done: details.readiness.sourceExtracted }, { label: "OCR page-quality review complete", done: details.readiness.ocrReviewComplete }, { label: "At least one reviewed active chapter", done: details.readiness.reviewedActiveChapters > 0 }, { label: "Pattern profile reviewed (optional for book activation)", done: details.readiness.patternProfilesReviewed > 0 }].map((item) => <div key={item.label} className="flex items-center gap-2 rounded-lg border border-border/60 bg-background/70 px-3 py-2"><CheckCircle2 className={`h-4 w-4 shrink-0 ${item.done ? "text-emerald-600" : "text-muted-foreground"}`} /><span className={item.done ? "text-foreground" : "text-muted-foreground"}>{item.label}</span></div>)}
                 </CardContent>
-              </Card>
-              {details.curriculumSet.status === "active" && <Card id="replace-active-book" className="border-amber-400/35 bg-amber-50/60"><CardHeader><CardTitle className="text-base">Replace this active book safely</CardTitle><CardDescription>Creates a linked draft edition. Teachers keep using the active book until the replacement has been reviewed and deliberately activated.</CardDescription></CardHeader><CardContent className="grid gap-3 sm:grid-cols-[1fr_1fr_auto]"><Input aria-label="Replacement curriculum label" value={replacementLabel} onChange={(event) => setReplacementLabel(event.target.value)} placeholder="Replacement book title" /><Input aria-label="Replacement edition label" value={replacementEditionLabel} onChange={(event) => setReplacementEditionLabel(event.target.value)} placeholder="e.g. 2027 edition" /><Button type="button" variant="outline" onClick={handleCreateReplacement} disabled={replaceActiveSet.isPending}>Create replacement draft</Button></CardContent></Card>}
-              <Card>
+              </Card>}
+              {activePortalPanel === "curriculum" && activeCurriculumTask === "edition" && <>{details.curriculumSet.status === "active" && <Card id="replace-active-book" className="border-amber-400/35 bg-amber-50/60"><CardHeader><CardTitle className="text-base">Replace this active book safely</CardTitle><CardDescription>Creates a linked draft edition. Teachers keep using the active book until the replacement has been reviewed and deliberately activated.</CardDescription></CardHeader><CardContent className="grid gap-3 sm:grid-cols-[1fr_1fr_auto]"><Input aria-label="Replacement curriculum label" value={replacementLabel} onChange={(event) => setReplacementLabel(event.target.value)} placeholder="Replacement book title" /><Input aria-label="Replacement edition label" value={replacementEditionLabel} onChange={(event) => setReplacementEditionLabel(event.target.value)} placeholder="e.g. 2027 edition" /><Button type="button" variant="outline" onClick={handleCreateReplacement} disabled={replaceActiveSet.isPending}>Create replacement draft</Button></CardContent></Card>}
+              <Card className="border-primary/15"><CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-semibold text-foreground">Teacher availability</p><p className="mt-1 text-sm text-muted-foreground">Activation is deliberate and succeeds only after the selected edition is ready.</p></div><Button className="shrink-0" onClick={handleActivate} disabled={activateSet.isPending || details.curriculumSet.status === "active"}><CheckCircle2 className="mr-2 h-4 w-4" />{details.curriculumSet.status === "active" ? "Active curriculum" : "Activate curriculum"}</Button></CardContent></Card></>}
+              {activePortalPanel === "curriculum" && activeCurriculumTask === "edition" && <Card>
                 <CardHeader><CardTitle className="flex items-center gap-2"><Upload className="h-5 w-5 text-accent" />1. Add One Source File</CardTitle><CardDescription>{details.curriculumSet.label} is currently <strong>{details.curriculumSet.status}</strong>. PDF, TXT, and photographed textbook pages are stored securely; scans enter Urdu-and-English OCR review before activation.</CardDescription></CardHeader>
                 <CardContent className="space-y-4">
                   <Input aria-label="Curriculum source upload" type="file" accept=".pdf,.txt,.jpg,.jpeg,.png,.webp" onChange={handleSourceUpload} disabled={isUploading} />
                   {isUploading && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Storing source and preparing extraction…</p>}
                   <div className="space-y-2">{details.sources.map((source) => { const ocrJob = details.ocrJobs?.find((job) => job.sourceId === source.id); return <button key={source.id} onClick={() => loadSourceForReview(source.id)} className="flex w-full items-center justify-between rounded-lg border border-border/60 p-3 text-left hover:border-accent/50"><span className="flex min-w-0 items-center gap-2"><FileText className="h-4 w-4 shrink-0 text-accent" /><span className="truncate text-sm">{source.originalFileName}</span></span><span className="text-right text-xs text-muted-foreground">{source.extractionStatus}{source.pageCount ? ` • ${source.pageCount} pages` : ""}{ocrJob && ocrJob.status !== "completed" ? ` • OCR page ${ocrJob.nextPage}/${ocrJob.totalPages}` : ""}</span></button>; })}</div>
                 </CardContent>
-              </Card>
-              {details.readiness.weakOcrPages > 0 && <Card className="border-amber-300/80 bg-amber-50/60">
+              </Card>}
+              {activePortalPanel === "review" && activeReviewTask === "source" && details.readiness.weakOcrPages > 0 && <Card className="border-amber-300/80 bg-amber-50/60">
                 <CardHeader><CardTitle className="flex items-center gap-2 text-base"><AlertTriangle className="h-5 w-5 text-amber-700" />OCR pages need review</CardTitle><CardDescription>{details.readiness.weakOcrPages} page{details.readiness.weakOcrPages === 1 ? "" : "s"} had limited readable text. Confirm each against the stored PDF before activating this edition.</CardDescription></CardHeader>
                 <CardContent className="space-y-2">{details.sourcePageReviews.filter((page) => page.reviewStatus === "needs_review").map((page) => {
                   const source = details.sources.find((candidate) => candidate.id === page.sourceId);
                   return <div key={`${page.sourceId}-${page.pageNumber}`} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-200 bg-background/80 p-3"><div><p className="text-sm font-semibold text-foreground">{source?.originalFileName ?? "Textbook source"} · page {page.pageNumber}</p><p className="mt-1 text-xs text-muted-foreground">Quality signal {page.qualityScore}/100{page.reviewReasons ? ` · ${page.reviewReasons}` : ""}</p></div><div className="flex flex-wrap gap-2"><Button type="button" size="sm" onClick={() => setOcrReviewTarget({ sourceId: page.sourceId, pageNumber: page.pageNumber })}>Compare and correct</Button><Button type="button" size="sm" variant="outline" onClick={() => handleReviewSourcePage(page.sourceId, page.pageNumber)} disabled={reviewSourcePage.isPending}>Mark reviewed without changes</Button></div></div>;
                 })}</CardContent>
               </Card>}
-              {ocrReviewTarget && <Card className="border-accent/35">
+              {activePortalPanel === "review" && activeReviewTask === "source" && ocrReviewTarget && <Card className="border-accent/35">
                 <CardHeader><CardTitle className="flex items-center gap-2 text-base"><FileText className="h-5 w-5 text-accent" />OCR page comparison</CardTitle><CardDescription>Compare the original page with its stored extraction. Save a correction only after checking every value, charge, equation, table cell, and diagram label. Saving changes this page only, marks it reviewed, and never restores generation automatically.</CardDescription></CardHeader>
                 <CardContent className="space-y-4">{ocrReviewPageQuery.isLoading ? <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Loading original page and extraction…</p> : ocrReviewPageQuery.error ? <p className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{ocrReviewPageQuery.error.message}</p> : ocrReviewPageQuery.data && <><div className="grid gap-4 lg:grid-cols-2"><section className="space-y-2"><p className="text-sm font-semibold text-foreground">Original page {ocrReviewPageQuery.data.pageNumber}</p><div className="overflow-hidden rounded-lg border border-border bg-muted/30"><img src={ocrReviewPageQuery.data.previewUrl} alt={`Original source page ${ocrReviewPageQuery.data.pageNumber}`} className="max-h-[38rem] w-full object-contain" /></div></section><section className="space-y-2"><Label htmlFor="corrected-ocr-page" className="text-sm font-semibold">Extracted text — edit only if needed</Label><Textarea id="corrected-ocr-page" value={correctedOcrText} onChange={(event) => setCorrectedOcrText(event.target.value)} className="min-h-[38rem] font-mono text-xs leading-5" /><p className="text-xs text-muted-foreground">Plain text is acceptable. Preserve every number, sign, ion charge, electron count, table heading, and reaction direction exactly as printed.</p></section></div><div className="flex flex-wrap justify-end gap-2 border-t border-border pt-3"><Button type="button" variant="outline" onClick={() => { setOcrReviewTarget(null); setCorrectedOcrText(""); }}>Cancel</Button>{details.curriculumSet.status === "active" && <Button type="button" variant="outline" onClick={() => document.getElementById("replace-active-book")?.scrollIntoView({ behavior: "smooth", block: "center" })}>Use replacement edition instead</Button>}<Button type="button" onClick={handleCorrectOcrReviewPage} disabled={correctOcrReviewPage.isPending || correctedOcrText.trim().length < 10}>{correctOcrReviewPage.isPending ? "Saving correction…" : "Save correction and mark reviewed"}</Button></div></>}</CardContent>
               </Card>}
-              <Card>
+              {activePortalPanel === "review" && activeReviewTask === "source" && <Card>
                 <CardHeader><CardTitle className="flex items-center gap-2 text-base"><ShieldCheck className="h-5 w-5 text-accent" />Generation availability</CardTitle><CardDescription>Temporarily exclude a chapter from every teacher generation scope when its source evidence needs correction. Restoring a chapter remains blocked while a page inside its range still needs OCR review.</CardDescription></CardHeader>
                 <CardContent className="space-y-2">{details.chapters.map((chapter) => <div key={chapter.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/60 p-3"><div><p className="text-sm font-semibold text-foreground">{chapter.code ? `${chapter.code}: ` : ""}{chapter.title}</p><p className="mt-1 text-xs text-muted-foreground">{chapter.startPage && chapter.endPage ? `Pages ${chapter.startPage}–${chapter.endPage}` : "No page range recorded"} · {chapter.isActive === 1 ? "Available to teachers" : "Excluded from generation"}</p></div><Button type="button" size="sm" variant={chapter.isActive === 1 ? "outline" : "default"} onClick={() => handleSetChapterGenerationAvailability(chapter.id, chapter.isActive !== 1)} disabled={setChapterGenerationAvailability.isPending}>{chapter.isActive === 1 ? "Exclude from generation" : "Restore generation"}</Button></div>)}</CardContent>
-              </Card>
+              </Card>}
 
-              <Card>
-                <CardHeader><CardTitle className="flex items-center gap-2"><BookMarked className="h-5 w-5 text-accent" />2. Propose Chapters from Extracted Text</CardTitle><CardDescription>For a new textbook edition, this reads only explicit <strong>CHAPTER</strong> or <strong>UNIT</strong> headings in the supplied extracted file. It never saves or activates chapters automatically.</CardDescription></CardHeader>
+              {activePortalPanel === "curriculum" && activeCurriculumTask === "content" && <Card>
+                <CardHeader><CardTitle className="flex items-center gap-2"><BookMarked className="h-5 w-5 text-accent" />Propose chapters from extracted text</CardTitle><CardDescription>Read only explicit <strong>CHAPTER</strong> or <strong>UNIT</strong> headings in the selected extracted file. Nothing is saved or activated automatically.</CardDescription></CardHeader>
                 <CardContent className="space-y-3">
                   <div className="grid gap-3 sm:grid-cols-[1fr_auto]"><Select value={proposalSourceId?.toString() ?? "__none__"} onValueChange={(value) => setProposalSourceId(Number(value))}><SelectTrigger aria-label="Textbook source for automatic chapter proposals"><SelectValue placeholder="Select an extracted textbook source" /></SelectTrigger><SelectContent>{details.sources.filter((source) => source.extractionStatus === "extracted" && source.extractedText?.trim()).map((source) => <SelectItem key={source.id} value={source.id.toString()}>{source.originalFileName}{source.pageCount ? ` · ${source.pageCount} pages` : ""}</SelectItem>)}</SelectContent></Select><Button type="button" variant="outline" onClick={() => chapterProposalsQuery.refetch()} disabled={!proposalSourceId || chapterProposalsQuery.isFetching}>{chapterProposalsQuery.isFetching ? "Parsing chapters…" : "Propose chapters"}</Button></div>
                   {chapterProposalsQuery.error && <p className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">{chapterProposalsQuery.error.message}</p>}
                   {chapterProposalsQuery.data && <div className="space-y-2"><p className="text-sm text-muted-foreground">{chapterProposalsQuery.data.proposals.length} proposed boundar{chapterProposalsQuery.data.proposals.length === 1 ? "y" : "ies"} from <span className="font-medium text-foreground">{chapterProposalsQuery.data.originalFileName}</span>. Load each one, review it, and save it individually below.</p>{chapterProposalsQuery.data.proposals.map((proposal) => <div key={`${proposal.sequence}-${proposal.code}`} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/60 p-3"><div><p className="text-sm font-semibold text-foreground">{proposal.code}: {proposal.title}</p><p className="mt-1 text-xs text-muted-foreground">{proposal.contentText.length.toLocaleString()} extracted characters</p></div><Button type="button" size="sm" variant="outline" onClick={() => loadProposedChapterForReview(proposal)}>Load for review</Button></div>)}</div>}
                 </CardContent>
-              </Card>
+              </Card>}
 
+              {activePortalPanel === "review" && activeReviewTask === "pattern" && <>
               <Card>
-                <CardHeader><CardTitle className="flex items-center gap-2"><FileText className="h-5 w-5 text-accent" />Paper Pattern Sources</CardTitle><CardDescription>Upload supplied model or past papers to guide section balance and question style. They never become question-content sources.</CardDescription></CardHeader>
+                <CardHeader><CardTitle className="flex items-center gap-2"><FileText className="h-5 w-5 text-accent" />Paper-pattern sources</CardTitle><CardDescription>Upload supplied model or past papers to guide section balance and question style. They never become question-content sources.</CardDescription></CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid gap-3 sm:grid-cols-3"><Select value={paperPatternKind} onValueChange={(value) => setPaperPatternKind(value as PaperPatternKind)}><SelectTrigger aria-label="Paper pattern source kind"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="past_paper">Past paper</SelectItem><SelectItem value="model_paper">Model paper</SelectItem></SelectContent></Select><Input aria-label="Paper pattern academic year" value={paperPatternYear} onChange={(event) => setPaperPatternYear(event.target.value)} placeholder="e.g. 2026" /><Input aria-label="Paper pattern source upload" type="file" accept=".pdf,.txt" onChange={handlePaperPatternUpload} disabled={isUploadingPattern} /></div>
                   {isUploadingPattern && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Storing and extracting paper text…</p>}
@@ -814,10 +844,11 @@ export default function CurriculumManagement() {
                     </>}
                   </>}
                 </CardContent>
-              </Card>
+              </Card></>}
 
+              {activePortalPanel === "curriculum" && activeCurriculumTask === "content" && <>
               <Card>
-                <CardHeader><CardTitle className="flex items-center gap-2"><BookMarked className="h-5 w-5 text-accent" />3. Review and Save a Chapter</CardTitle><CardDescription>Select an extracted source or load a proposal, then confirm or amend the chapter title and text before saving approved evidence.</CardDescription></CardHeader>
+                <CardHeader><CardTitle className="flex items-center gap-2"><BookMarked className="h-5 w-5 text-accent" />Review and save a chapter</CardTitle><CardDescription>Select an extracted source or load a proposal, then confirm or amend the chapter title and text before saving approved evidence.</CardDescription></CardHeader>
                 <CardContent className="space-y-3">
                   <div className="grid gap-3 sm:grid-cols-3"><Input aria-label="Chapter sequence" type="number" min="1" value={chapterSequence} onChange={(event) => setChapterSequence(event.target.value)} /><Input aria-label="Chapter code" value={chapterCode} onChange={(event) => setChapterCode(event.target.value)} placeholder="e.g. Ch. 10" /><Input aria-label="Chapter title" value={chapterTitle} onChange={(event) => setChapterTitle(event.target.value)} placeholder="Chapter title" /></div>
                   <Textarea aria-label="Reviewed chapter source text" value={chapterText} onChange={(event) => setChapterText(event.target.value)} placeholder="Select an extracted source above; review or adjust its chapter text here." className="min-h-52" />
@@ -831,19 +862,20 @@ export default function CurriculumManagement() {
                   <Select value={selectedChapterId?.toString() ?? undefined} onValueChange={(value) => { const chapterId = Number(value); setSelectedChapterId(chapterId); const chapter = details.chapters.find((item) => item.id === chapterId); if (chapter) { const midpoint = Math.ceil(chapter.contentText.length / 2); setFirstHalfText(chapter.contentText.slice(0, midpoint)); setSecondHalfText(chapter.contentText.slice(midpoint)); } }}><SelectTrigger aria-label="Chapter for segment review"><SelectValue placeholder="Select a reviewed chapter" /></SelectTrigger><SelectContent>{details.chapters.map((chapter) => <SelectItem key={chapter.id} value={chapter.id.toString()}>{chapter.code ? `${chapter.code}: ` : ""}{chapter.title}</SelectItem>)}</SelectContent></Select>
                   {selectedChapter && <><Textarea aria-label="First-half chapter source text" value={firstHalfText} onChange={(event) => setFirstHalfText(event.target.value)} className="min-h-32" /><Textarea aria-label="Second-half chapter source text" value={secondHalfText} onChange={(event) => setSecondHalfText(event.target.value)} className="min-h-32" /><Button onClick={handleSaveSegments} disabled={saveSegments.isPending}>Save First and Second Half</Button></>}
                 </CardContent>
-              </Card>
+              </Card></>}
 
-              <Card>
-                <CardHeader><CardTitle>4. Build a Reusable Half-Syllabus or Block Scope</CardTitle><CardDescription>These saved groups become selectable in the Quiz Builder. They always resolve to the reviewed chapter records below.</CardDescription></CardHeader>
+              {activePortalPanel === "curriculum" && activeCurriculumTask === "scopes" && <Card>
+                <CardHeader><CardTitle>Build a reusable half-syllabus or block scope</CardTitle><CardDescription>These saved groups become selectable in the Quiz Builder and always resolve to reviewed chapters.</CardDescription></CardHeader>
                 <CardContent className="space-y-3">
                   <div className="grid gap-3 sm:grid-cols-2"><Select value={scopeKind} onValueChange={(value) => setScopeKind(value as ScopeKind)}><SelectTrigger aria-label="Scope template kind"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="block">Full block</SelectItem><SelectItem value="half_syllabus">Half syllabus</SelectItem></SelectContent></Select><Input aria-label="Scope template label" value={scopeLabel} onChange={(event) => setScopeLabel(event.target.value)} placeholder="e.g. First-term Physics" /></div>
                   <div className="space-y-2 rounded-lg border border-border/60 p-3">{details.chapters.map((chapter) => <label key={chapter.id} className="flex items-center gap-2 text-sm"><Checkbox checked={scopeChapterIds.includes(chapter.id)} onCheckedChange={(checked) => toggleScopeChapter(chapter.id, checked === true)} />{chapter.code ? `${chapter.code}: ` : ""}{chapter.title}</label>)}</div>
                   <Button onClick={handleCreateScope} disabled={createScope.isPending}>Save Reusable Scope</Button>
                 </CardContent>
-              </Card>
+              </Card>}
             </>}
           </div>
         </div>
+        </>}
       </main>
     </AcademyShell>
   );

@@ -56,19 +56,29 @@ vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 describe("Curriculum Library Release 1", () => {
   afterEach(() => { cleanup(); invalidate.mockReset(); queryOptions.listSets.length = 0; queryOptions.listProgrammes.length = 0; queryOptions.staffDirectory.length = 0; authMock.role = "admin"; window.history.pushState({}, "", "/"); });
 
-  it("shows evidence-based edition readiness, OCR comparison controls, and the linked reviewed paper-pattern profile", async () => {
+  it("shows one focused Portal Admin task at a time while preserving every administrative workflow", async () => {
     render(<CurriculumManagement />);
 
-    expect(screen.getByText("Add another grade or subject")).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Add another grade" }).getAttribute("href")).toBe("#programme-catalogue");
-    expect(screen.getByRole("link", { name: "Staff access" }).getAttribute("href")).toBe("#staff-access");
-    expect(screen.getAllByText("Staff access").length).toBeGreaterThan(1);
+    expect(screen.getByRole("heading", { name: "What do you need to manage?" })).toBeTruthy();
+    expect(screen.queryByText("Staff access")).toBeNull();
+    expect(screen.queryByText("AI generation controls")).toBeNull();
+    expect(screen.queryByText("Edition readiness checklist")).toBeNull();
+
+    fireEvent.click(screen.getByRole("tab", { name: /Staff/i }));
+    expect(screen.getByText("Staff access")).toBeTruthy();
     expect(screen.getByText("Automatic teacher sign-in")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Approve teacher email" })).toBeTruthy();
+    expect(screen.queryByText("AI generation controls")).toBeNull();
+
+    fireEvent.click(screen.getByRole("tab", { name: /^AI/i }));
     expect(screen.getByText("AI generation controls")).toBeTruthy();
     expect(screen.getByLabelText("Enable Gemini fallback after managed-provider quota exhaustion")).toBeTruthy();
+    expect(screen.queryByText("AI generation history")).toBeNull();
+    fireEvent.click(screen.getByRole("tab", { name: "History" }));
     expect(screen.getByText("AI generation history")).toBeTruthy();
     expect(screen.getByText(/Gemini fallback · fallback used/)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("tab", { name: /^Review/i }));
     expect(screen.getByText("Generation availability")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Exclude from generation" })).toBeTruthy();
     expect(screen.getByText("Edition readiness checklist")).toBeTruthy();
@@ -84,9 +94,19 @@ describe("Curriculum Library Release 1", () => {
     expect(screen.getByAltText("Original source page 7")).toBeTruthy();
     expect(screen.getByDisplayValue("Extracted source text for review.")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Save correction and mark reviewed" })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("tab", { name: "Paper pattern" }));
     expect(screen.getByText("Review Paper-Pattern Profile")).toBeTruthy();
     expect((screen.getByLabelText("MCQ count") as HTMLInputElement).value).toBe("12");
     expect(screen.getByDisplayValue("Page 1 confirms the MCQ section.")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("tab", { name: /^Curriculum/i }));
+    expect(screen.getByText("Add another grade or subject")).toBeTruthy();
+    expect(screen.getByText("Teacher availability")).toBeTruthy();
+    expect(screen.queryByText("OCR pages need review")).toBeNull();
+    fireEvent.click(screen.getByRole("tab", { name: "Chapters" }));
+    expect(screen.getByText("Propose chapters from extracted text")).toBeTruthy();
+    expect(screen.getByText("Review and save a chapter")).toBeTruthy();
   });
 
   it("keeps a teacher out of the Portal Admin curriculum route", () => {
@@ -116,6 +136,8 @@ describe("Curriculum Library Release 1", () => {
 
   it("offers approved photographed textbook formats in the controlled upload control", () => {
     render(<CurriculumManagement />);
+
+    fireEvent.click(screen.getByRole("tab", { name: /^Curriculum/i }));
 
     const upload = screen.getByLabelText("Curriculum source upload") as HTMLInputElement;
     expect(upload.accept).toContain(".pdf");
