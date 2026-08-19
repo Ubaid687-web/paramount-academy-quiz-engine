@@ -582,3 +582,8 @@
 - [x] Inspect short-question printable-generation provider routing, Portal Admin setting, circuit state, and recent job telemetry.
 - [x] Trace the managed-quota failure path and identify any concrete reason Gemini fallback is not selected.
 - [x] Repair only an evidenced routing or configuration defect, add focused regression coverage, validate, and publish.
+
+## Phase 99: Gemini Transient Request-Limit Recovery
+- [x] Preserve and honor a bounded Gemini retry-after window for transient request-limit responses.
+- [x] Keep transient Gemini circuits short and distinguish them from confirmed quota/billing outages in printable-paper feedback.
+- [x] Add regression coverage, validate the recovery path, and publish only the evidenced repair.

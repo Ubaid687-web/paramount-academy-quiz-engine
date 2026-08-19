@@ -17,7 +17,7 @@ vi.mock("./db", () => ({
   closeGenerationCircuit: mocks.closeGenerationCircuit,
 }));
 
-import { invokeGenerationProvider } from "./generationProvider";
+import { invokeGenerationProvider, retryDelayMs } from "./generationProvider";
 
 const request = {
   messages: [
@@ -38,6 +38,12 @@ describe("generation provider fallback", () => {
   });
 
   afterEach(() => vi.unstubAllGlobals());
+
+  it("honors a bounded Gemini retry hint from a temporary request-limit response", () => {
+    expect(retryDelayMs(0, null, "Please retry in 38.929625371s.")).toBe(38_930);
+    expect(retryDelayMs(0, "2", "Please retry in 38.929625371s.")).toBe(2_000);
+    expect(retryDelayMs(0, null, "Please retry in 75s.")).toBe(45_000);
+  });
 
   it("uses Gemini only after a managed-provider quota exhaustion and records isolated provider telemetry", async () => {
     mocks.invokeLLM.mockRejectedValue(new Error("LLM invoke failed: 412 Precondition Failed – usage exhausted"));

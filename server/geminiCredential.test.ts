@@ -72,5 +72,5 @@ describe("Gemini fallback credential", () => {
     });
     const output = result.response.choices[0]?.message.content;
     expect(JSON.parse(typeof output === "string" ? output : "{}")).toEqual({ ok: true });
-  }, 45_000);
+  }, 70_000);
 });

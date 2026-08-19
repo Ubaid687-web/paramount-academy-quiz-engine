@@ -18,17 +18,26 @@ export type ProviderGenerationResult = {
   telemetry: GenerationProviderTelemetry;
 };
 
-const MAX_TRANSIENT_RETRY_ATTEMPTS = 3;
+// One provider-directed retry avoids repeated early calls while keeping the request within a practical server timeout.
+const MAX_TRANSIENT_RETRY_ATTEMPTS = 2;
 const GEMINI_MODEL = "gemini-3.6-flash";
+const MAX_PROVIDER_RETRY_DELAY_MS = 45_000;
 
 function messageText(content: MessageContent | MessageContent[]) {
   const entries = Array.isArray(content) ? content : [content];
   return entries.map((entry) => typeof entry === "string" ? entry : entry.type === "text" ? entry.text : "").filter(Boolean).join("\n");
 }
 
-function retryDelayMs(attempt: number, retryAfterHeader: string | null) {
+export function retryDelayMs(attempt: number, retryAfterHeader: string | null, providerResponseText = "") {
   const retryAfterSeconds = Number.parseFloat(retryAfterHeader ?? "");
-  if (Number.isFinite(retryAfterSeconds) && retryAfterSeconds >= 0) return Math.min(4_000, Math.ceil(retryAfterSeconds * 1_000));
+  if (Number.isFinite(retryAfterSeconds) && retryAfterSeconds >= 0) return Math.min(MAX_PROVIDER_RETRY_DELAY_MS, Math.ceil(retryAfterSeconds * 1_000));
+  const providerHint = providerResponseText.match(/retry\s+in\s+([0-9]+(?:\.[0-9]+)?)\s*(?:s|seconds?)/i);
+  if (providerHint?.[1]) {
+    const providerRetrySeconds = Number.parseFloat(providerHint[1]);
+    if (Number.isFinite(providerRetrySeconds) && providerRetrySeconds >= 0) {
+      return Math.min(MAX_PROVIDER_RETRY_DELAY_MS, Math.ceil(providerRetrySeconds * 1_000));
+    }
+  }
   const base = Math.min(4_000, 400 * 2 ** attempt);
   return base + Math.floor(Math.random() * Math.max(1, Math.floor(base * 0.25)));
 }
@@ -78,7 +87,7 @@ async function invokeGeminiFallback(params: InvokeParams): Promise<InvokeResult>
     const text = await response.text();
     const message = `Gemini fallback invoke failed: ${response.status} ${response.statusText} – ${text}`;
     if (!isTransientStatus(response.status) || attempt === MAX_TRANSIENT_RETRY_ATTEMPTS - 1) throw new Error(message);
-    await new Promise((resolve) => setTimeout(resolve, retryDelayMs(attempt, response.headers.get("retry-after"))));
+    await new Promise((resolve) => setTimeout(resolve, retryDelayMs(attempt, response.headers.get("retry-after"), text)));
   }
   throw new Error("Gemini fallback invoke failed after retry attempts were exhausted.");
 }
