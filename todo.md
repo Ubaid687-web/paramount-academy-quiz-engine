@@ -598,3 +598,8 @@
 - [x] Validate telemetry through MCQ and printable paths while preserving source grounding, validation, diversity, exclusion, retries, and cache correctness.
 - [x] Assess an approved-scope source-span selector only after telemetry is available; retain current source budgets until provenance and coverage are demonstrated.
 - [ ] Revisit output limits only after measured data and separate Portal Admin approval.
+
+## Phase 102: Chemistry Short-Paper Completion Failure
+- [x] Inspect the reported short-paper job, selected approved scope, provider telemetry, and exact server error.
+- [x] Reproduce the failure and identify the specific capacity, provider, validation, or routing condition causing the generic mobile message.
+- [x] Repair only the evidenced defect, add regressions, validate the mobile flow, and publish.

@@ -58,6 +58,14 @@ describe("printable paper payload normalization", () => {
     expect(failure?.message).not.toMatch(/billing pause/i);
   });
 
+  it("preserves a short provider rate-limit circuit as a temporary service state instead of blaming the approved source", () => {
+    const failure = buildPrintableUpstreamFailure(new Error("Generation is temporarily paused because the AI service is rate-limited. No new model call was made. Try again after 2026-08-19T17:45:00.000Z."));
+
+    expect(failure?.message).toMatch(/temporarily rate-limited/i);
+    expect(failure?.message).toMatch(/no new model call was made/i);
+    expect(failure?.message).not.toMatch(/approved material|narrower scope/i);
+  });
+
   it("passes the shared style anchor into printable generation before provider routing", async () => {
     const pair = [
       { ...shortGenerated.items[0], question: "State the speed relationship.", conceptKey: "speed", facetKey: "formula", answerTarget: "speed equals distance divided by time" },

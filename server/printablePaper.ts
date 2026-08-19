@@ -173,8 +173,11 @@ export function buildPrintablePaperPatternInstruction(sourceContext: GenerationS
 export function buildPrintableUpstreamFailure(error: unknown): Error | null {
   const message = error instanceof Error ? error.message : String(error);
   const normalized = message.toLowerCase();
-  if (message.includes("429") || normalized.includes("rate limit") || normalized.includes("too many requests")) {
-    return new Error("The AI generation service is temporarily rate-limited. The system retried automatically; please wait a moment and try again. No printable paper draft was saved.");
+  if (message.includes("429") || normalized.includes("rate limit") || normalized.includes("rate-limited") || normalized.includes("too many requests")) {
+    const noNewCall = normalized.includes("no new model call")
+      ? " No new model call was made while the short safety pause is active."
+      : " The system retried automatically.";
+    return new Error(`The AI generation service is temporarily rate-limited.${noNewCall} Please wait a moment and try again. No printable paper draft was saved.`);
   }
   if (message.includes("412") || normalized.includes("exhausted") || normalized.includes("billing") || normalized.includes("quota")) {
     return new Error("The connected AI generation service has hit a usage quota limit or billing pause. Please check account credits or try again later when usage resets. No printable paper draft was saved.");
