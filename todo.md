@@ -572,3 +572,8 @@
 - [x] Review the shared dialog animation primitives and preserve the reduced-motion path.
 - [x] Add a short fade-and-scale entrance to the active-generation leave confirmation without changing its layout or behavior.
 - [x] Add regression coverage, validate the motion refinement, and publish.
+
+## Phase 97: Core Mobile Assessment Workflow Audit
+- [x] Establish bundle, route-loading, and rendering baselines for the Quiz Centre and assessment-builder workflow.
+- [x] Inspect grade selection, source selection, settings, active generation, and review states at a 390px viewport for responsive or performance bottlenecks.
+- [x] Implement only evidenced low-risk improvements, add regressions, validate, and publish.

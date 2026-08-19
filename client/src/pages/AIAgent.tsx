@@ -125,7 +125,10 @@ export default function AIAgent() {
   const saveAssessmentDraftMutation = trpc.assessment.saveDraft.useMutation();
   const reviseAssessmentDraftMutation = trpc.assessment.reviseDraft.useMutation();
   const pdfExtractMutation = trpc.pdfUpload.extractPdfText.useMutation();
-  const scopeCatalogQuery = trpc.curriculum.getActiveScopeCatalog.useQuery({ board: "FBISE", grade: gradeLevel, subject });
+  const scopeCatalogQuery = trpc.curriculum.getActiveScopeCatalog.useQuery(
+    { board: "FBISE", grade: gradeLevel, subject },
+    { enabled: activeStep >= 2 }
+  );
   const assessmentAvailabilityQuery = trpc.assessment.getAvailability.useQuery({ board: "FBISE", grade: gradeLevel, subject });
   const assessmentDraftQuery = trpc.assessment.getDraft.useQuery({ assessmentDraftId: requestedReviewDraftId || 0 }, { enabled: requestedReviewDraftId !== null });
   const statusQuery = trpc.aiAgent.getGenerationStatus.useQuery(

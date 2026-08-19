@@ -78,7 +78,7 @@ vi.mock("@/lib/trpc", () => ({
       renderMcqSolutionKey: { useMutation: () => ({ mutateAsync: renderMcqSolutionMutation, isPending: false }) },
     },
     curriculum: {
-      getActiveScopeCatalog: { useQuery: () => scopeCatalogQuery() },
+      getActiveScopeCatalog: { useQuery: (...args: unknown[]) => scopeCatalogQuery(...args) },
       listReadyProgrammes: { useQuery: () => readyProgrammesQuery() },
     },
     assessment: {
@@ -144,6 +144,22 @@ describe("AI quiz generation feedback", () => {
     fireEvent.change(countInput, { target: { value: "101" } });
     fireEvent.blur(countInput);
     expect(screen.getByRole("alert")).toHaveTextContent("whole number from 1 to 100");
+  });
+
+  it("defers approved curriculum loading until the teacher reaches source selection", () => {
+    render(<AIAgent />);
+
+    expect(scopeCatalogQuery).toHaveBeenLastCalledWith(
+      { board: "FBISE", grade: "10", subject: "physics" },
+      { enabled: false }
+    );
+
+    chooseMcqOutput();
+
+    expect(scopeCatalogQuery).toHaveBeenLastCalledWith(
+      { board: "FBISE", grade: "10", subject: "physics" },
+      { enabled: true }
+    );
   });
 
   it("shows an accessible staged loading panel while the quiz request is in progress", async () => {
