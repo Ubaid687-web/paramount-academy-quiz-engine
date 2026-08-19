@@ -531,3 +531,10 @@
 - [x] Keep curriculum intake, staff access, OCR review, generation controls, and readiness work reachable without showing unrelated details together.
 - [x] Add responsive UI regressions for task navigation and closed-section states, then validate the full build.
 - [x] Publish the focused Portal workflow and document the intended staff path.
+
+## Phase 90: Chemistry Page-56 Electrochemical Series Review
+- [x] Verify the affected Chemistry source page, Unit 04 chapter mapping, OCR review status, and chapter availability.
+- [x] Save the user-supplied Electrochemical Series transcript as a page-bounded reviewed correction for page 56 only.
+- [x] Recheck remaining OCR flags and preserve manual control over Unit 04 generation availability.
+- [x] Validate the resulting curriculum state and report the single remaining Portal Admin action, if any.
+- [x] Checkpoint the reviewed OCR correction record.
