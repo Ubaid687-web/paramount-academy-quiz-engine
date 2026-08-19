@@ -156,12 +156,14 @@ export default function CurriculumManagement() {
   );
   const approveStyleAnchorExample = trpc.generation.approveStyleAnchorExample.useMutation();
   const removeStyleAnchorExample = trpc.generation.removeStyleAnchorExample.useMutation();
+  const allCurriculumSets = setsQuery.data ?? [];
+  const workingCurriculumSets = allCurriculumSets.filter((set) => set.status !== "archived");
 
   useEffect(() => {
-    if (selectedSetId !== null || !setsQuery.data?.length) return;
-    const requestedSet = requestedSetId ? setsQuery.data.find((set) => set.id === requestedSetId) : undefined;
-    setSelectedSetId(requestedSet?.id ?? setsQuery.data[0].id);
-  }, [selectedSetId, setsQuery.data, requestedSetId]);
+    if (selectedSetId !== null || !workingCurriculumSets.length) return;
+    const requestedSet = requestedSetId ? workingCurriculumSets.find((set) => set.id === requestedSetId) : undefined;
+    setSelectedSetId(requestedSet?.id ?? workingCurriculumSets[0].id);
+  }, [selectedSetId, workingCurriculumSets, requestedSetId]);
 
   useEffect(() => {
     if (isFocusedSubjectIntake && requestedGrade) setProgrammeGrade(requestedGrade);
@@ -186,12 +188,12 @@ export default function CurriculumManagement() {
   }, []);
 
   const details = detailsQuery.data;
-  const curriculumSets = setsQuery.data ?? [];
+  const curriculumSets = workingCurriculumSets;
   const programmes = programmesQuery.data ?? [];
   const statusCounts = {
     active: curriculumSets.filter((set) => set.status === "active").length,
     draft: curriculumSets.filter((set) => set.status === "draft").length,
-    archived: curriculumSets.filter((set) => set.status === "archived").length,
+    archived: allCurriculumSets.filter((set) => set.status === "archived").length,
   };
   const selectedChapter = useMemo(
     () => details?.chapters.find((chapter) => chapter.id === selectedChapterId),
@@ -666,6 +668,7 @@ export default function CurriculumManagement() {
             <h1 className="mt-2 text-3xl font-bold text-foreground">Curriculum Library</h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">Choose one task. Only the controls needed for that work are shown.</p>
           </div>
+            <Button type="button" variant="outline" size="sm" className="academy-back-button" onClick={() => navigate("/")}><ArrowLeft className="h-4 w-4" />Back to Quiz Centre</Button>
           </div>
         </div>
 
@@ -760,7 +763,7 @@ export default function CurriculumManagement() {
             <CardContent className="space-y-3">
               <Select value={selectedSetId?.toString() ?? "__none__"} onValueChange={(value) => setSelectedSetId(Number(value))}>
                 <SelectTrigger aria-label="Selected curriculum set"><SelectValue placeholder="Select a curriculum set" /></SelectTrigger>
-                <SelectContent>{setsQuery.data?.map((set) => <SelectItem key={set.id} value={set.id.toString()}>{formatSubjectLabel(set.subject)} — {set.label} ({set.status})</SelectItem>)}</SelectContent>
+                <SelectContent>{curriculumSets.map((set) => <SelectItem key={set.id} value={set.id.toString()}>{formatSubjectLabel(set.subject)} — {set.label} ({set.status})</SelectItem>)}</SelectContent>
               </Select>
               {activePortalPanel === "curriculum" && <><Label htmlFor="set-programme">New set programme</Label>
               <Select value={setProgrammeId?.toString() ?? "__none__"} onValueChange={(value) => setSetProgrammeId(Number(value))}><SelectTrigger id="set-programme"><SelectValue placeholder="Select a programme" /></SelectTrigger><SelectContent>{programmes.map((programme) => <SelectItem key={programme.id} value={programme.id.toString()}>Grade {programme.grade} · {programme.teacherLabel} ({programme.status})</SelectItem>)}</SelectContent></Select>

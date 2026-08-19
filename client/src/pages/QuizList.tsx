@@ -8,7 +8,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { getLoginUrl } from "@/const";
 
 type ReadyProgramme = { id: number; board: string; grade: string; subject: string; teacherLabel: string; status?: string };
 type SubjectPresentation = { eyebrow: string; Icon: typeof Atom; iconTone: string; cardTone: string; accentTone: string };
@@ -140,7 +139,7 @@ export default function QuizList() {
                     <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-primary">Quiz preparation · Step {currentStep} of 3</p>
                     <h1 className="mt-3 text-[2rem] font-extrabold tracking-[-0.055em] text-foreground sm:text-5xl">{currentStep === 1 ? "Choose a grade." : currentStep === 2 ? (isGrade9 ? "Add a Grade 9 subject." : "Choose a subject.") : "Ready to build."}</h1>
                     <p className="mt-2 text-sm text-muted-foreground">{currentStep === 1 ? "Start with the class you teach." : currentStep === 2 ? (isGrade9 ? "Name the subject, then upload its textbook." : "Select one approved subject.") : "Open the focused assessment builder."}</p>
-                  </div>{currentStep === 1 && !authLoading && !isAuthenticated && <Button type="button" variant="outline" size="sm" onClick={() => { window.location.href = getLoginUrl(); }}>Staff sign in</Button>}
+                  </div>{currentStep === 1 && !authLoading && !isAuthenticated && <Link href="/staff-sign-in" className="inline-flex h-9 items-center justify-center rounded-md border border-input bg-background px-3 text-sm font-medium shadow-xs transition-colors hover:bg-accent hover:text-accent-foreground">Staff sign in</Link>}
                 </div>
                 <div className="mt-6"><WizardProgress current={currentStep} /></div>
               </div>

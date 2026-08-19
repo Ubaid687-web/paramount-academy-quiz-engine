@@ -543,3 +543,10 @@
 - [x] Verify pages 1 and 6 are the only remaining Chemistry OCR flags and have no chapter-bound generation role.
 - [x] Record the user-confirmed pages as reviewed without changing source or chapter content.
 - [x] Verify Chemistry OCR readiness and unchanged generation availability, then checkpoint the review record.
+
+## Phase 92: Security, Curriculum, Navigation, and Staff Access Audit
+- [x] Audit server procedures, role boundaries, authentication assumptions, dependencies, secrets exposure, and error paths for evidenced security or hidden-regression risks.
+- [x] Verify all Grade 10 Chemistry curriculum editions and safely archive the incorrect non-2022–23 edition without deleting audit history or active textbook evidence.
+- [x] Map navigation dead ends and add consistent Back and return paths across teacher and Portal Admin workflows.
+- [x] Define a professional sign-in and approval-first staff access flow within supported authentication capabilities; do not add unsupported Google/email/phone credentials superficially.
+- [x] Implement the approved safe improvements, add regressions, run production validation, checkpoint, and report the verified limitations and findings.

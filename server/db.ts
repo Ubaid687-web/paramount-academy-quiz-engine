@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gte, inArray, lt, lte, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, lt, lte, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser,
@@ -226,12 +226,33 @@ export async function getQuizzes() {
   return db.select().from(quizzes);
 }
 
+/** A learner may see published quizzes plus their own drafts; Portal Admin keeps operational visibility. */
+export async function getQuizzesVisibleToUser(userId: number, isAdmin: boolean = false) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  if (isAdmin) return db.select().from(quizzes);
+  return db.select().from(quizzes).where(or(
+    eq(quizzes.createdBy, userId),
+    eq(quizzes.publicationStatus, "published"),
+  ));
+}
+
 export async function getQuizById(quizId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
   const result = await db.select().from(quizzes).where(eq(quizzes.id, quizId)).limit(1);
   return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getQuizVisibleToUser(quizId: number, userId: number, isAdmin: boolean = false) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const access = isAdmin
+    ? eq(quizzes.id, quizId)
+    : and(eq(quizzes.id, quizId), or(eq(quizzes.createdBy, userId), eq(quizzes.publicationStatus, "published")));
+  const rows = await db.select().from(quizzes).where(access).limit(1);
+  return rows[0];
 }
 
 export async function getQuestionsByQuizId(quizId: number, shuffle: boolean = false) {
@@ -996,12 +1017,16 @@ export async function activateCurriculumSet(curriculumSetId: number) {
 
   assertNoUnresolvedOcrPages(await listCurriculumSetPageReviews(curriculumSetId));
 
-  await db.update(curriculumSets).set({ status: "archived", archivedAt: new Date() }).where(and(
-    eq(curriculumSets.subject, set.subject),
-    eq(curriculumSets.grade, set.grade),
-    eq(curriculumSets.status, "active"),
-  ));
-  await db.update(curriculumSets).set({ status: "active", activatedAt: new Date(), archivedAt: null }).where(eq(curriculumSets.id, curriculumSetId));
+  const activatedAt = new Date();
+  await db.transaction(async (tx) => {
+    await tx.update(curriculumSets).set({ status: "archived", archivedAt: activatedAt }).where(and(
+      eq(curriculumSets.board, set.board),
+      eq(curriculumSets.subject, set.subject),
+      eq(curriculumSets.grade, set.grade),
+      eq(curriculumSets.status, "active"),
+    ));
+    await tx.update(curriculumSets).set({ status: "active", activatedAt, archivedAt: null }).where(eq(curriculumSets.id, curriculumSetId));
+  });
   const activated = await db.select().from(curriculumSets).where(eq(curriculumSets.id, curriculumSetId)).limit(1);
   return activated[0];
 }
@@ -1288,13 +1313,13 @@ export async function addQuestionsToQuiz(quizId: number, questionsList: any[]) {
   return db.insert(questions).values(questionsToInsert);
 }
 
-export async function deleteQuizAndRelated(quizId: number, userId: number) {
+export async function deleteQuizAndRelated(quizId: number, userId: number, isAdmin: boolean = false) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  // Verify quiz ownership (only creator can delete)
   const quiz = await getQuizById(quizId);
   if (!quiz) throw new Error("Quiz not found");
+  if (!isAdmin && quiz.createdBy !== userId) throw new Error("Only the quiz creator can remove this quiz.");
   
   // Delete user answers for all attempts of this quiz
   const attempts = await db.select().from(quizAttempts).where(eq(quizAttempts.quizId, quizId));

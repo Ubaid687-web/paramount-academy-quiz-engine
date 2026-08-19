@@ -32,6 +32,7 @@ function createAuthContext(userId: number = 1): TrpcContext {
 
 describe("quiz procedures", () => {
   let quizId: number;
+  let privateQuizId: number;
   let questions: any[] = [];
 
   beforeAll(async () => {
@@ -49,10 +50,23 @@ describe("quiz procedures", () => {
       options: { A: "Correct answer", B: "Distractor one", C: "Distractor two", D: "Distractor three" },
       answer: "A",
     })));
+
+    privateQuizId = await createQuiz({
+      title: `Private quiz procedure test ${Date.now()}`,
+      description: "Owner-only draft used to verify cross-user access protection.",
+      totalQuestions: 1,
+      isAiGenerated: 1,
+      createdBy: 1,
+      sourceContent: "Private textbook extract",
+      generationMetadata: JSON.stringify({ provider: "test" }),
+      publicationStatus: "draft",
+    });
+    await addQuestionsToQuiz(privateQuizId, [{ question: "Private question", options: { A: "A", B: "B", C: "C", D: "D" }, answer: "A" }]);
   });
 
   afterAll(async () => {
     if (quizId) await deleteQuizAndRelated(quizId, 1);
+    if (privateQuizId) await deleteQuizAndRelated(privateQuizId, 1);
   });
 
   describe("quiz.getAll", () => {
@@ -206,6 +220,26 @@ describe("quiz procedures", () => {
       const otherUser = appRouter.createCaller(createAuthContext(2));
 
       await expect(otherUser.quiz.getAttemptResults({ attemptId: result.attemptId })).resolves.toBeUndefined();
+    });
+
+    it("does not expose another user's unpublished draft, source snapshot, questions, answer checks, submissions, or deletion action", async () => {
+      const otherUser = appRouter.createCaller(createAuthContext(2));
+      const visible = await otherUser.quiz.getAll();
+      expect(visible.some((quiz) => quiz.id === privateQuizId)).toBe(false);
+      expect(await otherUser.quiz.getById({ quizId: privateQuizId })).toBeUndefined();
+      await expect(otherUser.quiz.getQuestions({ quizId: privateQuizId, shuffle: false })).rejects.toThrow("unavailable");
+      await expect(otherUser.quiz.checkAnswer({ quizId: privateQuizId, questionId: 1, selectedAnswer: "A" })).rejects.toThrow("unavailable");
+      await expect(otherUser.quiz.submitAttempt({ quizId: privateQuizId, answers: [{ questionId: 1, selectedAnswer: "A" }] })).rejects.toThrow("unavailable");
+      await expect(otherUser.quiz.deleteQuiz({ quizId: privateQuizId })).rejects.toThrow("Only the quiz creator");
+    });
+
+    it("strips private source snapshots from an accessible published quiz response", async () => {
+      const otherUser = appRouter.createCaller(createAuthContext(2));
+      const quiz = await otherUser.quiz.getById({ quizId });
+      expect(quiz).toBeDefined();
+      expect(quiz).not.toHaveProperty("sourceContent");
+      expect(quiz).not.toHaveProperty("scopeSnapshot");
+      expect(quiz).not.toHaveProperty("generationMetadata");
     });
   });
 

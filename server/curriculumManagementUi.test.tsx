@@ -21,11 +21,21 @@ const managementDetails = {
   readiness: { sourceStored: true, sourceExtracted: true, reviewedActiveChapters: 1, weakOcrPages: 1, ocrReviewComplete: false, patternSourcesExtracted: 1, patternProfilesReviewed: 1 },
 };
 
+const archivedChemistrySet = {
+  id: 99,
+  board: "FBISE",
+  grade: "10",
+  subject: "chemistry",
+  label: "FBISE Grade 10 Chemistry — retired 2020 edition",
+  editionLabel: "2020 NBF textbook",
+  status: "archived",
+};
+
 vi.mock("@/lib/trpc", () => ({
   trpc: {
     useUtils: () => ({ curriculum: { listSets: { invalidate }, listProgrammes: { invalidate }, getManagementDetails: { invalidate } }, generation: { getProviderSettings: { invalidate }, listHistory: { invalidate }, getStyleAnchor: { invalidate } } }),
     curriculum: {
-      listSets: { useQuery: (_input?: unknown, options?: { enabled?: boolean }) => { queryOptions.listSets.push(Boolean(options?.enabled)); return { data: [managementDetails.curriculumSet], isLoading: false, error: null }; } },
+      listSets: { useQuery: (_input?: unknown, options?: { enabled?: boolean }) => { queryOptions.listSets.push(Boolean(options?.enabled)); return { data: [managementDetails.curriculumSet, archivedChemistrySet], isLoading: false, error: null }; } },
       listProgrammes: { useQuery: (_input?: unknown, options?: { enabled?: boolean }) => { queryOptions.listProgrammes.push(Boolean(options?.enabled)); return { data: [{ id: 11, board: "FBISE", grade: "10", subject: "physics", teacherLabel: "Physics", status: "ready" }], isLoading: false, error: null }; } },
       getManagementDetails: { useQuery: () => ({ data: managementDetails, isLoading: false }) },
       proposeChaptersFromSource: { useQuery: () => ({ data: undefined, isLoading: false, isFetching: false, error: null, refetch: vi.fn() }) },
@@ -102,6 +112,8 @@ describe("Curriculum Library Release 1", () => {
 
     fireEvent.click(screen.getByRole("tab", { name: /^Curriculum/i }));
     expect(screen.getByText("Add another grade or subject")).toBeTruthy();
+    expect(screen.queryByText("FBISE Grade 10 Chemistry — retired 2020 edition")).toBeNull();
+    expect(screen.getByRole("button", { name: "Back to Quiz Centre" })).toBeTruthy();
     expect(screen.getByText("Teacher availability")).toBeTruthy();
     expect(screen.queryByText("OCR pages need review")).toBeNull();
     fireEvent.click(screen.getByRole("tab", { name: "Chapters" }));

@@ -7,6 +7,11 @@ import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, publicProcedure, protectedProcedure, router, teacherProcedure } from "./_core/trpc";
 import { buildSharedStyleAnchor, type ReviewedPaperPatternGuidance } from "./styleAnchor";
 
+function toViewerSafeQuiz<T extends { sourceContent?: unknown; scopeSnapshot?: unknown; generationMetadata?: unknown }>(quiz: T) {
+  const { sourceContent: _sourceContent, scopeSnapshot: _scopeSnapshot, generationMetadata: _generationMetadata, ...safeQuiz } = quiz;
+  return safeQuiz;
+}
+
 const programmeKeySchema = z.object({
   board: z.string().trim().min(2).max(50).default("FBISE"),
   grade: z.string().trim().min(1).max(20).default("10"),
@@ -115,21 +120,26 @@ export const appRouter = router({
   }),
 
   quiz: router({
-    getAll: protectedProcedure.query(async () => {
-      const { getQuizzes } = await import("./db");
-      return getQuizzes();
+    getAll: protectedProcedure.query(async ({ ctx }) => {
+      const { getQuizzesVisibleToUser } = await import("./db");
+      const quizzes = await getQuizzesVisibleToUser(ctx.user.id, ctx.user.role === "admin");
+      return quizzes.map(toViewerSafeQuiz);
     }),
 
     getById: protectedProcedure
       .input(z.object({ quizId: z.number() }))
-      .query(async ({ input }) => {
-        const { getQuizById } = await import("./db");
-        return getQuizById(input.quizId);
+      .query(async ({ ctx, input }) => {
+        const { getQuizVisibleToUser } = await import("./db");
+        const quiz = await getQuizVisibleToUser(input.quizId, ctx.user.id, ctx.user.role === "admin");
+        return quiz ? toViewerSafeQuiz(quiz) : undefined;
       }),
 
     getQuestions: protectedProcedure
       .input(z.object({ quizId: z.number(), shuffle: z.boolean().default(false) }))
-      .query(async ({ input }) => {
+      .query(async ({ ctx, input }) => {
+        const { getQuizVisibleToUser } = await import("./db");
+        const quiz = await getQuizVisibleToUser(input.quizId, ctx.user.id, ctx.user.role === "admin");
+        if (!quiz) throw new Error("Quiz not found or unavailable.");
         const { getPracticeQuestionsByQuizId } = await import("./db");
         return getPracticeQuestionsByQuizId(input.quizId, input.shuffle);
       }),
@@ -140,7 +150,10 @@ export const appRouter = router({
         questionId: z.number().int().positive(),
         selectedAnswer: z.enum(["A", "B", "C", "D"]),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ ctx, input }) => {
+        const { getQuizVisibleToUser } = await import("./db");
+        const quiz = await getQuizVisibleToUser(input.quizId, ctx.user.id, ctx.user.role === "admin");
+        if (!quiz) throw new Error("Quiz not found or unavailable.");
         const { getQuestionForQuiz } = await import("./db");
         const question = await getQuestionForQuiz(input.quizId, input.questionId);
         if (!question) throw new Error("This question does not belong to the selected quiz.");
@@ -160,7 +173,9 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ ctx, input }) => {
-        const { createQuizAttempt, getQuestionsByQuizId, saveUserAnswers } = await import("./db");
+        const { createQuizAttempt, getQuestionsByQuizId, getQuizVisibleToUser, saveUserAnswers } = await import("./db");
+        const quiz = await getQuizVisibleToUser(input.quizId, ctx.user.id, ctx.user.role === "admin");
+        if (!quiz) throw new Error("Quiz not found or unavailable.");
         const questions = await getQuestionsByQuizId(input.quizId);
         if (!questions.length) throw new Error("The selected quiz has no available questions.");
         const answersByQuestion = new Map(input.answers.map((answer) => [answer.questionId, answer]));
@@ -217,7 +232,7 @@ export const appRouter = router({
       .input(z.object({ quizId: z.number() }))
       .mutation(async ({ ctx, input }) => {
         const { deleteQuizAndRelated } = await import("./db");
-        return deleteQuizAndRelated(input.quizId, ctx.user.id);
+        return deleteQuizAndRelated(input.quizId, ctx.user.id, ctx.user.role === "admin");
       }),
   }),
 

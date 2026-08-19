@@ -1,0 +1,12 @@
+packages:
+  - .
+
+overrides:
+  qs: 6.15.2
+  body-parser: 1.20.6
+  tailwindcss>nanoid: 3.3.7
+  express>path-to-regexp: 0.1.13
+  recharts>lodash: 4.18.1
+
+patchedDependencies:
+  wouter@3.7.1: patches/wouter@3.7.1.patch

@@ -106,6 +106,12 @@ describe("Quiz Centre entry experience", () => {
     expect(screen.queryByRole("link", { name: /add subject/i })).toBeNull();
   });
 
+  it("routes unauthenticated staff through the dedicated secure sign-in page instead of presenting unsupported credential choices", () => {
+    setReadyGrade10();
+    render(<QuizList />);
+    expect(screen.getByRole("link", { name: "Staff sign in" }).getAttribute("href")).toBe("/staff-sign-in");
+  });
+
   it("shows the Curriculum Library navigation entry only to a signed-in Portal Admin", () => {
     setReadyGrade10();
     render(<QuizList />);
@@ -139,7 +145,7 @@ describe("Quiz Centre entry experience", () => {
   it("shows a staff sign-in action before authentication without exposing Portal Admin controls", () => {
     setReadyGrade10();
     render(<QuizList />);
-    expect(screen.getByRole("button", { name: "Staff sign in" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Staff sign in" }).getAttribute("href")).toBe("/staff-sign-in");
     expect(screen.queryByRole("link", { name: "Curriculum" })).toBeNull();
   });
 

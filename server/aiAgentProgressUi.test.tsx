@@ -237,6 +237,7 @@ describe("AI quiz generation feedback", () => {
   it("reveals only the next relevant decision group and restores the selected source", () => {
     render(<AIAgent />);
 
+    expect(screen.getByRole("button", { name: "Back to Quiz Centre" })).toBeTruthy();
     expect(screen.getByRole("progressbar", { name: "Step 1 of 4" })).toHaveAttribute("aria-valuenow", "1");
     expect(screen.queryByRole("button", { name: /Approved textbook chapters/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("slider", { name: "Number of questions" })).not.toBeInTheDocument();

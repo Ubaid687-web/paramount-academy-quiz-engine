@@ -756,6 +756,7 @@ export default function AIAgent() {
               <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-primary"><GraduationCap className="h-4 w-4" />Assessment builder</p>
               <h1 className="mt-2 text-3xl font-bold text-foreground sm:text-4xl">{activeStep === 4 ? "Review your draft." : !isContextEditing && isProgrammeReady ? `Grade ${gradeLevel} ${selectedReadyProgramme?.teacherLabel ?? formatSubjectLabel(subject)}` : "New assessment"}</h1>
             </div>
+            <Button type="button" variant="outline" size="sm" className="academy-back-button" onClick={() => navigate("/")}><ChevronLeft className="h-4 w-4" />Back to Quiz Centre</Button>
           </div>
           <div className="mt-5" aria-label="Assessment preparation progress" aria-live="polite">
             <div className="flex items-center justify-between gap-3"><p className="text-xs font-bold uppercase tracking-[0.12em] text-primary">Step {activeStep} of 4</p><p className="text-xs font-medium text-muted-foreground">{builderStepLabel}</p></div>
