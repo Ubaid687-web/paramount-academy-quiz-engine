@@ -60,6 +60,26 @@ export const appRouter = router({
       }),
   }),
 
+  generation: router({
+    getProviderSettings: adminProcedure.query(async () => {
+      const { getGenerationProviderSettings } = await import("./db");
+      const settings = await getGenerationProviderSettings();
+      return { ...settings, geminiCredentialConfigured: Boolean(ENV.geminiApiKey) };
+    }),
+    setGeminiFallbackEnabled: adminProcedure
+      .input(z.object({ enabled: z.boolean() }))
+      .mutation(async ({ ctx, input }) => {
+        const { setGeminiFallbackEnabled } = await import("./db");
+        return setGeminiFallbackEnabled(input.enabled, ctx.user.id);
+      }),
+    listHistory: adminProcedure
+      .input(z.object({ limit: z.number().int().min(1).max(100).default(30) }).optional())
+      .query(async ({ input }) => {
+        const { listAdminGenerationHistory } = await import("./db");
+        return listAdminGenerationHistory(input?.limit ?? 30);
+      }),
+  }),
+
   quiz: router({
     getAll: protectedProcedure.query(async () => {
       const { getQuizzes } = await import("./db");
@@ -939,8 +959,8 @@ export const appRouter = router({
           };
         }
         if (!contentText || !sourceContext) throw new Error("Upload or paste at least 100 characters of material, or choose a reviewed curriculum scope.");
-        const { getCachedGenerationResponse, getOpenGenerationCircuit, openGenerationCircuit, closeGenerationCircuit, putCachedGenerationResponse } = await import("./db");
-        const { buildGenerationRequestFingerprint, circuitOpenMessage, classifyCircuitOpen } = await import("./generationOptimization");
+        const { getCachedGenerationResponse, putCachedGenerationResponse, createGenerationJob, updateGenerationJob } = await import("./db");
+        const { buildGenerationRequestFingerprint } = await import("./generationOptimization");
         const requestFingerprint = buildGenerationRequestFingerprint({
           mode: input.paperType,
           sourceSnapshot: sourceContext.scopeSnapshot,
@@ -951,18 +971,40 @@ export const appRouter = router({
           priorQuestionHistory: sourceContext.priorQuestionHistory,
         });
         const cached = await getCachedGenerationResponse(ctx.user.id, requestFingerprint);
-        const openCircuit = await getOpenGenerationCircuit();
-        if (!cached && openCircuit?.openUntil && openCircuit.failureType) {
-          throw new Error(circuitOpenMessage(openCircuit.failureType, openCircuit.openUntil));
-        }
-        let payload: Awaited<ReturnType<typeof generatePrintablePaperFromContent>>;
+        const generationJob = await createGenerationJob({
+          userId: ctx.user.id,
+          contentText,
+          numQuestions: input.pairCount * 2,
+          difficulty: input.difficulty,
+          curriculumSetId: sourceContext.curriculumSetId,
+          scopeTemplateId: sourceContext.scopeTemplateId ?? undefined,
+          scopeType: sourceContext.scopeType ?? "ad_hoc",
+          selectedChapterIds: sourceContext.selectedChapterIds?.length ? JSON.stringify(sourceContext.selectedChapterIds) : undefined,
+          selectedSegmentIds: sourceContext.selectedSegmentIds?.length ? JSON.stringify(sourceContext.selectedSegmentIds) : undefined,
+          sourceSnapshot: sourceContext.scopeSnapshot ? JSON.stringify(sourceContext.scopeSnapshot) : undefined,
+          requestFingerprint,
+          promptSourceChars: contentText.length,
+          promptInputChars: Math.min(contentText.length, Math.max(3_000, input.pairCount * 3_000)),
+          status: "processing",
+          progress: 10,
+        });
+        let payload: import("@shared/assessmentDraftContract").ModeDraftPayload;
+        let providerTelemetry: { provider: "managed_llm" | "gemini_byok" | "mixed"; fallbackUsed: boolean; primaryFailureType: string | null; managedRetryAttempts: number; geminiRetryAttempts: number } = {
+          provider: "managed_llm", fallbackUsed: false, primaryFailureType: null, managedRetryAttempts: 0, geminiRetryAttempts: 0,
+        };
         let cacheReused = false;
         if (cached) {
-          payload = JSON.parse(cached.payload) as Awaited<ReturnType<typeof generatePrintablePaperFromContent>>;
+          const cachedResult = JSON.parse(cached.payload) as { payload?: import("@shared/assessmentDraftContract").ModeDraftPayload; providerTelemetry?: typeof providerTelemetry } | import("@shared/assessmentDraftContract").ModeDraftPayload;
+          if ("payload" in cachedResult && cachedResult.payload) {
+            payload = cachedResult.payload;
+            providerTelemetry = cachedResult.providerTelemetry ?? providerTelemetry;
+          } else {
+            payload = cachedResult as import("@shared/assessmentDraftContract").ModeDraftPayload;
+          }
           cacheReused = true;
         } else {
           try {
-            payload = await generatePrintablePaperFromContent({
+            const generated = await generatePrintablePaperFromContent({
               paperType: input.paperType,
               title: input.title,
               contentText,
@@ -970,18 +1012,18 @@ export const appRouter = router({
               difficulty: input.difficulty,
               sourceContext,
             });
-            await closeGenerationCircuit();
+            payload = generated.payload;
+            providerTelemetry = generated.providerTelemetry;
             await putCachedGenerationResponse({
               userId: ctx.user.id,
               requestFingerprint,
               generationMode: input.paperType,
-              payload: JSON.stringify(payload),
+              payload: JSON.stringify({ payload, providerTelemetry }),
               expiresAt: new Date(Date.now() + 15 * 60_000),
             });
           } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
-            const policy = classifyCircuitOpen(message);
-            if (policy) await openGenerationCircuit(policy);
+            await updateGenerationJob(generationJob.id, { status: "failed", errorMessage: message });
             throw error;
           }
         }
@@ -1012,7 +1054,18 @@ export const appRouter = router({
           });
           assessmentDraftId = draft.id;
         }
-        return { payload, assessmentDraftId, cacheReused, reviewWarning: cacheReused ? "Reused an exact recent draft; no new AI call was made. Portal Admin review and source verification are still required before issuing this paper." : "Draft only: Portal Admin review and source verification are required before issuing this paper." };
+        await updateGenerationJob(generationJob.id, {
+          status: "completed",
+          progress: 100,
+          cacheHit: cacheReused ? 1 : 0,
+          generationProvider: providerTelemetry.provider,
+          fallbackUsed: providerTelemetry.fallbackUsed ? 1 : 0,
+          primaryFailureType: providerTelemetry.primaryFailureType ?? undefined,
+          managedRetryAttempts: providerTelemetry.managedRetryAttempts,
+          geminiRetryAttempts: providerTelemetry.geminiRetryAttempts,
+          retryAttempts: providerTelemetry.managedRetryAttempts + providerTelemetry.geminiRetryAttempts,
+        });
+        return { payload, assessmentDraftId, cacheReused, providerTelemetry, reviewWarning: cacheReused ? "Reused an exact recent draft; no new AI call was made. Portal Admin review and source verification are still required before issuing this paper." : "Draft only: Portal Admin review and source verification are required before issuing this paper." };
       }),
 
     saveGeneratedQuiz: teacherProcedure

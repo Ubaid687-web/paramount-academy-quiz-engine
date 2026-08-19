@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   invokeLLM: vi.fn(),
+  invokeGenerationProvider: vi.fn(),
   createGenerationJob: vi.fn(),
   updateGenerationJob: vi.fn(),
   createAiGeneratedQuiz: vi.fn(),
@@ -15,6 +16,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("./_core/llm", () => ({ invokeLLM: mocks.invokeLLM }));
+vi.mock("./generationProvider", () => ({ invokeGenerationProvider: mocks.invokeGenerationProvider }));
 vi.mock("./db", () => ({
   createGenerationJob: mocks.createGenerationJob,
   updateGenerationJob: mocks.updateGenerationJob,
@@ -67,6 +69,7 @@ describe("AI Agent - MCQ Generation", () => {
     mocks.closeGenerationCircuit.mockReset();
     mocks.putCachedGenerationResponse.mockReset();
     mocks.invokeLLM.mockReset();
+    mocks.invokeGenerationProvider.mockReset();
     mocks.createGenerationJob.mockResolvedValue({ id: 501 });
     mocks.updateGenerationJob.mockResolvedValue(undefined);
     mocks.getCachedGenerationResponse.mockResolvedValue(undefined);
@@ -77,12 +80,16 @@ describe("AI Agent - MCQ Generation", () => {
     mocks.invokeLLM.mockResolvedValue({
       choices: [{ message: { content: JSON.stringify({ mcqs: createValidMcqs(10) }) } }],
     });
+    mocks.invokeGenerationProvider.mockResolvedValue({
+      response: { choices: [{ message: { content: JSON.stringify({ mcqs: createValidMcqs(10) }) } }] },
+      telemetry: { provider: "managed_llm", fallbackUsed: false, primaryFailureType: null, managedRetryAttempts: 0, geminiRetryAttempts: 0 },
+    });
   });
 
   it("returns a validated, source-grounded draft without relying on a live model call", async () => {
     const result = await generateMCQsFromContent(1, validContent, 5, "balanced");
 
-    expect(mocks.invokeLLM).toHaveBeenCalledTimes(1);
+    expect(mocks.invokeGenerationProvider).toHaveBeenCalledTimes(1);
     expect(result.jobId).toBe(501);
     expect(result.mcqs).toHaveLength(5);
     expect(result.draft.sourceMetadata).toMatchObject({
@@ -114,7 +121,7 @@ describe("AI Agent - MCQ Generation", () => {
     expect(result.jobId).toBe(502);
     expect(result.mcqs).toHaveLength(2);
     expect(result.draft.cache).toMatchObject({ reused: true });
-    expect(mocks.invokeLLM).not.toHaveBeenCalled();
+    expect(mocks.invokeGenerationProvider).not.toHaveBeenCalled();
   });
 
   it("stops before a new model call while the shared provider circuit is open", async () => {
@@ -126,7 +133,7 @@ describe("AI Agent - MCQ Generation", () => {
     expect(result.jobId).toBe(503);
     expect(result.draft.errorType).toBe("circuit_open");
     expect(result.draft.message).toContain("No new model call was made");
-    expect(mocks.invokeLLM).not.toHaveBeenCalled();
+    expect(mocks.invokeGenerationProvider).not.toHaveBeenCalled();
   });
 
   it("persists the immutable chapter-scope selection on the generation job", async () => {
@@ -158,14 +165,14 @@ describe("AI Agent - MCQ Generation", () => {
   });
 
   it("hydrates every approved-scope MCQ with a server-verified textbook citation", async () => {
-    mocks.invokeLLM.mockResolvedValue({
+    mocks.invokeGenerationProvider.mockResolvedValue({ response: {
       choices: [{ message: { content: JSON.stringify({
         mcqs: createValidMcqs(5).map((mcq) => ({
           ...mcq,
           sourceCitation: { citationKey: "chapter:10", textAnchor: "displacement, velocity, and acceleration" },
         })),
       }) } }],
-    });
+    }, telemetry: { provider: "managed_llm", fallbackUsed: false, primaryFailureType: null, managedRetryAttempts: 0, geminiRetryAttempts: 0 } });
 
     const result = await generateMCQsFromContent(1, validContent, 5, "balanced", {
       sourceType: "curriculum_scope",
@@ -201,8 +208,8 @@ describe("AI Agent - MCQ Generation", () => {
       ],
     });
 
-    const systemPrompt = mocks.invokeLLM.mock.calls[0][0].messages[0].content as string;
-    const prompt = mocks.invokeLLM.mock.calls[0][0].messages[1].content as string;
+    const systemPrompt = mocks.invokeGenerationProvider.mock.calls[0][0].messages[0].content as string;
+    const prompt = mocks.invokeGenerationProvider.mock.calls[0][0].messages[1].content as string;
     expect(prompt).toContain("VERIFIED BOARD-PATTERN GUIDANCE");
     expect(prompt).toContain("model paper");
     expect(prompt).toContain("past paper 2025");
@@ -227,7 +234,7 @@ describe("AI Agent - MCQ Generation", () => {
       sourceReference: "Kinematics — displacement",
       learningObjective: "Explain the textbook meaning of displacement.",
     };
-    mocks.invokeLLM.mockResolvedValue({ choices: [{ message: { content: JSON.stringify({ mcqs: repeated }) } }] });
+    mocks.invokeGenerationProvider.mockResolvedValue({ response: { choices: [{ message: { content: JSON.stringify({ mcqs: repeated }) } }] }, telemetry: { provider: "managed_llm", fallbackUsed: false, primaryFailureType: null, managedRetryAttempts: 0, geminiRetryAttempts: 0 } });
 
     const result = await generateMCQsFromContent(1, validContent, 2, "balanced");
 
@@ -255,7 +262,7 @@ describe("AI Agent - MCQ Generation", () => {
   });
 
   it("returns a structured failure contract when a model response omits required source fields", async () => {
-    mocks.invokeLLM.mockResolvedValue({
+    mocks.invokeGenerationProvider.mockResolvedValue({ response: {
       choices: [{ message: { content: JSON.stringify({
         mcqs: [{
           question: "Incomplete question",
@@ -265,7 +272,7 @@ describe("AI Agent - MCQ Generation", () => {
           difficulty: "easy",
         }],
       }) } }],
-    });
+    }, telemetry: { provider: "managed_llm", fallbackUsed: false, primaryFailureType: null, managedRetryAttempts: 0, geminiRetryAttempts: 0 } });
 
     const result = await generateMCQsFromContent(1, validContent, 1, "balanced");
 
@@ -332,7 +339,7 @@ describe("AI Agent - MCQ Generation", () => {
 });
 
   it("classifies upstream quota and billing exhaustion errors with clear recovery advice", async () => {
-    mocks.invokeLLM.mockRejectedValue(new Error("LLM invoke failed: 412 Precondition Failed – {\"code\":9,\"message\":\"your account has hit a usage exhausted\"}"));
+    mocks.invokeGenerationProvider.mockRejectedValue(new Error("LLM invoke failed: 412 Precondition Failed – {\"code\":9,\"message\":\"your account has hit a usage exhausted\"}"));
 
     const result = await generateMCQsFromContent(1, validContent, 5, "balanced");
 
@@ -343,7 +350,7 @@ describe("AI Agent - MCQ Generation", () => {
   });
 
   it("keeps an exhausted transient rate limit distinct from account quota exhaustion", async () => {
-    mocks.invokeLLM.mockRejectedValue(new Error("LLM invoke failed: 429 Too Many Requests – temporary rate limit"));
+    mocks.invokeGenerationProvider.mockRejectedValue(new Error("LLM invoke failed: 429 Too Many Requests – temporary rate limit"));
 
     const result = await generateMCQsFromContent(1, validContent, 5, "balanced");
 
@@ -353,9 +360,9 @@ describe("AI Agent - MCQ Generation", () => {
   });
 
   it("records retry attempts in the generation job telemetry when attempts occur", async () => {
-    mocks.invokeLLM.mockResolvedValueOnce({
-      choices: [{ message: { content: JSON.stringify({ mcqs: createValidMcqs(5) }) } }],
-      retryAttempts: 2,
+    mocks.invokeGenerationProvider.mockResolvedValueOnce({
+      response: { choices: [{ message: { content: JSON.stringify({ mcqs: createValidMcqs(5) }) } }] },
+      telemetry: { provider: "managed_llm", fallbackUsed: false, primaryFailureType: null, managedRetryAttempts: 2, geminiRetryAttempts: 0 },
     });
 
     await generateMCQsFromContent(1, validContent, 5, "balanced");

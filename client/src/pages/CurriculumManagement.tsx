@@ -129,6 +129,9 @@ export default function CurriculumManagement() {
   const teacherProvisionRulesQuery = trpc.staff.listTeacherProvisionRules.useQuery(undefined, { enabled: isPortalAdmin });
   const approveTeacherEmail = trpc.staff.approveTeacherEmail.useMutation();
   const removeTeacherEmailApproval = trpc.staff.removeTeacherEmailApproval.useMutation();
+  const generationSettingsQuery = trpc.generation.getProviderSettings.useQuery(undefined, { enabled: isPortalAdmin });
+  const generationHistoryQuery = trpc.generation.listHistory.useQuery({ limit: 30 }, { enabled: isPortalAdmin });
+  const setGeminiFallbackEnabled = trpc.generation.setGeminiFallbackEnabled.useMutation();
 
   useEffect(() => {
     if (selectedSetId !== null || !setsQuery.data?.length) return;
@@ -510,6 +513,19 @@ export default function CurriculumManagement() {
     }
   };
 
+  const handleGeminiFallbackChange = async (enabled: boolean) => {
+    try {
+      await setGeminiFallbackEnabled.mutateAsync({ enabled });
+      await Promise.all([
+        utils.generation.getProviderSettings.invalidate(),
+        utils.generation.listHistory.invalidate(),
+      ]);
+      toast.success(enabled ? "Gemini fallback enabled for eligible managed-provider quota exhaustion." : "Gemini fallback disabled. Generation will use the managed provider only.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "The Gemini fallback setting could not be changed.");
+    }
+  };
+
   const handleReviewSourcePage = async (sourceId: number, pageNumber: number) => {
     if (!selectedSetId) return;
     try {
@@ -596,6 +612,25 @@ export default function CurriculumManagement() {
                 {teacherProvisionRulesQuery.isLoading ? <p className="mt-3 text-sm text-muted-foreground">Loading approved teacher emails…</p> : teacherProvisionRulesQuery.error ? <p className="mt-3 text-sm text-destructive">Teacher email approvals could not be loaded.</p> : (teacherProvisionRulesQuery.data ?? []).length === 0 ? <p className="mt-3 text-sm text-muted-foreground">No teacher emails are approved for automatic access yet.</p> : <div className="mt-3 space-y-2">{(teacherProvisionRulesQuery.data ?? []).map((rule) => <div key={rule.id} className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-background/70 px-3 py-2"><span className="min-w-0 truncate text-sm font-medium text-foreground">{rule.email}</span><Button type="button" size="sm" variant="outline" onClick={() => handleRemoveTeacherEmailApproval(rule.id)} disabled={removeTeacherEmailApproval.isPending}>Remove</Button></div>)}</div>}
               </div>
               {staffDirectoryQuery.isLoading ? <p className="text-sm text-muted-foreground">Loading staff access…</p> : staffDirectoryQuery.error ? <p className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">Staff roles could not be loaded.</p> : <div className="space-y-2">{(staffDirectoryQuery.data ?? []).map((staffMember) => <div key={staffMember.id} className="flex flex-col gap-3 rounded-xl border border-border/60 p-3 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><p className="truncate text-sm font-bold text-foreground">{staffMember.name || staffMember.email || "Unlabelled account"}</p><p className="mt-1 text-xs text-muted-foreground">{staffMember.email || "No email available"} · {staffMember.role === "admin" ? "Portal Admin" : staffMember.role === "teacher" ? "Teacher" : "No staff role"}</p></div><Select value={staffMember.role} onValueChange={(value) => { if (value === "teacher" || value === "admin") void handleStaffRoleChange(staffMember.id, value); }} disabled={updateStaffRole.isPending}><SelectTrigger aria-label={`Role for ${staffMember.name || staffMember.email || `account ${staffMember.id}`}`} className="w-full sm:w-44"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="user" disabled>No staff access</SelectItem><SelectItem value="teacher">Teacher</SelectItem><SelectItem value="admin">Portal Admin</SelectItem></SelectContent></Select></div>)}</div>}
+            </CardContent>
+          </Card>
+        </section>
+
+        <section className="mb-6" aria-label="AI generation controls">
+          <Card className="border-primary/15 bg-card">
+            <CardHeader>
+              <CardTitle>AI generation controls</CardTitle>
+              <CardDescription>Control the secondary provider without exposing its credential. Gemini is attempted only after the managed provider reports a quota or usage-exhaustion condition; rate limits, source errors, validation failures, and ordinary provider errors do not switch providers.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <div className="flex items-start gap-3 rounded-xl border border-primary/15 bg-primary/[0.03] p-4">
+                <Checkbox id="gemini-fallback-enabled" checked={generationSettingsQuery.data?.geminiFallbackEnabled === 1} onCheckedChange={(checked) => void handleGeminiFallbackChange(checked === true)} disabled={generationSettingsQuery.isLoading || setGeminiFallbackEnabled.isPending || !generationSettingsQuery.data?.geminiCredentialConfigured} />
+                <div className="min-w-0"><Label htmlFor="gemini-fallback-enabled" className="font-semibold text-foreground">Enable Gemini fallback after managed-provider quota exhaustion</Label><p className="mt-1 text-sm text-muted-foreground">Credential status: {generationSettingsQuery.isLoading ? "checking…" : generationSettingsQuery.data?.geminiCredentialConfigured ? "configured securely" : "not configured"}. {generationSettingsQuery.data?.geminiCredentialConfigured ? "Disable this at any time to keep generation on the managed provider only." : "The switch remains unavailable until a server-side credential is configured."}</p></div>
+              </div>
+              <div>
+                <div className="flex flex-wrap items-baseline justify-between gap-2"><div><p className="font-semibold text-foreground">AI generation history</p><p className="mt-1 text-sm text-muted-foreground">Recent generation outcomes, provider routing, cache reuse, retries, and bounded prompt sizes. This stores operational metadata, not a Gemini credential.</p></div><span className="text-xs font-bold uppercase tracking-[0.12em] text-primary">Latest 30</span></div>
+                {generationHistoryQuery.isLoading ? <p className="mt-3 text-sm text-muted-foreground">Loading generation history…</p> : generationHistoryQuery.error ? <p className="mt-3 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">Generation history could not be loaded.</p> : (generationHistoryQuery.data ?? []).length === 0 ? <p className="mt-3 rounded-lg border border-dashed border-border p-3 text-sm text-muted-foreground">No generation jobs have been recorded yet.</p> : <div className="mt-3 space-y-2">{[...(generationHistoryQuery.data ?? [])].reverse().map((entry) => <div key={entry.id} className="rounded-xl border border-border/60 bg-background/70 p-3"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-sm font-bold text-foreground">{entry.generationProvider === "gemini_byok" ? "Gemini fallback" : entry.generationProvider === "mixed" ? "Managed + Gemini" : "Managed provider"}{entry.fallbackUsed ? " · fallback used" : ""}</p><p className="mt-1 text-xs text-muted-foreground">{entry.staffName || entry.staffEmail || "Teacher account"} · {new Date(entry.createdAt).toLocaleString()} · {entry.status}</p></div><span className={`rounded-full px-2 py-1 text-[11px] font-bold ${entry.status === "completed" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>{entry.cacheHit ? "cache reused" : "new generation"}</span></div><p className="mt-2 text-xs text-muted-foreground">Managed retries: {entry.managedRetryAttempts} · Gemini retries: {entry.geminiRetryAttempts} · Prompt: {entry.promptInputChars.toLocaleString()} / {entry.promptSourceChars.toLocaleString()} characters{entry.primaryFailureType ? ` · Primary: ${entry.primaryFailureType}` : ""}</p>{entry.errorMessage && <p className="mt-2 text-xs text-destructive">{entry.errorMessage}</p>}</div>)}</div>}
+              </div>
             </CardContent>
           </Card>
         </section>

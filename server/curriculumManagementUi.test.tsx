@@ -23,7 +23,7 @@ const managementDetails = {
 
 vi.mock("@/lib/trpc", () => ({
   trpc: {
-    useUtils: () => ({ curriculum: { listSets: { invalidate }, listProgrammes: { invalidate }, getManagementDetails: { invalidate } } }),
+    useUtils: () => ({ curriculum: { listSets: { invalidate }, listProgrammes: { invalidate }, getManagementDetails: { invalidate } }, generation: { getProviderSettings: { invalidate }, listHistory: { invalidate } } }),
     curriculum: {
       listSets: { useQuery: (_input?: unknown, options?: { enabled?: boolean }) => { queryOptions.listSets.push(Boolean(options?.enabled)); return { data: [managementDetails.curriculumSet], isLoading: false, error: null }; } },
       listProgrammes: { useQuery: (_input?: unknown, options?: { enabled?: boolean }) => { queryOptions.listProgrammes.push(Boolean(options?.enabled)); return { data: [{ id: 11, board: "FBISE", grade: "10", subject: "physics", teacherLabel: "Physics", status: "ready" }], isLoading: false, error: null }; } },
@@ -37,6 +37,11 @@ vi.mock("@/lib/trpc", () => ({
       listTeacherProvisionRules: { useQuery: () => ({ data: [{ id: 5, email: "teacher@example.com", addedBy: 1, createdAt: new Date() }], isLoading: false, error: null, refetch: vi.fn() }) },
       approveTeacherEmail: { useMutation: () => noOpMutation },
       removeTeacherEmailApproval: { useMutation: () => noOpMutation },
+    },
+    generation: {
+      getProviderSettings: { useQuery: () => ({ data: { id: 1, geminiFallbackEnabled: 0, geminiCredentialConfigured: true }, isLoading: false, error: null }) },
+      setGeminiFallbackEnabled: { useMutation: () => noOpMutation },
+      listHistory: { useQuery: () => ({ data: [{ id: 99, status: "completed", createdAt: new Date("2026-08-19T00:00:00.000Z"), completedAt: new Date("2026-08-19T00:00:02.000Z"), generationProvider: "gemini_byok", fallbackUsed: 1, primaryFailureType: "quota_exhaustion", retryAttempts: 2, managedRetryAttempts: 0, geminiRetryAttempts: 2, cacheHit: 0, promptSourceChars: 24000, promptInputChars: 12000, errorMessage: null, staffName: "Teacher", staffEmail: "teacher@example.com" }], isLoading: false, error: null }) },
     },
   },
 }));
@@ -56,6 +61,10 @@ describe("Curriculum Library Release 1", () => {
     expect(screen.getByText("Staff access")).toBeTruthy();
     expect(screen.getByText("Automatic teacher sign-in")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Approve teacher email" })).toBeTruthy();
+    expect(screen.getByText("AI generation controls")).toBeTruthy();
+    expect(screen.getByLabelText("Enable Gemini fallback after managed-provider quota exhaustion")).toBeTruthy();
+    expect(screen.getByText("AI generation history")).toBeTruthy();
+    expect(screen.getByText(/Gemini fallback · fallback used/)).toBeTruthy();
     expect(screen.getByText("Edition readiness checklist")).toBeTruthy();
     expect(screen.getByText("Textbook extraction completed")).toBeTruthy();
     expect(screen.getByText("At least one reviewed active chapter")).toBeTruthy();

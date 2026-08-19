@@ -1,8 +1,8 @@
-import { invokeLLM } from "./_core/llm";
 import { validateAssessmentDraftPayload, type ModeDraftPayload } from "@shared/assessmentDraftContract";
 import type { GenerationSourceContext } from "./aiAgent";
 import { chunkContent } from "./contentAnalyzer";
 import { buildPriorHistoryExclusion, validateDistinctOrPairCoverage, type QuestionCoverageRecord } from "./generationDiversity";
+import { invokeGenerationProvider, type GenerationProviderTelemetry } from "./generationProvider";
 
 export type PrintablePaperType = "short" | "long";
 export type NormalizedPrintablePaperPayload = {
@@ -10,6 +10,11 @@ export type NormalizedPrintablePaperPayload = {
   title: string;
   estimatedDurationMinutes: number | null;
   items: Array<Record<string, unknown> & QuestionCoverageRecord & { kind: PrintablePaperType; marks: number }>;
+};
+
+export type GeneratedPrintablePaperResult = {
+  payload: ModeDraftPayload;
+  providerTelemetry: Omit<GenerationProviderTelemetry, "provider"> & { provider: "managed_llm" | "gemini_byok" | "mixed" };
 };
 
 export const PRINTABLE_PAPER_PROMPT = `You are a careful FBISE-style assessment designer. Create a PRINTABLE paper draft grounded strictly and exclusively in the supplied source material.
@@ -166,7 +171,7 @@ export async function generatePrintablePaperFromContent(params: {
   pairCount: number;
   difficulty: "balanced" | "easy" | "medium" | "hard";
   sourceContext: GenerationSourceContext;
-}): Promise<ModeDraftPayload> {
+}): Promise<GeneratedPrintablePaperResult> {
   const { paperType, title, contentText, pairCount, difficulty, sourceContext } = params;
   const safeSections = chunkContent(contentText, Math.min(6, Math.max(2, pairCount))).map((section, index) => `SOURCE SECTION ${index + 1}:\n${section.slice(0, 1500)}`).join("\n\n");
   const marksRule = paperType === "short"
@@ -177,6 +182,11 @@ export async function generatePrintablePaperFromContent(params: {
   const items: Array<Record<string, unknown> & QuestionCoverageRecord & { kind: PrintablePaperType; marks: number }> = [];
   let completedGroups = 0;
   let diversityShortfall = false;
+  let managedRetryAttempts = 0;
+  let geminiRetryAttempts = 0;
+  let fallbackUsed = false;
+  let primaryFailureType: string | null = null;
+  const providers = new Set<"managed_llm" | "gemini_byok">();
 
   for (let batchIndex = 0; batchIndex < batchPlan.length; batchIndex += 1) {
     const batchPairs = batchPlan[batchIndex]!;
@@ -187,7 +197,7 @@ export async function generatePrintablePaperFromContent(params: {
           ...(sourceContext.priorQuestionHistory ?? []),
           ...items,
         ]);
-        const response = await invokeLLM({
+        const providerResult = await invokeGenerationProvider({
           messages: [
             { role: "system", content: PRINTABLE_PAPER_PROMPT },
             { role: "user", content: `This is batch ${batchIndex + 1} of ${batchPlan.length}. Create exactly ${batchPairs} numbered OR pairs (${batchPairs * 2} printed prompts) for a ${paperType}-question paper. Difficulty preference: ${difficulty}. ${marksRule}\n\nPaper title: ${title}\nSource title: ${sourceContext.sourceTitle}\n${paperPatternInstruction}\n\n${existingCoverage}\n\nUse the full source breadth. A concept may appear more than once only when every occurrence has a different source-supported facetKey and answerTarget. Do not repeat a definition as a reworded definition, a formula as the same formula task, or an application with the same answer target. Each OR pair must contain two genuinely different alternatives with different answer targets. Return the two alternatives consecutively.\n\n${safeSections}` },
@@ -197,7 +207,12 @@ export async function generatePrintablePaperFromContent(params: {
             json_schema: { name: `${paperType}_paper_batch`, strict: true, schema: buildSchema(paperType) },
           },
         });
-        const responseContent = response.choices[0]?.message?.content;
+        providers.add(providerResult.telemetry.provider);
+        managedRetryAttempts += providerResult.telemetry.managedRetryAttempts;
+        geminiRetryAttempts += providerResult.telemetry.geminiRetryAttempts;
+        fallbackUsed ||= providerResult.telemetry.fallbackUsed;
+        primaryFailureType ||= providerResult.telemetry.primaryFailureType;
+        const responseContent = providerResult.response.choices[0]?.message?.content;
         if (typeof responseContent !== "string") throw new Error("No structured batch output.");
         const candidate = normalizePrintablePaperPayload(paperType, title, JSON.parse(responseContent || "{}"));
         if (candidate.items.length !== batchPairs * 2) {
@@ -235,10 +250,15 @@ export async function generatePrintablePaperFromContent(params: {
     throw new Error(`The selected source does not provide enough distinct source-supported question targets without repeating an answer or rewording the same task. ${finalDiversity.issues[0] ?? ""}`);
   }
 
-  return {
+  const payload = {
     mode: paperType,
     title,
     estimatedDurationMinutes: paperType === "short" ? pairCount * 6 : pairCount * 10,
     items,
   } as unknown as ModeDraftPayload;
+  const provider = providers.size > 1 ? "mixed" : providers.has("gemini_byok") ? "gemini_byok" : "managed_llm";
+  return {
+    payload,
+    providerTelemetry: { provider, fallbackUsed, primaryFailureType, managedRetryAttempts, geminiRetryAttempts },
+  };
 }

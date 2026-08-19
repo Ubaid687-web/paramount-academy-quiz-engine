@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ invokeLLM: vi.fn() }));
-vi.mock("./_core/llm", () => ({ invokeLLM: mocks.invokeLLM }));
+const mocks = vi.hoisted(() => ({ invokeGenerationProvider: vi.fn() }));
+vi.mock("./generationProvider", () => ({ invokeGenerationProvider: mocks.invokeGenerationProvider }));
 
 import { buildPrintablePairBatches, buildPrintablePaperPatternInstruction, buildPrintableUpstreamFailure, generatePrintablePaperFromContent, normalizePrintablePaperPayload } from "./printablePaper";
 
@@ -16,7 +16,7 @@ const longGenerated = {
 };
 
 describe("printable paper payload normalization", () => {
-  beforeEach(() => mocks.invokeLLM.mockReset());
+  beforeEach(() => mocks.invokeGenerationProvider.mockReset());
   it("uses paper-pattern records for wording and K/U/A guidance only, not answer evidence", () => {
     const instruction = buildPrintablePaperPatternInstruction({
       sourceType: "curriculum_scope",
@@ -56,7 +56,7 @@ describe("printable paper payload normalization", () => {
       { ...longGenerated.items[0], question: "Describe the construction of a Daniel cell.", conceptKey: "daniel cell", facetKey: "construction", answerTarget: "zinc and copper electrodes in electrolyte solutions", sourceReference: "Daniel cell", learningObjective: "Describe the construction of a Daniel cell." },
       { ...longGenerated.items[0], question: "Explain the working of a galvanic Daniel cell.", conceptKey: "daniel cell", facetKey: "working", answerTarget: "electron flow from zinc to copper", sourceReference: "Daniel cell", learningObjective: "Explain the working of a Daniel cell." },
     ];
-    mocks.invokeLLM.mockResolvedValue({ choices: [{ message: { content: JSON.stringify({ estimatedDurationMinutes: 20, items: sameConceptPair }) } }] });
+    mocks.invokeGenerationProvider.mockResolvedValue({ response: { choices: [{ message: { content: JSON.stringify({ estimatedDurationMinutes: 20, items: sameConceptPair }) } }] }, telemetry: { provider: "managed_llm", fallbackUsed: false, primaryFailureType: null, managedRetryAttempts: 0, geminiRetryAttempts: 0 } });
 
     const paper = await generatePrintablePaperFromContent({
       paperType: "long",
@@ -67,8 +67,8 @@ describe("printable paper payload normalization", () => {
       sourceContext: { sourceType: "curriculum_scope", sourceTitle: "Electrochemistry" },
     });
 
-    expect(paper.items).toHaveLength(2);
-    expect(paper.items[0]?.orGroup).toBe(paper.items[1]?.orGroup);
+    expect(paper.payload.items).toHaveLength(2);
+    expect(paper.payload.items[0]?.orGroup).toBe(paper.payload.items[1]?.orGroup);
   });
 
   it("allows multiple source-supported facets of the same concept across numbered pairs", async () => {
@@ -78,7 +78,7 @@ describe("printable paper payload normalization", () => {
       { ...longGenerated.items[0], question: "State the function of the salt bridge in a Daniel cell.", conceptKey: "daniel cell", facetKey: "salt bridge function", answerTarget: "maintains electrical neutrality", sourceReference: "Daniel cell", learningObjective: "State the salt bridge function." },
       { ...longGenerated.items[0], question: "State the role of zinc in a Daniel cell.", conceptKey: "daniel cell", facetKey: "electrode role", answerTarget: "zinc acts as an anode", sourceReference: "Daniel cell", learningObjective: "State the anode role." },
     ];
-    mocks.invokeLLM.mockResolvedValue({ choices: [{ message: { content: JSON.stringify({ estimatedDurationMinutes: 20, items: distinctDanielCellFacets }) } }] });
+    mocks.invokeGenerationProvider.mockResolvedValue({ response: { choices: [{ message: { content: JSON.stringify({ estimatedDurationMinutes: 20, items: distinctDanielCellFacets }) } }] }, telemetry: { provider: "managed_llm", fallbackUsed: false, primaryFailureType: null, managedRetryAttempts: 0, geminiRetryAttempts: 0 } });
 
     const paper = await generatePrintablePaperFromContent({
       paperType: "long",
@@ -89,7 +89,7 @@ describe("printable paper payload normalization", () => {
       sourceContext: { sourceType: "curriculum_scope", sourceTitle: "Electrochemistry" },
     });
 
-    expect(paper.items).toHaveLength(4);
+    expect(paper.payload.items).toHaveLength(4);
   });
 
   it("rejects a second numbered pair that repeats an earlier facet and answer target", async () => {
@@ -99,7 +99,7 @@ describe("printable paper payload normalization", () => {
       { ...longGenerated.items[0], question: "How is a Daniel cell constructed?", conceptKey: "daniel cell", facetKey: "construction", answerTarget: "zinc and copper electrodes in electrolyte solutions", sourceReference: "Daniel cell", learningObjective: "Describe construction." },
       { ...longGenerated.items[0], question: "State the function of the salt bridge in a Daniel cell.", conceptKey: "daniel cell", facetKey: "salt bridge function", answerTarget: "maintains electrical neutrality", sourceReference: "Daniel cell", learningObjective: "State salt bridge function." },
     ];
-    mocks.invokeLLM.mockResolvedValue({ choices: [{ message: { content: JSON.stringify({ estimatedDurationMinutes: 20, items: repeatedPairItems }) } }] });
+    mocks.invokeGenerationProvider.mockResolvedValue({ response: { choices: [{ message: { content: JSON.stringify({ estimatedDurationMinutes: 20, items: repeatedPairItems }) } }] }, telemetry: { provider: "managed_llm", fallbackUsed: false, primaryFailureType: null, managedRetryAttempts: 0, geminiRetryAttempts: 0 } });
 
     await expect(generatePrintablePaperFromContent({
       paperType: "long",
@@ -116,7 +116,7 @@ describe("printable paper payload normalization", () => {
       { ...longGenerated.items[0], question: "Explain the Daniel cell.", conceptKey: "daniel cell", facetKey: "working", answerTarget: "electron flow from zinc to copper", sourceReference: "Daniel cell", learningObjective: "Explain the Daniel cell." },
       { ...longGenerated.items[0], question: "Explain the Daniel cell.", conceptKey: "daniel cell", facetKey: "working", answerTarget: "electron flow from zinc to copper", sourceReference: "Daniel cell", learningObjective: "Explain the Daniel cell." },
     ];
-    mocks.invokeLLM.mockResolvedValue({ choices: [{ message: { content: JSON.stringify({ estimatedDurationMinutes: 20, items: duplicatePromptPair }) } }] });
+    mocks.invokeGenerationProvider.mockResolvedValue({ response: { choices: [{ message: { content: JSON.stringify({ estimatedDurationMinutes: 20, items: duplicatePromptPair }) } }] }, telemetry: { provider: "managed_llm", fallbackUsed: false, primaryFailureType: null, managedRetryAttempts: 0, geminiRetryAttempts: 0 } });
 
     await expect(generatePrintablePaperFromContent({
       paperType: "long",

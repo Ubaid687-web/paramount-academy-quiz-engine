@@ -13,6 +13,8 @@ const mocks = vi.hoisted(() => ({
   openGenerationCircuit: vi.fn(),
   closeGenerationCircuit: vi.fn(),
   putCachedGenerationResponse: vi.fn(),
+  createGenerationJob: vi.fn(),
+  updateGenerationJob: vi.fn(),
 }));
 
 vi.mock("./db", () => ({
@@ -26,6 +28,8 @@ vi.mock("./db", () => ({
   openGenerationCircuit: mocks.openGenerationCircuit,
   closeGenerationCircuit: mocks.closeGenerationCircuit,
   putCachedGenerationResponse: mocks.putCachedGenerationResponse,
+  createGenerationJob: mocks.createGenerationJob,
+  updateGenerationJob: mocks.updateGenerationJob,
 }));
 vi.mock("./printablePaper", () => ({ generatePrintablePaperFromContent: mocks.generatePrintablePaperFromContent }));
 
@@ -46,11 +50,15 @@ describe("printable paper history persistence", () => {
     mocks.openGenerationCircuit.mockReset();
     mocks.closeGenerationCircuit.mockReset();
     mocks.putCachedGenerationResponse.mockReset();
+    mocks.createGenerationJob.mockReset();
+    mocks.updateGenerationJob.mockReset();
     mocks.getCachedGenerationResponse.mockResolvedValue(undefined);
     mocks.getOpenGenerationCircuit.mockResolvedValue(undefined);
     mocks.openGenerationCircuit.mockResolvedValue(undefined);
     mocks.closeGenerationCircuit.mockResolvedValue(undefined);
     mocks.putCachedGenerationResponse.mockResolvedValue(undefined);
+    mocks.createGenerationJob.mockResolvedValue({ id: 700 });
+    mocks.updateGenerationJob.mockResolvedValue(undefined);
   });
   it("stores an approved-scope generated paper with its concept keys for future exclusion", async () => {
     mocks.getActiveCurriculumScopeCatalog.mockResolvedValue({
@@ -62,11 +70,12 @@ describe("printable paper history persistence", () => {
     mocks.listReviewedAssessmentPatternGuidance.mockResolvedValue([]);
     mocks.listPriorGeneratedQuestionHistory.mockResolvedValue([{ conceptKey: "velocity", question: "Define velocity." }]);
     mocks.generatePrintablePaperFromContent.mockResolvedValue({
-      mode: "long", title: "Kinematics revision", estimatedDurationMinutes: 10,
-      items: [
+      payload: { mode: "long", title: "Kinematics revision", estimatedDurationMinutes: 10,
+        items: [
         { kind: "long", question: "Explain displacement.", conceptKey: "displacement", sourceReference: "Kinematics — displacement", learningObjective: "Explain displacement.", cognitiveLevel: "U", orGroup: 1, marks: 5, difficulty: "medium", expectedKeyPoints: ["A verified point."], markingRubric: [{ criterion: "Explains displacement.", marks: 5 }] },
         { kind: "long", question: "Explain acceleration.", conceptKey: "acceleration", sourceReference: "Kinematics — acceleration", learningObjective: "Explain acceleration.", cognitiveLevel: "U", orGroup: 1, marks: 5, difficulty: "medium", expectedKeyPoints: ["A verified point."], markingRubric: [{ criterion: "Explains acceleration.", marks: 5 }] },
-      ],
+        ], },
+      providerTelemetry: { provider: "gemini_byok", fallbackUsed: true, primaryFailureType: "quota_exhaustion", managedRetryAttempts: 0, geminiRetryAttempts: 1 },
     });
     mocks.createAssessmentDraft.mockResolvedValue({ id: 901 });
 
@@ -86,5 +95,6 @@ describe("printable paper history persistence", () => {
       totalMarks: 5,
       draftPayload: expect.stringContaining("acceleration"),
     }));
+    expect(mocks.updateGenerationJob).toHaveBeenCalledWith(700, expect.objectContaining({ generationProvider: "gemini_byok", fallbackUsed: 1, primaryFailureType: "quota_exhaustion" }));
   });
 });

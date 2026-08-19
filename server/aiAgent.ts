@@ -1,12 +1,12 @@
 import { z } from "zod";
-import { invokeLLM } from "./_core/llm";
-import { createGenerationJob, updateGenerationJob, createAiGeneratedQuiz, addQuestionsToQuiz, getGenerationJob, closeGenerationCircuit, getCachedGenerationResponse, getOpenGenerationCircuit, openGenerationCircuit, putCachedGenerationResponse } from "./db";
+import { createGenerationJob, updateGenerationJob, createAiGeneratedQuiz, addQuestionsToQuiz, getGenerationJob, getCachedGenerationResponse, getOpenGenerationCircuit, putCachedGenerationResponse } from "./db";
 import { analyzeContent } from "./contentAnalyzer";
 import { buildDraftQualityChecks, validateGeneratedMcqs, type GeneratedMcq } from "./quizDraftValidator";
 import type { InsertGenerationJob } from "../drizzle/schema";
 import type { FbiseSubject, ScopeType, TextbookCitationCandidate } from "./curriculumScope";
 import { buildPriorHistoryExclusion, type PriorQuestionHistory } from "./generationDiversity";
 import { buildBudgetedSourceText, buildGenerationRequestFingerprint, circuitOpenMessage, classifyCircuitOpen } from "./generationOptimization";
+import { invokeGenerationProvider, type GenerationProviderTelemetry } from "./generationProvider";
 
 export type GenerationSourceContext = {
   sourceType: "raw_text" | "curriculum_scope";
@@ -161,7 +161,7 @@ export async function generateMCQsFromContent(
     sourceType: "raw_text",
     sourceTitle: "Uploaded study material",
   }
-): Promise<{ jobId: number; mcqs: GeneratedMcq[]; analysis: any; draft: any }> {
+): Promise<{ jobId: number; mcqs: GeneratedMcq[]; analysis: any; draft: any; providerTelemetry?: GenerationProviderTelemetry }> {
   // Analyze content to determine optimal MCQ count
   const analysis = analyzeContent(contentText);
   const finalNumQuestions = numQuestions || analysis.recommendedQuestions.optimal;
@@ -178,6 +178,7 @@ export async function generateMCQsFromContent(
 
   if (cached) {
     const cachedPayload = JSON.parse(cached.payload) as Omit<Awaited<ReturnType<typeof generateMCQsFromContent>>, "jobId">;
+    const cachedTelemetry = cachedPayload.providerTelemetry;
     const cacheJob = await createGenerationJob({
       userId,
       contentText,
@@ -191,6 +192,12 @@ export async function generateMCQsFromContent(
       sourceSnapshot: sourceContext.scopeSnapshot ? JSON.stringify(sourceContext.scopeSnapshot) : undefined,
       requestFingerprint,
       cacheHit: 1,
+      generationProvider: cachedTelemetry?.provider ?? "managed_llm",
+      fallbackUsed: cachedTelemetry?.fallbackUsed ? 1 : 0,
+      primaryFailureType: cachedTelemetry?.primaryFailureType ?? undefined,
+      managedRetryAttempts: cachedTelemetry?.managedRetryAttempts ?? 0,
+      geminiRetryAttempts: cachedTelemetry?.geminiRetryAttempts ?? 0,
+      retryAttempts: (cachedTelemetry?.managedRetryAttempts ?? 0) + (cachedTelemetry?.geminiRetryAttempts ?? 0),
       promptSourceChars: budgetedSource.sourceChars,
       promptInputChars: 0,
       status: "completed",
@@ -317,7 +324,7 @@ REQUIREMENTS:
     // deterministically above; the source payload is compacted only when it exceeds the safe cap.
     await updateGenerationJob(job.id, { progress: 40 });
 
-    const response = await invokeLLM({
+    const providerResult = await invokeGenerationProvider({
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
@@ -376,8 +383,18 @@ REQUIREMENTS:
       },
     });
 
-    const recordedRetryAttempts = response.retryAttempts ?? 0;
-    await updateGenerationJob(job.id, { progress: 80, retryAttempts: recordedRetryAttempts });
+    const response = providerResult.response;
+    const providerTelemetry = providerResult.telemetry;
+    const recordedRetryAttempts = providerTelemetry.managedRetryAttempts + providerTelemetry.geminiRetryAttempts;
+    await updateGenerationJob(job.id, {
+      progress: 80,
+      retryAttempts: recordedRetryAttempts,
+      generationProvider: providerTelemetry.provider,
+      fallbackUsed: providerTelemetry.fallbackUsed ? 1 : 0,
+      primaryFailureType: providerTelemetry.primaryFailureType ?? undefined,
+      managedRetryAttempts: providerTelemetry.managedRetryAttempts,
+      geminiRetryAttempts: providerTelemetry.geminiRetryAttempts,
+    });
 
     // Parse the response
     const content = response.choices[0]?.message?.content;
@@ -405,7 +422,6 @@ REQUIREMENTS:
     const qualityChecks = buildDraftQualityChecks(finalMcqs, finalNumQuestions);
 
     await updateGenerationJob(job.id, { progress: 100, status: "completed" });
-    await closeGenerationCircuit();
 
     const result = {
       jobId: job.id,
@@ -438,13 +454,15 @@ REQUIREMENTS:
           questions: finalMcqs,
         },
         qualityChecks,
+        providerTelemetry,
       },
+      providerTelemetry,
     };
     await putCachedGenerationResponse({
       userId,
       requestFingerprint,
       generationMode: "mcq",
-      payload: JSON.stringify({ mcqs: result.mcqs, analysis: result.analysis, draft: result.draft }),
+      payload: JSON.stringify({ mcqs: result.mcqs, analysis: result.analysis, draft: result.draft, providerTelemetry: result.providerTelemetry }),
       expiresAt: new Date(Date.now() + 15 * 60_000),
     });
     return result;
@@ -458,8 +476,6 @@ REQUIREMENTS:
     const normalizedErrorMessage = errorMessage.toLowerCase();
     const isQuotaError = errorMessage.includes("412") || normalizedErrorMessage.includes("exhausted") || normalizedErrorMessage.includes("billing") || normalizedErrorMessage.includes("quota");
     const isRateLimitError = errorMessage.includes("429") || normalizedErrorMessage.includes("rate limit") || normalizedErrorMessage.includes("too many requests");
-    const circuitPolicy = classifyCircuitOpen(errorMessage);
-    if (circuitPolicy) await openGenerationCircuit(circuitPolicy);
     const errorType = isQuotaError
       ? "quota_exhaustion"
       : isRateLimitError

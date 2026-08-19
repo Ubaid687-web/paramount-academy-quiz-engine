@@ -36,6 +36,17 @@ export const teacherProvisionRules = mysqlTable("teacherProvisionRules", {
 export type TeacherProvisionRule = typeof teacherProvisionRules.$inferSelect;
 export type InsertTeacherProvisionRule = typeof teacherProvisionRules.$inferInsert;
 
+/** Portal Admin controls for optional secondary AI generation routing. This table has one row (id=1). */
+export const generationProviderSettings = mysqlTable("generationProviderSettings", {
+  id: int("id").primaryKey(),
+  geminiFallbackEnabled: int("geminiFallbackEnabled").default(0).notNull(),
+  updatedBy: int("updatedBy"),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type GenerationProviderSettings = typeof generationProviderSettings.$inferSelect;
+export type InsertGenerationProviderSettings = typeof generationProviderSettings.$inferInsert;
+
 export const quizzes = mysqlTable("quizzes", {
   id: int("id").autoincrement().primaryKey(),
   title: varchar("title", { length: 255 }).notNull(),
@@ -119,6 +130,11 @@ export const generationJobs = mysqlTable("generationJobs", {
   errorMessage: text("errorMessage"),
   progress: int("progress").default(0).notNull(), // 0-100
   retryAttempts: int("retryAttempts").default(0).notNull(),
+  generationProvider: varchar("generationProvider", { length: 64 }).default("managed_llm").notNull(),
+  fallbackUsed: int("fallbackUsed").default(0).notNull(),
+  primaryFailureType: varchar("primaryFailureType", { length: 80 }),
+  managedRetryAttempts: int("managedRetryAttempts").default(0).notNull(),
+  geminiRetryAttempts: int("geminiRetryAttempts").default(0).notNull(),
   requestFingerprint: varchar("requestFingerprint", { length: 64 }),
   cacheHit: int("cacheHit").default(0).notNull(),
   promptSourceChars: int("promptSourceChars").default(0).notNull(),

@@ -469,3 +469,16 @@
 - [x] Add an explicit allowlist-based automatic teacher role assignment that cannot elevate Portal Admin access.
 - [x] Surface pending staff accounts for Portal Admin review and preserve manual role management.
 - [x] Add provisioning regressions, validate sign-in behavior, checkpoint, and report required onboarding steps.
+
+## Phase 81: Secondary Generation Provider Assessment
+- [x] Audit exact-result caching, prompt budgeting, circuit breaking, and retry handling in the existing quiz-generation paths.
+- [x] Design a provider-isolated fallback that can be attempted only after an eligible primary-provider usage-exhaustion failure.
+- [x] Preserve source grounding, structured output validation, citation rules, diversity checks, and per-provider observability.
+- [x] Present the technical recommendation and request a Gemini credential only after explicit approval to implement.
+
+## Phase 82: Portal Admin-Controlled Gemini Fallback
+- [x] Define persistent Portal Admin configuration for enabling or disabling Gemini fallback without code changes.
+- [x] Add provider-isolated routing so Gemini is attempted only after eligible managed-provider quota exhaustion, without retry loops.
+- [x] Record provider, primary failure type, fallback use, and provider-specific retry telemetry for every generation job.
+- [x] Add a concise Portal Admin AI generation controls card and visible generation history monitoring view.
+- [x] Add source-safety, routing, control, and telemetry regressions; validate before requesting the Gemini key securely.

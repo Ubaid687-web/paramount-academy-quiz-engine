@@ -42,6 +42,7 @@ import {
   ocrSchedulerStates,
   InsertOcrExtractionJob,
   teacherProvisionRules,
+  generationProviderSettings,
 } from "../drizzle/schema";
 import type { FbiseSubject, ProgrammeKey, ScopeCatalog } from "./curriculumScope";
 import { assertNoUnresolvedOcrPages } from "./ocrQuality";
@@ -405,6 +406,49 @@ export async function getUserGenerationJobs(userId: number) {
   if (!db) throw new Error("Database not available");
   
   return db.select().from(generationJobs).where(eq(generationJobs.userId, userId));
+}
+
+export async function getGenerationProviderSettings() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const existing = await db.select().from(generationProviderSettings).where(eq(generationProviderSettings.id, 1)).limit(1);
+  if (existing[0]) return existing[0];
+  await db.insert(generationProviderSettings).values({ id: 1, geminiFallbackEnabled: 0 });
+  const created = await db.select().from(generationProviderSettings).where(eq(generationProviderSettings.id, 1)).limit(1);
+  return created[0]!;
+}
+
+export async function setGeminiFallbackEnabled(enabled: boolean, updatedBy: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(generationProviderSettings).values({ id: 1, geminiFallbackEnabled: enabled ? 1 : 0, updatedBy }).onDuplicateKeyUpdate({
+    set: { geminiFallbackEnabled: enabled ? 1 : 0, updatedBy },
+  });
+  return getGenerationProviderSettings();
+}
+
+export async function listAdminGenerationHistory(limit = 30) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.select({
+    id: generationJobs.id,
+    status: generationJobs.status,
+    createdAt: generationJobs.createdAt,
+    completedAt: generationJobs.completedAt,
+    generationProvider: generationJobs.generationProvider,
+    fallbackUsed: generationJobs.fallbackUsed,
+    primaryFailureType: generationJobs.primaryFailureType,
+    retryAttempts: generationJobs.retryAttempts,
+    managedRetryAttempts: generationJobs.managedRetryAttempts,
+    geminiRetryAttempts: generationJobs.geminiRetryAttempts,
+    cacheHit: generationJobs.cacheHit,
+    promptSourceChars: generationJobs.promptSourceChars,
+    promptInputChars: generationJobs.promptInputChars,
+    errorMessage: generationJobs.errorMessage,
+    sourceTitle: generationJobs.scopeType,
+    staffName: users.name,
+    staffEmail: users.email,
+  }).from(generationJobs).leftJoin(users, eq(users.id, generationJobs.userId)).orderBy(generationJobs.id).limit(Math.min(Math.max(limit, 1), 100));
 }
 
 export async function getCachedGenerationResponse(userId: number, requestFingerprint: string) {
