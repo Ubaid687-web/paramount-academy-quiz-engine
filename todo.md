@@ -530,4 +530,4 @@
 - [x] Replace the long single-page administration layout with compact task navigation and focused progressive-disclosure sections.
 - [x] Keep curriculum intake, staff access, OCR review, generation controls, and readiness work reachable without showing unrelated details together.
 - [x] Add responsive UI regressions for task navigation and closed-section states, then validate the full build.
-- [ ] Publish the focused Portal workflow and document the intended staff path.
+- [x] Publish the focused Portal workflow and document the intended staff path.
