@@ -517,10 +517,10 @@
 - [x] Verify owner, Portal Admin, Teacher, and ordinary-user role state plus published sign-in and route behavior.
 - [x] Identify and repair every evidenced case where a completed capability is hidden, unreachable, unclear, or wrongly shown to a role.
 - [x] Add visible role/status feedback and regressions for the corrected Portal access paths.
-- [ ] Validate the published Portal walkthrough, checkpoint, and report the actual teacher/admin separation.
+- [x] Validate the published Portal walkthrough, checkpoint, and report the actual teacher/admin separation.
 
 ## Phase 88: Published Revision Recovery
 - [x] Reconcile the older local workspace and live public UI against the later database schema and verified checkpoint history.
 - [x] Recover the latest verified source release locally without rewriting project history.
 - [x] Restore the recovered release to the published project before making further Portal visibility changes.
-- [ ] Verify the restored published build exposes the intended role-gated controls and maintains Gemini fallback generation.
+- [x] Verify the restored published build exposes the intended role-gated controls and maintains Gemini fallback generation.
