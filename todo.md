@@ -414,6 +414,11 @@
 - [x] Add persisted circuit-breaker guards for upstream failures and record optimization metadata for monitoring.
 - [x] Integrate MCQ and printable generation paths, add regressions, validate, checkpoint, and report.
 
+## Phase 73: Focused Grade and Subject Intake Workflow
+- [x] Audit grade selection, subject intake, and book-ingestion controls for duplicated or premature actions.
+- [x] Redesign the flow as selected grade → subject name → textbook upload → extraction/OCR review → controlled activation.
+- [x] Hide non-current setup details, preserve Grade 10 preparation flow, add UI regressions, validate, checkpoint, and report.
+
 ## Phase 67: Transient Rate-Limit Retry Resilience
 - [x] Define bounded retry eligibility for transient LLM rate-limit and service failures without retrying quota exhaustion, billing, invalid requests, or source errors.
 - [x] Implement exponential backoff with jitter in the shared LLM transport and preserve final error context.

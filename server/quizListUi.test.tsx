@@ -76,7 +76,7 @@ describe("Quiz Centre entry experience", () => {
     expect(document.querySelectorAll('[data-slot="skeleton"]').length).toBe(21);
   });
 
-  it("keeps Grade 9 visibly separate as a curriculum-intake path", () => {
+  it("keeps Grade 9 separate while exposing only the next subject-intake action", () => {
     programmesQuery.mockReturnValue({
       data: [...grade10Programmes, { id: 9, board: "FBISE", grade: "9", subject: "physics", teacherLabel: "Physics", status: "intake_only" }],
       isLoading: false,
@@ -85,21 +85,22 @@ describe("Quiz Centre entry experience", () => {
     quizzesQuery.mockReturnValue({ data: [], isLoading: false, error: null, refetch: vi.fn() });
     render(<QuizList />);
     expect(screen.getByText("Grade 9")).toBeTruthy();
-    expect(screen.getByText(/remains separate/i)).toBeTruthy();
-    expect(screen.getByRole("link", { name: /Open curriculum management/i })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /Set up Grade 9/i }));
+    expect(screen.getByRole("heading", { name: "Add a Grade 9 subject." })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Add Grade 9 subject" }).getAttribute("href")).toBe("/curriculum?grade=9&intake=subject");
   });
 
   it("shows Grade 9 intake messaging even when the ready catalogue has only Grade 10", () => {
     setReadyGrade10();
     render(<QuizList />);
     expect(screen.getByText("Grade 9")).toBeTruthy();
-    expect(screen.getByText(/curriculum intake/i)).toBeTruthy();
+    expect(screen.getByText(/subject setup/i)).toBeTruthy();
   });
 
-  it("keeps the add-subject action in the admin path instead of mixing it into teacher setup", () => {
+  it("does not mix a global admin add-subject action into the grade-selection screen", () => {
     setReadyGrade10();
     render(<QuizList />);
-    expect(screen.getByRole("link", { name: /Open curriculum management/i }).getAttribute("href")).toBe("/curriculum");
+    expect(screen.queryByRole("link", { name: /add subject/i })).toBeNull();
   });
 
   it("shows all existing ready Grade 10 programmes without a staff-detail selector", () => {

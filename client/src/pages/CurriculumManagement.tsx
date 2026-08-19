@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import React from "react";
-import { AlertTriangle, BookMarked, CheckCircle2, FileText, FolderPlus, Loader2, Plus, Upload } from "lucide-react";
+import { AlertTriangle, ArrowLeft, BookMarked, CheckCircle2, FileText, FolderPlus, Loader2, Plus, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
 import { AcademyShell } from "@/components/AcademyShell";
+import { useLocation } from "wouter";
 
 type Subject = string;
 type ScopeKind = "half_syllabus" | "block";
@@ -61,6 +62,10 @@ function fileToBase64(file: File): Promise<string> {
 }
 
 export default function CurriculumManagement() {
+  const [, navigate] = useLocation();
+  const requestedGrade = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("grade") : null;
+  const requestedSetId = typeof window !== "undefined" ? Number(new URLSearchParams(window.location.search).get("set")) || null : null;
+  const isFocusedSubjectIntake = requestedGrade !== null && new URLSearchParams(window.location.search).get("intake") === "subject";
   const utils = trpc.useUtils();
   const [selectedSetId, setSelectedSetId] = useState<number | null>(null);
   const [setProgrammeId, setSetProgrammeId] = useState<number | null>(null);
@@ -90,6 +95,7 @@ export default function CurriculumManagement() {
   const [scopeKind, setScopeKind] = useState<ScopeKind>("block");
   const [scopeLabel, setScopeLabel] = useState("");
   const [scopeChapterIds, setScopeChapterIds] = useState<number[]>([]);
+  const [focusedIntakeSetId, setFocusedIntakeSetId] = useState<number | null>(null);
 
   const setsQuery = trpc.curriculum.listSets.useQuery();
   const programmesQuery = trpc.curriculum.listProgrammes.useQuery();
@@ -116,8 +122,14 @@ export default function CurriculumManagement() {
   const activateProgramme = trpc.curriculum.activateProgramme.useMutation();
 
   useEffect(() => {
-    if (selectedSetId === null && setsQuery.data?.length) setSelectedSetId(setsQuery.data[0].id);
-  }, [selectedSetId, setsQuery.data]);
+    if (selectedSetId !== null || !setsQuery.data?.length) return;
+    const requestedSet = requestedSetId ? setsQuery.data.find((set) => set.id === requestedSetId) : undefined;
+    setSelectedSetId(requestedSet?.id ?? setsQuery.data[0].id);
+  }, [selectedSetId, setsQuery.data, requestedSetId]);
+
+  useEffect(() => {
+    if (isFocusedSubjectIntake && requestedGrade) setProgrammeGrade(requestedGrade);
+  }, [isFocusedSubjectIntake, requestedGrade]);
 
   useEffect(() => {
     if (setProgrammeId === null && programmesQuery.data?.length) setSetProgrammeId(programmesQuery.data[0].id);
@@ -208,6 +220,32 @@ export default function CurriculumManagement() {
       toast.success("Programme created as intake-only. Add and activate a reviewed curriculum edition before making it teacher-ready.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "The programme could not be created.");
+    }
+  };
+
+  const handleCreateFocusedProgramme = async () => {
+    if (!requestedGrade || !programmeSubject.trim()) return toast.error("Enter the subject name first.");
+    const subjectName = programmeSubject.trim();
+    try {
+      const programme = await createProgramme.mutateAsync({
+        board: "FBISE",
+        grade: requestedGrade,
+        subject: subjectName.toLowerCase().replace(/\s+/g, "_"),
+        teacherLabel: subjectName,
+      });
+      const set = await createSet.mutateAsync({
+        programmeId: programme.id,
+        label: `Grade ${requestedGrade} ${subjectName} textbook`,
+        editionLabel: "Intake draft",
+      });
+      setSetProgrammeId(programme.id);
+      setSelectedSetId(set.id);
+      setFocusedIntakeSetId(set.id);
+      setProgrammeSubject("");
+      await Promise.all([utils.curriculum.listProgrammes.invalidate(), utils.curriculum.listSets.invalidate()]);
+      toast.success("Subject created. Upload its textbook next.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "The subject could not be created.");
     }
   };
 
@@ -438,6 +476,32 @@ export default function CurriculumManagement() {
       toast.error(error instanceof Error ? error.message : "The OCR page review could not be saved.");
     }
   };
+
+  const focusedStep = !focusedIntakeSetId ? 1 : !details?.sources.length ? 2 : 3;
+
+  if (isFocusedSubjectIntake && requestedGrade) {
+    return (
+      <AcademyShell eyebrow="Portal Admin" showAdministration>
+        <main className="container py-7 sm:py-10">
+          <section className="mx-auto max-w-2xl space-y-5">
+            <Button type="button" variant="ghost" className="academy-back-button" onClick={() => navigate("/")}><ArrowLeft className="h-4 w-4" />Back to Grade {requestedGrade}</Button>
+            <div className="rounded-[1.5rem] border border-primary/15 bg-card p-6 shadow-sm sm:p-8">
+              <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-primary">Grade {requestedGrade} · Subject intake</p>
+              <h1 className="mt-3 text-3xl font-extrabold tracking-[-0.05em] text-foreground">Add one subject at a time.</h1>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">Only the current task is shown. A subject remains unavailable to teachers until its textbook is extracted, reviewed, and deliberately activated.</p>
+              <div className="mt-6 grid grid-cols-3 gap-2" aria-label="Subject intake progress">{["Subject", "Textbook", "Review"].map((label, index) => <div key={label} className={`rounded-xl border px-3 py-2 text-center text-xs font-bold ${focusedStep === index + 1 ? "border-primary bg-primary/10 text-primary" : focusedStep > index + 1 ? "border-primary/20 bg-primary/[0.03] text-primary" : "border-border bg-muted/30 text-muted-foreground"}`}>{index + 1}. {label}</div>)}</div>
+            </div>
+
+            {focusedStep === 1 && <Card className="border-primary/15"><CardHeader><CardTitle>What subject are you adding?</CardTitle><CardDescription>Enter one clear subject name. Grade and board are already set to Grade {requestedGrade} and FBISE.</CardDescription></CardHeader><CardContent className="space-y-4"><div><Label htmlFor="focused-subject-name">Subject name</Label><Input id="focused-subject-name" value={programmeSubject} onChange={(event) => setProgrammeSubject(event.target.value)} placeholder="e.g. Biology" autoFocus /></div><Button type="button" className="w-full" onClick={handleCreateFocusedProgramme} disabled={createProgramme.isPending || createSet.isPending}>{createProgramme.isPending || createSet.isPending ? "Creating subject…" : "Continue to textbook upload"}</Button></CardContent></Card>}
+
+            {focusedStep === 2 && <Card className="border-primary/15"><CardHeader><CardTitle className="flex items-center gap-2"><Upload className="h-5 w-5 text-primary" />Upload the textbook</CardTitle><CardDescription>Upload the official book as a PDF or TXT file. Text extraction and scan-quality checks run before review.</CardDescription></CardHeader><CardContent className="space-y-4"><Input aria-label="Focused curriculum source upload" type="file" accept=".pdf,.txt" onChange={handleSourceUpload} disabled={isUploading} />{isUploading && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Storing and extracting the textbook…</p>}<p className="text-xs leading-5 text-muted-foreground">Use a searchable/OCR-enabled PDF for scan-based books. Weak pages are flagged for review before the book can be used.</p></CardContent></Card>}
+
+            {focusedStep === 3 && <Card className={details?.readiness.ocrReviewComplete ? "border-emerald-300/60 bg-emerald-50/40" : "border-amber-300/70 bg-amber-50/40"}><CardHeader><CardTitle>{details?.readiness.ocrReviewComplete ? "Textbook intake complete" : "Textbook quality review"}</CardTitle><CardDescription>{details?.readiness.ocrReviewComplete ? "The source was stored and extraction checks completed. Continue to the controlled chapter-review workspace." : "Some pages need review before this book can be activated for teachers."}</CardDescription></CardHeader><CardContent className="space-y-4"><div className="rounded-xl border border-border/60 bg-background/70 p-3 text-sm text-foreground"><strong>{details?.sources.length ?? 0} textbook file</strong> stored for this subject.{details?.readiness.weakOcrPages ? ` ${details.readiness.weakOcrPages} page${details.readiness.weakOcrPages === 1 ? "" : "s"} still need review.` : ""}</div><Button type="button" className="w-full" onClick={() => navigate(`/curriculum?set=${focusedIntakeSetId}`)}>Continue to book review</Button></CardContent></Card>}
+          </section>
+        </main>
+      </AcademyShell>
+    );
+  }
 
   return (
     <AcademyShell eyebrow="Portal Admin" showAdministration>

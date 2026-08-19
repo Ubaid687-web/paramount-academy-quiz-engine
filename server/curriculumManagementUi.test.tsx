@@ -35,7 +35,7 @@ vi.mock("@/components/AcademyShell", () => ({ AcademyShell: ({ children }: { chi
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 describe("Curriculum Library Release 1", () => {
-  afterEach(() => { cleanup(); invalidate.mockReset(); });
+  afterEach(() => { cleanup(); invalidate.mockReset(); window.history.pushState({}, "", "/"); });
 
   it("shows evidence-based edition readiness and the linked reviewed paper-pattern profile", () => {
     render(<CurriculumManagement />);
@@ -52,5 +52,16 @@ describe("Curriculum Library Release 1", () => {
     expect(screen.getByText("Review Paper-Pattern Profile")).toBeTruthy();
     expect((screen.getByLabelText("MCQ count") as HTMLInputElement).value).toBe("12");
     expect(screen.getByDisplayValue("Page 1 confirms the MCQ section.")).toBeTruthy();
+  });
+
+  it("shows only subject naming for the focused Grade 9 intake handoff", () => {
+    window.history.pushState({}, "", "/curriculum?grade=9&intake=subject");
+    render(<CurriculumManagement />);
+
+    expect(screen.getByRole("heading", { name: "Add one subject at a time." })).toBeTruthy();
+    expect(screen.getByLabelText("Subject name")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Continue to textbook upload" })).toBeTruthy();
+    expect(screen.queryByText("Add a grade or subject")).toBeNull();
+    expect(screen.queryByText("Edition readiness checklist")).toBeNull();
   });
 });
