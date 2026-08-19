@@ -60,19 +60,16 @@ describe("End-to-End: Quiz Submit and Results", () => {
       const questions = await caller.quiz.getQuestions({ quizId, shuffle: false });
       expect(questions).toHaveLength(5);
 
-      // Simulate user answers (mark first 3 as correct, rest as incorrect)
+      // Simulate user answers: the server derives correctness from the stored answer key.
       const answers = questions.map((q, index) => ({
         questionId: q.id,
-        selectedAnswer: index < 3 ? q.correctAnswer : "X",
-        isCorrect: index < 3 ? 1 : 0,
+        selectedAnswer: index < 3 ? "A" as const : "B" as const,
       }));
 
       // Submit the quiz attempt
       const submitResult = await caller.quiz.submitAttempt({
         quizId,
         answers,
-        score: 3,
-        totalQuestions: questions.length,
       });
 
       expect(submitResult).toBeDefined();
@@ -96,7 +93,7 @@ describe("End-to-End: Quiz Submit and Results", () => {
       const firstAnswer = results.answers[0];
       expect(firstAnswer).toBeDefined();
       expect(firstAnswer.questionId).toBe(questions[0]!.id);
-      expect(firstAnswer.selectedAnswer).toBe(questions[0]!.correctAnswer);
+      expect(firstAnswer.selectedAnswer).toBe("A");
       expect(firstAnswer.isCorrect).toBe(1);
 
       // Verify incorrect answer

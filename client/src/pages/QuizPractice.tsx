@@ -15,7 +15,6 @@ interface Question {
   optionB: string;
   optionC: string;
   optionD: string;
-  correctAnswer: string;
 }
 
 interface UserAnswer {
@@ -33,6 +32,7 @@ export default function QuizPractice({ params }: { params: { quizId: string } })
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [answered, setAnswered] = useState(false);
   const [userAnswers, setUserAnswers] = useState<UserAnswer[]>([]);
+  const [isCheckingAnswer, setIsCheckingAnswer] = useState(false);
 
   const { data: quiz, isLoading: quizLoading } = trpc.quiz.getById.useQuery({ quizId });
   const { data: questions, isLoading: questionsLoading } = trpc.quiz.getQuestions.useQuery(
@@ -41,6 +41,7 @@ export default function QuizPractice({ params }: { params: { quizId: string } })
   );
 
   const submitAttempt = trpc.quiz.submitAttempt.useMutation();
+  const checkAnswer = trpc.quiz.checkAnswer.useMutation();
 
   if (quizLoading) {
     return (
@@ -158,6 +159,7 @@ export default function QuizPractice({ params }: { params: { quizId: string } })
   }
 
   const currentQuestion = questions[currentQuestionIndex];
+  const currentRecordedAnswer = userAnswers.find((answer) => answer.questionId === currentQuestion.id);
   const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
   const options = [
     { key: "A", value: currentQuestion.optionA },
@@ -166,20 +168,20 @@ export default function QuizPractice({ params }: { params: { quizId: string } })
     { key: "D", value: currentQuestion.optionD },
   ];
 
-  const handleSelectAnswer = (optionKey: string) => {
-    if (answered) return;
+  const handleSelectAnswer = async (optionKey: string) => {
+    if (answered || isCheckingAnswer) return;
     setSelectedAnswer(optionKey);
-    setAnswered(true);
-
-    const isCorrect = optionKey === currentQuestion.correctAnswer ? 1 : 0;
-    setUserAnswers([
-      ...userAnswers,
-      {
-        questionId: currentQuestion.id,
-        selectedAnswer: optionKey,
-        isCorrect,
-      },
-    ]);
+    setIsCheckingAnswer(true);
+    try {
+      const result = await checkAnswer.mutateAsync({ quizId, questionId: currentQuestion.id, selectedAnswer: optionKey as "A" | "B" | "C" | "D" });
+      setUserAnswers((answers) => [...answers.filter((answer) => answer.questionId !== currentQuestion.id), { questionId: currentQuestion.id, selectedAnswer: optionKey, isCorrect: result.isCorrect }]);
+      setAnswered(true);
+    } catch (error) {
+      setSelectedAnswer(null);
+      toast.error(error instanceof Error ? error.message : "Could not check this answer.");
+    } finally {
+      setIsCheckingAnswer(false);
+    }
   };
 
   const handleNext = () => {
@@ -205,9 +207,7 @@ export default function QuizPractice({ params }: { params: { quizId: string } })
     try {
       const result = await submitAttempt.mutateAsync({
         quizId,
-        answers: userAnswers,
-        score: userAnswers.filter((a) => a.isCorrect === 1).length,
-        totalQuestions: questions.length,
+        answers: userAnswers.map(({ questionId, selectedAnswer }) => ({ questionId, selectedAnswer: selectedAnswer as "A" | "B" | "C" | "D" })),
       });
       navigate(`/results/${result.attemptId}`);
     } catch (error) {
@@ -265,15 +265,14 @@ export default function QuizPractice({ params }: { params: { quizId: string } })
           <div className="space-y-3 mb-8">
             {options.map((option) => {
               const isSelected = selectedAnswer === option.key;
-              const isCorrect = option.key === currentQuestion.correctAnswer;
-              const showCorrect = answered && isCorrect;
-              const showWrong = answered && isSelected && !isCorrect;
+              const showCorrect = answered && isSelected && currentRecordedAnswer?.isCorrect === 1;
+              const showWrong = answered && isSelected && currentRecordedAnswer?.isCorrect === 0;
 
               return (
                 <button
                   key={option.key}
                   onClick={() => handleSelectAnswer(option.key)}
-                  disabled={answered}
+                  disabled={answered || isCheckingAnswer}
                   className={`w-full p-4 rounded-lg border-2 transition-all duration-300 text-left font-medium group ${
                     showCorrect
                       ? "bg-green-500/20 border-green-500/50 text-green-400"
@@ -309,10 +308,10 @@ export default function QuizPractice({ params }: { params: { quizId: string } })
 
           {/* Feedback */}
           {answered && (
-            <Card className={`mb-8 ${selectedAnswer === currentQuestion.correctAnswer ? "bg-green-500/10 border-green-500/30" : "bg-red-500/10 border-red-500/30"}`}>
+            <Card className={`mb-8 ${currentRecordedAnswer?.isCorrect === 1 ? "bg-green-500/10 border-green-500/30" : "bg-red-500/10 border-red-500/30"}`}>
               <CardContent className="pt-6">
                 <div className="flex items-start gap-3">
-                  {selectedAnswer === currentQuestion.correctAnswer ? (
+                  {currentRecordedAnswer?.isCorrect === 1 ? (
                     <>
                       <CheckCircle2 className="h-6 w-6 text-green-400 flex-shrink-0 mt-0.5" />
                       <div>
@@ -325,9 +324,7 @@ export default function QuizPractice({ params }: { params: { quizId: string } })
                       <XCircle className="h-6 w-6 text-red-400 flex-shrink-0 mt-0.5" />
                       <div>
                         <p className="font-semibold text-red-400">Incorrect</p>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          The correct answer is <span className="font-semibold text-foreground">{currentQuestion.correctAnswer}</span>
-                        </p>
+                        <p className="text-sm text-muted-foreground mt-1">Review this concept in the approved textbook, then continue to the next question.</p>
                       </div>
                     </>
                   )}

@@ -109,7 +109,7 @@ describe("quiz procedures", () => {
       expect(qs[0]).toHaveProperty("optionB");
       expect(qs[0]).toHaveProperty("optionC");
       expect(qs[0]).toHaveProperty("optionD");
-      expect(qs[0]).toHaveProperty("correctAnswer");
+      expect(qs[0]).not.toHaveProperty("correctAnswer");
 
       questions = qs;
     });
@@ -138,24 +138,21 @@ describe("quiz procedures", () => {
         questions = qs;
       }
 
-      const answers = questions.slice(0, 5).map((q, idx) => ({
+      const answers = questions.map((q) => ({
         questionId: q.id,
-        selectedAnswer: idx % 2 === 0 ? q.correctAnswer : "A",
-        isCorrect: idx % 2 === 0 ? 1 : 0,
+        selectedAnswer: "A" as const,
       }));
 
       const result = await caller.quiz.submitAttempt({
         quizId,
         answers,
-        score: 3,
-        totalQuestions: 5,
       });
 
       expect(result).toHaveProperty("attemptId");
       expect(result).toHaveProperty("score");
       expect(result).toHaveProperty("percentage");
-      expect(result.score).toBe(3);
-      expect(result.percentage).toBe(60);
+      expect(result.score).toBe(10);
+      expect(result.percentage).toBe(100);
     });
 
     it("should calculate percentage correctly", async () => {
@@ -167,20 +164,48 @@ describe("quiz procedures", () => {
         questions = qs;
       }
 
-      const answers = questions.slice(0, 10).map((q) => ({
+      const answers = questions.map((q) => ({
         questionId: q.id,
-        selectedAnswer: q.correctAnswer,
-        isCorrect: 1,
+        selectedAnswer: "A" as const,
       }));
 
       const result = await caller.quiz.submitAttempt({
         quizId,
         answers,
-        score: 10,
-        totalQuestions: 10,
       });
 
       expect(result.percentage).toBe(100);
+    });
+
+    it("derives correctness on the server rather than accepting a claimed client score", async () => {
+      const ctx = createAuthContext();
+      const caller = appRouter.createCaller(ctx);
+      const answers = questions.map((q, index) => ({
+        questionId: q.id,
+        selectedAnswer: index === 0 ? "B" as const : "A" as const,
+      }));
+
+      const result = await caller.quiz.submitAttempt({ quizId, answers });
+      expect(result.score).toBe(9);
+      expect(result.percentage).toBe(90);
+    });
+  });
+
+  describe("quiz confidentiality", () => {
+    it("rejects anonymous question delivery", async () => {
+      const caller = appRouter.createCaller({ ...createAuthContext(), user: null });
+      await expect(caller.quiz.getQuestions({ quizId, shuffle: false })).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+    });
+
+    it("does not return one learner's attempt result to another learner", async () => {
+      const owner = appRouter.createCaller(createAuthContext(1));
+      const result = await owner.quiz.submitAttempt({
+        quizId,
+        answers: questions.map((q) => ({ questionId: q.id, selectedAnswer: "A" as const })),
+      });
+      const otherUser = appRouter.createCaller(createAuthContext(2));
+
+      await expect(otherUser.quiz.getAttemptResults({ attemptId: result.attemptId })).resolves.toBeUndefined();
     });
   });
 

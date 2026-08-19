@@ -25,55 +25,81 @@ export const appRouter = router({
   }),
 
   quiz: router({
-    getAll: publicProcedure.query(async () => {
+    getAll: protectedProcedure.query(async () => {
       const { getQuizzes } = await import("./db");
       return getQuizzes();
     }),
 
-    getById: publicProcedure
+    getById: protectedProcedure
       .input(z.object({ quizId: z.number() }))
       .query(async ({ input }) => {
         const { getQuizById } = await import("./db");
         return getQuizById(input.quizId);
       }),
 
-    getQuestions: publicProcedure
+    getQuestions: protectedProcedure
       .input(z.object({ quizId: z.number(), shuffle: z.boolean().default(false) }))
       .query(async ({ input }) => {
-        const { getQuestionsByQuizId } = await import("./db");
-        return getQuestionsByQuizId(input.quizId, input.shuffle);
+        const { getPracticeQuestionsByQuizId } = await import("./db");
+        return getPracticeQuestionsByQuizId(input.quizId, input.shuffle);
+      }),
+
+    checkAnswer: protectedProcedure
+      .input(z.object({
+        quizId: z.number().int().positive(),
+        questionId: z.number().int().positive(),
+        selectedAnswer: z.enum(["A", "B", "C", "D"]),
+      }))
+      .mutation(async ({ input }) => {
+        const { getQuestionForQuiz } = await import("./db");
+        const question = await getQuestionForQuiz(input.quizId, input.questionId);
+        if (!question) throw new Error("This question does not belong to the selected quiz.");
+        return { isCorrect: question.correctAnswer === input.selectedAnswer ? 1 : 0 };
       }),
 
     submitAttempt: protectedProcedure
       .input(
         z.object({
-          quizId: z.number(),
+          quizId: z.number().int().positive(),
           answers: z.array(
             z.object({
-              questionId: z.number(),
-              selectedAnswer: z.string(),
-              isCorrect: z.number(),
+              questionId: z.number().int().positive(),
+              selectedAnswer: z.enum(["A", "B", "C", "D"]),
             })
-          ),
-          score: z.number(),
-          totalQuestions: z.number(),
+          ).min(1),
         })
       )
       .mutation(async ({ ctx, input }) => {
-        const { createQuizAttempt, saveUserAnswers } = await import("./db");
-        const percentage = Math.round((input.score / input.totalQuestions) * 100);
+        const { createQuizAttempt, getQuestionsByQuizId, saveUserAnswers } = await import("./db");
+        const questions = await getQuestionsByQuizId(input.quizId);
+        if (!questions.length) throw new Error("The selected quiz has no available questions.");
+        const answersByQuestion = new Map(input.answers.map((answer) => [answer.questionId, answer]));
+        if (answersByQuestion.size !== questions.length || input.answers.length !== questions.length || questions.some((question) => !answersByQuestion.has(question.id))) {
+          throw new Error("Submit one answer for every question in the selected quiz.");
+        }
+        const scoredAnswers = questions.map((question) => {
+          const submitted = answersByQuestion.get(question.id)!;
+          return {
+            questionId: question.id,
+            selectedAnswer: submitted.selectedAnswer,
+            isCorrect: submitted.selectedAnswer === question.correctAnswer ? 1 : 0,
+          };
+        });
+        const score = scoredAnswers.filter((answer) => answer.isCorrect === 1).length;
+        const totalQuestions = questions.length;
+        const percentage = Math.round((score / totalQuestions) * 100);
 
         const attemptId = await createQuizAttempt({
           userId: ctx.user.id,
           quizId: input.quizId,
-          score: input.score,
-          totalQuestions: input.totalQuestions,
+          score,
+          totalQuestions,
           percentage,
           startedAt: new Date(),
           completedAt: new Date(),
         });
 
-        const userAnswersData = input.answers.map((answer) => ({
+        const userAnswersData = scoredAnswers.map((answer) => ({
           attemptId,
           questionId: answer.questionId,
           selectedAnswer: answer.selectedAnswer,
@@ -82,14 +108,14 @@ export const appRouter = router({
 
         await saveUserAnswers(userAnswersData);
 
-        return { attemptId, score: input.score, percentage };
+        return { attemptId, score, percentage };
       }),
 
-    getAttemptResults: publicProcedure
+    getAttemptResults: protectedProcedure
       .input(z.object({ attemptId: z.number() }))
-      .query(async ({ input }) => {
-        const { getAttemptWithAnswers } = await import("./db");
-        return getAttemptWithAnswers(input.attemptId);
+      .query(async ({ ctx, input }) => {
+        const { getAttemptWithAnswersForUser } = await import("./db");
+        return getAttemptWithAnswersForUser(input.attemptId, ctx.user.id);
       }),
 
     getAttemptHistory: protectedProcedure.query(async ({ ctx }) => {
@@ -106,14 +132,15 @@ export const appRouter = router({
   }),
 
   pdfUpload: router({
-    extractPdfText: publicProcedure
+    extractPdfText: protectedProcedure
       .input(z.object({
-        fileBuffer: z.string(), // Base64 encoded PDF
-        fileName: z.string(),
+        fileBuffer: z.string().min(4).max(40_000_000), // Base64 encoded PDF, capped before decoding.
+        fileName: z.string().min(1).max(255),
       }))
       .mutation(async ({ input }) => {
         const { extractTextFromPdf } = await import("./pdfProcessor");
         const buffer = Buffer.from(input.fileBuffer, 'base64');
+        if (!buffer.length || buffer.length > 30 * 1024 * 1024) throw new Error("PDF upload must be between 1 byte and 30MB.");
         return extractTextFromPdf(buffer, input.fileName);
       }),
   }),

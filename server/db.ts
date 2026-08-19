@@ -170,6 +170,21 @@ export async function getQuestionsByQuizId(quizId: number, shuffle: boolean = fa
   return results;
 }
 
+export async function getPracticeQuestionsByQuizId(quizId: number, shuffle: boolean = false) {
+  const results = await getQuestionsByQuizId(quizId, shuffle);
+  return results.map(({ correctAnswer: _correctAnswer, sourceCitation: _sourceCitation, ...question }) => question);
+}
+
+export async function getQuestionForQuiz(quizId: number, questionId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const rows = await db.select().from(questions).where(and(
+    eq(questions.quizId, quizId),
+    eq(questions.id, questionId),
+  )).limit(1);
+  return rows[0];
+}
+
 export async function listPriorGeneratedQuestionHistory(params: {
   userId: number;
   curriculumSetId?: number;
@@ -264,6 +279,17 @@ export async function getAttemptWithAnswers(attemptId: number) {
   );
   
   return { attempt: attempt[0], answers: answersWithQuestions };
+}
+
+export async function getAttemptWithAnswersForUser(attemptId: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const attempt = await db.select().from(quizAttempts).where(and(
+    eq(quizAttempts.id, attemptId),
+    eq(quizAttempts.userId, userId),
+  )).limit(1);
+  if (!attempt.length) return undefined;
+  return getAttemptWithAnswers(attemptId);
 }
 
 export async function getUserAttemptHistory(userId: number) {

@@ -41,8 +41,8 @@ describe("Curriculum Library Release 1", () => {
   it("shows evidence-based edition readiness and the linked reviewed paper-pattern profile", () => {
     render(<CurriculumManagement />);
 
-    expect(screen.getByText("Add a grade or subject")).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Add grade or subject" }).getAttribute("href")).toBe("#programme-catalogue");
+    expect(screen.getByText("Add another grade or subject")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Add another grade" }).getAttribute("href")).toBe("#programme-catalogue");
     expect(screen.getByText("Edition readiness checklist")).toBeTruthy();
     expect(screen.getByText("Textbook extraction completed")).toBeTruthy();
     expect(screen.getByText("At least one reviewed active chapter")).toBeTruthy();

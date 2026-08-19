@@ -440,3 +440,9 @@
 - [x] Add bilingual Urdu-and-English OCR language selection and production language data.
 - [x] Preserve page review safeguards for Urdu-only and mixed-script textbook pages.
 - [x] Add regression coverage, validate the production build, checkpoint, and report the enhanced pipeline.
+
+## Phase 76: Future Grade Intake and Security Reliability Audit
+- [x] Audit grade-management entry points, authorization boundaries, client-visible data, dependencies, and duplicate workflow paths.
+- [x] Add a controlled Portal Admin entry point for future grades without cluttering teacher-facing Grade 9/10 preparation.
+- [x] Implement only verified, low-risk security or reliability fixes and record any remaining risks.
+- [x] Add regression coverage, validate source/build/security checks, checkpoint, and report the completed audit.
