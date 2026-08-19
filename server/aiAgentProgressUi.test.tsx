@@ -189,6 +189,12 @@ describe("AI quiz generation feedback", () => {
     fireEvent.click(screen.getByRole("button", { name: "Back to Quiz Centre" }));
 
     expect(screen.getByRole("alertdialog")).toHaveTextContent("Leave while MCQs are generating?");
+    const leaveActions = screen.getByTestId("leave-generation-actions");
+    expect(leaveActions).toHaveClass("flex-col");
+    expect(leaveActions).not.toHaveClass("flex-col-reverse");
+    expect(Array.from(leaveActions.querySelectorAll("button")).map((button) => button.textContent)).toEqual(["Keep generating", "Leave generation"]);
+    expect(screen.getByRole("button", { name: "Keep generating" })).toHaveClass("min-h-11", "w-full");
+    expect(screen.getByRole("button", { name: "Leave generation" })).toHaveClass("min-h-11", "w-full");
     fireEvent.click(screen.getByRole("button", { name: "Keep generating" }));
     expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
     expect(navigate).not.toHaveBeenCalled();

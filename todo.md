@@ -562,3 +562,8 @@
 - [x] Add an accessible confirmation that appears only while MCQ generation is active.
 - [x] Ensure stay preserves the active request and leave returns safely to Quiz Centre.
 - [x] Add regression coverage for guarded and ordinary Back navigation, validate, and publish.
+
+## Phase 95: Mobile Leave-Confirmation Responsiveness
+- [x] Capture the active-generation leave confirmation at a mobile viewport and inspect its spacing, text wrapping, action hierarchy, and clipping.
+- [x] Refine the dialog only if the mobile review identifies an evidenced layout or usability issue.
+- [x] Add or update responsive dialog regression coverage, validate, and publish the reviewed result.

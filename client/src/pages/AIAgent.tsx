@@ -1319,9 +1319,9 @@ export default function AIAgent() {
               Your request is still being prepared. Leaving now will remove this in-progress draft from this screen before you can review or save it.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Keep generating</AlertDialogCancel>
-            <AlertDialogAction onClick={() => navigate("/")}>Leave generation</AlertDialogAction>
+          <AlertDialogFooter className="flex-col sm:flex-row" data-testid="leave-generation-actions">
+            <AlertDialogCancel className="min-h-11 w-full border-primary bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground sm:w-auto">Keep generating</AlertDialogCancel>
+            <AlertDialogAction className="min-h-11 w-full border border-destructive/40 bg-background text-destructive hover:bg-destructive/10 hover:text-destructive sm:w-auto" onClick={() => navigate("/")}>Leave generation</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
