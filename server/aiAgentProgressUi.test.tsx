@@ -632,6 +632,12 @@ describe("AI quiz generation feedback", () => {
     expect(screen.getByLabelText("Printable generation activity")).toBeVisible();
     expect(screen.getByText("Source scope locked")).toBeVisible();
     expect(screen.getByText("Review draft release")).toBeVisible();
+    const sourceLockedState = screen.getByRole("group", { name: "Source scope locked: explanation available" });
+    expect(sourceLockedState).toHaveAttribute("title", expect.stringMatching(/generation cannot use material outside this source/i));
+    expect(sourceLockedState).toHaveAccessibleDescription(/generation cannot use material outside this source/i);
+    const reviewReleaseState = screen.getByRole("group", { name: "Review draft release: explanation available" });
+    expect(reviewReleaseState).toHaveAttribute("title", expect.stringMatching(/only then is the review draft released/i));
+    expect(reviewReleaseState).toHaveAccessibleDescription(/only then is the review draft released/i);
     const progressbar = screen.getByRole("progressbar", { name: "Printable paper verification progress" });
     expect(progressbar).toHaveAttribute("aria-valuetext", "0 of 10 OR pairs verified");
     expect(screen.getByText(/completed-pair count is exact/i)).toBeVisible();

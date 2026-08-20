@@ -661,3 +661,7 @@
 - [x] Add a professional real-state generation activity display without simulated progress or misleading completion claims.
 - [x] Refine the staff sign-in page with concise approval-first guidance, clear visual hierarchy, and a mobile-ready layout.
 - [x] Add focused UI regressions, validate the production build, and publish the upgrade.
+
+## Phase 112: Printable Activity-State Explanations
+- [x] Add concise accessible hover and keyboard-focus explanations for the Source scope locked and Review draft release activity states.
+- [x] Add UI regression coverage, validate, checkpoint, and report the refinement.

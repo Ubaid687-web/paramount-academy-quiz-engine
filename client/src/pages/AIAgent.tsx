@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { AcademyShell } from "@/components/AcademyShell";
 import { trpc } from "@/lib/trpc";
 import { GENERATION_STEPS, getGenerationStep, getNextSimulatedProgress } from "@/lib/generation-progress";
@@ -1000,9 +1001,9 @@ export default function AIAgent() {
                 : generationStage.detail;
               const exactProgress = printableProgress ? Math.round((printableProgress.completedPairs / printableProgress.totalPairs) * 100) : generationProgress;
               const printableActivity = printableProgress ? [
-                { label: "Source scope locked", detail: "Approved material selected", icon: ShieldCheck, state: "complete" as const },
+                { label: "Source scope locked", detail: "Approved material selected", tooltip: "The selected textbook chapters or lesson material are fixed for this paper. Generation cannot use material outside this source.", icon: ShieldCheck, state: "complete" as const },
                 { label: `Batch ${printableProgress.currentBatchIndex} in progress`, detail: `Pairs ${nextPairStart}–${nextPairEnd} are being prepared`, icon: ScanLine, state: "active" as const },
-                { label: "Review draft release", detail: "Available only after every pair verifies", icon: FileCheck2, state: "waiting" as const },
+                { label: "Review draft release", detail: "Available only after every pair verifies", tooltip: "This remains waiting until every requested OR pair passes source checks. Only then is the review draft released.", icon: FileCheck2, state: "waiting" as const },
               ] : [];
               return (
                 <Card className="overflow-hidden border-accent/30 bg-card shadow-[0_20px_60px_oklch(0.66_0.16_165_/_0.12)]" aria-live="polite" data-testid="generation-activity-panel">
@@ -1040,10 +1041,16 @@ export default function AIAgent() {
                         </div>
 
                         {printableProgress ? <><div className="mt-5 grid gap-2 sm:grid-cols-3" aria-label="Printable generation activity">
-                          {printableActivity.map(({ label, detail, icon: Icon, state }) => <div key={label} className={`rounded-xl border p-3 ${state === "complete" ? "border-accent/25 bg-accent/[0.06]" : state === "active" ? "border-primary/25 bg-primary/[0.05]" : "border-border bg-muted/25"}`}>
-                            <div className="flex items-center gap-2"><Icon className={`h-4 w-4 ${state === "complete" ? "text-accent" : state === "active" ? "text-primary motion-safe:animate-pulse" : "text-muted-foreground"}`} aria-hidden="true" /><p className="text-xs font-bold text-foreground">{label}</p></div>
-                            <p className="mt-1 text-[11px] leading-4 text-muted-foreground">{detail}</p>
-                          </div>)}
+                          {printableActivity.map(({ label, detail, tooltip, icon: Icon, state }) => {
+                            const tooltipId = tooltip ? `generation-activity-tooltip-${state}` : undefined;
+                            const activityCard = <div className={`rounded-xl border p-3 ${tooltip ? "cursor-help outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2" : ""} ${state === "complete" ? "border-accent/25 bg-accent/[0.06]" : state === "active" ? "border-primary/25 bg-primary/[0.05]" : "border-border bg-muted/25"}`} data-testid={tooltip ? `generation-activity-${state}` : undefined} role={tooltip ? "group" : undefined} aria-label={tooltip ? `${label}: explanation available` : undefined} aria-describedby={tooltipId} title={tooltip} tabIndex={tooltip ? 0 : undefined}>
+                              <div className="flex items-center gap-2"><Icon className={`h-4 w-4 ${state === "complete" ? "text-accent" : state === "active" ? "text-primary motion-safe:animate-pulse" : "text-muted-foreground"}`} aria-hidden="true" /><p className="text-xs font-bold text-foreground">{label}</p></div>
+                              <p className="mt-1 text-[11px] leading-4 text-muted-foreground">{detail}</p>
+                              {tooltip && <span id={tooltipId} className="sr-only">{tooltip}</span>}
+                            </div>;
+
+                            return tooltip ? <Tooltip key={label}><TooltipTrigger asChild>{activityCard}</TooltipTrigger><TooltipContent side="top" sideOffset={8} className="max-w-64 leading-5"><p>{tooltip}</p></TooltipContent></Tooltip> : <div key={label}>{activityCard}</div>;
+                          })}
                         </div><p className="mt-4 flex items-start gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2 text-xs leading-5 text-muted-foreground"><Clock3 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />The completed-pair count is exact. This screen stays active while the provider responds and the source-safety checks finish; the review draft appears only when every requested pair passes.</p></> : <div className="mt-5 grid grid-cols-2 gap-x-3 gap-y-2 text-xs sm:grid-cols-3">
                           {GENERATION_STEPS.slice(1).map((step) => {
                             const isComplete = generationProgress >= step.threshold;
