@@ -608,3 +608,8 @@
 - [x] Correlate the latest failed Computer Science short-paper request with generation-job data, provider circuit state, retries, batching, source size, and production logs.
 - [x] Determine from recorded evidence whether the managed provider, Gemini fallback, provider request limits, or application routing caused the failure.
 - [x] Add durable Portal Admin-visible failure evidence and repair only a demonstrated application-side defect; validate and publish.
+
+## Phase 104: Printable Paper 90-92% Doctype HTML Error Fix
+- [ ] Investigate server-side timeouts and client-side JSON parsing when printable paper generation reaches 90-92% progress.
+- [ ] Implement robust error handling, HTML/doctype response trapping, and graceful user feedback for gateway or timeout errors.
+- [ ] Add regression tests, validate with build and test suite, and publish.
