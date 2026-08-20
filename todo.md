@@ -655,3 +655,9 @@
 - [x] Persist completion timestamps for completed MCQ and printable generation jobs so operational telemetry can report real durations.
 - [x] Repair the demonstrated security, reliability, and Grade 9 workflow defects; add focused regressions and validate the production build.
 - [x] Publish the audit findings and the Grade 9 operating recommendation.
+
+## Phase 111: Professional Generation Feedback and Staff Sign-In Experience
+- [x] Audit the current printable-generation feedback and staff sign-in page for clarity, responsiveness, accessibility, and truthful timing.
+- [x] Add a professional real-state generation activity display without simulated progress or misleading completion claims.
+- [x] Refine the staff sign-in page with concise approval-first guidance, clear visual hierarchy, and a mobile-ready layout.
+- [x] Add focused UI regressions, validate the production build, and publish the upgrade.

@@ -15,7 +15,7 @@ import { GENERATION_STEPS, getGenerationStep, getNextSimulatedProgress } from "@
 import { submitNativePdfExport } from "@/lib/pdfDownload";
 import { calculateQuestionRecommendation } from "@shared/questionRecommendation";
 import { useLocation } from "wouter";
-import { Loader2, Sparkles, CheckCircle2, AlertCircle, Upload, FileText, X, GraduationCap, LibraryBig, SlidersHorizontal, ChevronLeft, ChevronRight, ClipboardCheck } from "lucide-react";
+import { Loader2, Sparkles, CheckCircle2, AlertCircle, Upload, FileText, X, GraduationCap, LibraryBig, SlidersHorizontal, ChevronLeft, ChevronRight, ClipboardCheck, ScanLine, ShieldCheck, FileCheck2, Clock3 } from "lucide-react";
 import { toast } from "sonner";
 
 type FbiseSubject = string;
@@ -988,24 +988,30 @@ export default function AIAgent() {
             </Card>}
 
             {activeStep === 4 && isGenerating && (() => {
-              const activeStep = getGenerationStep(generationProgress);
+              const generationStage = getGenerationStep(generationProgress);
               const printableProgress = isPrintablePaperMode ? printableGenerationProgress : null;
               const nextPairStart = printableProgress ? printableProgress.completedPairs + 1 : 0;
               const nextPairEnd = printableProgress ? Math.min(printableProgress.totalPairs, printableProgress.completedPairs + printableProgress.currentBatchPairs) : 0;
               const progressLabel = printableProgress
                 ? `Generating and verifying pairs ${nextPairStart}–${nextPairEnd} of ${printableProgress.totalPairs}`
-                : activeStep.label;
+                : generationStage.label;
               const progressDetail = printableProgress
                 ? `Batch ${printableProgress.currentBatchIndex} of ${printableProgress.totalBatches}. Each pair must pass source and diversity checks before the next batch starts.`
-                : activeStep.detail;
+                : generationStage.detail;
               const exactProgress = printableProgress ? Math.round((printableProgress.completedPairs / printableProgress.totalPairs) * 100) : generationProgress;
+              const printableActivity = printableProgress ? [
+                { label: "Source scope locked", detail: "Approved material selected", icon: ShieldCheck, state: "complete" as const },
+                { label: `Batch ${printableProgress.currentBatchIndex} in progress`, detail: `Pairs ${nextPairStart}–${nextPairEnd} are being prepared`, icon: ScanLine, state: "active" as const },
+                { label: "Review draft release", detail: "Available only after every pair verifies", icon: FileCheck2, state: "waiting" as const },
+              ] : [];
               return (
-                <Card className="overflow-hidden border-accent/30 bg-card shadow-lg shadow-accent/10" aria-live="polite">
-                  <div className="h-1.5 bg-gradient-to-r from-accent via-secondary to-accent animate-pulse" />
+                <Card className="overflow-hidden border-accent/30 bg-card shadow-[0_20px_60px_oklch(0.66_0.16_165_/_0.12)]" aria-live="polite" data-testid="generation-activity-panel">
+                  <div className="h-1.5 bg-gradient-to-r from-primary via-accent to-secondary motion-safe:animate-pulse" />
                   <CardContent className="p-6">
                     <div className="flex items-start gap-4">
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-accent/15 text-accent">
-                        <Sparkles className="h-6 w-6 animate-pulse" aria-hidden="true" />
+                      <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-accent/15 text-accent">
+                        <span className="absolute inset-1 rounded-xl border border-accent/30 motion-safe:animate-ping motion-safe:[animation-duration:2.4s]" aria-hidden="true" />
+                        {printableProgress ? <ScanLine className="h-6 w-6" aria-hidden="true" /> : <Sparkles className="h-6 w-6 motion-safe:animate-pulse" aria-hidden="true" />}
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1013,7 +1019,7 @@ export default function AIAgent() {
                             <p className="text-base font-semibold text-foreground">{progressLabel}</p>
                             <p className="mt-1 text-sm text-muted-foreground">{progressDetail}</p>
                           </div>
-                          <span className="rounded-full bg-accent/15 px-3 py-1 text-sm font-semibold text-accent tabular-nums">
+                          <span className="rounded-full bg-accent/15 px-3 py-1 text-sm font-semibold text-accent tabular-nums" data-testid="generation-exact-progress">
                             {printableProgress ? `${printableProgress.completedPairs} of ${printableProgress.totalPairs} verified` : `${generationProgress}%`}
                           </span>
                         </div>
@@ -1025,7 +1031,7 @@ export default function AIAgent() {
                           aria-valuemin={0}
                           aria-valuemax={100}
                           aria-valuenow={exactProgress}
-                          aria-valuetext={printableProgress ? `${printableProgress.completedPairs} of ${printableProgress.totalPairs} OR pairs verified` : `${generationProgress}% complete: ${activeStep.label}`}
+                          aria-valuetext={printableProgress ? `${printableProgress.completedPairs} of ${printableProgress.totalPairs} OR pairs verified` : `${generationProgress}% complete: ${generationStage.label}`}
                         >
                           <div
                             className="h-full rounded-full bg-gradient-to-r from-accent via-secondary to-accent transition-all duration-700 ease-out"
@@ -1033,7 +1039,12 @@ export default function AIAgent() {
                           />
                         </div>
 
-                        {printableProgress ? <p className="mt-5 rounded-lg border border-border bg-muted/30 px-3 py-2 text-xs leading-5 text-muted-foreground">The completed-pair count is exact. Timing depends on the AI provider response and the source-safety checks; this paper will not be issued until every requested OR pair is verified.</p> : <div className="mt-5 grid grid-cols-2 gap-x-3 gap-y-2 text-xs sm:grid-cols-3">
+                        {printableProgress ? <><div className="mt-5 grid gap-2 sm:grid-cols-3" aria-label="Printable generation activity">
+                          {printableActivity.map(({ label, detail, icon: Icon, state }) => <div key={label} className={`rounded-xl border p-3 ${state === "complete" ? "border-accent/25 bg-accent/[0.06]" : state === "active" ? "border-primary/25 bg-primary/[0.05]" : "border-border bg-muted/25"}`}>
+                            <div className="flex items-center gap-2"><Icon className={`h-4 w-4 ${state === "complete" ? "text-accent" : state === "active" ? "text-primary motion-safe:animate-pulse" : "text-muted-foreground"}`} aria-hidden="true" /><p className="text-xs font-bold text-foreground">{label}</p></div>
+                            <p className="mt-1 text-[11px] leading-4 text-muted-foreground">{detail}</p>
+                          </div>)}
+                        </div><p className="mt-4 flex items-start gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2 text-xs leading-5 text-muted-foreground"><Clock3 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />The completed-pair count is exact. This screen stays active while the provider responds and the source-safety checks finish; the review draft appears only when every requested pair passes.</p></> : <div className="mt-5 grid grid-cols-2 gap-x-3 gap-y-2 text-xs sm:grid-cols-3">
                           {GENERATION_STEPS.slice(1).map((step) => {
                             const isComplete = generationProgress >= step.threshold;
                             return (

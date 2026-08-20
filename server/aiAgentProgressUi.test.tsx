@@ -628,6 +628,10 @@ describe("AI quiz generation feedback", () => {
 
     expect(await screen.findByText("Generating and verifying pairs 1–4 of 10")).toBeVisible();
     expect(screen.getByText("0 of 10 verified")).toBeVisible();
+    expect(screen.getByTestId("generation-activity-panel")).toBeVisible();
+    expect(screen.getByLabelText("Printable generation activity")).toBeVisible();
+    expect(screen.getByText("Source scope locked")).toBeVisible();
+    expect(screen.getByText("Review draft release")).toBeVisible();
     const progressbar = screen.getByRole("progressbar", { name: "Printable paper verification progress" });
     expect(progressbar).toHaveAttribute("aria-valuetext", "0 of 10 OR pairs verified");
     expect(screen.getByText(/completed-pair count is exact/i)).toBeVisible();

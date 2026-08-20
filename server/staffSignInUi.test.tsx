@@ -20,6 +20,9 @@ describe("staff sign-in experience", () => {
     expect(screen.getByRole("button", { name: "Continue to secure sign in" })).toBeTruthy();
     expect(screen.getByText(/does not collect or store staff passwords, mobile numbers, or separate Google credentials/i)).toBeTruthy();
     expect(screen.getByText(/Approval happens after identity verification/i)).toBeTruthy();
+    expect(screen.getByRole("region", { name: "Staff access process" })).toBeTruthy();
+    expect(screen.getByText("Verify identity")).toBeTruthy();
+    expect(screen.getByText("Portal Admin approval")).toBeTruthy();
   });
 
   it("shows the current role after sign-in without granting access through the page", () => {
@@ -27,6 +30,7 @@ describe("staff sign-in experience", () => {
     render(<StaffSignIn />);
     expect(screen.getByText("No staff role yet")).toBeTruthy();
     expect(screen.getByText("new.staff@example.com")).toBeTruthy();
+    expect(screen.getByText(/Identity verified\. Portal Admin approval is still required/i)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Return to Quiz Centre" }));
     expect(navigate).toHaveBeenCalledWith("/");
   });
