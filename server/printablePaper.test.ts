@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({ invokeGenerationProvider: vi.fn(), getProviderFailureEvidence: vi.fn() }));
 vi.mock("./generationProvider", () => ({ invokeGenerationProvider: mocks.invokeGenerationProvider, getProviderFailureEvidence: mocks.getProviderFailureEvidence }));
 
-import { buildPrintablePairBatches, buildPrintablePaperPatternInstruction, buildPrintableUpstreamFailure, generatePrintablePaperFromContent, normalizePrintablePaperPayload } from "./printablePaper";
+import { buildPrintablePairBatches, buildPrintablePaperPatternInstruction, buildPrintableUpstreamFailure, generatePrintablePaperBatch, generatePrintablePaperFromContent, normalizePrintablePaperPayload } from "./printablePaper";
 
 const shortGenerated = {
   estimatedDurationMinutes: 30,
@@ -88,6 +88,30 @@ describe("printable paper payload normalization", () => {
     });
 
     expect(mocks.invokeGenerationProvider.mock.calls[0]?.[0].messages[0].content).toContain("SHARED FBISE STYLE ANCHOR");
+  });
+
+  it("sends persisted verified prompts to a later batch so their concept facets cannot be regenerated", async () => {
+    const pair = [
+      { ...shortGenerated.items[0], question: "State the SI unit of speed.", conceptKey: "speed", facetKey: "unit", answerTarget: "metre per second" },
+      { ...shortGenerated.items[0], question: "State the SI unit of velocity.", conceptKey: "velocity", facetKey: "unit", answerTarget: "metre per second" },
+    ];
+    mocks.invokeGenerationProvider.mockResolvedValue({ response: { choices: [{ message: { content: JSON.stringify({ estimatedDurationMinutes: 10, items: pair }) } }] }, telemetry: { provider: "managed_llm", fallbackUsed: false, primaryFailureType: null, managedRetryAttempts: 0, geminiRetryAttempts: 0 } });
+
+    await generatePrintablePaperBatch({
+      paperType: "short",
+      title: "Motion short paper",
+      contentText: "Speed is the distance travelled per unit time. The SI unit of speed is metre per second. Velocity is displacement per unit time.".repeat(4),
+      pairCount: 1,
+      difficulty: "balanced",
+      sourceContext: { sourceType: "curriculum_scope", sourceTitle: "Motion" },
+      existingItems: [{ ...shortGenerated.items[0], kind: "short", conceptKey: "speed", facetKey: "formula", answerTarget: "speed equals distance divided by time", orGroup: 1 }],
+      batchIndex: 1,
+      totalBatches: 2,
+    });
+
+    expect(mocks.invokeGenerationProvider).toHaveBeenCalledWith(expect.objectContaining({
+      messages: expect.arrayContaining([expect.objectContaining({ content: expect.stringContaining("speed") })]),
+    }));
   });
 
   it("aggregates provider-reported usage across printable batches without fabricating absent metrics", async () => {

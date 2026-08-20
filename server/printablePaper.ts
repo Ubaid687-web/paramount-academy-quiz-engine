@@ -18,6 +18,11 @@ export type GeneratedPrintablePaperResult = {
   providerTelemetry: Omit<GenerationProviderTelemetry, "provider"> & { provider: "managed_llm" | "gemini_byok" | "mixed" };
 };
 
+export type GeneratedPrintablePaperBatchResult = {
+  items: Array<Record<string, unknown> & QuestionCoverageRecord & { kind: PrintablePaperType; marks: number }>;
+  providerTelemetry: Omit<GenerationProviderTelemetry, "provider"> & { provider: "managed_llm" | "gemini_byok" };
+};
+
 type PrintableFailureError = Error & { providerFailure?: ProviderFailureEvidence };
 
 function preserveProviderFailure(message: string, error: unknown) {
@@ -203,21 +208,8 @@ export async function generatePrintablePaperFromContent(params: {
   sourceContext: GenerationSourceContext;
 }): Promise<GeneratedPrintablePaperResult> {
   const { paperType, title, contentText, pairCount, difficulty, sourceContext } = params;
-  const sharedStyleAnchor = sourceContext.styleAnchor ?? buildSharedStyleAnchor({
-    board: "FBISE",
-    grade: sourceContext.classLevel ?? "Unspecified grade",
-    subject: sourceContext.subject ?? "Unspecified subject",
-    paperPatternGuidance: sourceContext.paperPatternGuidance ?? [],
-    approvedExamples: [],
-  });
-  const safeSections = chunkContent(contentText, Math.min(6, Math.max(2, pairCount))).map((section, index) => `SOURCE SECTION ${index + 1}:\n${section.slice(0, 1500)}`).join("\n\n");
-  const marksRule = paperType === "short"
-    ? "Each short question is normally 3 marks unless the selected source requires another value."
-    : "Each long question must be 5–8 marks; its rubric total must exactly match its marks.";
   const batchPlan = buildPrintablePairBatches(pairCount);
   const items: Array<Record<string, unknown> & QuestionCoverageRecord & { kind: PrintablePaperType; marks: number }> = [];
-  let completedGroups = 0;
-  let diversityShortfall = false;
   let managedRetryAttempts = 0;
   let geminiRetryAttempts = 0;
   let fallbackUsed = false;
@@ -227,60 +219,34 @@ export async function generatePrintablePaperFromContent(params: {
 
   for (let batchIndex = 0; batchIndex < batchPlan.length; batchIndex += 1) {
     const batchPairs = batchPlan[batchIndex]!;
-    let batchPayload: NormalizedPrintablePaperPayload | null = null;
-    for (let attempt = 0; attempt < 2 && !batchPayload; attempt += 1) {
-      try {
-        const existingCoverage = buildPriorHistoryExclusion([
-          ...(sourceContext.priorQuestionHistory ?? []),
-          ...items,
-        ]);
-        const providerResult = await invokeGenerationProvider({
-          messages: [
-            { role: "system", content: PRINTABLE_PAPER_PROMPT + sharedStyleAnchor.instruction },
-            { role: "user", content: `This is batch ${batchIndex + 1} of ${batchPlan.length}. Create exactly ${batchPairs} numbered OR pairs (${batchPairs * 2} printed prompts) for a ${paperType}-question paper. Difficulty preference: ${difficulty}. ${marksRule}\n\nPaper title: ${title}\nSource title: ${sourceContext.sourceTitle}\n\n${existingCoverage}\n\nUse the full source breadth. A concept may appear more than once only when every occurrence has a different source-supported facetKey and answerTarget. Do not repeat a definition as a reworded definition, a formula as the same formula task, or an application with the same answer target. Each OR pair must contain two genuinely different alternatives with different answer targets. Return the two alternatives consecutively.\n\n${safeSections}` },
-          ],
-          response_format: {
-            type: "json_schema",
-            json_schema: { name: `${paperType}_paper_batch`, strict: true, schema: buildSchema(paperType) },
-          },
-        });
-        providers.add(providerResult.telemetry.provider);
-        managedRetryAttempts += providerResult.telemetry.managedRetryAttempts;
-        geminiRetryAttempts += providerResult.telemetry.geminiRetryAttempts;
-        fallbackUsed ||= providerResult.telemetry.fallbackUsed;
-        primaryFailureType ||= providerResult.telemetry.primaryFailureType;
-        providerUsage = addProviderUsage(providerUsage, providerResult.telemetry.usage);
-        const responseContent = providerResult.response.choices[0]?.message?.content;
-        if (typeof responseContent !== "string") throw new Error("No structured batch output.");
-        const candidate = normalizePrintablePaperPayload(paperType, title, JSON.parse(responseContent || "{}"));
-        if (candidate.items.length !== batchPairs * 2) {
-          diversityShortfall = true;
-          throw new Error("Insufficient distinct concept coverage for the requested OR-pair batch.");
-        }
-        const candidateItems = candidate.items.map((item, index) => ({ ...item, orGroup: Math.floor(index / 2) + 1 }));
-        const diversity = validateDistinctOrPairCoverage(candidateItems, [
-          ...(sourceContext.priorQuestionHistory ?? []),
-          ...items,
-        ]);
-        if (!diversity.valid) {
-          diversityShortfall = true;
-          throw new Error(diversity.issues.join(" "));
-        }
-        batchPayload = { ...candidate, items: candidateItems };
-      } catch (error) {
-        const upstreamFailure = buildPrintableUpstreamFailure(error);
-        if (upstreamFailure) throw upstreamFailure;
-        // Retry once with the same small batch; no partial output is exposed to the teacher.
-      }
-    }
-    if (!batchPayload) {
-      if (diversityShortfall) {
+    let batch: GeneratedPrintablePaperBatchResult;
+    try {
+      batch = await generatePrintablePaperBatch({
+        paperType,
+        title,
+        contentText,
+        pairCount: batchPairs,
+        difficulty,
+        sourceContext,
+        existingItems: items,
+        batchIndex,
+        totalBatches: batchPlan.length,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (message.includes("does not provide enough distinct source-supported question targets")) {
         throw new Error(`The selected source does not provide ${pairCount} distinct source-supported question targets for this paper without repeating an answer or rewording the same task. Reduce the requested OR pairs or select a wider approved scope.`);
       }
-      throw new Error("The printable paper could not be completed from the approved material. Please try again with fewer OR pairs or a narrower scope.");
+      throw error;
     }
-    items.push(...batchPayload.items.map((item, index) => ({ ...item, orGroup: completedGroups + Math.floor(index / 2) + 1 })));
-    completedGroups += batchPairs;
+    providers.add(batch.providerTelemetry.provider);
+    managedRetryAttempts += batch.providerTelemetry.managedRetryAttempts;
+    geminiRetryAttempts += batch.providerTelemetry.geminiRetryAttempts;
+    fallbackUsed ||= batch.providerTelemetry.fallbackUsed;
+    primaryFailureType ||= batch.providerTelemetry.primaryFailureType;
+    providerUsage = addProviderUsage(providerUsage, batch.providerTelemetry.usage);
+    const completedGroups = items.length / 2;
+    items.push(...batch.items.map((item, index) => ({ ...item, orGroup: completedGroups + Math.floor(index / 2) + 1 })));
   }
 
   const finalDiversity = validateDistinctOrPairCoverage(items, sourceContext.priorQuestionHistory ?? []);
@@ -299,4 +265,83 @@ export async function generatePrintablePaperFromContent(params: {
     payload,
     providerTelemetry: { provider, fallbackUsed, primaryFailureType, managedRetryAttempts, geminiRetryAttempts, usage: providerUsage },
   };
+}
+
+/**
+ * Generates one bounded, source-validated printable batch. Callers may persist the returned
+ * items before requesting another batch; passing those accepted items back in is mandatory for
+ * cross-batch concept, facet, and answer-target exclusion.
+ */
+export async function generatePrintablePaperBatch(params: {
+  paperType: PrintablePaperType;
+  title: string;
+  contentText: string;
+  pairCount: number;
+  difficulty: "balanced" | "easy" | "medium" | "hard";
+  sourceContext: GenerationSourceContext;
+  existingItems?: Array<Record<string, unknown> & QuestionCoverageRecord & { kind: PrintablePaperType; marks: number }>;
+  batchIndex?: number;
+  totalBatches?: number;
+}): Promise<GeneratedPrintablePaperBatchResult> {
+  const { paperType, title, contentText, pairCount, difficulty, sourceContext, existingItems = [], batchIndex = 0, totalBatches = 1 } = params;
+  if (!Number.isInteger(pairCount) || pairCount < 1 || pairCount > 4) {
+    throw new Error("Printable batches must contain between 1 and 4 OR pairs.");
+  }
+  const sharedStyleAnchor = sourceContext.styleAnchor ?? buildSharedStyleAnchor({
+    board: "FBISE",
+    grade: sourceContext.classLevel ?? "Unspecified grade",
+    subject: sourceContext.subject ?? "Unspecified subject",
+    paperPatternGuidance: sourceContext.paperPatternGuidance ?? [],
+    approvedExamples: [],
+  });
+  const safeSections = chunkContent(contentText, Math.min(6, Math.max(2, pairCount))).map((section, index) => `SOURCE SECTION ${index + 1}:\n${section.slice(0, 1500)}`).join("\n\n");
+  const marksRule = paperType === "short"
+    ? "Each short question is normally 3 marks unless the selected source requires another value."
+    : "Each long question must be 5–8 marks; its rubric total must exactly match its marks.";
+  let diversityShortfall = false;
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      const existingCoverage = buildPriorHistoryExclusion([
+        ...(sourceContext.priorQuestionHistory ?? []),
+        ...existingItems,
+      ]);
+      const providerResult = await invokeGenerationProvider({
+        messages: [
+          { role: "system", content: PRINTABLE_PAPER_PROMPT + sharedStyleAnchor.instruction },
+          { role: "user", content: `This is batch ${batchIndex + 1} of ${totalBatches}. Create exactly ${pairCount} numbered OR pairs (${pairCount * 2} printed prompts) for a ${paperType}-question paper. Difficulty preference: ${difficulty}. ${marksRule}\n\nPaper title: ${title}\nSource title: ${sourceContext.sourceTitle}\n\n${existingCoverage}\n\nUse the full source breadth. A concept may appear more than once only when every occurrence has a different source-supported facetKey and answerTarget. Do not repeat a definition as a reworded definition, a formula as the same formula task, or an application with the same answer target. Each OR pair must contain two genuinely different alternatives with different answer targets. Return the two alternatives consecutively.\n\n${safeSections}` },
+        ],
+        response_format: {
+          type: "json_schema",
+          json_schema: { name: `${paperType}_paper_batch`, strict: true, schema: buildSchema(paperType) },
+        },
+      });
+      const responseContent = providerResult.response.choices[0]?.message?.content;
+      if (typeof responseContent !== "string") throw new Error("No structured batch output.");
+      const candidate = normalizePrintablePaperPayload(paperType, title, JSON.parse(responseContent || "{}"));
+      if (candidate.items.length !== pairCount * 2) {
+        diversityShortfall = true;
+        throw new Error("Insufficient distinct concept coverage for the requested OR-pair batch.");
+      }
+      const candidateItems = candidate.items.map((item, index) => ({ ...item, orGroup: Math.floor(index / 2) + 1 }));
+      const diversity = validateDistinctOrPairCoverage(candidateItems, [
+        ...(sourceContext.priorQuestionHistory ?? []),
+        ...existingItems,
+      ]);
+      if (!diversity.valid) {
+        diversityShortfall = true;
+        throw new Error(diversity.issues.join(" "));
+      }
+      return {
+        items: candidateItems,
+        providerTelemetry: providerResult.telemetry,
+      };
+    } catch (error) {
+      const upstreamFailure = buildPrintableUpstreamFailure(error);
+      if (upstreamFailure) throw upstreamFailure;
+    }
+  }
+  if (diversityShortfall) {
+    throw new Error("The selected source does not provide enough distinct source-supported question targets for this batch without repeating an answer or rewording the same task. Reduce the requested OR pairs or select a wider approved scope.");
+  }
+  throw new Error("The printable paper batch could not be completed from the approved material. Please try again with fewer OR pairs or a narrower scope.");
 }

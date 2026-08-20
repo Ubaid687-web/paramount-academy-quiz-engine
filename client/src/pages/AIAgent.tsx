@@ -38,6 +38,14 @@ type FullPaperDraftItem = {
   learningObjective: string;
 };
 type FullPaperSection = { id: string; label: string; instructions: string; items: FullPaperDraftItem[] };
+type PrintableGenerationProgress = {
+  completedPairs: number;
+  totalPairs: number;
+  totalBatches: number;
+  currentBatchIndex: number;
+  currentBatchPairs: number;
+  failure?: string;
+};
 
 const SUBJECT_LABELS: Record<string, string> = {
   physics: "Physics",
@@ -77,6 +85,7 @@ export default function AIAgent() {
   const [generatedDraft, setGeneratedDraft] = useState<any>(null);
   const [generatedPrintablePaper, setGeneratedPrintablePaper] = useState<any>(null);
   const [printableCacheReused, setPrintableCacheReused] = useState(false);
+  const [printableGenerationProgress, setPrintableGenerationProgress] = useState<PrintableGenerationProgress | null>(null);
   const [paperPairCount, setPaperPairCount] = useState(5);
   const [paperPairCountInput, setPaperPairCountInput] = useState("5");
   const [paperPairCountError, setPaperPairCountError] = useState<string | null>(null);
@@ -120,7 +129,8 @@ export default function AIAgent() {
   const readySubjectsForGrade = readyProgrammes.filter((programme) => programme.grade === gradeLevel && programme.board === programmeBoard);
 
   const generateMutation = trpc.aiAgent.generateMCQs.useMutation();
-  const generatePrintablePaperMutation = trpc.aiAgent.generatePrintablePaper.useMutation();
+  const startPrintableGenerationMutation = trpc.aiAgent.startPrintableGeneration.useMutation();
+  const advancePrintableGenerationMutation = trpc.aiAgent.advancePrintableGeneration.useMutation();
   const saveMutation = trpc.aiAgent.saveGeneratedQuiz.useMutation();
   const saveAssessmentDraftMutation = trpc.assessment.saveDraft.useMutation();
   const reviseAssessmentDraftMutation = trpc.assessment.reviseDraft.useMutation();
@@ -156,7 +166,7 @@ export default function AIAgent() {
   }, [statusQuery.data?.progress, statusQuery.data?.status]);
 
   useEffect(() => {
-    if (!isGenerating) return;
+    if (!isGenerating || assessmentMode !== "mcq") return;
 
     const progressTimer = window.setInterval(() => {
       setGenerationProgress((currentProgress) => {
@@ -165,7 +175,7 @@ export default function AIAgent() {
     }, 850);
 
     return () => window.clearInterval(progressTimer);
-  }, [isGenerating]);
+  }, [assessmentMode, isGenerating]);
 
   useEffect(() => {
     const draft = assessmentDraftQuery.data;
@@ -545,6 +555,45 @@ export default function AIAgent() {
     }
   };
 
+  const completePrintableGeneration = (result: { payload: unknown; cacheReused: boolean; completedPairs: number }) => {
+    setGenerationProgress(100);
+    setGeneratedPrintablePaper(result.payload);
+    setPrintableCacheReused(Boolean(result.cacheReused));
+    setPrintableGenerationProgress((current) => current ? { ...current, completedPairs: result.completedPairs, failure: undefined } : current);
+    toast.success(result.cacheReused ? "Reused an exact recent paper draft; no new AI call was made." : `${assessmentMode === "short" ? "Short" : "Long"} question paper draft created for review.`);
+  };
+
+  const advancePrintableGeneration = async (activeJobId: number, initialProgress: PrintableGenerationProgress) => {
+    let progressState = initialProgress;
+    try {
+      while (progressState.completedPairs < progressState.totalPairs) {
+        setPrintableGenerationProgress({ ...progressState, failure: undefined });
+        const result = await advancePrintableGenerationMutation.mutateAsync({ jobId: activeJobId });
+        if (result.status === "completed") {
+          if (!result.payload) throw new Error("The printable paper completed without a safe final draft. Please start again.");
+          completePrintableGeneration({ payload: result.payload, cacheReused: result.cacheReused, completedPairs: result.completedPairs });
+          return;
+        }
+        const nextPairs = result.totalPairs - result.completedPairs;
+        progressState = {
+          completedPairs: result.completedPairs,
+          totalPairs: result.totalPairs,
+          totalBatches: result.totalBatches,
+          currentBatchIndex: Math.floor(result.completedPairs / 4) + 1,
+          currentBatchPairs: Math.min(4, nextPairs),
+        };
+        setGenerationProgress(result.progress);
+        setPrintableGenerationProgress(progressState);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "The printable paper paused before the next batch could be verified.";
+      setPrintableGenerationProgress({ ...progressState, failure: message });
+      toast.error(`${message} Verified pairs have been kept safely; you can resume from this point.`);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   const handleGeneratePrintablePaper = async () => {
     if (!isPrintablePaperMode) return;
     if (!quizTitle.trim()) return toast.error("Please enter a paper title.");
@@ -562,9 +611,9 @@ export default function AIAgent() {
     setActiveStep(4);
     setGeneratedPrintablePaper(null);
     setPrintableCacheReused(false);
-    setGenerationProgress(20);
+    setGenerationProgress(0);
     try {
-      const result = await generatePrintablePaperMutation.mutateAsync({
+      const start = await startPrintableGenerationMutation.mutateAsync({
         paperType: assessmentMode,
         title: quizTitle.trim(),
         pairCount: requestedPairCount,
@@ -572,16 +621,33 @@ export default function AIAgent() {
         patternProgramme: { board: "FBISE", grade: gradeLevel, subject },
         ...(scopeType !== "uploaded_content" ? { scope: { board: "FBISE", grade: gradeLevel, subject, scopeType: generationScopeType, chapterIds: selectedChapterIds, segmentIds: selectedSegmentId ? [selectedSegmentId] : [], scopeTemplateId: selectedScopeTemplateId ?? undefined } } : { contentText }),
       });
-      setGenerationProgress(100);
-      setGeneratedPrintablePaper(result.payload);
-      setPrintableCacheReused(Boolean(result.cacheReused));
-      toast.success(result.cacheReused ? "Reused an exact recent paper draft; no new AI call was made." : `${assessmentMode === "short" ? "Short" : "Long"} question paper draft created for review.`);
+      setJobId(start.jobId);
+      if (start.status === "completed") {
+        if (!start.payload) throw new Error("The cached printable paper is unavailable. Please start a new draft.");
+        completePrintableGeneration({ payload: start.payload, cacheReused: start.cacheReused, completedPairs: start.completedPairs });
+        return;
+      }
+      const initialProgress: PrintableGenerationProgress = {
+        completedPairs: start.completedPairs,
+        totalPairs: start.totalPairs,
+        totalBatches: start.totalBatches,
+        currentBatchIndex: 1,
+        currentBatchPairs: Math.min(4, start.totalPairs),
+      };
+      setPrintableGenerationProgress(initialProgress);
+      await advancePrintableGeneration(start.jobId, initialProgress);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to generate the printable paper.");
-      setActiveStep(3);
-    } finally {
+      toast.error(error instanceof Error ? error.message : "Failed to prepare the printable paper.");
       setIsGenerating(false);
+      setActiveStep(3);
     }
+  };
+
+  const handleResumePrintableGeneration = async () => {
+    if (!jobId || !printableGenerationProgress) return;
+    setIsGenerating(true);
+    setPrintableGenerationProgress({ ...printableGenerationProgress, failure: undefined });
+    await advancePrintableGeneration(jobId, { ...printableGenerationProgress, failure: undefined });
   };
 
   const handlePrintableDownload = (kind: "paper" | "solution") => {
@@ -892,7 +958,7 @@ export default function AIAgent() {
               <CardContent className="space-y-4">
                 <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm leading-6 text-muted-foreground"><strong>Draft review required.</strong> Verify source references, answer wording, formulas, and diagrams before issuing this paper.</div>
                 <div><Label htmlFor="paper-pairs" className="mb-2 block text-sm font-medium">Numbered OR pairs</Label><Input id="paper-pairs" type="number" inputMode="numeric" value={paperPairCountInput} onChange={(event) => { const rawValue = event.target.value; setPaperPairCountInput(rawValue); setPaperPairCountError(null); if (/^\d+$/.test(rawValue)) setPaperPairCount(Number.parseInt(rawValue, 10)); }} onBlur={() => { if (paperPairCountInput === "") { setPaperPairCountError("Enter a whole number from 1 to 30."); return; } const parsedValue = Number.parseInt(paperPairCountInput, 10); if (!/^\d+$/.test(paperPairCountInput) || !Number.isInteger(parsedValue) || parsedValue < 1 || parsedValue > 30) { setPaperPairCountError("Enter a whole number from 1 to 30."); return; } setPaperPairCount(parsedValue); setPaperPairCountError(null); }} /><p className="mt-1 text-xs text-muted-foreground">Each numbered question includes an alternative of equal marks. Choose 1–30 pairs; the source still must support a different concept for each numbered pair.</p>{paperPairCountError && <p className="mt-2 text-xs text-destructive" role="alert">{paperPairCountError}</p>}</div>
-                <div className="flex flex-col gap-2 border-t border-border pt-3 sm:flex-row sm:items-center sm:justify-between"><Button type="button" variant="outline" size="sm" onClick={() => setActiveStep(2)}><ChevronLeft className="mr-1 h-4 w-4" />Back</Button><Button type="button" onClick={handleGeneratePrintablePaper} disabled={isGenerating || generatePrintablePaperMutation.isPending || !canAdvanceToDraft} className="sm:flex-1 bg-primary text-primary-foreground font-semibold shadow-sm hover:bg-primary/90">{isGenerating || generatePrintablePaperMutation.isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating paper draft…</> : "Generate printable paper draft"}</Button></div>
+                <div className="flex flex-col gap-2 border-t border-border pt-3 sm:flex-row sm:items-center sm:justify-between"><Button type="button" variant="outline" size="sm" onClick={() => setActiveStep(2)}><ChevronLeft className="mr-1 h-4 w-4" />Back</Button><Button type="button" onClick={handleGeneratePrintablePaper} disabled={isGenerating || startPrintableGenerationMutation.isPending || advancePrintableGenerationMutation.isPending || !canAdvanceToDraft} className="sm:flex-1 bg-primary text-primary-foreground font-semibold shadow-sm hover:bg-primary/90">{isGenerating || startPrintableGenerationMutation.isPending || advancePrintableGenerationMutation.isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Preparing verified paper batch…</> : "Generate printable paper draft"}</Button></div>
                 {generatedPrintablePaper && <div className="space-y-3 rounded-xl border border-accent/30 bg-accent/5 p-4"><div><p className="font-semibold text-foreground">Printable draft ready</p><p className="mt-1 text-sm text-muted-foreground">{generatedPrintablePaper.items?.length || 0} prompts across {paperPairCount} OR pairs. This is not an online quiz.</p></div><div className="flex flex-col gap-2 sm:flex-row"><Button type="button" variant="outline" className="flex-1" onClick={() => handlePrintableDownload("paper")}>Download paper PDF</Button><Button type="button" variant="outline" className="flex-1" onClick={() => handlePrintableDownload("solution")}>Download solution key</Button></div><p className="text-xs text-muted-foreground">Your browser will receive the PDF directly from this tap. If the paper needs regeneration, the browser will show a clear message.</p></div>}
               </CardContent>
             </Card>}
@@ -910,8 +976,29 @@ export default function AIAgent() {
               </CardContent>
             </Card>}
 
+            {activeStep === 4 && !isGenerating && !generatedPrintablePaper && printableGenerationProgress?.failure && <Card className="border-amber-500/30 bg-card shadow-sm" aria-live="polite">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2"><AlertCircle className="h-5 w-5 text-amber-600" />Printable paper paused safely</CardTitle>
+                <CardDescription>Previously verified OR pairs are retained. The next request will continue from the saved batch rather than generate them again.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-foreground"><strong>{printableGenerationProgress.completedPairs} of {printableGenerationProgress.totalPairs} OR pairs verified.</strong><p className="mt-1 text-muted-foreground">{printableGenerationProgress.failure}</p></div>
+                <div className="flex flex-col gap-2 sm:flex-row"><Button type="button" variant="outline" className="sm:flex-1" onClick={() => setActiveStep(3)}><ChevronLeft className="mr-1 h-4 w-4" />Back to settings</Button><Button type="button" className="sm:flex-1" onClick={handleResumePrintableGeneration}><Sparkles className="mr-2 h-4 w-4" />Resume verified generation</Button></div>
+              </CardContent>
+            </Card>}
+
             {activeStep === 4 && isGenerating && (() => {
               const activeStep = getGenerationStep(generationProgress);
+              const printableProgress = isPrintablePaperMode ? printableGenerationProgress : null;
+              const nextPairStart = printableProgress ? printableProgress.completedPairs + 1 : 0;
+              const nextPairEnd = printableProgress ? Math.min(printableProgress.totalPairs, printableProgress.completedPairs + printableProgress.currentBatchPairs) : 0;
+              const progressLabel = printableProgress
+                ? `Generating and verifying pairs ${nextPairStart}–${nextPairEnd} of ${printableProgress.totalPairs}`
+                : activeStep.label;
+              const progressDetail = printableProgress
+                ? `Batch ${printableProgress.currentBatchIndex} of ${printableProgress.totalBatches}. Each pair must pass source and diversity checks before the next batch starts.`
+                : activeStep.detail;
+              const exactProgress = printableProgress ? Math.round((printableProgress.completedPairs / printableProgress.totalPairs) * 100) : generationProgress;
               return (
                 <Card className="overflow-hidden border-accent/30 bg-card shadow-lg shadow-accent/10" aria-live="polite">
                   <div className="h-1.5 bg-gradient-to-r from-accent via-secondary to-accent animate-pulse" />
@@ -923,30 +1010,30 @@ export default function AIAgent() {
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <div>
-                            <p className="text-base font-semibold text-foreground">{activeStep.label}</p>
-                            <p className="mt-1 text-sm text-muted-foreground">{activeStep.detail}</p>
+                            <p className="text-base font-semibold text-foreground">{progressLabel}</p>
+                            <p className="mt-1 text-sm text-muted-foreground">{progressDetail}</p>
                           </div>
                           <span className="rounded-full bg-accent/15 px-3 py-1 text-sm font-semibold text-accent tabular-nums">
-                            {generationProgress}%
+                            {printableProgress ? `${printableProgress.completedPairs} of ${printableProgress.totalPairs} verified` : `${generationProgress}%`}
                           </span>
                         </div>
 
                         <div
                           className="mt-5 h-2.5 overflow-hidden rounded-full bg-muted"
                           role="progressbar"
-                          aria-label="Quiz generation progress"
+                          aria-label={printableProgress ? "Printable paper verification progress" : "Quiz generation progress"}
                           aria-valuemin={0}
                           aria-valuemax={100}
-                          aria-valuenow={generationProgress}
-                          aria-valuetext={`${generationProgress}% complete: ${activeStep.label}`}
+                          aria-valuenow={exactProgress}
+                          aria-valuetext={printableProgress ? `${printableProgress.completedPairs} of ${printableProgress.totalPairs} OR pairs verified` : `${generationProgress}% complete: ${activeStep.label}`}
                         >
                           <div
                             className="h-full rounded-full bg-gradient-to-r from-accent via-secondary to-accent transition-all duration-700 ease-out"
-                            style={{ width: `${generationProgress}%` }}
+                            style={{ width: `${exactProgress}%` }}
                           />
                         </div>
 
-                        <div className="mt-5 grid grid-cols-2 gap-x-3 gap-y-2 text-xs sm:grid-cols-3">
+                        {printableProgress ? <p className="mt-5 rounded-lg border border-border bg-muted/30 px-3 py-2 text-xs leading-5 text-muted-foreground">The completed-pair count is exact. Timing depends on the AI provider response and the source-safety checks; this paper will not be issued until every requested OR pair is verified.</p> : <div className="mt-5 grid grid-cols-2 gap-x-3 gap-y-2 text-xs sm:grid-cols-3">
                           {GENERATION_STEPS.slice(1).map((step) => {
                             const isComplete = generationProgress >= step.threshold;
                             return (
@@ -956,7 +1043,7 @@ export default function AIAgent() {
                               </div>
                             );
                           })}
-                        </div>
+                        </div>}
                       </div>
                     </div>
                   </CardContent>

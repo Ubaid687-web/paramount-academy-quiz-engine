@@ -9,12 +9,14 @@ const mocks = vi.hoisted(() => ({
   listPriorGeneratedQuestionHistory: vi.fn(),
   createAssessmentDraft: vi.fn(),
   generatePrintablePaperFromContent: vi.fn(),
+  generatePrintablePaperBatch: vi.fn(),
   getCachedGenerationResponse: vi.fn(),
   getOpenGenerationCircuit: vi.fn(),
   openGenerationCircuit: vi.fn(),
   closeGenerationCircuit: vi.fn(),
   putCachedGenerationResponse: vi.fn(),
   createGenerationJob: vi.fn(),
+  getGenerationJob: vi.fn(),
   updateGenerationJob: vi.fn(),
 }));
 
@@ -31,9 +33,18 @@ vi.mock("./db", () => ({
   closeGenerationCircuit: mocks.closeGenerationCircuit,
   putCachedGenerationResponse: mocks.putCachedGenerationResponse,
   createGenerationJob: mocks.createGenerationJob,
+  getGenerationJob: mocks.getGenerationJob,
   updateGenerationJob: mocks.updateGenerationJob,
 }));
-vi.mock("./printablePaper", () => ({ generatePrintablePaperFromContent: mocks.generatePrintablePaperFromContent }));
+vi.mock("./printablePaper", () => ({
+  buildPrintablePairBatches: (pairCount: number) => {
+    const batches: number[] = [];
+    for (let remaining = pairCount; remaining > 0; remaining -= 4) batches.push(Math.min(4, remaining));
+    return batches;
+  },
+  generatePrintablePaperFromContent: mocks.generatePrintablePaperFromContent,
+  generatePrintablePaperBatch: mocks.generatePrintablePaperBatch,
+}));
 
 import { appRouter } from "./routers";
 
@@ -45,6 +56,24 @@ function createAdminContext(): TrpcContext {
   };
 }
 
+function shortItem(conceptKey: string, facetKey: string, answerTarget: string, orGroup: number) {
+  return {
+    kind: "short" as const,
+    question: `State the ${conceptKey} ${facetKey}.`,
+    sourceReference: `Motion — ${conceptKey}`,
+    learningObjective: `Explain ${conceptKey}.`,
+    conceptKey,
+    facetKey,
+    answerTarget,
+    cognitiveLevel: "U" as const,
+    orGroup,
+    marks: 3,
+    difficulty: "medium" as const,
+    expectedAnswer: answerTarget,
+    markingGuide: [answerTarget],
+  };
+}
+
 describe("printable paper history persistence", () => {
   beforeEach(() => {
     mocks.getCachedGenerationResponse.mockReset();
@@ -53,13 +82,16 @@ describe("printable paper history persistence", () => {
     mocks.closeGenerationCircuit.mockReset();
     mocks.putCachedGenerationResponse.mockReset();
     mocks.createGenerationJob.mockReset();
+    mocks.getGenerationJob.mockReset();
     mocks.updateGenerationJob.mockReset();
+    mocks.generatePrintablePaperBatch.mockReset();
     mocks.getCachedGenerationResponse.mockResolvedValue(undefined);
     mocks.getOpenGenerationCircuit.mockResolvedValue(undefined);
     mocks.openGenerationCircuit.mockResolvedValue(undefined);
     mocks.closeGenerationCircuit.mockResolvedValue(undefined);
     mocks.putCachedGenerationResponse.mockResolvedValue(undefined);
     mocks.createGenerationJob.mockResolvedValue({ id: 700 });
+    mocks.getGenerationJob.mockResolvedValue(undefined);
     mocks.updateGenerationJob.mockResolvedValue(undefined);
   });
   it("stores an approved-scope generated paper with its concept keys for future exclusion", async () => {
@@ -126,5 +158,116 @@ describe("printable paper history persistence", () => {
       fallbackUsed: 1,
       providerFailure: expect.stringContaining('"httpStatus":429'),
     }));
+  });
+
+  it("persists each verified batch, passes accepted prompts into the next batch, and returns a paper only after the final batch", async () => {
+    let printableState = "";
+    mocks.createGenerationJob.mockImplementation(async (record) => {
+      printableState = record.printableState;
+      return { id: 700 };
+    });
+    mocks.getGenerationJob.mockImplementation(async () => ({
+      id: 700,
+      userId: 7,
+      generationMode: "short",
+      printableState,
+      contentText: "Motion describes speed, velocity, acceleration, momentum, force, work, power, and energy. ".repeat(4),
+      requestFingerprint: "progressive-printable-fingerprint",
+    }));
+    mocks.updateGenerationJob.mockImplementation(async (_jobId, updates) => {
+      if (updates.printableState) printableState = updates.printableState;
+    });
+    mocks.listActiveAssessmentPatternSources.mockResolvedValue([]);
+    mocks.listReviewedAssessmentPatternGuidance.mockResolvedValue([]);
+    mocks.listApprovedStyleAnchorExamples.mockResolvedValue([]);
+    mocks.listPriorGeneratedQuestionHistory.mockResolvedValue([]);
+    mocks.generatePrintablePaperBatch
+      .mockResolvedValueOnce({
+        items: [
+          shortItem("speed", "definition", "speed is distance per unit time", 1),
+          shortItem("velocity", "definition", "velocity is displacement per unit time", 1),
+          shortItem("acceleration", "definition", "acceleration is change in velocity per unit time", 2),
+          shortItem("momentum", "formula", "momentum equals mass multiplied by velocity", 2),
+          shortItem("work", "formula", "work equals force multiplied by displacement", 3),
+          shortItem("energy", "definition", "energy is the capacity to do work", 3),
+          shortItem("density", "formula", "density equals mass per unit volume", 4),
+          shortItem("pressure", "formula", "pressure equals force per unit area", 4),
+        ],
+        providerTelemetry: { provider: "gemini_byok", fallbackUsed: true, primaryFailureType: "quota_exhaustion", managedRetryAttempts: 0, geminiRetryAttempts: 1 },
+      })
+      .mockResolvedValueOnce({
+        items: [
+          shortItem("force", "formula", "force equals mass multiplied by acceleration", 1),
+          shortItem("power", "formula", "power equals work per unit time", 1),
+        ],
+        providerTelemetry: { provider: "gemini_byok", fallbackUsed: true, primaryFailureType: "quota_exhaustion", managedRetryAttempts: 0, geminiRetryAttempts: 0 },
+      })
+      ;
+
+    const caller = appRouter.createCaller(createAdminContext());
+    const start = await caller.aiAgent.startPrintableGeneration({
+      paperType: "short",
+      title: "Motion revision",
+      pairCount: 5,
+      difficulty: "balanced",
+      contentText: "Motion describes speed, velocity, acceleration, momentum, force, work, power, and energy. ".repeat(4),
+      patternProgramme: { board: "FBISE", grade: "10", subject: "physics" },
+    });
+
+    expect(start).toMatchObject({ status: "pending", completedPairs: 0, totalPairs: 5, totalBatches: 2 });
+    const firstAdvance = await caller.aiAgent.advancePrintableGeneration({ jobId: start.jobId });
+    expect(firstAdvance).toMatchObject({ status: "pending", completedPairs: 4, totalPairs: 5 });
+    expect(JSON.parse(printableState).completedItems).toHaveLength(8);
+    expect(mocks.putCachedGenerationResponse).not.toHaveBeenCalled();
+
+    const finalAdvance = await caller.aiAgent.advancePrintableGeneration({ jobId: start.jobId });
+    expect(mocks.generatePrintablePaperBatch).toHaveBeenLastCalledWith(expect.objectContaining({
+      existingItems: expect.arrayContaining([expect.objectContaining({ conceptKey: "speed" })]),
+      pairCount: 1,
+    }));
+    expect(finalAdvance).toMatchObject({ status: "completed", completedPairs: 5, totalPairs: 5 });
+    expect(finalAdvance.payload).toMatchObject({ mode: "short", items: expect.arrayContaining([expect.objectContaining({ orGroup: 5, conceptKey: "force" })]) });
+    expect(mocks.putCachedGenerationResponse).toHaveBeenCalledWith(expect.objectContaining({ requestFingerprint: "progressive-printable-fingerprint" }));
+  });
+
+  it("resumes an interrupted printable job without discarding its saved batch state", async () => {
+    const resumableState = JSON.stringify({
+      version: 1,
+      input: { paperType: "short", title: "Motion revision", pairCount: 1, difficulty: "balanced" },
+      sourceContext: { sourceType: "raw_text", sourceTitle: "Teacher-provided custom source", priorQuestionHistory: [] },
+      batchPlan: [1],
+      completedItems: [],
+      providerTelemetry: { providers: [], fallbackUsed: false, primaryFailureType: null, managedRetryAttempts: 0, geminiRetryAttempts: 0 },
+    });
+    let printableState = resumableState;
+    mocks.getGenerationJob.mockImplementation(async () => ({
+      id: 701,
+      userId: 7,
+      generationMode: "short",
+      printableState,
+      contentText: "Motion explains speed, velocity, and acceleration using verified textbook definitions. ".repeat(4),
+      requestFingerprint: "resume-printable-fingerprint",
+    }));
+    mocks.updateGenerationJob.mockImplementation(async (_jobId, updates) => {
+      if (updates.printableState) printableState = updates.printableState;
+    });
+    mocks.generatePrintablePaperBatch
+      .mockRejectedValueOnce(new Error("Temporary provider interruption"))
+      .mockResolvedValueOnce({
+        items: [
+          shortItem("speed", "definition", "speed is distance per unit time", 1),
+          shortItem("velocity", "definition", "velocity is displacement per unit time", 1),
+        ],
+        providerTelemetry: { provider: "managed_llm", fallbackUsed: false, primaryFailureType: null, managedRetryAttempts: 0, geminiRetryAttempts: 0 },
+      });
+
+    const caller = appRouter.createCaller(createAdminContext());
+    await expect(caller.aiAgent.advancePrintableGeneration({ jobId: 701 })).rejects.toThrow("Temporary provider interruption");
+    expect(mocks.updateGenerationJob).toHaveBeenCalledWith(701, expect.objectContaining({ status: "failed", progress: 0 }));
+    expect(JSON.parse(printableState).completedItems).toEqual([]);
+
+    const resumed = await caller.aiAgent.advancePrintableGeneration({ jobId: 701 });
+    expect(resumed).toMatchObject({ status: "completed", completedPairs: 1, totalPairs: 1 });
+    expect(mocks.generatePrintablePaperBatch).toHaveBeenCalledTimes(2);
   });
 });

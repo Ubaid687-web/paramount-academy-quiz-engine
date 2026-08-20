@@ -22,7 +22,8 @@ Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
 
 const generateMutation = vi.fn();
 const navigate = vi.fn();
-const generatePrintablePaperMutation = vi.fn();
+const startPrintableGenerationMutation = vi.fn();
+const advancePrintableGenerationMutation = vi.fn();
 const saveMutation = vi.fn();
 const renderPrintablePaperMutation = vi.fn();
 const renderPrintableSolutionMutation = vi.fn();
@@ -67,7 +68,8 @@ vi.mock("@/lib/trpc", () => ({
     },
     aiAgent: {
       generateMCQs: { useMutation: () => ({ mutateAsync: generateMutation }) },
-      generatePrintablePaper: { useMutation: () => ({ mutateAsync: generatePrintablePaperMutation, isPending: false }) },
+      startPrintableGeneration: { useMutation: () => ({ mutateAsync: startPrintableGenerationMutation, isPending: false }) },
+      advancePrintableGeneration: { useMutation: () => ({ mutateAsync: advancePrintableGenerationMutation, isPending: false }) },
       saveGeneratedQuiz: { useMutation: () => ({ mutateAsync: saveMutation, isPending: false }) },
       getGenerationStatus: { useQuery: () => ({ data: undefined }) },
     },
@@ -104,7 +106,8 @@ describe("AI quiz generation feedback", () => {
     cleanup();
     generateMutation.mockReset();
     navigate.mockReset();
-    generatePrintablePaperMutation.mockReset();
+    startPrintableGenerationMutation.mockReset();
+    advancePrintableGenerationMutation.mockReset();
     saveMutation.mockReset();
     renderPrintablePaperMutation.mockReset();
     renderPrintableSolutionMutation.mockReset();
@@ -576,10 +579,12 @@ describe("AI quiz generation feedback", () => {
   });
 
   it("offers a printable-only short-question path with paper and solution-key downloads", async () => {
-    generatePrintablePaperMutation.mockResolvedValue({ payload: { mode: "short", title: "Motion revision paper", estimatedDurationMinutes: 30, items: [
+    const payload = { mode: "short", title: "Motion revision paper", estimatedDurationMinutes: 30, items: [
       { kind: "short", question: "State a speed relationship.", expectedAnswer: "Speed is distance divided by time.", markingGuide: ["States the relationship."], difficulty: "easy", sourceReference: "Motion", learningObjective: "Relate speed, distance and time.", cognitiveLevel: "K", orGroup: 1, marks: 3 },
       { kind: "short", question: "Calculate a speed.", expectedAnswer: "5 m/s.", markingGuide: ["Calculates correctly."], difficulty: "medium", sourceReference: "Motion", learningObjective: "Calculate speed.", cognitiveLevel: "A", orGroup: 1, marks: 3 },
-    ] } });
+    ] };
+    startPrintableGenerationMutation.mockResolvedValue({ jobId: 81, status: "pending", completedPairs: 0, totalPairs: 10, totalBatches: 3, progress: 0, cacheReused: false });
+    advancePrintableGenerationMutation.mockResolvedValue({ jobId: 81, status: "completed", completedPairs: 10, totalPairs: 10, totalBatches: 3, progress: 100, cacheReused: false, payload });
     render(<AIAgent />);
 
     confirmTeacherContext();
@@ -603,7 +608,29 @@ describe("AI quiz generation feedback", () => {
     fireEvent.click(screen.getByRole("button", { name: /generate printable paper draft/i }));
     expect(await screen.findByRole("button", { name: /download paper pdf/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /download solution key/i })).toBeInTheDocument();
-    expect(generatePrintablePaperMutation).toHaveBeenCalledWith(expect.objectContaining({ paperType: "short", pairCount: 10 }));
+    expect(startPrintableGenerationMutation).toHaveBeenCalledWith(expect.objectContaining({ paperType: "short", pairCount: 10 }));
+    expect(advancePrintableGenerationMutation).toHaveBeenCalledWith({ jobId: 81 });
+  });
+
+  it("shows exact printable OR-pair verification progress rather than simulated percentage progress", async () => {
+    startPrintableGenerationMutation.mockResolvedValue({ jobId: 82, status: "pending", completedPairs: 0, totalPairs: 10, totalBatches: 3, progress: 0, cacheReused: false });
+    advancePrintableGenerationMutation.mockImplementation(() => new Promise(() => undefined));
+    render(<AIAgent />);
+
+    confirmTeacherContext();
+    fireEvent.click(screen.getByRole("button", { name: /^Short question paper/i }));
+    chooseCustomPasteSource();
+    fireEvent.change(screen.getByLabelText("Paste source text"), { target: { value: "Source-grounded short question material for a progressive printable draft. ".repeat(4) } });
+    fireEvent.change(screen.getByLabelText("Quiz title"), { target: { value: "Motion revision paper" } });
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    fireEvent.change(screen.getByLabelText("Numbered OR pairs"), { target: { value: "10" } });
+    fireEvent.click(screen.getByRole("button", { name: /generate printable paper draft/i }));
+
+    expect(await screen.findByText("Generating and verifying pairs 1–4 of 10")).toBeVisible();
+    expect(screen.getByText("0 of 10 verified")).toBeVisible();
+    const progressbar = screen.getByRole("progressbar", { name: "Printable paper verification progress" });
+    expect(progressbar).toHaveAttribute("aria-valuetext", "0 of 10 OR pairs verified");
+    expect(screen.getByText(/completed-pair count is exact/i)).toBeVisible();
   });
 
   it("offers all approved Computer Science output types while keeping only MCQs online", () => {

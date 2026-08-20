@@ -7,6 +7,8 @@ import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, publicProcedure, protectedProcedure, router, teacherProcedure } from "./_core/trpc";
 import { buildSharedStyleAnchor, type ReviewedPaperPatternGuidance } from "./styleAnchor";
 import type { ProviderTokenUsage } from "./generationProvider";
+import type { GenerationSourceContext } from "./aiAgent";
+import type { ModeDraftPayload } from "@shared/assessmentDraftContract";
 
 function toViewerSafeQuiz<T extends { sourceContent?: unknown; scopeSnapshot?: unknown; generationMetadata?: unknown }>(quiz: T) {
   const { sourceContent: _sourceContent, scopeSnapshot: _scopeSnapshot, generationMetadata: _generationMetadata, ...safeQuiz } = quiz;
@@ -19,6 +21,76 @@ const programmeKeySchema = z.object({
   subject: z.string().trim().min(2).max(100),
 });
 
+const printableGenerationInputSchema = z.object({
+  paperType: z.enum(["short", "long"]),
+  title: z.string().trim().min(3).max(160),
+  contentText: z.string().min(100, "Content must be at least 100 characters").optional(),
+  pairCount: z.number().int().min(1).max(30),
+  difficulty: z.enum(["balanced", "easy", "medium", "hard"]).default("balanced"),
+  patternProgramme: programmeKeySchema.optional(),
+  scope: z.object({
+    board: z.string().trim().min(2).max(50).default("FBISE"),
+    grade: z.string().trim().min(1).max(20),
+    subject: z.string().trim().min(2).max(100),
+    scopeType: z.enum(["single_chapter", "half_chapter", "multiple_chapters", "half_syllabus", "block"]),
+    chapterIds: z.array(z.number().int().positive()).optional(),
+    segmentIds: z.array(z.number().int().positive()).optional(),
+    scopeTemplateId: z.number().int().positive().optional(),
+  }).optional(),
+});
+
+type PrintableGenerationInput = z.infer<typeof printableGenerationInputSchema>;
+type ProgressivePrintableProviderTelemetry = {
+  providers: Array<"managed_llm" | "gemini_byok">;
+  fallbackUsed: boolean;
+  primaryFailureType: string | null;
+  managedRetryAttempts: number;
+  geminiRetryAttempts: number;
+  usage?: ProviderTokenUsage;
+};
+type ProgressivePrintableState = {
+  version: 1;
+  input: Pick<PrintableGenerationInput, "paperType" | "title" | "pairCount" | "difficulty">;
+  sourceContext: GenerationSourceContext;
+  batchPlan: number[];
+  completedItems: Array<Record<string, unknown>>;
+  providerTelemetry: ProgressivePrintableProviderTelemetry;
+  final?: { payload: ModeDraftPayload; assessmentDraftId?: number; cacheReused: boolean };
+};
+
+function emptyProgressivePrintableTelemetry(): ProgressivePrintableProviderTelemetry {
+  return { providers: [], fallbackUsed: false, primaryFailureType: null, managedRetryAttempts: 0, geminiRetryAttempts: 0 };
+}
+
+function addProgressiveProviderUsage(left: ProviderTokenUsage | undefined, right: ProviderTokenUsage | undefined): ProviderTokenUsage | undefined {
+  if (!right) return left;
+  const add = (first: number | null | undefined, second: number | null) => first === null || first === undefined ? second : second === null ? first : first + second;
+  return {
+    inputTokens: add(left?.inputTokens, right.inputTokens),
+    outputTokens: add(left?.outputTokens, right.outputTokens),
+    cachedTokens: add(left?.cachedTokens, right.cachedTokens),
+    totalTokens: add(left?.totalTokens, right.totalTokens),
+  };
+}
+
+function mergeProgressivePrintableTelemetry(
+  current: ProgressivePrintableProviderTelemetry,
+  next: { provider: "managed_llm" | "gemini_byok"; fallbackUsed: boolean; primaryFailureType: string | null; managedRetryAttempts: number; geminiRetryAttempts: number; usage?: ProviderTokenUsage },
+): ProgressivePrintableProviderTelemetry {
+  return {
+    providers: current.providers.includes(next.provider) ? current.providers : [...current.providers, next.provider],
+    fallbackUsed: current.fallbackUsed || next.fallbackUsed,
+    primaryFailureType: current.primaryFailureType ?? next.primaryFailureType,
+    managedRetryAttempts: current.managedRetryAttempts + next.managedRetryAttempts,
+    geminiRetryAttempts: current.geminiRetryAttempts + next.geminiRetryAttempts,
+    usage: addProgressiveProviderUsage(current.usage, next.usage),
+  };
+}
+
+function resolveProgressivePrintableProvider(telemetry: ProgressivePrintableProviderTelemetry): "managed_llm" | "gemini_byok" | "mixed" {
+  return telemetry.providers.length > 1 ? "mixed" : telemetry.providers[0] ?? "managed_llm";
+}
+
 async function buildStyleAnchorForProgramme(
   programme: { board: string; grade: string; subject: string },
   paperPatternGuidance: ReviewedPaperPatternGuidance[],
@@ -26,6 +98,92 @@ async function buildStyleAnchorForProgramme(
   const { listApprovedStyleAnchorExamples } = await import("./db");
   const approvedExamples = await listApprovedStyleAnchorExamples(programme);
   return buildSharedStyleAnchor({ ...programme, paperPatternGuidance, approvedExamples });
+}
+
+async function resolvePrintableGenerationSource(userId: number, input: PrintableGenerationInput) {
+  let contentText = input.contentText;
+  let sourceContext: GenerationSourceContext | undefined;
+  if (input.scope) {
+    const { getActiveCurriculumScopeCatalog, listActiveAssessmentPatternSources, listReviewedAssessmentPatternGuidance, listPriorGeneratedQuestionHistory } = await import("./db");
+    const { resolveCurriculumScope } = await import("./curriculumScope");
+    const [catalog, paperPatternSources, paperPatternGuidance] = await Promise.all([
+      getActiveCurriculumScopeCatalog(input.scope),
+      listActiveAssessmentPatternSources(input.scope),
+      listReviewedAssessmentPatternGuidance(input.scope),
+    ]);
+    if (!catalog) throw new Error("No active reviewed textbook source is available for the selected subject.");
+    const styleAnchor = await buildStyleAnchorForProgramme(input.scope, paperPatternGuidance);
+    const resolvedScope = resolveCurriculumScope(catalog, input.scope);
+    const priorQuestionHistory = await listPriorGeneratedQuestionHistory({
+      userId,
+      curriculumSetId: catalog.curriculumSet.id,
+      scopeSnapshot: resolvedScope.snapshot,
+    });
+    contentText = resolvedScope.sourceText;
+    sourceContext = {
+      sourceType: "curriculum_scope",
+      sourceTitle: resolvedScope.displayLabel,
+      styleAnchor,
+      subject: catalog.curriculumSet.subject,
+      classLevel: catalog.curriculumSet.grade,
+      curriculumSetId: catalog.curriculumSet.id,
+      scopeTemplateId: resolvedScope.scopeTemplateId,
+      scopeType: resolvedScope.scopeType,
+      selectedChapterIds: resolvedScope.chapterIds,
+      selectedSegmentIds: resolvedScope.segmentIds,
+      scopeSnapshot: resolvedScope.snapshot,
+      paperPatternGuidance: paperPatternGuidance.length ? paperPatternGuidance : paperPatternSources.map((source) => ({ sourceKind: source.sourceKind, academicYear: source.academicYear })),
+      priorQuestionHistory,
+    };
+  } else if (input.patternProgramme) {
+    const { listActiveAssessmentPatternSources, listReviewedAssessmentPatternGuidance, listPriorGeneratedQuestionHistory } = await import("./db");
+    const [paperSources, paperPatternGuidance, priorQuestionHistory] = await Promise.all([
+      listActiveAssessmentPatternSources(input.patternProgramme),
+      listReviewedAssessmentPatternGuidance(input.patternProgramme),
+      listPriorGeneratedQuestionHistory({ userId, contentText: input.contentText }),
+    ]);
+    const styleAnchor = await buildStyleAnchorForProgramme(input.patternProgramme, paperPatternGuidance);
+    sourceContext = {
+      sourceType: "raw_text",
+      sourceTitle: "Teacher-provided custom source",
+      styleAnchor,
+      subject: input.patternProgramme.subject,
+      classLevel: input.patternProgramme.grade,
+      paperPatternGuidance: paperPatternGuidance.length ? paperPatternGuidance : paperSources.map((source) => ({ sourceKind: source.sourceKind, academicYear: source.academicYear })),
+      priorQuestionHistory,
+    };
+  }
+  if (!contentText || !sourceContext) throw new Error("Upload or paste at least 100 characters of material, or choose a reviewed curriculum scope.");
+  return { contentText, sourceContext };
+}
+
+async function createProgressivePrintableAssessmentDraft(userId: number, state: ProgressivePrintableState, payload: ModeDraftPayload) {
+  if (state.sourceContext.sourceType !== "curriculum_scope" || !state.sourceContext.curriculumSetId || !state.sourceContext.scopeSnapshot) return undefined;
+  if (payload.mode !== "short" && payload.mode !== "long") return undefined;
+  const { createAssessmentDraft } = await import("./db");
+  const attemptedMarks = new Map<number, number>();
+  payload.items.forEach((item) => {
+    const group = Number(item.orGroup ?? 0);
+    if (group > 0 && !attemptedMarks.has(group)) attemptedMarks.set(group, item.marks);
+  });
+  const draft = await createAssessmentDraft({
+    title: payload.title,
+    assessmentMode: payload.mode,
+    sourceState: "ready",
+    curriculumSetId: state.sourceContext.curriculumSetId,
+    scopeSnapshot: JSON.stringify(state.sourceContext.scopeSnapshot),
+    paperPatternReferences: state.sourceContext.paperPatternGuidance?.length ? JSON.stringify(state.sourceContext.paperPatternGuidance) : undefined,
+    draftPayload: JSON.stringify(payload),
+    totalMarks: Array.from(attemptedMarks.values()).reduce((total, marks) => total + marks, 0),
+    estimatedDurationMinutes: payload.estimatedDurationMinutes,
+    status: "draft",
+    reviewWarnings: JSON.stringify([
+      "Generated draft: review is required before publication or issue.",
+      "Concept keys are retained to prevent later papers from repeating this scope's underlying topics.",
+    ]),
+    createdBy: userId,
+  });
+  return draft.id;
 }
 
 export const appRouter = router({
@@ -1214,6 +1372,262 @@ export const appRouter = router({
           providerTotalTokens: providerTelemetry.usage?.totalTokens ?? undefined,
         });
         return { payload, assessmentDraftId, cacheReused, providerTelemetry, reviewWarning: cacheReused ? "Reused an exact recent draft; no new AI call was made. Portal Admin review and source verification are still required before issuing this paper." : "Draft only: Portal Admin review and source verification are required before issuing this paper." };
+      }),
+
+    startPrintableGeneration: teacherProcedure
+      .input(printableGenerationInputSchema)
+      .mutation(async ({ ctx, input }) => {
+        const { contentText, sourceContext } = await resolvePrintableGenerationSource(ctx.user.id, input);
+        const { buildGenerationRequestFingerprint } = await import("./generationOptimization");
+        const { buildPrintablePairBatches } = await import("./printablePaper");
+        const { createGenerationJob, getCachedGenerationResponse } = await import("./db");
+        const requestFingerprint = buildGenerationRequestFingerprint({
+          mode: input.paperType,
+          sourceSnapshot: sourceContext.scopeSnapshot,
+          contentText,
+          difficulty: input.difficulty,
+          requestedCount: input.pairCount,
+          title: input.title,
+          priorQuestionHistory: sourceContext.priorQuestionHistory,
+          styleAnchorFingerprint: sourceContext.styleAnchor?.fingerprint,
+        });
+        const cached = await getCachedGenerationResponse(ctx.user.id, requestFingerprint);
+        if (cached) {
+          const cachedResult = JSON.parse(cached.payload) as { payload?: ModeDraftPayload } | ModeDraftPayload;
+          const payload = "payload" in cachedResult && cachedResult.payload ? cachedResult.payload : cachedResult as ModeDraftPayload;
+          const generationJob = await createGenerationJob({
+            userId: ctx.user.id,
+            contentText,
+            numQuestions: input.pairCount * 2,
+            difficulty: input.difficulty,
+            curriculumSetId: sourceContext.curriculumSetId,
+            scopeTemplateId: sourceContext.scopeTemplateId ?? undefined,
+            scopeType: sourceContext.scopeType ?? "ad_hoc",
+            selectedChapterIds: sourceContext.selectedChapterIds?.length ? JSON.stringify(sourceContext.selectedChapterIds) : undefined,
+            selectedSegmentIds: sourceContext.selectedSegmentIds?.length ? JSON.stringify(sourceContext.selectedSegmentIds) : undefined,
+            sourceSnapshot: sourceContext.scopeSnapshot ? JSON.stringify(sourceContext.scopeSnapshot) : undefined,
+            requestFingerprint,
+            promptSourceChars: contentText.length,
+            promptInputChars: 0,
+            generationMode: input.paperType,
+            status: "completed",
+            progress: 100,
+            cacheHit: 1,
+            printableState: JSON.stringify({
+              version: 1,
+              input: { paperType: input.paperType, title: input.title, pairCount: input.pairCount, difficulty: input.difficulty },
+              sourceContext,
+              batchPlan: buildPrintablePairBatches(input.pairCount),
+              completedItems: payload.mode === "short" || payload.mode === "long" ? payload.items : [],
+              providerTelemetry: emptyProgressivePrintableTelemetry(),
+              final: { payload, cacheReused: true },
+            } satisfies ProgressivePrintableState),
+          });
+          return {
+            jobId: generationJob.id,
+            status: "completed" as const,
+            completedPairs: input.pairCount,
+            totalPairs: input.pairCount,
+            totalBatches: 0,
+            progress: 100,
+            cacheReused: true,
+            payload,
+          };
+        }
+
+        const batchPlan = buildPrintablePairBatches(input.pairCount);
+        const state: ProgressivePrintableState = {
+          version: 1,
+          input: { paperType: input.paperType, title: input.title, pairCount: input.pairCount, difficulty: input.difficulty },
+          sourceContext,
+          batchPlan,
+          completedItems: [],
+          providerTelemetry: emptyProgressivePrintableTelemetry(),
+        };
+        const generationJob = await createGenerationJob({
+          userId: ctx.user.id,
+          contentText,
+          numQuestions: input.pairCount * 2,
+          difficulty: input.difficulty,
+          curriculumSetId: sourceContext.curriculumSetId,
+          scopeTemplateId: sourceContext.scopeTemplateId ?? undefined,
+          scopeType: sourceContext.scopeType ?? "ad_hoc",
+          selectedChapterIds: sourceContext.selectedChapterIds?.length ? JSON.stringify(sourceContext.selectedChapterIds) : undefined,
+          selectedSegmentIds: sourceContext.selectedSegmentIds?.length ? JSON.stringify(sourceContext.selectedSegmentIds) : undefined,
+          sourceSnapshot: sourceContext.scopeSnapshot ? JSON.stringify(sourceContext.scopeSnapshot) : undefined,
+          requestFingerprint,
+          promptSourceChars: contentText.length,
+          promptInputChars: 0,
+          generationMode: input.paperType,
+          status: "pending",
+          progress: 0,
+          printableState: JSON.stringify(state),
+        });
+        return {
+          jobId: generationJob.id,
+          status: "pending" as const,
+          completedPairs: 0,
+          totalPairs: input.pairCount,
+          totalBatches: batchPlan.length,
+          progress: 0,
+          cacheReused: false,
+        };
+      }),
+
+    advancePrintableGeneration: teacherProcedure
+      .input(z.object({ jobId: z.number().int().positive() }))
+      .mutation(async ({ ctx, input }) => {
+        const { getGenerationJob, updateGenerationJob, putCachedGenerationResponse } = await import("./db");
+        const job = await getGenerationJob(input.jobId);
+        if (!job || job.userId !== ctx.user.id || (job.generationMode !== "short" && job.generationMode !== "long")) {
+          throw new Error("Printable generation job not found or unauthorized.");
+        }
+        if (!job.printableState) throw new Error("This printable generation cannot be resumed because its batch state is unavailable. Please start a new paper.");
+        let state: ProgressivePrintableState;
+        try {
+          state = JSON.parse(job.printableState) as ProgressivePrintableState;
+        } catch {
+          throw new Error("The printable generation state could not be read safely. Please start a new paper.");
+        }
+        if (state.version !== 1 || !state.batchPlan.length) throw new Error("This printable generation state is not supported. Please start a new paper.");
+        if (state.final) {
+          return {
+            jobId: job.id,
+            status: "completed" as const,
+            completedPairs: state.input.pairCount,
+            totalPairs: state.input.pairCount,
+            totalBatches: state.batchPlan.length,
+            progress: 100,
+            cacheReused: state.final.cacheReused,
+            payload: state.final.payload,
+            assessmentDraftId: state.final.assessmentDraftId,
+          };
+        }
+        const completedPairs = state.completedItems.length / 2;
+        if (!Number.isInteger(completedPairs) || completedPairs < 0 || completedPairs >= state.input.pairCount) {
+          throw new Error("The printable generation state has an invalid verified-pair count. Please start a new paper.");
+        }
+        const batchIndex = state.batchPlan.findIndex((batchPairs, index) => state.batchPlan.slice(0, index).reduce((total, count) => total + count, 0) === completedPairs);
+        const batchPairs = state.batchPlan[batchIndex];
+        if (!batchPairs) throw new Error("No remaining printable batch could be found. Please start a new paper.");
+        await updateGenerationJob(job.id, { status: "processing", errorMessage: null, providerFailure: null, progress: Math.floor((completedPairs / state.input.pairCount) * 100) });
+        try {
+          const { generatePrintablePaperBatch } = await import("./printablePaper");
+          const batch = await generatePrintablePaperBatch({
+            paperType: state.input.paperType,
+            title: state.input.title,
+            contentText: job.contentText,
+            pairCount: batchPairs,
+            difficulty: state.input.difficulty,
+            sourceContext: state.sourceContext,
+            existingItems: state.completedItems as never,
+            batchIndex,
+            totalBatches: state.batchPlan.length,
+          });
+          state.completedItems.push(...batch.items.map((item, itemIndex) => ({
+            ...item,
+            orGroup: completedPairs + Math.floor(itemIndex / 2) + 1,
+          })));
+          state.providerTelemetry = mergeProgressivePrintableTelemetry(state.providerTelemetry, batch.providerTelemetry);
+          const nextCompletedPairs = state.completedItems.length / 2;
+          const progress = Math.floor((nextCompletedPairs / state.input.pairCount) * 100);
+          if (nextCompletedPairs < state.input.pairCount) {
+            await updateGenerationJob(job.id, {
+              status: "pending",
+              progress,
+              printableState: JSON.stringify(state),
+              generationProvider: resolveProgressivePrintableProvider(state.providerTelemetry),
+              fallbackUsed: state.providerTelemetry.fallbackUsed ? 1 : 0,
+              primaryFailureType: state.providerTelemetry.primaryFailureType ?? undefined,
+              managedRetryAttempts: state.providerTelemetry.managedRetryAttempts,
+              geminiRetryAttempts: state.providerTelemetry.geminiRetryAttempts,
+              retryAttempts: state.providerTelemetry.managedRetryAttempts + state.providerTelemetry.geminiRetryAttempts,
+              providerInputTokens: state.providerTelemetry.usage?.inputTokens ?? undefined,
+              providerOutputTokens: state.providerTelemetry.usage?.outputTokens ?? undefined,
+              providerCachedTokens: state.providerTelemetry.usage?.cachedTokens ?? undefined,
+              providerTotalTokens: state.providerTelemetry.usage?.totalTokens ?? undefined,
+            });
+            return {
+              jobId: job.id,
+              status: "pending" as const,
+              completedPairs: nextCompletedPairs,
+              totalPairs: state.input.pairCount,
+              totalBatches: state.batchPlan.length,
+              progress,
+              cacheReused: false,
+              nextBatch: { index: batchIndex + 2, pairs: batchPairs, startPair: nextCompletedPairs + 1, endPair: nextCompletedPairs + state.batchPlan[batchIndex + 1]! },
+            };
+          }
+          const { validateDistinctOrPairCoverage } = await import("./generationDiversity");
+          const finalDiversity = validateDistinctOrPairCoverage(state.completedItems as never, state.sourceContext.priorQuestionHistory ?? []);
+          if (!finalDiversity.valid) throw new Error(`The selected source does not provide enough distinct source-supported question targets without repetition. ${finalDiversity.issues[0] ?? ""}`);
+          const payload = {
+            mode: state.input.paperType,
+            title: state.input.title,
+            estimatedDurationMinutes: state.input.paperType === "short" ? state.input.pairCount * 6 : state.input.pairCount * 10,
+            items: state.completedItems,
+          } as ModeDraftPayload;
+          const assessmentDraftId = await createProgressivePrintableAssessmentDraft(ctx.user.id, state, payload);
+          const providerTelemetry = {
+            provider: resolveProgressivePrintableProvider(state.providerTelemetry),
+            fallbackUsed: state.providerTelemetry.fallbackUsed,
+            primaryFailureType: state.providerTelemetry.primaryFailureType,
+            managedRetryAttempts: state.providerTelemetry.managedRetryAttempts,
+            geminiRetryAttempts: state.providerTelemetry.geminiRetryAttempts,
+            usage: state.providerTelemetry.usage,
+          };
+          await putCachedGenerationResponse({
+            userId: ctx.user.id,
+            requestFingerprint: job.requestFingerprint!,
+            generationMode: state.input.paperType,
+            payload: JSON.stringify({ payload, providerTelemetry }),
+            expiresAt: new Date(Date.now() + 15 * 60_000),
+          });
+          state.final = { payload, assessmentDraftId, cacheReused: false };
+          await updateGenerationJob(job.id, {
+            status: "completed",
+            progress: 100,
+            printableState: JSON.stringify(state),
+            generationProvider: providerTelemetry.provider,
+            fallbackUsed: providerTelemetry.fallbackUsed ? 1 : 0,
+            primaryFailureType: providerTelemetry.primaryFailureType ?? undefined,
+            managedRetryAttempts: providerTelemetry.managedRetryAttempts,
+            geminiRetryAttempts: providerTelemetry.geminiRetryAttempts,
+            retryAttempts: providerTelemetry.managedRetryAttempts + providerTelemetry.geminiRetryAttempts,
+            providerInputTokens: providerTelemetry.usage?.inputTokens ?? undefined,
+            providerOutputTokens: providerTelemetry.usage?.outputTokens ?? undefined,
+            providerCachedTokens: providerTelemetry.usage?.cachedTokens ?? undefined,
+            providerTotalTokens: providerTelemetry.usage?.totalTokens ?? undefined,
+          });
+          return {
+            jobId: job.id,
+            status: "completed" as const,
+            completedPairs: nextCompletedPairs,
+            totalPairs: state.input.pairCount,
+            totalBatches: state.batchPlan.length,
+            progress: 100,
+            cacheReused: false,
+            payload,
+            assessmentDraftId,
+          };
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          const { getProviderFailureEvidence } = await import("./generationProvider");
+          const providerFailure = getProviderFailureEvidence(error);
+          await updateGenerationJob(job.id, {
+            status: "failed",
+            progress: Math.floor((completedPairs / state.input.pairCount) * 100),
+            errorMessage: message,
+            providerFailure: providerFailure ? JSON.stringify(providerFailure) : undefined,
+            generationProvider: providerFailure?.provider ?? resolveProgressivePrintableProvider(state.providerTelemetry),
+            fallbackUsed: providerFailure?.provider === "gemini_byok" || state.providerTelemetry.fallbackUsed ? 1 : 0,
+            primaryFailureType: providerFailure?.primaryFailureType ?? state.providerTelemetry.primaryFailureType ?? undefined,
+            managedRetryAttempts: state.providerTelemetry.managedRetryAttempts + (providerFailure?.provider === "managed_llm" ? providerFailure.retryAttempts : 0),
+            geminiRetryAttempts: state.providerTelemetry.geminiRetryAttempts + (providerFailure?.provider === "gemini_byok" ? providerFailure.retryAttempts : 0),
+            retryAttempts: state.providerTelemetry.managedRetryAttempts + state.providerTelemetry.geminiRetryAttempts + (providerFailure?.retryAttempts ?? 0),
+          });
+          throw error;
+        }
       }),
 
     saveGeneratedQuiz: teacherProcedure

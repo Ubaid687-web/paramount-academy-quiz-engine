@@ -610,6 +610,17 @@
 - [x] Add durable Portal Admin-visible failure evidence and repair only a demonstrated application-side defect; validate and publish.
 
 ## Phase 104: Printable Paper 90-92% Doctype HTML Error Fix
-- [ ] Investigate server-side timeouts and client-side JSON parsing when printable paper generation reaches 90-92% progress.
-- [ ] Implement robust error handling, HTML/doctype response trapping, and graceful user feedback for gateway or timeout errors.
-- [ ] Add regression tests, validate with build and test suite, and publish.
+- [x] Investigate server-side timeouts and client-side JSON parsing when printable paper generation reaches 90-92% progress.
+- [x] Replace the long-running printable request with persisted bounded batch requests so gateway timeout HTML is no longer treated as an incomplete paper result.
+- [x] Add regression tests, validate with build and test suite, and publish.
+
+## Phase 105: Controlled Printable Generation Telemetry Test
+- [ ] Verify deployed printable batching and select the smallest valid approved scope for one real test request.
+- [ ] Run one controlled printable-generation request and capture duration, provider route, retries, token use, and failure evidence.
+- [ ] Report measured results without changing grounding, validation, diversity, exclusion, or cache behavior.
+
+## Phase 106: Progressive Source-Safe Printable Workflow
+- [x] Audit existing printable batch execution, request lifetime, progress status, and approved-scope source assembly.
+- [x] Design the bounded, resumable, per-batch-validated workflow for large printable papers without widening source authority.
+- [x] Implement server-side orchestration and mobile-friendly truthful progress feedback.
+- [x] Add source, diversity, retry, timeout, and progress regressions; validate and publish.
