@@ -10,6 +10,7 @@ import { registerPdfExportRoutes } from "../pdfExportRoute";
 import { runOcrExtractionWorker } from "../ocrWorkerRoute";
 import { registerOcrReviewRoutes } from "../ocrReviewRoute";
 import { serveStatic, setupVite } from "./vite";
+import { handleLargeCurriculumSourceUpload, LARGE_CURRICULUM_SOURCE_UPLOAD_PATH } from "../curriculumLargeUploadRoute";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -35,6 +36,9 @@ async function startServer() {
   const server = createServer(app);
   // Avoid the extended qs parser for query strings; routes use typed tRPC inputs instead.
   app.set("query parser", "simple");
+  // Large scanned textbooks are sent as binary PDF data to avoid base64/JSON expansion. The handler
+  // remains Portal Admin-only and enforces its own 150 MB source limit before storage or extraction.
+  app.post(LARGE_CURRICULUM_SOURCE_UPLOAD_PATH, express.raw({ type: "application/pdf", limit: "150mb" }), handleLargeCurriculumSourceUpload);
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));

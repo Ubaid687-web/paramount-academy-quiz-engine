@@ -49,6 +49,9 @@ const subjectLabels: Record<string, string> = {
   computer_science: "Computer Science",
 };
 
+const MAX_PORTAL_ADMIN_SOURCE_BYTES = 150 * 1024 * 1024;
+const DIRECT_PDF_UPLOAD_THRESHOLD_BYTES = 30 * 1024 * 1024;
+
 const formatSubjectLabel = (subject: string) => subjectLabels[subject] ?? subject.replace(/[_-]+/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 
 function fileToBase64(file: File): Promise<string> {
@@ -64,6 +67,21 @@ function fileToBase64(file: File): Promise<string> {
     reader.onerror = () => reject(new Error("The file could not be read."));
     reader.readAsDataURL(file);
   });
+}
+
+async function uploadLargeCurriculumPdf(file: File, curriculumSetId: number) {
+  const response = await fetch(`/api/curriculum/source-upload?curriculumSetId=${curriculumSetId}`, {
+    method: "POST",
+    credentials: "same-origin",
+    headers: {
+      "Content-Type": "application/pdf",
+      "X-Source-File-Name": encodeURIComponent(file.name),
+    },
+    body: file,
+  });
+  const payload = await response.json().catch(() => ({})) as { error?: string } & Record<string, unknown>;
+  if (!response.ok) throw new Error(payload.error || "The large PDF could not be stored or extracted.");
+  return payload as { id: number; extractedText?: string | null; extractionStatus: "pending" | "extracted" | "needs_review" | "failed" };
 }
 
 export default function CurriculumManagement() {
@@ -320,23 +338,27 @@ export default function CurriculumManagement() {
       toast.error("Upload a PDF, TXT, JPG, PNG, or WEBP textbook source.");
       return;
     }
-    if (file.size > 30 * 1024 * 1024) {
-      toast.error("Keep each source under 30MB.");
+    if (file.size > MAX_PORTAL_ADMIN_SOURCE_BYTES) {
+      toast.error("Textbook sources must be 150MB or smaller.");
       return;
     }
     setIsUploading(true);
     try {
-      const fileBuffer = await fileToBase64(file);
-      const source = await ingestSource.mutateAsync({
-        curriculumSetId: selectedSetId,
-        fileName: file.name,
-        mimeType: file.type as "application/pdf" | "text/plain" | "image/jpeg" | "image/png" | "image/webp",
-        fileBuffer,
-      });
+      const source = file.type === "application/pdf" && file.size > DIRECT_PDF_UPLOAD_THRESHOLD_BYTES
+        ? await uploadLargeCurriculumPdf(file, selectedSetId)
+        : await (async () => {
+          const fileBuffer = await fileToBase64(file);
+          return ingestSource.mutateAsync({
+            curriculumSetId: selectedSetId,
+            fileName: file.name,
+            mimeType: file.type as "application/pdf" | "text/plain" | "image/jpeg" | "image/png" | "image/webp",
+            fileBuffer,
+          });
+        })();
       setChapterSourceId(source.id);
       setChapterText(source.extractedText ?? "");
       await utils.curriculum.getManagementDetails.invalidate({ curriculumSetId: selectedSetId });
-      toast.success(source.extractionStatus === "pending" ? "Scanned source stored. OCR is queued and this screen will update as pages are processed." : "Source stored and extracted. Review it before saving a chapter.");
+      toast.success(source.extractionStatus === "pending" ? "Scanned source stored. OCR is queued in reviewable page batches and this screen will update as pages are processed." : "Source stored and extracted. Review it before saving a chapter.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "The source could not be stored or extracted.");
     } finally {
@@ -791,6 +813,7 @@ export default function CurriculumManagement() {
               {activePortalPanel === "curriculum" && activeCurriculumTask === "edition" && <Card>
                 <CardHeader><CardTitle className="flex items-center gap-2"><Upload className="h-5 w-5 text-accent" />1. Add One Source File</CardTitle><CardDescription>{details.curriculumSet.label} is currently <strong>{details.curriculumSet.status}</strong>. PDF, TXT, and photographed textbook pages are stored securely; scans enter Urdu-and-English OCR review before activation.</CardDescription></CardHeader>
                 <CardContent className="space-y-4">
+                  <p className="text-sm text-muted-foreground">PDF textbooks up to 150MB are accepted. PDFs over 30MB use direct binary transfer instead of browser base64 conversion; scanned pages continue through the existing reviewable OCR queue.</p>
                   <Input aria-label="Curriculum source upload" type="file" accept=".pdf,.txt,.jpg,.jpeg,.png,.webp" onChange={handleSourceUpload} disabled={isUploading} />
                   {isUploading && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Storing source and preparing extraction…</p>}
                   <div className="space-y-2">{details.sources.map((source) => { const ocrJob = details.ocrJobs?.find((job) => job.sourceId === source.id); return <button key={source.id} onClick={() => loadSourceForReview(source.id)} className="flex w-full items-center justify-between rounded-lg border border-border/60 p-3 text-left hover:border-accent/50"><span className="flex min-w-0 items-center gap-2"><FileText className="h-4 w-4 shrink-0 text-accent" /><span className="truncate text-sm">{source.originalFileName}</span></span><span className="text-right text-xs text-muted-foreground">{source.extractionStatus}{source.pageCount ? ` • ${source.pageCount} pages` : ""}{ocrJob && ocrJob.status !== "completed" ? ` • OCR page ${ocrJob.nextPage}/${ocrJob.totalPages}` : ""}</span></button>; })}</div>

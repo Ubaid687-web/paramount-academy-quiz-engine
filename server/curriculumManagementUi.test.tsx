@@ -113,6 +113,7 @@ describe("Curriculum Library Release 1", () => {
 
     fireEvent.click(screen.getByRole("tab", { name: /^Curriculum/i }));
     expect(screen.getByText("Add another grade or subject")).toBeTruthy();
+    expect(screen.getByText(/PDF textbooks up to 150MB are accepted/i)).toBeTruthy();
     expect(screen.queryByText("FBISE Grade 10 Chemistry — retired 2020 edition")).toBeNull();
     expect(screen.getByRole("button", { name: "Back to Quiz Centre" })).toBeTruthy();
     expect(screen.getByText("Teacher availability")).toBeTruthy();

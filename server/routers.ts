@@ -537,46 +537,19 @@ export const appRouter = router({
         fileBuffer: z.string().min(4).max(42_000_000),
       }))
       .mutation(async ({ ctx, input }) => {
-        const { getCurriculumSet, createCurriculumSource, createOcrExtractionJob, replaceCurriculumSourcePageReviews } = await import("./db");
-        const { extractCurriculumSourceText, validateCurriculumSourceFileSignature } = await import("./curriculumIngestion");
-        const { assessExtractedSourceQuality } = await import("./ocrQuality");
-        const { storagePut } = await import("./storage");
-        const curriculumSet = await getCurriculumSet(input.curriculumSetId);
-        if (!curriculumSet) throw new Error("Curriculum set not found");
-
         const fileBuffer = decodeStrictBase64(input.fileBuffer, "curriculum source");
         if (!fileBuffer.length || fileBuffer.length > 30 * 1024 * 1024) {
-          throw new Error("Curriculum source must be between 1 byte and 30MB.");
+          throw new Error("Curriculum sources over 30MB must use the Portal Admin PDF upload flow.");
         }
-        validateCurriculumSourceFileSignature(fileBuffer, input.mimeType);
-        const extracted = await extractCurriculumSourceText({ fileBuffer, fileName: input.fileName, mimeType: input.mimeType });
-        const extension = input.mimeType === "application/pdf" ? "pdf" : input.mimeType === "text/plain" ? "txt" : input.mimeType === "image/png" ? "png" : input.mimeType === "image/webp" ? "webp" : "jpg";
-        const stored = await storagePut(
-          `curricula/${input.curriculumSetId}/${randomUUID()}.${extension}`,
-          fileBuffer,
-          input.mimeType,
-        );
-        const source = await createCurriculumSource({
+        const { ingestPortalAdminCurriculumSource } = await import("./curriculumSourceIntake");
+        return ingestPortalAdminCurriculumSource({
           curriculumSetId: input.curriculumSetId,
-          storageKey: stored.key,
-          storageUrl: stored.url,
-          originalFileName: input.fileName,
+          fileName: input.fileName,
           mimeType: input.mimeType,
-          contentHash: createHash("sha256").update(fileBuffer).digest("hex"),
-          extractionStatus: extracted.mode === "ocr_required" ? "pending" : "extracted",
-          pageCount: extracted.pageCount,
-          extractedText: extracted.text,
+          fileBuffer,
           uploadedBy: ctx.user.id,
-          extractedAt: extracted.mode === "native_text" ? new Date() : null,
+          sessionCookie: ctx.req.headers.cookie,
         });
-        if (extracted.mode === "ocr_required") {
-          await createOcrExtractionJob({ sourceId: source.id, totalPages: extracted.pageCount ?? 1 });
-          const { ensureOcrScheduler } = await import("./ocrScheduler");
-          await ensureOcrScheduler(ctx.req.headers.cookie);
-        } else {
-          await replaceCurriculumSourcePageReviews(source.id, assessExtractedSourceQuality(extracted.pages));
-        }
-        return source;
       }),
 
     proposeChaptersFromSource: adminProcedure
