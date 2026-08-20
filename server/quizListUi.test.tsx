@@ -86,11 +86,22 @@ describe("Quiz Centre entry experience", () => {
       error: null,
     });
     quizzesQuery.mockReturnValue({ data: [], isLoading: false, error: null, refetch: vi.fn() });
+    authUser = { role: "admin" };
     render(<QuizList />);
     expect(screen.getByText("Grade 9")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /Set up Grade 9/i }));
     expect(screen.getByRole("heading", { name: "Add a Grade 9 subject." })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Add Grade 9 subject" }).getAttribute("href")).toBe("/curriculum?grade=9&intake=subject");
+  });
+
+  it("keeps Grade 9 intake inside Portal Admin and gives teachers a clear non-generation readiness state", () => {
+    setReadyGrade10();
+    authUser = { role: "teacher" };
+    render(<QuizList />);
+    fireEvent.click(screen.getByRole("button", { name: /Set up Grade 9/i }));
+    expect(screen.getByRole("heading", { name: "Grade 9 preparation." })).toBeTruthy();
+    expect(screen.getByText("Grade 9 is being prepared.")).toBeTruthy();
+    expect(screen.queryByRole("link", { name: "Add Grade 9 subject" })).toBeNull();
   });
 
   it("shows Grade 9 intake messaging even when the ready catalogue has only Grade 10", () => {

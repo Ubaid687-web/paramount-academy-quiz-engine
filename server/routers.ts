@@ -58,6 +58,14 @@ type ProgressivePrintableState = {
   final?: { payload: ModeDraftPayload; assessmentDraftId?: number; cacheReused: boolean };
 };
 
+const strictBase64Pattern = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
+
+function decodeStrictBase64(raw: string, label: string) {
+  const normalized = raw.replace(/\s+/g, "");
+  if (!strictBase64Pattern.test(normalized)) throw new Error(`The uploaded ${label} encoding is invalid.`);
+  return Buffer.from(normalized, "base64");
+}
+
 function emptyProgressivePrintableTelemetry(): ProgressivePrintableProviderTelemetry {
   return { providers: [], fallbackUsed: false, primaryFailureType: null, managedRetryAttempts: 0, geminiRetryAttempts: 0 };
 }
@@ -396,15 +404,21 @@ export const appRouter = router({
   }),
 
   pdfUpload: router({
-    extractPdfText: protectedProcedure
+    extractPdfText: teacherProcedure
       .input(z.object({
         fileBuffer: z.string().min(4).max(40_000_000), // Base64 encoded PDF, capped before decoding.
         fileName: z.string().min(1).max(255),
       }))
       .mutation(async ({ input }) => {
         const { extractTextFromPdf } = await import("./pdfProcessor");
-        const buffer = Buffer.from(input.fileBuffer, 'base64');
+        if (!input.fileName.toLowerCase().endsWith(".pdf")) {
+          throw new Error("Only PDF files can be extracted.");
+        }
+        const buffer = decodeStrictBase64(input.fileBuffer, "PDF");
         if (!buffer.length || buffer.length > 30 * 1024 * 1024) throw new Error("PDF upload must be between 1 byte and 30MB.");
+        if (buffer.subarray(0, 5).toString("ascii") !== "%PDF-") {
+          throw new Error("Only valid PDF files can be extracted.");
+        }
         return extractTextFromPdf(buffer, input.fileName);
       }),
   }),
@@ -520,20 +534,21 @@ export const appRouter = router({
         curriculumSetId: z.number().int().positive(),
         fileName: z.string().min(1).max(255),
         mimeType: z.enum(["application/pdf", "text/plain", "image/jpeg", "image/png", "image/webp"]),
-        fileBuffer: z.string().min(1),
+        fileBuffer: z.string().min(4).max(42_000_000),
       }))
       .mutation(async ({ ctx, input }) => {
         const { getCurriculumSet, createCurriculumSource, createOcrExtractionJob, replaceCurriculumSourcePageReviews } = await import("./db");
-        const { extractCurriculumSourceText } = await import("./curriculumIngestion");
+        const { extractCurriculumSourceText, validateCurriculumSourceFileSignature } = await import("./curriculumIngestion");
         const { assessExtractedSourceQuality } = await import("./ocrQuality");
         const { storagePut } = await import("./storage");
         const curriculumSet = await getCurriculumSet(input.curriculumSetId);
         if (!curriculumSet) throw new Error("Curriculum set not found");
 
-        const fileBuffer = Buffer.from(input.fileBuffer, "base64");
+        const fileBuffer = decodeStrictBase64(input.fileBuffer, "curriculum source");
         if (!fileBuffer.length || fileBuffer.length > 30 * 1024 * 1024) {
           throw new Error("Curriculum source must be between 1 byte and 30MB.");
         }
+        validateCurriculumSourceFileSignature(fileBuffer, input.mimeType);
         const extracted = await extractCurriculumSourceText({ fileBuffer, fileName: input.fileName, mimeType: input.mimeType });
         const extension = input.mimeType === "application/pdf" ? "pdf" : input.mimeType === "text/plain" ? "txt" : input.mimeType === "image/png" ? "png" : input.mimeType === "image/webp" ? "webp" : "jpg";
         const stored = await storagePut(
@@ -1359,6 +1374,7 @@ export const appRouter = router({
         await updateGenerationJob(generationJob.id, {
           status: "completed",
           progress: 100,
+          completedAt: new Date(),
           cacheHit: cacheReused ? 1 : 0,
           generationProvider: providerTelemetry.provider,
           fallbackUsed: providerTelemetry.fallbackUsed ? 1 : 0,
@@ -1412,6 +1428,7 @@ export const appRouter = router({
             generationMode: input.paperType,
             status: "completed",
             progress: 100,
+            completedAt: new Date(),
             cacheHit: 1,
             printableState: JSON.stringify({
               version: 1,
@@ -1477,7 +1494,7 @@ export const appRouter = router({
     advancePrintableGeneration: teacherProcedure
       .input(z.object({ jobId: z.number().int().positive() }))
       .mutation(async ({ ctx, input }) => {
-        const { getGenerationJob, updateGenerationJob, putCachedGenerationResponse } = await import("./db");
+        const { getGenerationJob, claimPrintableGenerationJob, updateGenerationJob, putCachedGenerationResponse } = await import("./db");
         const job = await getGenerationJob(input.jobId);
         if (!job || job.userId !== ctx.user.id || (job.generationMode !== "short" && job.generationMode !== "long")) {
           throw new Error("Printable generation job not found or unauthorized.");
@@ -1510,7 +1527,9 @@ export const appRouter = router({
         const batchIndex = state.batchPlan.findIndex((batchPairs, index) => state.batchPlan.slice(0, index).reduce((total, count) => total + count, 0) === completedPairs);
         const batchPairs = state.batchPlan[batchIndex];
         if (!batchPairs) throw new Error("No remaining printable batch could be found. Please start a new paper.");
-        await updateGenerationJob(job.id, { status: "processing", errorMessage: null, providerFailure: null, progress: Math.floor((completedPairs / state.input.pairCount) * 100) });
+        if (job.status === "processing") throw new Error("This printable batch is already being generated. Please wait for its verified result.");
+        const claimed = await claimPrintableGenerationJob(job.id, ctx.user.id, Math.floor((completedPairs / state.input.pairCount) * 100));
+        if (!claimed) throw new Error("This printable generation changed before the next batch could start. Refresh its status before retrying.");
         try {
           const { generatePrintablePaperBatch } = await import("./printablePaper");
           const batch = await generatePrintablePaperBatch({
@@ -1555,7 +1574,7 @@ export const appRouter = router({
               totalBatches: state.batchPlan.length,
               progress,
               cacheReused: false,
-              nextBatch: { index: batchIndex + 2, pairs: batchPairs, startPair: nextCompletedPairs + 1, endPair: nextCompletedPairs + state.batchPlan[batchIndex + 1]! },
+              nextBatch: { index: batchIndex + 2, pairs: state.batchPlan[batchIndex + 1]!, startPair: nextCompletedPairs + 1, endPair: nextCompletedPairs + state.batchPlan[batchIndex + 1]! },
             };
           }
           const { validateDistinctOrPairCoverage } = await import("./generationDiversity");
@@ -1587,6 +1606,7 @@ export const appRouter = router({
           await updateGenerationJob(job.id, {
             status: "completed",
             progress: 100,
+            completedAt: new Date(),
             printableState: JSON.stringify(state),
             generationProvider: providerTelemetry.provider,
             fallbackUsed: providerTelemetry.fallbackUsed ? 1 : 0,

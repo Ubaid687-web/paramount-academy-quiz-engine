@@ -17,6 +17,7 @@ const mocks = vi.hoisted(() => ({
   putCachedGenerationResponse: vi.fn(),
   createGenerationJob: vi.fn(),
   getGenerationJob: vi.fn(),
+  claimPrintableGenerationJob: vi.fn(),
   updateGenerationJob: vi.fn(),
 }));
 
@@ -34,6 +35,7 @@ vi.mock("./db", () => ({
   putCachedGenerationResponse: mocks.putCachedGenerationResponse,
   createGenerationJob: mocks.createGenerationJob,
   getGenerationJob: mocks.getGenerationJob,
+  claimPrintableGenerationJob: mocks.claimPrintableGenerationJob,
   updateGenerationJob: mocks.updateGenerationJob,
 }));
 vi.mock("./printablePaper", () => ({
@@ -83,6 +85,7 @@ describe("printable paper history persistence", () => {
     mocks.putCachedGenerationResponse.mockReset();
     mocks.createGenerationJob.mockReset();
     mocks.getGenerationJob.mockReset();
+    mocks.claimPrintableGenerationJob.mockReset();
     mocks.updateGenerationJob.mockReset();
     mocks.generatePrintablePaperBatch.mockReset();
     mocks.getCachedGenerationResponse.mockResolvedValue(undefined);
@@ -92,6 +95,7 @@ describe("printable paper history persistence", () => {
     mocks.putCachedGenerationResponse.mockResolvedValue(undefined);
     mocks.createGenerationJob.mockResolvedValue({ id: 700 });
     mocks.getGenerationJob.mockResolvedValue(undefined);
+    mocks.claimPrintableGenerationJob.mockResolvedValue(true);
     mocks.updateGenerationJob.mockResolvedValue(undefined);
   });
   it("stores an approved-scope generated paper with its concept keys for future exclusion", async () => {
@@ -217,6 +221,7 @@ describe("printable paper history persistence", () => {
     expect(start).toMatchObject({ status: "pending", completedPairs: 0, totalPairs: 5, totalBatches: 2 });
     const firstAdvance = await caller.aiAgent.advancePrintableGeneration({ jobId: start.jobId });
     expect(firstAdvance).toMatchObject({ status: "pending", completedPairs: 4, totalPairs: 5 });
+    expect(firstAdvance.nextBatch).toMatchObject({ index: 2, pairs: 1, startPair: 5, endPair: 5 });
     expect(JSON.parse(printableState).completedItems).toHaveLength(8);
     expect(mocks.putCachedGenerationResponse).not.toHaveBeenCalled();
 
@@ -227,7 +232,33 @@ describe("printable paper history persistence", () => {
     }));
     expect(finalAdvance).toMatchObject({ status: "completed", completedPairs: 5, totalPairs: 5 });
     expect(finalAdvance.payload).toMatchObject({ mode: "short", items: expect.arrayContaining([expect.objectContaining({ orGroup: 5, conceptKey: "force" })]) });
+    expect(mocks.updateGenerationJob).toHaveBeenCalledWith(700, expect.objectContaining({ status: "completed", completedAt: expect.any(Date) }));
     expect(mocks.putCachedGenerationResponse).toHaveBeenCalledWith(expect.objectContaining({ requestFingerprint: "progressive-printable-fingerprint" }));
+  });
+
+  it("does not send a duplicate provider batch when another request already claimed the printable job", async () => {
+    const printableState = JSON.stringify({
+      version: 1,
+      input: { paperType: "short", title: "Motion revision", pairCount: 1, difficulty: "balanced" },
+      sourceContext: { sourceType: "raw_text", sourceTitle: "Teacher-provided custom source", priorQuestionHistory: [] },
+      batchPlan: [1],
+      completedItems: [],
+      providerTelemetry: { providers: [], fallbackUsed: false, primaryFailureType: null, managedRetryAttempts: 0, geminiRetryAttempts: 0 },
+    });
+    mocks.getGenerationJob.mockResolvedValue({
+      id: 702,
+      userId: 7,
+      generationMode: "short",
+      status: "pending",
+      printableState,
+      contentText: "Motion explains speed, velocity, and acceleration using verified textbook definitions. ".repeat(4),
+      requestFingerprint: "duplicate-claim-fingerprint",
+    });
+    mocks.claimPrintableGenerationJob.mockResolvedValue(false);
+
+    const caller = appRouter.createCaller(createAdminContext());
+    await expect(caller.aiAgent.advancePrintableGeneration({ jobId: 702 })).rejects.toThrow("changed before the next batch could start");
+    expect(mocks.generatePrintablePaperBatch).not.toHaveBeenCalled();
   });
 
   it("resumes an interrupted printable job without discarding its saved batch state", async () => {

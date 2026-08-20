@@ -423,6 +423,23 @@ export async function updateGenerationJob(jobId: number, updates: Partial<Genera
   await db.update(generationJobs).set(updates).where(eq(generationJobs.id, jobId));
 }
 
+/** Claims one resumable printable job so repeated taps cannot produce duplicate provider batches. */
+export async function claimPrintableGenerationJob(jobId: number, userId: number, progress: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.update(generationJobs).set({
+    status: "processing",
+    errorMessage: null,
+    providerFailure: null,
+    progress,
+  }).where(and(
+    eq(generationJobs.id, jobId),
+    eq(generationJobs.userId, userId),
+    inArray(generationJobs.status, ["pending", "failed"]),
+  ));
+  return result[0].affectedRows > 0;
+}
+
 export async function getUserGenerationJobs(userId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");

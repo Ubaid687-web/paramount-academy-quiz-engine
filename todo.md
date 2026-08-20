@@ -644,3 +644,14 @@
 - [x] Trace confirmed weaknesses to the question-generation or PDF-rendering contracts without adding unsupported content.
 - [x] Implement evidence-based professional PDF improvements: one-based question numbering, attempted-pair-only marks, balanced continuation pages, and student-ready solution presentation.
 - [x] Add regressions, validate the generated PDFs, and publish the verified repair.
+
+## Phase 110: Supervisor Security, Reliability, and Grade 9 Intake Review
+- [x] Inventory project routes, procedures, data ownership boundaries, uploads, downloads, dependency state, generation recovery, and Grade 9 curriculum readiness.
+- [x] Audit authorization, cross-user data exposure, curriculum isolation, source intake, printable state recovery, and mobile/frontend error paths.
+- [x] Define and implement the least-risk Grade 9 intake controls: Portal Admin-only intake with teacher-facing preparation status until explicit activation.
+- [x] Restrict PDF extraction to approved staff and reject malformed/non-PDF input before parser execution; add focused regressions.
+- [x] Validate curriculum source MIME signatures and strict base64 before parsing or storing Portal Admin uploads; add focused regressions.
+- [x] Make progressive printable batch claiming atomic and correct next-batch feedback to prevent duplicate requests or misleading progress.
+- [x] Persist completion timestamps for completed MCQ and printable generation jobs so operational telemetry can report real durations.
+- [x] Repair the demonstrated security, reliability, and Grade 9 workflow defects; add focused regressions and validate the production build.
+- [x] Publish the audit findings and the Grade 9 operating recommendation.

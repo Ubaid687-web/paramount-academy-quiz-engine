@@ -149,6 +149,7 @@ describe("AI Agent - MCQ Generation", () => {
 
     expect(result.draft.status).toBe("success");
     expect(mocks.updateGenerationJob).toHaveBeenCalledWith(501, expect.objectContaining({ providerInputTokens: 800, providerOutputTokens: 300, providerCachedTokens: 120, providerTotalTokens: 1_100 }));
+    expect(mocks.updateGenerationJob).toHaveBeenCalledWith(501, expect.objectContaining({ status: "completed", completedAt: expect.any(Date) }));
   });
 
   it("persists the immutable chapter-scope selection on the generation job", async () => {

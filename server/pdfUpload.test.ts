@@ -5,14 +5,14 @@ import { validateGeneratedMcqs } from "./quizDraftValidator";
 
 type AuthenticatedUser = NonNullable<TrpcContext["user"]>;
 
-function createAuthContext(): TrpcContext {
+function createAuthContext(role: AuthenticatedUser["role"] = "teacher"): TrpcContext {
   const user: AuthenticatedUser = {
     id: 1,
     openId: "test-user",
     email: "test@example.com",
     name: "Test User",
     loginMethod: "manus",
-    role: "user",
+    role,
     createdAt: new Date(),
     updatedAt: new Date(),
     lastSignedIn: new Date(),
@@ -96,13 +96,30 @@ describe("PDF Upload", () => {
         fileBuffer: "invalid-base64-!!!",
         fileName: "test.pdf",
       });
-      // This may or may not throw depending on pdf-parse behavior
-      // Just verify the procedure is callable
-      expect(true).toBe(true);
+      expect.fail("Malformed base64 must be rejected before PDF parsing.");
     } catch (error) {
-      // Expected to fail with invalid PDF data
-      expect(error).toBeDefined();
+      expect(error).toMatchObject({ message: "The uploaded PDF encoding is invalid." });
     }
+  });
+
+  it("rejects non-PDF bytes and non-PDF filenames before invoking the extractor", async () => {
+    const caller = appRouter.createCaller(createAuthContext());
+    await expect(caller.pdfUpload.extractPdfText({
+      fileBuffer: Buffer.from("not a PDF").toString("base64"),
+      fileName: "notes.pdf",
+    })).rejects.toMatchObject({ message: "Only valid PDF files can be extracted." });
+    await expect(caller.pdfUpload.extractPdfText({
+      fileBuffer: textPdfBase64,
+      fileName: "notes.txt",
+    })).rejects.toMatchObject({ message: "Only PDF files can be extracted." });
+  });
+
+  it("requires an approved Teacher or Portal Admin role before parsing uploaded PDFs", async () => {
+    const caller = appRouter.createCaller(createAuthContext("user"));
+    await expect(caller.pdfUpload.extractPdfText({
+      fileBuffer: textPdfBase64,
+      fileName: "physics-revision.pdf",
+    })).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
   it("should require authenticated user", async () => {

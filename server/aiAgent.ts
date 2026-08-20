@@ -213,6 +213,7 @@ export async function generateMCQsFromContent(
       generationMode: "mcq",
       status: "completed",
       progress: 100,
+      completedAt: new Date(),
     });
     return {
       ...cachedPayload,
@@ -395,7 +396,7 @@ REQUIREMENTS:
 
     const qualityChecks = buildDraftQualityChecks(finalMcqs, finalNumQuestions);
 
-    await updateGenerationJob(job.id, { progress: 100, status: "completed" });
+    await updateGenerationJob(job.id, { progress: 100, status: "completed", completedAt: new Date() });
 
     const result = {
       jobId: job.id,
