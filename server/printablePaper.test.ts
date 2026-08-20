@@ -7,12 +7,12 @@ import { buildPrintablePairBatches, buildPrintablePaperPatternInstruction, build
 
 const shortGenerated = {
   estimatedDurationMinutes: 30,
-  items: [{ question: "State the speed relationship.", expectedAnswer: "Speed is distance divided by time.", markingGuide: ["States the correct relationship."], difficulty: "easy", conceptKey: "speed distance time relationship", facetKey: "formula", answerTarget: "speed equals distance divided by time", sourceReference: "Motion", learningObjective: "Relate speed, distance and time.", cognitiveLevel: "K", orGroup: 1, marks: 3 }],
+  items: [{ question: "State the speed relationship.", expectedAnswer: "Speed is distance divided by time.", markingGuide: ["States the correct relationship."], solutionPoints: ["Speed is distance travelled per unit time."], difficulty: "easy", conceptKey: "speed distance time relationship", facetKey: "formula", answerTarget: "speed equals distance divided by time", sourceReference: "Motion", sourceExcerpt: "Speed is the distance travelled per unit time.", learningObjective: "Relate speed, distance and time.", cognitiveLevel: "K", orGroup: 1, marks: 3 }],
 };
 
 const longGenerated = {
   estimatedDurationMinutes: 45,
-  items: [{ question: "Explain a source-grounded concept.", expectedKeyPoints: ["First verified point.", "Second verified point."], markingRubric: [{ criterion: "Explains the first point.", marks: 3 }, { criterion: "Explains the second point.", marks: 3 }], difficulty: "medium", conceptKey: "selected verified concept", facetKey: "explanation", answerTarget: "selected concept explanation", sourceReference: "Verified topic", learningObjective: "Explain the selected concept.", cognitiveLevel: "U", orGroup: 1, marks: 6 }],
+  items: [{ question: "Explain a source-grounded concept.", expectedKeyPoints: ["First verified point.", "Second verified point."], markingRubric: [{ criterion: "Explains the first point.", marks: 3 }, { criterion: "Explains the second point.", marks: 3 }], solutionPoints: ["First verified point.", "Second verified point."], difficulty: "medium", conceptKey: "selected verified concept", facetKey: "explanation", answerTarget: "selected concept explanation", sourceReference: "Verified topic", sourceExcerpt: "The source covers Daniel cells, hydrogen-oxygen fuel cells, electrolysis, and refining.", learningObjective: "Explain the selected concept.", cognitiveLevel: "U", orGroup: 1, marks: 6 }],
 };
 
 describe("printable paper payload normalization", () => {
@@ -90,6 +90,45 @@ describe("printable paper payload normalization", () => {
     expect(mocks.invokeGenerationProvider.mock.calls[0]?.[0].messages[0].content).toContain("SHARED FBISE STYLE ANCHOR");
   });
 
+  it("uses labelled textbook excerpts and explicitly forbids internal source language in student-facing prompts", async () => {
+    const pair = [
+      { ...shortGenerated.items[0], question: "State the speed relationship.", conceptKey: "speed", facetKey: "formula", answerTarget: "speed equals distance divided by time" },
+      { ...shortGenerated.items[0], question: "State the SI unit of speed.", conceptKey: "speed", facetKey: "unit", answerTarget: "metre per second", sourceExcerpt: "The SI unit of speed is metre per second.", solutionPoints: ["The SI unit of speed is metre per second."] },
+    ];
+    const contentText = "Speed is the distance travelled per unit time. The SI unit of speed is metre per second.".repeat(12);
+    mocks.invokeGenerationProvider.mockResolvedValue({ response: { choices: [{ message: { content: JSON.stringify({ estimatedDurationMinutes: 10, items: pair }) } }] }, telemetry: { provider: "managed_llm", fallbackUsed: false, primaryFailureType: null, managedRetryAttempts: 0, geminiRetryAttempts: 0 } });
+
+    await generatePrintablePaperBatch({ paperType: "short", title: "Motion short paper", contentText, pairCount: 1, difficulty: "balanced", sourceContext: { sourceType: "curriculum_scope", sourceTitle: "Motion" } });
+
+    const systemPrompt = mocks.invokeGenerationProvider.mock.calls[0]?.[0].messages[0].content ?? "";
+    const sourcePrompt = mocks.invokeGenerationProvider.mock.calls[0]?.[0].messages[1].content ?? "";
+    expect(sourcePrompt).toContain("TEXTBOOK EXCERPT:");
+    expect(systemPrompt).toContain("Never write “source text”");
+    expect(sourcePrompt).not.toContain("SOURCE SECTION");
+  });
+
+  it("rejects internal source wording instead of saving a linguistically generic printable question", async () => {
+    const invalidPair = [
+      { ...shortGenerated.items[0], question: "State the definition in the source text.", conceptKey: "speed", facetKey: "definition", answerTarget: "speed definition" },
+      { ...shortGenerated.items[0], question: "State the SI unit of speed.", conceptKey: "speed", facetKey: "unit", answerTarget: "metre per second", sourceExcerpt: "The SI unit of speed is metre per second.", solutionPoints: ["The SI unit of speed is metre per second."] },
+    ];
+    const contentText = "Speed is the distance travelled per unit time. The SI unit of speed is metre per second.".repeat(12);
+    mocks.invokeGenerationProvider.mockResolvedValue({ response: { choices: [{ message: { content: JSON.stringify({ estimatedDurationMinutes: 10, items: invalidPair }) } }] }, telemetry: { provider: "managed_llm", fallbackUsed: false, primaryFailureType: null, managedRetryAttempts: 0, geminiRetryAttempts: 0 } });
+
+    await expect(generatePrintablePaperBatch({ paperType: "short", title: "Motion short paper", contentText, pairCount: 1, difficulty: "balanced", sourceContext: { sourceType: "curriculum_scope", sourceTitle: "Motion" } })).rejects.toThrow(/internal source wording/i);
+  });
+
+  it("rejects a narrative printable stem even when it is otherwise supported by the textbook excerpt", async () => {
+    const narrativePair = [
+      { ...shortGenerated.items[0], question: "During a student activity, speed is discussed with distance and time. What is the relationship?", conceptKey: "speed", facetKey: "formula", answerTarget: "speed equals distance divided by time" },
+      { ...shortGenerated.items[0], question: "State the SI unit of speed.", conceptKey: "speed", facetKey: "unit", answerTarget: "metre per second", sourceExcerpt: "The SI unit of speed is metre per second.", solutionPoints: ["The SI unit of speed is metre per second."] },
+    ];
+    const contentText = "Speed is the distance travelled per unit time. The SI unit of speed is metre per second.".repeat(12);
+    mocks.invokeGenerationProvider.mockResolvedValue({ response: { choices: [{ message: { content: JSON.stringify({ estimatedDurationMinutes: 10, items: narrativePair }) } }] }, telemetry: { provider: "managed_llm", fallbackUsed: false, primaryFailureType: null, managedRetryAttempts: 0, geminiRetryAttempts: 0 } });
+
+    await expect(generatePrintablePaperBatch({ paperType: "short", title: "Motion short paper", contentText, pairCount: 1, difficulty: "balanced", sourceContext: { sourceType: "curriculum_scope", sourceTitle: "Motion" } })).rejects.toThrow(/narrative prompt/i);
+  });
+
   it("sends persisted verified prompts to a later batch so their concept facets cannot be regenerated", async () => {
     const pair = [
       { ...shortGenerated.items[0], question: "State the SI unit of speed.", conceptKey: "speed", facetKey: "unit", answerTarget: "metre per second" },
@@ -116,7 +155,7 @@ describe("printable paper payload normalization", () => {
 
   it("aggregates provider-reported usage across printable batches without fabricating absent metrics", async () => {
     const topics = ["velocity", "acceleration", "momentum", "force", "work", "power", "energy", "pressure", "density", "impulse"];
-    const makeItem = (index: number) => ({ ...shortGenerated.items[0], question: `State the verified relationship for ${topics[index - 1]}.`, conceptKey: topics[index - 1], facetKey: "definition", answerTarget: `${topics[index - 1]} verified outcome`, sourceReference: `Verified ${topics[index - 1]} topic`, learningObjective: `State the verified relationship for ${topics[index - 1]}.` });
+    const makeItem = (index: number) => ({ ...shortGenerated.items[0], question: `State the verified relationship for ${topics[index - 1]}.`, conceptKey: topics[index - 1], facetKey: "definition", answerTarget: `${topics[index - 1]} verified outcome`, sourceReference: `Verified ${topics[index - 1]} topic`, sourceExcerpt: `${topics[index - 1][0]!.toUpperCase()}${topics[index - 1].slice(1)} Relationship explains`, solutionPoints: [`${topics[index - 1]} verified outcome.`], learningObjective: `State the verified relationship for ${topics[index - 1]}.` });
     const firstBatch = Array.from({ length: 8 }, (_, index) => makeItem(index + 1));
     const secondBatch = Array.from({ length: 2 }, (_, index) => makeItem(index + 9));
     mocks.invokeGenerationProvider

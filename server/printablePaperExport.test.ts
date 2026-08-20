@@ -12,6 +12,9 @@ const shortPaper = {
       question: "State the relationship between speed, distance, and time.",
       expectedAnswer: "Speed is distance travelled divided by time taken.",
       markingGuide: ["States speed = distance ÷ time.", "Uses the relationship correctly."],
+      solutionPoints: ["Speed is distance travelled divided by time taken.", "Use distance, time, and speed in the correct relationship."],
+      sourceExcerpt: "Speed is distance travelled divided by time taken.",
+      diagramSpec: { kind: "labelled_flow" as const, title: "Speed relationship", labels: ["Distance", "Time", "Speed"] },
       difficulty: "easy" as const,
       sourceReference: "Motion: speed relationship",
       learningObjective: "Relate speed to distance and time.",
@@ -24,6 +27,8 @@ const shortPaper = {
       question: "A student travels 20 m in 4 s. Calculate the speed.",
       expectedAnswer: "Speed = 20 ÷ 4 = 5 m/s.",
       markingGuide: ["Substitutes distance and time.", "Gives 5 m/s with unit."],
+      solutionPoints: ["Speed = distance ÷ time.", "Speed = 20 ÷ 4 = 5 m/s."],
+      sourceExcerpt: "Speed is distance travelled divided by time taken.",
       difficulty: "medium" as const,
       sourceReference: "Motion: speed calculation",
       learningObjective: "Calculate speed from distance and time.",
@@ -47,10 +52,27 @@ describe("printable paper PDF export", () => {
     expect(pdf.length).toBeGreaterThan(800);
   });
 
-  it("renders a separate PDF solution key with source-traceable marking guidance", async () => {
+  it("renders a separate PDF solution key", async () => {
     const pdf = await renderPrintableSolutionPdf(shortPaper);
     expect(pdf.subarray(0, 5).toString()).toBe("%PDF-");
     expect(pdf.length).toBeGreaterThan(800);
+  });
+
+  it("removes teacher-marking language while presenting answer points and a source-bound labelled diagram", async () => {
+    const pdf = await renderPrintableSolutionPdf(shortPaper);
+    const parser = new PDFParse({ data: pdf });
+    try {
+      const result = await parser.getText();
+      expect(result.text).toContain("SOLUTION KEY");
+      expect(result.text).toContain("Labelled diagram: Speed relationship");
+      expect(result.text).toContain("Key points");
+      expect(result.text).not.toContain("MARKING AND LEARNING GUIDE");
+      expect(result.text).not.toContain("Marking points");
+      expect(result.text).not.toContain("Marking rubric");
+      expect(result.text).not.toContain("Cognitive level:");
+    } finally {
+      await parser.destroy();
+    }
   });
 
   it("keeps every OR pair in one two-column row across a multipage paper", async () => {

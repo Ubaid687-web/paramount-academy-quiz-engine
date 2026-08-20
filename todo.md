@@ -624,3 +624,10 @@
 - [x] Design the bounded, resumable, per-batch-validated workflow for large printable papers without widening source authority.
 - [x] Implement server-side orchestration and mobile-friendly truthful progress feedback.
 - [x] Add source, diversity, retry, timeout, and progress regressions; validate and publish.
+
+## Phase 107: FBISE Printable Question and Solution-Key Quality Calibration
+- [x] Audit the reported printable draft against the selected approved textbook scope, verified paper-pattern profiles, and stored source references.
+- [x] Replace generic language-heavy printable prompts with source-led, concept-first FBISE question rules across Physics, Chemistry, and Computer Science.
+- [x] Add an evidence-bound diagram trigger and deterministic diagram instructions only where the selected textbook and paper pattern justify them.
+- [x] Remove marking-guide wording from teacher-facing solution keys and present textbook-faithful definitions and structured comparison tables; automatic external supplementary facts remain prohibited.
+- [x] Add paper-quality, source-alignment, diagram, solution-key, and PDF-output regressions; validate and publish.

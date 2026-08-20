@@ -8,6 +8,7 @@ export type AssessmentDraftStatus = z.infer<typeof assessmentDraftStatusSchema>;
 
 const sourceGroundingSchema = z.object({
   sourceReference: z.string().trim().min(1, "A source reference is required."),
+  sourceExcerpt: z.string().trim().min(8, "A supporting textbook excerpt is required.").optional(),
   learningObjective: z.string().trim().min(1, "A learning objective is required."),
   conceptKey: z.string().trim().min(2, "A source-derived concept key is required.").optional(),
   facetKey: z.string().trim().min(2, "An assessable facet key is required.").optional(),
@@ -15,6 +16,12 @@ const sourceGroundingSchema = z.object({
   cognitiveLevel: z.enum(["K", "U", "A"]).default("U"),
   orGroup: z.number().int().positive().nullable().default(null),
   marks: z.number().int().positive("Marks must be a positive whole number."),
+});
+
+const diagramSpecSchema = z.object({
+  kind: z.enum(["labelled_flow", "labelled_graph", "labelled_block"]),
+  title: z.string().trim().min(2),
+  labels: z.array(z.string().trim().min(1)).min(2).max(6),
 });
 
 export const mcqDraftItemSchema = sourceGroundingSchema.extend({
@@ -41,6 +48,8 @@ export const shortDraftItemSchema = sourceGroundingSchema.extend({
   question: z.string().trim().min(1, "Question text is required."),
   expectedAnswer: z.string().trim().min(1, "An expected answer is required."),
   markingGuide: z.array(z.string().trim().min(1)).min(1, "At least one marking point is required."),
+  solutionPoints: z.array(z.string().trim().min(1)).min(1, "At least one solution point is required.").optional(),
+  diagramSpec: diagramSpecSchema.optional(),
   difficulty: z.enum(["easy", "medium", "hard"]),
 });
 
@@ -52,6 +61,8 @@ export const longDraftItemSchema = sourceGroundingSchema.extend({
     criterion: z.string().trim().min(1),
     marks: z.number().int().positive(),
   })).min(1, "At least one marking-rubric criterion is required."),
+  solutionPoints: z.array(z.string().trim().min(1)).min(1, "At least one solution point is required.").optional(),
+  diagramSpec: diagramSpecSchema.optional(),
   difficulty: z.enum(["easy", "medium", "hard"]),
 }).superRefine((item, ctx) => {
   const rubricTotal = item.markingRubric.reduce((total, criterion) => total + criterion.marks, 0);

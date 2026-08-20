@@ -14,6 +14,12 @@ export type SolutionKeyPointPresentation =
   | { kind: "diagram"; label: string }
   | { kind: "bullet"; text: string };
 
+type DiagramSpec = {
+  kind: "labelled_flow" | "labelled_graph" | "labelled_block";
+  title: string;
+  labels: string[];
+};
+
 export function classifySolutionKeyPoint(point: string): SolutionKeyPointPresentation {
   const diagram = point.match(/^(?:diagram|labelled sketch|labeled sketch)\s*:\s*(.+)$/i);
   if (diagram) return { kind: "diagram", label: diagram[1].trim() };
@@ -90,6 +96,58 @@ function renderSolutionKeyPoint(doc: PDFKit.PDFDocument, index: number, point: s
     x += width;
   });
   doc.y = y + 50;
+}
+
+function cleanLegacyMarkingPoint(point: string) {
+  return point
+    .replace(/^\s*\d+\s*marks?\s*:\s*/i, "")
+    .replace(/^\s*states?\s+(that\s+)?/i, "")
+    .trim();
+}
+
+function renderDiagramSpec(doc: PDFKit.PDFDocument, spec: DiagramSpec) {
+  ensureSpace(doc, 128);
+  const labels = spec.labels.slice(0, 6);
+  const x = 66;
+  const y = doc.y;
+  const width = 460;
+  const height = 98;
+  doc.fillColor("#173F62").font("Helvetica-Bold").fontSize(8.5).text(`Labelled diagram: ${spec.title}`, x, y, { width });
+  const diagramY = y + 16;
+  doc.strokeColor("#9EB6C8").lineWidth(0.7).rect(x, diagramY, width, height).stroke();
+
+  if (spec.kind === "labelled_graph") {
+    const originX = x + 48;
+    const originY = diagramY + height - 20;
+    doc.strokeColor("#173F62").lineWidth(1).moveTo(originX, diagramY + 12).lineTo(originX, originY).lineTo(x + width - 18, originY).stroke();
+    const usableWidth = width - 90;
+    const step = labels.length > 1 ? usableWidth / (labels.length - 1) : usableWidth;
+    labels.forEach((label, index) => {
+      const pointX = originX + step * index;
+      const pointY = diagramY + 34 + (index % 2 ? 14 : 0);
+      if (index) doc.strokeColor("#2B6C8E").lineWidth(1.2).moveTo(originX + step * (index - 1), diagramY + 34 + ((index - 1) % 2 ? 14 : 0)).lineTo(pointX, pointY).stroke();
+      doc.fillColor("#173F62").circle(pointX, pointY, 2).fill();
+      doc.fillColor("#374151").font("Helvetica").fontSize(6.8).text(label, pointX - 28, originY + 4, { width: 56, align: "center" });
+    });
+  } else {
+    const columns = Math.min(labels.length, spec.kind === "labelled_flow" ? 4 : 3);
+    const rows = Math.ceil(labels.length / columns);
+    const cellWidth = (width - 28) / columns;
+    const cellHeight = Math.min(30, (height - 22) / rows);
+    labels.forEach((label, index) => {
+      const column = index % columns;
+      const row = Math.floor(index / columns);
+      const boxX = x + 14 + column * cellWidth;
+      const boxY = diagramY + 13 + row * cellHeight;
+      doc.fillColor("#F5F9FC").strokeColor("#7FA7BE").rect(boxX, boxY, cellWidth - 12, cellHeight - 7).fillAndStroke();
+      doc.fillColor("#173F62").font("Helvetica").fontSize(7).text(label, boxX + 4, boxY + 5, { width: cellWidth - 20, height: cellHeight - 12, align: "center" });
+      if (spec.kind === "labelled_flow" && column < columns - 1 && index + 1 < labels.length) {
+        const arrowY = boxY + (cellHeight - 7) / 2;
+        doc.strokeColor("#2B6C8E").lineWidth(0.8).moveTo(boxX + cellWidth - 11, arrowY).lineTo(boxX + cellWidth - 3, arrowY).stroke();
+      }
+    });
+  }
+  doc.y = diagramY + height + 10;
 }
 
 function pairItems(items: PrintableItem[]) {
@@ -192,28 +250,31 @@ export async function renderPrintablePaperPdf(payload: PrintablePayload) {
 export async function renderPrintableSolutionPdf(payload: PrintablePayload) {
   return pdfBuffer((doc) => {
     const paperName = payload.mode === "short" ? "Short Question Solution Key" : "Long Question Solution Key";
-    pageHeader(doc, payload.title, `${paperName} · Internal review copy · Total marks: ${printableTotalMarks(payload)}`);
-    doc.fillColor("#173F62").font("Helvetica-Bold").fontSize(11).text("MARKING AND LEARNING GUIDE");
-    doc.fillColor("#374151").font("Helvetica").fontSize(9).text("Use this source-traceable key for teacher review. Check wording, formulas, and diagrams against the approved source before publication.");
+    pageHeader(doc, payload.title, `${paperName} · Textbook-grounded answer set`);
+    doc.fillColor("#173F62").font("Helvetica-Bold").fontSize(11).text("SOLUTION KEY");
+    doc.fillColor("#374151").font("Helvetica").fontSize(9).text("Use these concise answers to revise the selected textbook concepts. Diagrams and comparison tables appear only where they support the answer.");
     doc.moveDown(1);
     pairItems(payload.items).forEach((group, index) => {
       group.forEach((item: PrintableItem, alternativeIndex: number) => {
         ensureSpace(doc, 130);
-        doc.fillColor("#173F62").font("Helvetica-Bold").fontSize(10).text(`Q${index}${alternativeIndex ? " (OR)" : ""} · ${item.marks} marks`);
+        doc.fillColor("#173F62").font("Helvetica-Bold").fontSize(10).text(`Q${index}${alternativeIndex ? " (OR)" : ""}`);
         doc.fillColor("#111827").font("Helvetica").fontSize(9.5).text(item.question);
-        doc.fillColor("#516174").fontSize(8).text(`Source: ${item.sourceReference} · Objective: ${item.learningObjective} · Cognitive level: ${item.cognitiveLevel}`);
         doc.moveDown(0.35);
         if (item.kind === "short") {
-          doc.fillColor("#173F62").font("Helvetica-Bold").fontSize(9).text("Expected answer");
-          doc.fillColor("#1F2937").font("Helvetica").text(item.expectedAnswer);
-          doc.fillColor("#173F62").font("Helvetica-Bold").text("Marking points");
-          item.markingGuide.forEach((point: string, pointIndex: number) => renderSolutionKeyPoint(doc, pointIndex, point));
+          const textbookAnswer = /\b(definition|law|statement)\b/i.test(item.facetKey ?? "") && item.sourceExcerpt
+            ? item.sourceExcerpt
+            : item.expectedAnswer;
+          doc.fillColor("#173F62").font("Helvetica-Bold").fontSize(9).text("Answer");
+          doc.fillColor("#1F2937").font("Helvetica").text(textbookAnswer);
+          const solutionPoints = item.solutionPoints?.length ? item.solutionPoints : item.markingGuide.map(cleanLegacyMarkingPoint);
+          doc.fillColor("#173F62").font("Helvetica-Bold").text("Key points");
+          solutionPoints.forEach((point: string, pointIndex: number) => renderSolutionKeyPoint(doc, pointIndex, point));
         } else {
-          doc.fillColor("#173F62").font("Helvetica-Bold").fontSize(9).text("Expected key points");
-          item.expectedKeyPoints.forEach((point: string, pointIndex: number) => renderSolutionKeyPoint(doc, pointIndex, point));
-          doc.fillColor("#173F62").font("Helvetica-Bold").text("Marking rubric");
-          item.markingRubric.forEach((criterion: { criterion: string; marks: number }) => doc.fillColor("#1F2937").font("Helvetica").text(`• ${criterion.criterion} — ${criterion.marks} mark${criterion.marks === 1 ? "" : "s"}`));
+          doc.fillColor("#173F62").font("Helvetica-Bold").fontSize(9).text("Answer outline");
+          const solutionPoints = item.solutionPoints?.length ? item.solutionPoints : item.expectedKeyPoints;
+          solutionPoints.forEach((point: string, pointIndex: number) => renderSolutionKeyPoint(doc, pointIndex, point));
         }
+        if (item.diagramSpec) renderDiagramSpec(doc, item.diagramSpec);
         doc.moveDown(0.6);
         doc.strokeColor("#D6DFE7").moveTo(52, doc.y).lineTo(543, doc.y).stroke();
         doc.moveDown(0.7);
