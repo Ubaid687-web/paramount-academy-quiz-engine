@@ -637,3 +637,4 @@
 - [x] Implement a bounded OCR- and formatting-tolerant excerpt matcher without accepting unsupported question evidence.
 - [x] Ensure failed batches show an actionable correction path rather than a misleading resume state when zero pairs are verified.
 - [x] Add source-matcher, progressive-state, and mobile-feedback regressions; validate and publish.
+- [x] Add a server-derived private textbook anchor only when the generated question and answer retain multiple matching source terms, then validate it through focused and full regressions.

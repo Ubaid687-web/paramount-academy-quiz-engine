@@ -246,6 +246,36 @@ export function hasVerifiableTextbookExcerpt(contentText: string, sourceExcerpt:
   return termCoverage >= 0.8 && hasContiguousSourceRun;
 }
 
+function meaningfulTerms(text: string) {
+  return Array.from(new Set(normaliseEvidence(text).split(" ").filter((term) => term.length >= 5)));
+}
+
+function deriveExactTextbookAnchor(contentText: string, item: Record<string, unknown>) {
+  const referenceTerms = meaningfulTerms(String(item.sourceReference ?? ""));
+  const answerText = [
+    String(item.question ?? ""),
+    String(item.expectedAnswer ?? ""),
+    ...(Array.isArray(item.expectedKeyPoints) ? item.expectedKeyPoints.map(String) : []),
+    ...(Array.isArray(item.solutionPoints) ? item.solutionPoints.map(String) : []),
+  ].join(" ");
+  const answerTerms = meaningfulTerms(answerText);
+  if (answerTerms.length < 3) return null;
+
+  const candidates = contentText
+    .split(/(?:---\s*PAGE\s+\d+\s*---|\n{2,})/i)
+    .map((candidate) => candidate.trim())
+    .filter((candidate) => candidate.length >= 80);
+  const scored = candidates.map((candidate) => {
+    const normalisedCandidate = normaliseEvidence(candidate);
+    const answerMatches = answerTerms.filter((term) => normalisedCandidate.includes(term)).length;
+    const referenceMatches = referenceTerms.filter((term) => normalisedCandidate.includes(term)).length;
+    return { candidate, answerMatches, referenceMatches };
+  }).sort((left, right) => (right.answerMatches + right.referenceMatches * 2) - (left.answerMatches + left.referenceMatches * 2));
+  const best = scored[0];
+  if (!best || best.answerMatches < 3 || (referenceTerms.length > 0 && best.referenceMatches === 0)) return null;
+  return best.candidate.slice(0, 520);
+}
+
 function buildTextbookExcerpts(contentText: string, pairCount: number) {
   const passages = contentText
     .split(/(?=---\s*PAGE\s+\d+\s*---|\n\s*\d+(?:\.\d+){0,2}\s+[A-Z])/i)
@@ -277,7 +307,9 @@ function validateStudentFacingPrintableContent(
       throw new Error("The generated paper used a narrative prompt instead of a concise FBISE command-led question.");
     }
     if (!hasVerifiableTextbookExcerpt(contentText, sourceExcerpt)) {
-      throw new Error("The generated paper did not provide a verifiable textbook excerpt for every question. No draft was saved.");
+      const derivedAnchor = deriveExactTextbookAnchor(contentText, item);
+      if (!derivedAnchor) throw new Error("The generated paper did not provide a verifiable textbook excerpt for every question. No draft was saved.");
+      item.sourceExcerpt = derivedAnchor;
     }
     const solutionPoints = Array.isArray(item.solutionPoints) ? item.solutionPoints : [];
     if (!solutionPoints.length || solutionPoints.some((point) => INTERNAL_SOURCE_LANGUAGE.test(String(point)) || SOLUTION_MARKING_LANGUAGE.test(String(point)))) {

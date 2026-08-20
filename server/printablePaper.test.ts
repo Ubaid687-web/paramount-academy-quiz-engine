@@ -41,6 +41,19 @@ describe("printable paper payload normalization", () => {
     expect(hasVerifiableTextbookExcerpt(source, "The formula uses external numerical values to calculate the concentration of a solution.")).toBe(false);
   });
 
+  it("derives a private exact textbook anchor when the model paraphrases the excerpt but the question and answer retain a strong source match", async () => {
+    const sourceText = "Condensation occurs when a gas changes into a liquid. During condensation, intermolecular forces bring particles closer together and latent heat is released. The temperature remains constant during the change of state.";
+    const pair = [
+      { ...shortGenerated.items[0], question: "Explain condensation.", expectedAnswer: "During condensation, particles come closer and latent heat is released.", solutionPoints: ["A gas changes into a liquid.", "Intermolecular forces bring particles closer together."], sourceReference: "Condensation", sourceExcerpt: "This paraphrase does not copy an exact textbook sentence.", conceptKey: "condensation", facetKey: "explanation", answerTarget: "gas changes to liquid and releases latent heat" },
+      { ...shortGenerated.items[0], question: "State the change of state in condensation.", expectedAnswer: "A gas changes into a liquid.", solutionPoints: ["A gas changes into a liquid."], sourceReference: "Condensation", sourceExcerpt: "This paraphrase does not copy an exact textbook sentence.", conceptKey: "condensation", facetKey: "state change", answerTarget: "gas changes to liquid" },
+    ];
+    mocks.invokeGenerationProvider.mockResolvedValue({ response: { choices: [{ message: { content: JSON.stringify({ estimatedDurationMinutes: 6, items: pair }) } }] }, telemetry: { provider: "managed_llm", fallbackUsed: false, primaryFailureType: null, managedRetryAttempts: 0, geminiRetryAttempts: 0 } });
+
+    const result = await generatePrintablePaperBatch({ paperType: "short", title: "Condensation revision", contentText: sourceText, pairCount: 1, difficulty: "balanced", sourceContext: { sourceType: "curriculum_scope", sourceTitle: "Matter" } });
+
+    expect(result.items[0]?.sourceExcerpt).toContain("Condensation occurs when a gas changes into a liquid");
+  });
+
   it("adds the required short-item type before contract validation", () => {
     const payload = normalizePrintablePaperPayload("short", "Motion short paper", shortGenerated);
     expect(payload.mode).toBe("short");
