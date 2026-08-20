@@ -298,16 +298,34 @@ export default function CurriculumManagement() {
   const handleCreateFocusedProgramme = async () => {
     if (!requestedGrade || !programmeSubject.trim()) return toast.error("Enter the subject name first.");
     const subjectName = programmeSubject.trim();
+    const normalizedSubject = subjectName.toLowerCase().replace(/\s+/g, "_");
+    const existingProgramme = programmes.find((programme) => (
+      programme.board === "FBISE"
+      && programme.grade === requestedGrade
+      && programme.subject === normalizedSubject
+    ));
+    const existingSet = existingProgramme ? workingCurriculumSets.find((set) => (
+      set.board === existingProgramme.board
+      && set.grade === existingProgramme.grade
+      && set.subject === existingProgramme.subject
+    )) : undefined;
+
+    if (existingProgramme && existingSet) {
+      setSetProgrammeId(existingProgramme.id);
+      setSelectedSetId(existingSet.id);
+      setFocusedIntakeSetId(existingSet.id);
+      setProgrammeSubject("");
+      setActivePortalPanel("curriculum");
+      setActiveCurriculumTask("edition");
+      toast.success(`${formatSubjectLabel(existingProgramme.subject)} intake already exists. Continue with its textbook upload.`);
+      return;
+    }
+
     try {
-      const programme = await createProgramme.mutateAsync({
-        board: "FBISE",
-        grade: requestedGrade,
-        subject: subjectName.toLowerCase().replace(/\s+/g, "_"),
-        teacherLabel: subjectName,
-      });
-      const set = await createSet.mutateAsync({
+      const programme = existingProgramme ?? await createProgramme.mutateAsync({ board: "FBISE", grade: requestedGrade, subject: normalizedSubject, teacherLabel: subjectName });
+      const set = existingSet ?? await createSet.mutateAsync({
         programmeId: programme.id,
-        label: `Grade ${requestedGrade} ${subjectName} textbook`,
+        label: `Grade ${requestedGrade} ${formatSubjectLabel(programme.subject)} textbook`,
         editionLabel: "Intake draft",
       });
       setSetProgrammeId(programme.id);
@@ -315,7 +333,7 @@ export default function CurriculumManagement() {
       setFocusedIntakeSetId(set.id);
       setProgrammeSubject("");
       await Promise.all([utils.curriculum.listProgrammes.invalidate(), utils.curriculum.listSets.invalidate()]);
-      toast.success("Subject created. Upload its textbook next.");
+      toast.success(existingProgramme ? "Existing subject found. Upload its textbook next." : "Subject created. Upload its textbook next.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "The subject could not be created.");
     }
@@ -671,7 +689,7 @@ export default function CurriculumManagement() {
 
             {focusedStep === 1 && <Card className="border-primary/15"><CardHeader><CardTitle>What subject are you adding?</CardTitle><CardDescription>Enter one clear subject name. Grade and board are already set to Grade {requestedGrade} and FBISE.</CardDescription></CardHeader><CardContent className="space-y-4"><div><Label htmlFor="focused-subject-name">Subject name</Label><Input id="focused-subject-name" value={programmeSubject} onChange={(event) => setProgrammeSubject(event.target.value)} placeholder="e.g. Biology" autoFocus /></div><Button type="button" className="w-full" onClick={handleCreateFocusedProgramme} disabled={createProgramme.isPending || createSet.isPending}>{createProgramme.isPending || createSet.isPending ? "Creating subject…" : "Continue to textbook upload"}</Button></CardContent></Card>}
 
-            {focusedStep === 2 && <Card className="border-primary/15"><CardHeader><CardTitle className="flex items-center gap-2"><Upload className="h-5 w-5 text-primary" />Upload the textbook</CardTitle><CardDescription>Upload the official book as a PDF, TXT, JPG, PNG, or WEBP file. Scanned pages are queued for Urdu-and-English OCR before review.</CardDescription></CardHeader><CardContent className="space-y-4"><Input aria-label="Focused curriculum source upload" type="file" accept=".pdf,.txt,.jpg,.jpeg,.png,.webp" onChange={handleSourceUpload} disabled={isUploading} />{isUploading && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Storing the textbook and preparing extraction…</p>}<p className="text-xs leading-5 text-muted-foreground">Scanned PDFs and photographed pages are read in small Urdu-and-English OCR batches. Weak pages remain blocked for Portal Admin review before activation.</p></CardContent></Card>}
+            {focusedStep === 2 && <Card className="border-primary/15"><CardHeader><CardTitle className="flex items-center gap-2"><Upload className="h-5 w-5 text-primary" />Upload the textbook</CardTitle><CardDescription>Upload the official book as a PDF, TXT, JPG, PNG, or WEBP file. Scanned pages are queued for Urdu-and-English OCR before review.</CardDescription></CardHeader><CardContent className="space-y-4"><p className="text-sm text-muted-foreground">PDF textbooks up to 150MB are accepted. PDFs above 30MB transfer directly without browser base64 conversion.</p><Input aria-label="Focused curriculum source upload" type="file" accept=".pdf,.txt,.jpg,.jpeg,.png,.webp" onChange={handleSourceUpload} disabled={isUploading} />{isUploading && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Storing the textbook and preparing extraction…</p>}<p className="text-xs leading-5 text-muted-foreground">Scanned PDFs and photographed pages are read in small Urdu-and-English OCR batches. Weak pages remain blocked for Portal Admin review before activation.</p></CardContent></Card>}
 
             {focusedStep === 3 && <Card className={hasPendingTextbookOcr ? "border-primary/30 bg-primary/[0.04]" : hasFailedTextbookOcr || !details?.readiness.ocrReviewComplete ? "border-amber-300/70 bg-amber-50/40" : "border-emerald-300/60 bg-emerald-50/40"}><CardHeader><CardTitle>{hasPendingTextbookOcr ? "Textbook OCR in progress" : hasFailedTextbookOcr ? "Textbook extraction needs attention" : details?.readiness.ocrReviewComplete ? "Textbook intake complete" : "Textbook quality review"}</CardTitle><CardDescription>{hasPendingTextbookOcr ? "The stored scan is being read in small batches. This page refreshes automatically; chapter review remains unavailable until extraction finishes." : hasFailedTextbookOcr ? "Extraction did not complete. Open the detailed review workspace to see the recorded failure before re-uploading or correcting the source." : details?.readiness.ocrReviewComplete ? "The source was stored and extraction checks completed. Continue to the controlled chapter-review workspace." : "Some pages need review before this book can be activated for teachers."}</CardDescription></CardHeader><CardContent className="space-y-4"><div className="rounded-xl border border-border/60 bg-background/70 p-3 text-sm text-foreground"><strong>{details?.sources.length ?? 0} textbook file</strong> stored for this subject.{hasPendingTextbookOcr && details?.ocrJobs?.length ? ` OCR progress: page ${details.ocrJobs[0].nextPage} of ${details.ocrJobs[0].totalPages}.` : details?.readiness.weakOcrPages ? ` ${details.readiness.weakOcrPages} page${details.readiness.weakOcrPages === 1 ? "" : "s"} still need review.` : ""}</div><Button type="button" className="w-full" onClick={() => navigate(`/curriculum?set=${focusedIntakeSetId}`)} disabled={hasPendingTextbookOcr}>{hasPendingTextbookOcr ? "OCR in progress" : "Continue to book review"}</Button></CardContent></Card>}
           </section>

@@ -673,11 +673,16 @@
 - [x] Add regressions, validate, checkpoint, and report the evidence-based calibration.
 
 ## Phase 114: Grade 9 Controlled Intake Recommendation
-- [ ] Inspect the current Grade 9 programme, curriculum, textbook, and paper-pattern readiness without enabling generation.
-- [ ] Provide the minimal Portal Admin-only subject-by-subject intake and activation sequence for Grade 9 Physics, Chemistry, and Computer Science.
+- [x] Inspect the current Grade 9 programme, curriculum, textbook, and paper-pattern readiness without enabling generation.
+- [x] Provide the minimal Portal Admin-only subject-by-subject intake and activation sequence for Grade 9 Physics, Chemistry, and Computer Science.
 
 ## Phase 115: Larger Source-PDF Intake
 - [x] Audit all client, router, storage, extraction, and OCR size boundaries affecting Portal Admin textbook uploads.
 - [x] Permit secure Portal Admin textbook source uploads up to 150 MB while retaining strict file-signature, MIME, and base64 safeguards.
 - [x] Ensure large-PDF extraction stays server-side and bounded or queued, without requiring staff to split normal textbooks manually.
 - [x] Add upload-limit regressions, validate, checkpoint, and report the intake upgrade.
+
+## Phase 116: Grade 9 Duplicate-Subject Intake Repair
+- [x] Trace the raw programme-catalogue insert failure shown during Grade 9 Chemistry subject intake.
+- [x] Make duplicate subject selection safe and actionable, without exposing database internals to Portal Admin.
+- [x] Add regressions, validate, checkpoint, and report the repaired Grade 9 intake flow.

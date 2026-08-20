@@ -31,13 +31,25 @@ const archivedChemistrySet = {
   status: "archived",
 };
 
+const grade9ChemistryProgramme = { id: 12, board: "FBISE", grade: "9", subject: "chemistry", teacherLabel: "Chemistry", status: "intake_only" };
+const grade9ChemistrySet = { id: 13, board: "FBISE", grade: "9", subject: "chemistry", label: "Grade 9 Chemistry textbook", editionLabel: "Intake draft", status: "draft" };
+const grade9ChemistryDetails = {
+  ...managementDetails,
+  curriculumSet: grade9ChemistrySet,
+  sources: [],
+  sourcePageReviews: [],
+  ocrJobs: [],
+  chapters: [],
+  readiness: { ...managementDetails.readiness, sourceStored: false, sourceExtracted: false, reviewedActiveChapters: 0, weakOcrPages: 0, ocrReviewComplete: true },
+};
+
 vi.mock("@/lib/trpc", () => ({
   trpc: {
     useUtils: () => ({ curriculum: { listSets: { invalidate }, listProgrammes: { invalidate }, getManagementDetails: { invalidate } }, generation: { getProviderSettings: { invalidate }, listHistory: { invalidate }, getStyleAnchor: { invalidate } } }),
     curriculum: {
-      listSets: { useQuery: (_input?: unknown, options?: { enabled?: boolean }) => { queryOptions.listSets.push(Boolean(options?.enabled)); return { data: [managementDetails.curriculumSet, archivedChemistrySet], isLoading: false, error: null }; } },
-      listProgrammes: { useQuery: (_input?: unknown, options?: { enabled?: boolean }) => { queryOptions.listProgrammes.push(Boolean(options?.enabled)); return { data: [{ id: 11, board: "FBISE", grade: "10", subject: "physics", teacherLabel: "Physics", status: "ready" }], isLoading: false, error: null }; } },
-      getManagementDetails: { useQuery: () => ({ data: managementDetails, isLoading: false }) },
+      listSets: { useQuery: (_input?: unknown, options?: { enabled?: boolean }) => { queryOptions.listSets.push(Boolean(options?.enabled)); return { data: [managementDetails.curriculumSet, grade9ChemistrySet, archivedChemistrySet], isLoading: false, error: null }; } },
+      listProgrammes: { useQuery: (_input?: unknown, options?: { enabled?: boolean }) => { queryOptions.listProgrammes.push(Boolean(options?.enabled)); return { data: [{ id: 11, board: "FBISE", grade: "10", subject: "physics", teacherLabel: "Physics", status: "ready" }, grade9ChemistryProgramme], isLoading: false, error: null }; } },
+      getManagementDetails: { useQuery: (input: { curriculumSetId: number }) => ({ data: input.curriculumSetId === grade9ChemistrySet.id ? grade9ChemistryDetails : managementDetails, isLoading: false }) },
       proposeChaptersFromSource: { useQuery: () => ({ data: undefined, isLoading: false, isFetching: false, error: null, refetch: vi.fn() }) },
       createProgramme: { useMutation: () => noOpMutation }, activateProgramme: { useMutation: () => noOpMutation }, createSet: { useMutation: () => noOpMutation }, replaceActiveSet: { useMutation: () => noOpMutation }, ingestSource: { useMutation: () => noOpMutation }, ingestPaperPatternSource: { useMutation: () => noOpMutation }, activatePaperPatternSource: { useMutation: () => noOpMutation }, savePaperPatternProfile: { useMutation: () => noOpMutation }, createChapter: { useMutation: () => noOpMutation }, saveHalfChapterSegments: { useMutation: () => noOpMutation }, createScopeTemplate: { useMutation: () => noOpMutation }, activateSet: { useMutation: () => noOpMutation }, reviewSourcePage: { useMutation: () => noOpMutation }, getOcrReviewPage: { useQuery: () => ({ data: { pageNumber: 7, pageText: "Extracted source text for review.", previewUrl: "/api/ocr-review/source/2/page/7" }, isLoading: false, error: null }) }, correctOcrReviewPage: { useMutation: () => noOpMutation }, setChapterGenerationAvailability: { useMutation: () => noOpMutation },
     },
@@ -146,6 +158,18 @@ describe("Curriculum Library Release 1", () => {
     expect(screen.getByRole("button", { name: "Continue to textbook upload" })).toBeTruthy();
     expect(screen.queryByText("Add a grade or subject")).toBeNull();
     expect(screen.queryByText("Edition readiness checklist")).toBeNull();
+  });
+
+  it("resumes an existing Grade 9 Chemistry intake instead of attempting another programme insert", async () => {
+    window.history.pushState({}, "", "/curriculum?grade=9&intake=subject");
+    render(<CurriculumManagement />);
+
+    fireEvent.change(screen.getByLabelText("Subject name"), { target: { value: "Chemistry" } });
+    fireEvent.click(screen.getByRole("button", { name: "Continue to textbook upload" }));
+
+    expect(noOpMutation.mutateAsync).not.toHaveBeenCalled();
+    expect(await screen.findByText("Upload the textbook")).toBeTruthy();
+    expect(screen.getByText(/PDF textbooks up to 150MB are accepted/i)).toBeTruthy();
   });
 
   it("offers approved photographed textbook formats in the controlled upload control", () => {

@@ -613,8 +613,19 @@ export async function getProgrammeCatalogueByKey(programme: ProgrammeKey) {
 export async function createProgrammeCatalogue(values: Pick<InsertProgrammeCatalogue, "board" | "grade" | "subject" | "teacherLabel" | "createdBy">) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result = await db.insert(programmeCatalogues).values({ ...values, status: "intake_only" });
-  return getProgrammeCatalogue(result[0].insertId as number);
+  const existing = await getProgrammeCatalogueByKey(values);
+  if (existing) return existing;
+
+  try {
+    const result = await db.insert(programmeCatalogues).values({ ...values, status: "intake_only" });
+    return getProgrammeCatalogue(result[0].insertId as number);
+  } catch (error) {
+    // The unique board/grade/subject index remains the concurrency guard. If another Portal Admin
+    // request won the race, recover the existing intake record instead of exposing SQL details.
+    const concurrentProgramme = await getProgrammeCatalogueByKey(values);
+    if (concurrentProgramme) return concurrentProgramme;
+    throw error;
+  }
 }
 
 export async function activateProgrammeCatalogue(programmeId: number) {

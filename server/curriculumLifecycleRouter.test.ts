@@ -74,6 +74,17 @@ describe("curriculum lifecycle administration", () => {
     expect(mocks.createProgrammeCatalogue).toHaveBeenCalledWith({ board: "FBISE", grade: "9", subject: "physics", teacherLabel: "Physics", createdBy: 77 });
   });
 
+  it("returns an existing Grade 9 intake record instead of leaking a duplicate database insert error", async () => {
+    mocks.createProgrammeCatalogue.mockResolvedValue({ id: 81, board: "FBISE", grade: "9", subject: "chemistry", teacherLabel: "Chemistry", status: "intake_only" });
+    const caller = appRouter.createCaller(createContext("admin"));
+
+    await expect(caller.curriculum.createProgramme({ board: "FBISE", grade: "9", subject: "chemistry", teacherLabel: "Chemistry" })).resolves.toMatchObject({
+      id: 81,
+      status: "intake_only",
+      subject: "chemistry",
+    });
+  });
+
   it("does not allow a non-admin to activate a programme", async () => {
     const caller = appRouter.createCaller(createContext("user"));
     await expect(caller.curriculum.activateProgramme({ programmeId: 71 })).rejects.toMatchObject({ code: "FORBIDDEN" });
