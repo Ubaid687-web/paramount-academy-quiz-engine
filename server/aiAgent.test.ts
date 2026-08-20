@@ -106,6 +106,26 @@ describe("AI Agent - MCQ Generation", () => {
     expect(request.messages[0].content).toContain("Never copy an example");
   });
 
+  it("passes the audited Grade 10 Computer Science calibration to the provider without treating paper patterns as answer evidence", async () => {
+    await generateMCQsFromContent(1, validContent, 2, "balanced", {
+      sourceType: "curriculum_scope",
+      sourceTitle: "Data and Analysis",
+      classLevel: "10",
+      subject: "computer_science",
+      paperPatternGuidance: [{
+        sourceKind: "past_paper",
+        academicYear: "2025",
+        sectionAInstruction: "Section A has compact four-option MCQs.",
+        profileEvidenceNotes: "Reviewed paper uses concise direct wording.",
+      }],
+    });
+
+    const request = mocks.invokeGenerationProvider.mock.calls[0]?.[0];
+    expect(request.messages[0].content).toContain("GRADE 10 COMPUTER SCIENCE CALIBRATION");
+    expect(request.messages[0].content).toContain("Do not let a topic that appeared in a past paper select the scope");
+    expect(request.messages[0].content).toContain("sole authority for every answer");
+  });
+
   it("reuses an exact recent private draft without calling the model again", async () => {
     mocks.getCachedGenerationResponse.mockResolvedValue({
       payload: JSON.stringify({

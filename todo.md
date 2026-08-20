@@ -665,3 +665,9 @@
 ## Phase 112: Printable Activity-State Explanations
 - [x] Add concise accessible hover and keyboard-focus explanations for the Source scope locked and Review draft release activity states.
 - [x] Add UI regression coverage, validate, checkpoint, and report the refinement.
+
+## Phase 113: Computer Science FBISE 2027 Evidence Alignment
+- [x] Inventory the retained Grade 10 Computer Science textbook and supplied model, 2024, 2025, and 2026 morning/evening paper evidence without requesting duplicate uploads.
+- [x] Reconcile each paper's verified topic emphasis, wording, command forms, choice structure, and current-textbook alignment; exclude outdated or unsupported demands.
+- [x] Apply only evidence-backed Computer Science generation guidance for 2027 preparation, preserving textbook-only factual authority and Portal Admin review.
+- [x] Add regressions, validate, checkpoint, and report the evidence-based calibration.

@@ -39,4 +39,15 @@ describe("shared FBISE style anchor", () => {
     expect(withExample.instruction).toContain("Never copy or paraphrase an example");
     expect(withExample.fingerprint).not.toBe(withoutExample.fingerprint);
   });
+
+  it("adds the audited Grade 10 Computer Science direct-wording and selected-scope calibration without turning papers into factual authority", () => {
+    const computerScienceAnchor = buildSharedStyleAnchor({ board: "FBISE", grade: "10", subject: "computer_science", paperPatternGuidance, approvedExamples: [] });
+    const physicsAnchor = buildSharedStyleAnchor({ board: "FBISE", grade: "10", subject: "physics", paperPatternGuidance, approvedExamples: [] });
+
+    expect(computerScienceAnchor.instruction).toContain("GRADE 10 COMPUTER SCIENCE CALIBRATION");
+    expect(computerScienceAnchor.instruction).toContain("natural Which/What/Why/How form");
+    expect(computerScienceAnchor.instruction).toContain("Do not let a topic that appeared in a past paper select the scope");
+    expect(computerScienceAnchor.instruction).toContain("Never copy a past-paper stem, task, code sample, or answer");
+    expect(physicsAnchor.instruction).not.toContain("GRADE 10 COMPUTER SCIENCE CALIBRATION");
+  });
 });
