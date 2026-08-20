@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({ invokeGenerationProvider: vi.fn(), getProviderFailureEvidence: vi.fn() }));
 vi.mock("./generationProvider", () => ({ invokeGenerationProvider: mocks.invokeGenerationProvider, getProviderFailureEvidence: mocks.getProviderFailureEvidence }));
 
-import { buildPrintablePairBatches, buildPrintablePaperPatternInstruction, buildPrintableUpstreamFailure, generatePrintablePaperBatch, generatePrintablePaperFromContent, normalizePrintablePaperPayload } from "./printablePaper";
+import { buildPrintablePairBatches, buildPrintablePaperPatternInstruction, buildPrintableUpstreamFailure, generatePrintablePaperBatch, generatePrintablePaperFromContent, hasVerifiableTextbookExcerpt, normalizePrintablePaperPayload } from "./printablePaper";
 
 const shortGenerated = {
   estimatedDurationMinutes: 30,
@@ -29,6 +29,16 @@ describe("printable paper payload normalization", () => {
     expect(instruction).toContain("past paper 2025");
     expect(instruction).toContain("K/U/A balance only");
     expect(instruction).toContain("use them as answer evidence");
+  });
+
+  it("accepts a bounded OCR or word-break variation only when it retains a strong contiguous textbook anchor", () => {
+    const source = "The intermolecular forces bring particles closer together and release latent heat during condensation.";
+    expect(hasVerifiableTextbookExcerpt(source, "The inter molecular forces bring particles closer together and release latent heat during condensation.")).toBe(true);
+  });
+
+  it("rejects an unsupported excerpt even when it is written in plausible subject language", () => {
+    const source = "The intermolecular forces bring particles closer together and release latent heat during condensation.";
+    expect(hasVerifiableTextbookExcerpt(source, "The formula uses external numerical values to calculate the concentration of a solution.")).toBe(false);
   });
 
   it("adds the required short-item type before contract validation", () => {

@@ -631,3 +631,9 @@
 - [x] Add an evidence-bound diagram trigger and deterministic diagram instructions only where the selected textbook and paper pattern justify them.
 - [x] Remove marking-guide wording from teacher-facing solution keys and present textbook-faithful definitions and structured comparison tables; automatic external supplementary facts remain prohibited.
 - [x] Add paper-quality, source-alignment, diagram, solution-key, and PDF-output regressions; validate and publish.
+
+## Phase 108: OCR-Tolerant Printable Evidence Verification
+- [x] Trace the failed post-release printable batch and reproduce the exact textbook-excerpt matching mismatch.
+- [x] Implement a bounded OCR- and formatting-tolerant excerpt matcher without accepting unsupported question evidence.
+- [x] Ensure failed batches show an actionable correction path rather than a misleading resume state when zero pairs are verified.
+- [x] Add source-matcher, progressive-state, and mobile-feedback regressions; validate and publish.

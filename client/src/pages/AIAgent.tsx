@@ -588,7 +588,7 @@ export default function AIAgent() {
     } catch (error) {
       const message = error instanceof Error ? error.message : "The printable paper paused before the next batch could be verified.";
       setPrintableGenerationProgress({ ...progressState, failure: message });
-      toast.error(`${message} Verified pairs have been kept safely; you can resume from this point.`);
+      toast.error(progressState.completedPairs > 0 ? `${message} Verified pairs have been kept safely; you can resume from this point.` : `${message} No pair was verified, so retrying will start with the first batch.`);
     } finally {
       setIsGenerating(false);
     }
@@ -977,13 +977,13 @@ export default function AIAgent() {
             </Card>}
 
             {activeStep === 4 && !isGenerating && !generatedPrintablePaper && printableGenerationProgress?.failure && <Card className="border-amber-500/30 bg-card shadow-sm" aria-live="polite">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2"><AlertCircle className="h-5 w-5 text-amber-600" />Printable paper paused safely</CardTitle>
-                <CardDescription>Previously verified OR pairs are retained. The next request will continue from the saved batch rather than generate them again.</CardDescription>
-              </CardHeader>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><AlertCircle className="h-5 w-5 text-amber-600" />{printableGenerationProgress.completedPairs > 0 ? "Printable paper paused safely" : "Printable paper needs a safe retry"}</CardTitle>
+              <CardDescription>{printableGenerationProgress.completedPairs > 0 ? "Previously verified OR pairs are retained. The next request will continue from the saved batch rather than generate them again." : "No OR pair was accepted, so the next request will retry the first batch after the source-evidence check is corrected."}</CardDescription>
+            </CardHeader>
               <CardContent className="space-y-4">
                 <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-foreground"><strong>{printableGenerationProgress.completedPairs} of {printableGenerationProgress.totalPairs} OR pairs verified.</strong><p className="mt-1 text-muted-foreground">{printableGenerationProgress.failure}</p></div>
-                <div className="flex flex-col gap-2 sm:flex-row"><Button type="button" variant="outline" className="sm:flex-1" onClick={() => setActiveStep(3)}><ChevronLeft className="mr-1 h-4 w-4" />Back to settings</Button><Button type="button" className="sm:flex-1" onClick={handleResumePrintableGeneration}><Sparkles className="mr-2 h-4 w-4" />Resume verified generation</Button></div>
+                <div className="flex flex-col gap-2 sm:flex-row"><Button type="button" variant="outline" className="sm:flex-1" onClick={() => setActiveStep(3)}><ChevronLeft className="mr-1 h-4 w-4" />Back to settings</Button><Button type="button" className="sm:flex-1" onClick={handleResumePrintableGeneration}><Sparkles className="mr-2 h-4 w-4" />{printableGenerationProgress.completedPairs > 0 ? "Resume verified generation" : "Retry first batch"}</Button></div>
               </CardContent>
             </Card>}
 

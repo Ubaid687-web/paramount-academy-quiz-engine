@@ -220,6 +220,32 @@ function normaliseEvidence(text: string) {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, " ").replace(/\s+/g, " ").trim();
 }
 
+/**
+ * Accepts an exact quotation or a narrowly OCR-tolerant variation of one. The tolerant branch
+ * still requires a four-to-five-word contiguous source run plus at least 80% of the meaningful
+ * excerpt terms in the selected textbook; it is not semantic matching and cannot accept a new fact.
+ */
+export function hasVerifiableTextbookExcerpt(contentText: string, sourceExcerpt: string) {
+  const source = normaliseEvidence(contentText);
+  const excerpt = normaliseEvidence(sourceExcerpt);
+  if (!excerpt || !source) return false;
+  if (source.includes(excerpt)) return true;
+
+  const excerptTokens = excerpt.split(" ").filter(Boolean);
+  if (excerptTokens.length < 8) return false;
+  const meaningfulTokens = excerptTokens.filter((token) => token.length >= 4);
+  if (meaningfulTokens.length < 5) return false;
+
+  const matchedMeaningfulTerms = meaningfulTokens.filter((token) => source.includes(token)).length;
+  const termCoverage = matchedMeaningfulTerms / meaningfulTokens.length;
+  const runLength = excerptTokens.length >= 12 ? 5 : 4;
+  const hasContiguousSourceRun = excerptTokens
+    .slice(0, Math.max(0, excerptTokens.length - runLength + 1))
+    .some((_, index) => source.includes(excerptTokens.slice(index, index + runLength).join(" ")));
+
+  return termCoverage >= 0.8 && hasContiguousSourceRun;
+}
+
 function buildTextbookExcerpts(contentText: string, pairCount: number) {
   const passages = contentText
     .split(/(?=---\s*PAGE\s+\d+\s*---|\n\s*\d+(?:\.\d+){0,2}\s+[A-Z])/i)
@@ -250,8 +276,8 @@ function validateStudentFacingPrintableContent(
     if (!DIRECT_FBISE_COMMAND.test(question.trim())) {
       throw new Error("The generated paper used a narrative prompt instead of a concise FBISE command-led question.");
     }
-    if (!normaliseEvidence(sourceExcerpt) || !source.includes(normaliseEvidence(sourceExcerpt))) {
-      throw new Error("The generated paper did not provide an exact textbook excerpt for every question. No draft was saved.");
+    if (!hasVerifiableTextbookExcerpt(contentText, sourceExcerpt)) {
+      throw new Error("The generated paper did not provide a verifiable textbook excerpt for every question. No draft was saved.");
     }
     const solutionPoints = Array.isArray(item.solutionPoints) ? item.solutionPoints : [];
     if (!solutionPoints.length || solutionPoints.some((point) => INTERNAL_SOURCE_LANGUAGE.test(String(point)) || SOLUTION_MARKING_LANGUAGE.test(String(point)))) {
@@ -426,7 +452,7 @@ export async function generatePrintablePaperBatch(params: {
       const upstreamFailure = buildPrintableUpstreamFailure(error);
       if (upstreamFailure) throw upstreamFailure;
       const message = error instanceof Error ? error.message : String(error);
-      if (/internal source wording|exact textbook excerpt|student-ready textbook answer|diagram includes|narrative prompt/i.test(message)) {
+      if (/internal source wording|verifiable textbook excerpt|student-ready textbook answer|diagram includes|narrative prompt/i.test(message)) {
         qualityFailure = message;
       }
     }

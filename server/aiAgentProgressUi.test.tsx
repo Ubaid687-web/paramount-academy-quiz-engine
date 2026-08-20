@@ -633,6 +633,25 @@ describe("AI quiz generation feedback", () => {
     expect(screen.getByText(/completed-pair count is exact/i)).toBeVisible();
   });
 
+  it("shows a first-batch retry rather than a misleading resume action when zero printable pairs were verified", async () => {
+    startPrintableGenerationMutation.mockResolvedValue({ jobId: 83, status: "pending", completedPairs: 0, totalPairs: 5, totalBatches: 2, progress: 0, cacheReused: false });
+    advancePrintableGenerationMutation.mockRejectedValue(new Error("The generated paper did not provide a verifiable textbook excerpt for every question. No draft was saved."));
+    render(<AIAgent />);
+
+    confirmTeacherContext();
+    fireEvent.click(screen.getByRole("button", { name: /^Short question paper/i }));
+    chooseCustomPasteSource();
+    fireEvent.change(screen.getByLabelText("Paste source text"), { target: { value: "Source-grounded short question material for a retry-state test. ".repeat(4) } });
+    fireEvent.change(screen.getByLabelText("Quiz title"), { target: { value: "Retry-state paper" } });
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    fireEvent.click(screen.getByRole("button", { name: /generate printable paper draft/i }));
+
+    expect(await screen.findByText("Printable paper needs a safe retry")).toBeVisible();
+    expect(screen.getByText(/no OR pair was accepted/i)).toBeVisible();
+    expect(screen.getByRole("button", { name: /retry first batch/i })).toBeVisible();
+    expect(screen.queryByRole("button", { name: /resume verified generation/i })).not.toBeInTheDocument();
+  });
+
   it("offers all approved Computer Science output types while keeping only MCQs online", () => {
     window.history.pushState({}, "", "/ai-agent?grade=10&subject=computer_science");
     assessmentAvailabilityQuery.mockReturnValue({
