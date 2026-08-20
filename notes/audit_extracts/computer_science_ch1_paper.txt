@@ -1,0 +1,86 @@
+                                     PARAMOUNT ACADEMY
+                                                        Paper 01
+                           Short Question Paper · Total marks: 60 · Suggested time: 60 minutes
+
+
+Name: ______________________________                                  Roll No.: __________________
+
+Date: __________________                                              Teacher signature: ________________
+
+
+
+                                                                      SECTION B — SHORT QUESTIONS
+                                                                      Attempt one alternative from each numbered pair. Write
+                                                                      clear, relevant answers. Use a labelled sketch where it
+                                                                      improves your explanation.
+
+
+Q1                                               [3 marks]          Q1 · OR                                        [3 marks]
+State the four outcomes of adding two binary digits,                Explain the steps to represent a negative integer
+and calculate the sum of 10010 and 111 in binary.                   using 8-bit 2's complement, and write the
+                                                                    representation of -13.
+
+
+
+Q2                                               [3 marks]          Q2 · OR                                        [3 marks]
+State the main functions of memory management                       Write the operations that an operating system's file
+performed by an operating system.                                   management permits users to perform on files and
+                                                                    folders.
+
+
+
+Q3                                               [3 marks]          Q3 · OR                                        [3 marks]
+Differentiate between Single-Level, Two-Level, and                  Calculate the value range for an 8-bit unsigned binary
+Tree-Structured directory organizations.                            number in decimal and binary forms using the range
+                                                                    formula.
+
+
+
+Q4                                               [3 marks]          Q4 · OR                                        [3 marks]
+Explain the function of compilers and state two real-               Explain how code completion and debugging features
+world compilers mentioned in the textbook.                          in IDEs assist programmers during software
+                                                                    development.
+
+
+
+Q5                                               [3 marks]          Q5 · OR                                        [3 marks]
+Explain the term process and describe how process                   Explain the function of device management in an
+management allocates system resources.                              operating system.
+
+
+
+Q6                                               [3 marks]          Q6 · OR                                        [3 marks]
+Define metadata in a file system and list four specific             Calculate the 8-bit two's complement representation
+file attributes contained in metadata.                              for the decimal number -55.
+
+
+
+Q7                                               [3 marks]          Q7 · OR                                        [3 marks]
+State the main purpose of text editors in programming               Explain how syntax highlighting assists programmers
+software and name three examples of text editors.                   when writing code.
+
+
+
+Q8                                               [3 marks]          Q8 · OR                                        [3 marks]
+Differentiate between signed binary numbers and                     Explain the concept of a computer system and
+unsigned binary numbers.                                            describe how its components work together.
+
+
+                                 Paramount Academy · Draft for Portal Admin review · Page 1 of 2
+Q9                                               [3 marks]          Q9 · OR                                       [3 marks]
+Define the file system components 'Files' and                       State the rule to obtain the 2's complement of a binary
+'Directories/Folders' as specified in operating system              number and explain how the sign bit determines
+file organization.                                                  whether a number is positive or negative.
+
+
+
+Q10                                              [3 marks]          Q10 · OR                                      [3 marks]
+Calculate the four-bit fractional binary equivalent of              Calculate the 8-bit unsigned binary representation for
+the decimal fraction 0.257 by showing all                           the decimal number 105.
+multiplication steps.
+
+
+
+
+                                 Paramount Academy · Draft for Portal Admin review · Page 2 of 2
+

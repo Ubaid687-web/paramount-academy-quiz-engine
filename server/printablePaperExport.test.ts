@@ -65,7 +65,8 @@ describe("printable paper PDF export", () => {
       const result = await parser.getText();
       expect(result.text).toContain("SOLUTION KEY");
       expect(result.text).toContain("Labelled diagram: Speed relationship");
-      expect(result.text).toContain("Key points");
+      expect(result.text).toContain("Revision points");
+      expect(result.text).not.toContain("Name:");
       expect(result.text).not.toContain("MARKING AND LEARNING GUIDE");
       expect(result.text).not.toContain("Marking points");
       expect(result.text).not.toContain("Marking rubric");
@@ -89,6 +90,30 @@ describe("printable paper PDF export", () => {
       expect(result.text).toContain("Q14 · OR");
     } finally {
       await parser.destroy();
+    }
+  });
+
+  it("counts each OR pair once and numbers both paper and solution-key questions from Q1", async () => {
+    const items = [
+      ...shortPaper.items,
+      { ...shortPaper.items[0], question: "State the supported second concept.", orGroup: 2 },
+      { ...shortPaper.items[1], question: "Explain the alternate supported second concept.", orGroup: 2 },
+    ];
+    const paper = await renderPrintablePaperPdf({ ...shortPaper, items });
+    const solution = await renderPrintableSolutionPdf({ ...shortPaper, items });
+    const paperParser = new PDFParse({ data: paper });
+    const solutionParser = new PDFParse({ data: solution });
+    try {
+      const [paperText, solutionText] = await Promise.all([paperParser.getText(), solutionParser.getText()]);
+      expect(paperText.text).toContain("Total marks: 6");
+      expect(paperText.text).toContain("Q1 · OR");
+      expect(paperText.text).toContain("Q2 · OR");
+      expect(solutionText.text).toContain("Q1 (OR)");
+      expect(solutionText.text).toContain("Q2 (OR)");
+      expect(solutionText.text).not.toContain("Q0");
+    } finally {
+      await paperParser.destroy();
+      await solutionParser.destroy();
     }
   });
 

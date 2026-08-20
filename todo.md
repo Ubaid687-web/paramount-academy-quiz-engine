@@ -638,3 +638,9 @@
 - [x] Ensure failed batches show an actionable correction path rather than a misleading resume state when zero pairs are verified.
 - [x] Add source-matcher, progressive-state, and mobile-feedback regressions; validate and publish.
 - [x] Add a server-derived private textbook anchor only when the generated question and answer retain multiple matching source terms, then validate it through focused and full regressions.
+
+## Phase 109: Computer Science Chapter 1 Printable Quality Audit
+- [x] Inspect the uploaded Computer Science Chapter 1 paper and solution key for FBISE structure, concept coverage, textbook faithfulness, solution usefulness, and print quality.
+- [x] Trace confirmed weaknesses to the question-generation or PDF-rendering contracts without adding unsupported content.
+- [x] Implement evidence-based professional PDF improvements: one-based question numbering, attempted-pair-only marks, balanced continuation pages, and student-ready solution presentation.
+- [x] Add regressions, validate the generated PDFs, and publish the verified repair.

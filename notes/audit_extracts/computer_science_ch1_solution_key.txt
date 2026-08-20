@@ -1,0 +1,249 @@
+                                 PARAMOUNT ACADEMY
+                                                    Paper 01
+                            Short Question Solution Key · Textbook-grounded answer set
+
+
+Name: ______________________________                              Roll No.: __________________
+
+Date: __________________                                          Teacher signature: ________________
+
+
+
+                                                                  SOLUTION KEY
+                                                                  Use these concise answers to revise the selected
+                                                                  textbook concepts. Diagrams and comparison tables
+                                                                  appear only where they support the answer.
+
+                                                                  Q0
+                                                                  State the four outcomes of adding two binary digits,
+                                                                  and calculate the sum of 10010 and 111 in binary.
+                                                                  Answer
+                                                                  The possible outcomes of adding two binary digits are
+                                                                  0+0=0, 0+1=1, 1+0=1, and 1+1=10. Adding 10010 and
+                                                                  111 yields 11001.
+                                                                  Key points
+                                                                  1. Binary addition rules: 0+0=0, 0+1=1, 1+0=1, 1+1=10
+                                                                  (carry 1 to the next higher bit).
+                                                                  2. Align binary digits: 10010 + 00111.
+                                                                  3. Sum calculation: 10010 + 111 = 11001.
+
+                                                                  Q0 (OR)
+                                                                  Explain the steps to represent a negative integer
+                                                                  using 8-bit 2's complement, and write the
+                                                                  representation of -13.
+                                                                  Answer
+                                                                  To represent a negative integer in 2's complement,
+                                                                  convert the positive value to 8-bit binary, invert all bits,
+                                                                  and add 1 to the LSB. For -13, positive 13 is 00001101,
+                                                                  inverting gives 11110010, and adding 1 gives 11110011.
+                                                                  Key points
+                                                                  1. Convert 13 to 8-bit binary form: 00001101.
+                                                                  2. Invert all the bits: 11110010.
+                                                                  3. Add 1 to the least significant bit (LSB): 11110010 + 1
+                                                                  = 11110011.
+
+                                                                  Q1
+                                                                  State the main functions of memory management
+                                                                  performed by an operating system.
+                                                                  Answer
+                                                                  Memory management controls main memory operations
+                                                                  by allocating space to programs loaded for execution,
+                                                                  tracking freed memory when programs close, and
+                                                                  updating overall memory status.
+                                                                  Key points
+                                                                  1. Controls and manages the operation of main memory
+                                                                  during computer operation.
+                                                                  2. Allocates space to programs loaded into main memory
+                                                                  for execution.
+                                                                  3. Tracks freed memory when a program closes and
+                                                                  updates memory status.
+
+
+
+
+                             Paramount Academy · Draft for Portal Admin review · Page 1 of 4
+Q1 (OR)
+Write the operations that an operating system's file management permits users to perform on files and folders.
+Answer
+File management allows creating, copying, moving, renaming, deleting, searching, as well as read, write, open, and close
+operations on files and folders.
+Key points
+1. Management operations: creating, copying, moving, renaming, deleting, and searching files and folders.
+2. Access operations: read, write, open, and close operations on files and folders.
+
+Q2
+Differentiate between Single-Level, Two-Level, and Tree-Structured directory organizations.
+Answer
+Single-Level stores all files in one folder; Two-Level provides each user a distinct directory under the root; Tree-Structured
+provides a flexible hierarchy of directories and subdirectories.
+Key points
+1. Single-Level Directory — All files are stored in a single folder; simple but inefficient for many files.
+2. Two-Level Directory — Each user has a separate directory under the root directory.
+3. Tree-Structured Directory — A flexible, scalable hierarchy of directories and subdirectories resembling a tree.
+
+Q2 (OR)
+Calculate the value range for an 8-bit unsigned binary number in decimal and binary forms using the range formula.
+Answer
+The range formula is 0 to (2^n - 1). For n = 8, the decimal range is 0 to 255 and the binary range is 00000000 to 11111111.
+Key points
+1. Formula: Range is 0 to (2^n - 1), where n is the number of bits.
+2. Decimal calculation: 0 to (2^8 - 1) = 0 to 255.
+3. Binary representation range: 00000000 to 11111111.
+
+Q3
+Explain the function of compilers and state two real-world compilers mentioned in the textbook.
+Answer
+A compiler translates high-level programming code into executable machine code. Examples include GCC for C/C++ and
+javac for Java.
+Key points
+1. Function: Translates code written in a high-level programming language into machine code that the computer can execute.
+2. Example 1: GCC (GNU Compiler Collection) for C/C++.
+3. Example 2: javac for Java.
+
+Q3 (OR)
+Explain how code completion and debugging features in IDEs assist programmers during software development.
+Answer
+Code completion predicts and suggests code as it is typed to increase speed and lower errors. Debugging enables step-by-
+step execution, variable inspection, and flow analysis to identify and correct bugs.
+Key points
+1. Code Completion: Predicts and suggests the next part of the code being typed, helping write code faster with fewer errors.
+2. Debugging: Allows running code step-by-step, inspecting variables, and understanding execution flow to find and fix bugs.
+
+Q4
+Explain the term process and describe how process management allocates system resources.
+Answer
+A process is a program in execution, and process management in an operating system allocates resources like CPU time to
+various processes in memory.
+Key points
+1. Define a process as a program in execution.
+2. State that process management allocates resources such as CPU time to processes in memory.
+3. Explain that managing execution order optimizes total processing time.
+
+
+
+
+                                     Paramount Academy · Draft for Portal Admin review · Page 2 of 4
+Q4 (OR)
+Explain the function of device management in an operating system.
+Answer
+Device management is the part of operating system that controls input and output device drivers to ensure that the I/O
+operations are carried out smoothly and efficiently.
+Key points
+1. Identify device management as the operating system component that controls input and output device drivers.
+2. State that it manages hardware devices connected to the system.
+3. Explain that it ensures I/O operations are carried out smoothly and efficiently.
+
+Q5
+Define metadata in a file system and list four specific file attributes contained in metadata.
+Answer
+Metadata: Information about files and directories, such as their names, sizes, types, permissions, and timestamps (creation,
+modification, and access times).
+Key points
+1. Define metadata as information stored about files and directories.
+2. List attributes stored in metadata: file name, file size, file type, permissions, and timestamps.
+
+Q5 (OR)
+Calculate the 8-bit two's complement representation for the decimal number -55.
+Answer
+To represent -55 in 8-bit two's complement: convert 55 to 8-bit binary (00110111), invert all bits (11001000), and add 1 to get
+11001001.
+Key points
+1. Convert positive decimal 55 to 8-bit binary: 00110111.
+2. Invert all bits: 11001000.
+3. Add 1 to the inverted bits: 11001000 + 1 = 11001001.
+
+Q6
+State the main purpose of text editors in programming software and name three examples of text editors.
+Answer
+Text editors are basic tools that allow programmers to write and edit code. Three examples are Notepad++, Sublime Text,
+and Visual Studio Code.
+Key points
+1. State that text editors are basic software tools used to write and edit code.
+2. List three examples: Notepad++, Sublime Text, and Visual Studio Code.
+
+Q6 (OR)
+Explain how syntax highlighting assists programmers when writing code.
+Answer
+Syntax highlighting colors the code according to its syntax, making it easier to read and understand. For example, keywords
+may appear in blue while comments appear in green.
+Key points
+1. Explain that syntax highlighting colors code elements based on programming syntax.
+2. State that it makes code easier to read and understand.
+3. Give an example: keywords appearing in blue and comments in green.
+
+Q7
+Differentiate between signed binary numbers and unsigned binary numbers.
+Answer
+Unsigned binary numbers do not have a sign bit and can represent only positive numbers (magnitude only). Signed binary
+numbers use a sign bit to distinguish between positive and negative numbers.
+Key points
+1. Aspect — Sign Bit: Unsigned numbers do not have a sign bit; Signed numbers use a sign bit.
+2. Aspect — Polarity: Unsigned numbers represent positive numbers only; Signed numbers can represent both positive and
+negative integers.
+3. Aspect — Representation: Unsigned numbers contain magnitude only; Signed numbers use representation systems like
+Two's Complement for negative values.
+
+
+
+
+                                    Paramount Academy · Draft for Portal Admin review · Page 3 of 4
+Q7 (OR)
+Explain the concept of a computer system and describe how its components work together.
+Answer
+A computer system isn't just one device; it's a mix of hardware (physical parts) and software (programs) that work together to
+process information, solve problems, and do many tasks.
+Key points
+1. Define a computer system as a combination of hardware and software rather than a single device.
+2. Identify hardware as the physical parts and software as the programs.
+3. Explain that hardware and software work together to process information, solve problems, and perform tasks.
+
+Q8
+Define the file system components 'Files' and 'Directories/Folders' as specified in operating system file organization.
+Answer
+A file is the smallest unit of data storage, representing a collection of bytes stored on a disk, such as text files, executables,
+or images. Directories (or folders) are containers that hold files and other directories, providing a hierarchical structure.
+Key points
+1. Files are the smallest units of data storage, representing bytes stored on a disk in forms such as text files, executables, or
+images.
+2. Directories (folders) are containers that hold files and other directories, providing a hierarchical structure for file
+organization.
+
+Q8 (OR)
+State the rule to obtain the 2's complement of a binary number and explain how the sign bit determines whether a
+number is positive or negative.
+Answer
+To obtain the 2's complement of a number, flip all the bits and then add 1 to the least significant bit (LSB). If the sign bit is 0,
+the number is positive and its regular binary form is used. If the sign bit is 1, the number is negative and its value is obtained
+using 2's complement.
+Key points
+1. To obtain the 2's complement, invert (flip) all the bits and add 1 to the least significant bit (LSB).
+2. A sign bit of 0 indicates a positive number represented in regular binary form.
+3. A sign bit of 1 indicates a negative number represented using 2's complement.
+
+Q9
+Calculate the four-bit fractional binary equivalent of the decimal fraction 0.257 by showing all multiplication steps.
+Answer
+Multiply 0.257 by 2 to get 0.514 (integer 0). Multiply 0.514 by 2 to get 1.028 (integer 1). Multiply 0.028 by 2 to get 0.056
+(integer 0). Multiply 0.056 by 2 to get 0.112 (integer 0). Taking the integer parts gives (0.257)10 = (0.0100)2.
+Key points
+1. Step 1: 0.257 x 2 = 0.514 (Integer part: 0)
+2. Step 2: 0.514 x 2 = 1.028 (Integer part: 1)
+3. Step 3: 0.028 x 2 = 0.056 (Integer part: 0)
+4. Step 4: 0.056 x 2 = 0.112 (Integer part: 0)
+5. Result: (0.257)10 = (0.0100)2
+
+Q9 (OR)
+Calculate the 8-bit unsigned binary representation for the decimal number 105.
+Answer
+To represent decimal 105 in unsigned binary form, convert 105 to binary: 105 = 64 + 32 + 8 + 1, which gives 01101001 in 8-
+bit unsigned binary form.
+Key points
+1. Convert decimal 105 into binary using place values (64 + 32 + 8 + 1).
+2. The binary conversion yields 01101001.
+3. In 8-bit unsigned form, decimal 105 is represented as (01101001)2.
+
+
+
+
+                                      Paramount Academy · Draft for Portal Admin review · Page 4 of 4
+

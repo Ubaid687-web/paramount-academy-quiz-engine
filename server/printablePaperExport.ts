@@ -29,7 +29,13 @@ export function classifySolutionKeyPoint(point: string): SolutionKeyPointPresent
 }
 
 function printableTotalMarks(payload: PrintablePayload) {
-  return payload.items.reduce((total, item) => total + item.marks, 0);
+  const attemptedGroups = new Set<number>();
+  return payload.items.reduce((total, item) => {
+    if (!item.orGroup) return total + item.marks;
+    if (attemptedGroups.has(item.orGroup)) return total;
+    attemptedGroups.add(item.orGroup);
+    return total + item.marks;
+  }, 0);
 }
 
 function pdfBuffer(build: (doc: PDFKit.PDFDocument) => void) {
@@ -44,12 +50,16 @@ function pdfBuffer(build: (doc: PDFKit.PDFDocument) => void) {
   });
 }
 
-function pageHeader(doc: PDFKit.PDFDocument, title: string, subtitle: string) {
+function pageHeader(doc: PDFKit.PDFDocument, title: string, subtitle: string, includeStudentFields = true) {
   doc.fillColor("#123B5D").font("Helvetica-Bold").fontSize(16).text("PARAMOUNT ACADEMY", { align: "center" });
   doc.fillColor("#1F2937").fontSize(13).text(title, { align: "center" });
   doc.font("Helvetica").fontSize(8.5).fillColor("#516174").text(subtitle, { align: "center" });
   doc.moveDown(1);
   const y = doc.y;
+  if (!includeStudentFields) {
+    doc.y = y + 18;
+    return;
+  }
   doc.fillColor("#F3F7FA").rect(48, y, 499, 46).fill();
   doc.fillColor("#1F2937").fontSize(8).font("Helvetica-Bold");
   doc.text("Name: ______________________________", 58, y + 12);
@@ -208,7 +218,7 @@ function renderQuestionCell(
   });
 }
 
-function questionText(doc: PDFKit.PDFDocument, index: number, group: PrintableItem[]) {
+function questionText(doc: PDFKit.PDFDocument, index: number, group: PrintableItem[], onPageBreak?: () => void) {
   const left = group[0];
   const right = group[1];
   const columnWidth = (QUESTION_PAIR_LAYOUT.width - QUESTION_PAIR_LAYOUT.gap) / 2;
@@ -219,7 +229,10 @@ function questionText(doc: PDFKit.PDFDocument, index: number, group: PrintableIt
     questionCellHeight(doc, right, columnWidth),
   );
 
-  ensureSpace(doc, rowHeight + 12);
+  if (doc.y + rowHeight + 12 > doc.page.height - 60) {
+    if (onPageBreak) onPageBreak();
+    else doc.addPage();
+  }
   const y = doc.y;
   renderQuestionCell(doc, left, index, QUESTION_PAIR_LAYOUT.x, y, columnWidth, false, rowHeight);
   renderQuestionCell(doc, right, index, rightX, y, columnWidth, true, rowHeight);
@@ -238,11 +251,25 @@ function footer(doc: PDFKit.PDFDocument) {
 export async function renderPrintablePaperPdf(payload: PrintablePayload) {
   return pdfBuffer((doc) => {
     const paperName = payload.mode === "short" ? "Short Question Paper" : "Long Question Paper";
-    pageHeader(doc, payload.title, `${paperName} · Total marks: ${printableTotalMarks(payload)} · Suggested time: ${payload.estimatedDurationMinutes || "—"} minutes`);
-    doc.fillColor("#173F62").font("Helvetica-Bold").fontSize(11).text(payload.mode === "short" ? "SECTION B — SHORT QUESTIONS" : "SECTION C — LONG QUESTIONS");
-    doc.fillColor("#374151").font("Helvetica").fontSize(9).text("Attempt one alternative from each numbered pair. Write clear, relevant answers. Use a labelled sketch where it improves your explanation.");
-    doc.moveDown(1);
-    pairItems(payload.items).forEach((group, index) => questionText(doc, index + 1, group));
+    const subtitle = `${paperName} · Total marks: ${printableTotalMarks(payload)} · Suggested time: ${payload.estimatedDurationMinutes || "—"} minutes`;
+    const renderSectionHeading = (continued = false) => {
+      doc.fillColor("#173F62").font("Helvetica-Bold").fontSize(11).text(`${payload.mode === "short" ? "SECTION B — SHORT QUESTIONS" : "SECTION C — LONG QUESTIONS"}${continued ? " (CONTINUED)" : ""}`);
+      doc.fillColor("#374151").font("Helvetica").fontSize(9).text("Attempt one alternative from each numbered pair. Write clear, relevant answers. Use a labelled sketch where it improves your explanation.");
+      doc.moveDown(1);
+    };
+    const startContinuationPage = () => {
+      doc.addPage();
+      pageHeader(doc, payload.title, subtitle);
+      renderSectionHeading(true);
+    };
+    pageHeader(doc, payload.title, subtitle);
+    renderSectionHeading();
+    const groups = pairItems(payload.items);
+    const balancedSplit = groups.length > 8 && groups.length <= 10 ? Math.ceil(groups.length / 2) : null;
+    groups.forEach((group, index) => {
+      if (balancedSplit && index === balancedSplit && doc.y > 300) startContinuationPage();
+      questionText(doc, index + 1, group, startContinuationPage);
+    });
     footer(doc);
   });
 }
@@ -250,14 +277,14 @@ export async function renderPrintablePaperPdf(payload: PrintablePayload) {
 export async function renderPrintableSolutionPdf(payload: PrintablePayload) {
   return pdfBuffer((doc) => {
     const paperName = payload.mode === "short" ? "Short Question Solution Key" : "Long Question Solution Key";
-    pageHeader(doc, payload.title, `${paperName} · Textbook-grounded answer set`);
+    pageHeader(doc, payload.title, `${paperName} · Textbook-grounded answer set`, false);
     doc.fillColor("#173F62").font("Helvetica-Bold").fontSize(11).text("SOLUTION KEY");
     doc.fillColor("#374151").font("Helvetica").fontSize(9).text("Use these concise answers to revise the selected textbook concepts. Diagrams and comparison tables appear only where they support the answer.");
     doc.moveDown(1);
     pairItems(payload.items).forEach((group, index) => {
       group.forEach((item: PrintableItem, alternativeIndex: number) => {
         ensureSpace(doc, 130);
-        doc.fillColor("#173F62").font("Helvetica-Bold").fontSize(10).text(`Q${index}${alternativeIndex ? " (OR)" : ""}`);
+        doc.fillColor("#173F62").font("Helvetica-Bold").fontSize(10).text(`Q${index + 1}${alternativeIndex ? " (OR)" : ""}`);
         doc.fillColor("#111827").font("Helvetica").fontSize(9.5).text(item.question);
         doc.moveDown(0.35);
         if (item.kind === "short") {
@@ -267,7 +294,7 @@ export async function renderPrintableSolutionPdf(payload: PrintablePayload) {
           doc.fillColor("#173F62").font("Helvetica-Bold").fontSize(9).text("Answer");
           doc.fillColor("#1F2937").font("Helvetica").text(textbookAnswer);
           const solutionPoints = item.solutionPoints?.length ? item.solutionPoints : item.markingGuide.map(cleanLegacyMarkingPoint);
-          doc.fillColor("#173F62").font("Helvetica-Bold").text("Key points");
+          doc.fillColor("#173F62").font("Helvetica-Bold").text("Revision points");
           solutionPoints.forEach((point: string, pointIndex: number) => renderSolutionKeyPoint(doc, pointIndex, point));
         } else {
           doc.fillColor("#173F62").font("Helvetica-Bold").fontSize(9).text("Answer outline");
