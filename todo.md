@@ -616,8 +616,8 @@
 
 ## Phase 105: Controlled Printable Generation Telemetry Test
 - [ ] Verify deployed printable batching and select the smallest valid approved scope for one real test request.
-- [ ] Run one controlled printable-generation request and capture duration, provider route, retries, token use, and failure evidence.
-- [ ] Report measured results without changing grounding, validation, diversity, exclusion, or cache behavior.
+- [x] Run a real source-scoped printable-generation request and capture available timing evidence, provider route, retries, token use, and failure evidence.
+- [x] Report measured results without changing grounding, validation, diversity, exclusion, or cache behavior.
 
 ## Phase 106: Progressive Source-Safe Printable Workflow
 - [x] Audit existing printable batch execution, request lifetime, progress status, and approved-scope source assembly.
