@@ -1,0 +1,388 @@
+{
+  "count": 76,
+  "entries": [
+    {
+      "timestamp": "2026-08-20T15:08:45Z",
+      "severity": "Default",
+      "message": "[OAuth] Initialized with baseURL: https://api.manus.ai"
+    },
+    {
+      "timestamp": "2026-08-20T15:08:45Z",
+      "severity": "Default",
+      "message": "Server running on http://localhost:3000/"
+    },
+    {
+      "timestamp": "2026-08-20T15:09:36Z",
+      "severity": "Default",
+      "message": "[OAuth] Initialized with baseURL: https://api.manus.ai"
+    },
+    {
+      "timestamp": "2026-08-20T15:09:36Z",
+      "severity": "Default",
+      "message": "Server running on http://localhost:3000/"
+    },
+    {
+      "timestamp": "2026-08-20T15:09:38Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-20T15:09:38Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-20T15:11:08Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-20T15:20:56Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-20T15:30:47Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-20T15:40:39Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-20T15:50:38Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-20T16:00:35Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-20T16:10:33Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-20T16:20:28Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-20T16:30:32Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-20T16:40:26Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-20T16:50:25Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-20T17:00:25Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-20T17:10:21Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-20T17:20:22Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-20T17:30:22Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-20T17:40:19Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-20T17:50:19Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-20T18:00:20Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-20T18:10:17Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-20T18:20:16Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-20T18:30:25Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-20T18:40:14Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-20T18:50:15Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-20T19:00:19Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-20T19:10:16Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-20T19:20:12Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-20T19:30:14Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-20T19:40:11Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-20T19:50:13Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-20T20:00:19Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-20T20:10:14Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-20T20:20:10Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-20T20:30:09Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-20T20:40:09Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-20T20:50:08Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-20T21:00:09Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-20T21:10:08Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-21T05:59:18Z",
+      "severity": "Default",
+      "message": "[OAuth] Initialized with baseURL: https://api.manus.ai"
+    },
+    {
+      "timestamp": "2026-08-21T05:59:18Z",
+      "severity": "Default",
+      "message": "Server running on http://localhost:3000/"
+    },
+    {
+      "timestamp": "2026-08-21T06:00:52Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-21T06:10:42Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-21T06:20:36Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-21T06:30:33Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-21T06:40:27Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-21T06:50:26Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-21T07:00:25Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-21T07:10:22Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-21T07:20:20Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-21T07:30:20Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-21T07:40:19Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-21T07:50:18Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-21T08:00:20Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-21T08:10:16Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-21T08:20:17Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-21T08:30:17Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-21T08:40:14Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-21T08:50:15Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-21T09:00:16Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-21T09:10:13Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-21T09:20:13Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-21T09:30:14Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-21T09:40:11Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-21T09:50:12Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-21T10:00:11Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-21T10:10:11Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-21T10:20:11Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-21T10:30:10Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-21T10:40:10Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-21T10:50:09Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-21T11:00:56Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    }
+  ],
+  "has_more": false,
+  "oldest_time": "",
+  "project_id": "g2y5mutEzwdHvruUz8MtKx"
+}

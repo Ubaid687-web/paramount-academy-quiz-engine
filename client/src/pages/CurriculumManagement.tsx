@@ -54,7 +54,7 @@ const DIRECT_PDF_UPLOAD_THRESHOLD_BYTES = 30 * 1024 * 1024;
 
 const formatSubjectLabel = (subject: string) => subjectLabels[subject] ?? subject.replace(/[_-]+/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 
-function fileToBase64(file: File): Promise<string> {
+function fileToBase64(file: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
@@ -67,21 +67,6 @@ function fileToBase64(file: File): Promise<string> {
     reader.onerror = () => reject(new Error("The file could not be read."));
     reader.readAsDataURL(file);
   });
-}
-
-async function uploadLargeCurriculumPdf(file: File, curriculumSetId: number) {
-  const response = await fetch(`/api/curriculum/source-upload?curriculumSetId=${curriculumSetId}`, {
-    method: "POST",
-    credentials: "same-origin",
-    headers: {
-      "Content-Type": "application/pdf",
-      "X-Source-File-Name": encodeURIComponent(file.name),
-    },
-    body: file,
-  });
-  const payload = await response.json().catch(() => ({})) as { error?: string } & Record<string, unknown>;
-  if (!response.ok) throw new Error(payload.error || "The large PDF could not be stored or extracted.");
-  return payload as { id: number; extractedText?: string | null; extractionStatus: "pending" | "extracted" | "needs_review" | "failed" };
 }
 
 export default function CurriculumManagement() {
@@ -143,6 +128,9 @@ export default function CurriculumManagement() {
   const createSet = trpc.curriculum.createSet.useMutation();
   const replaceActiveSet = trpc.curriculum.replaceActiveSet.useMutation();
   const ingestSource = trpc.curriculum.ingestSource.useMutation();
+  const prepareLargePdfUpload = trpc.curriculum.prepareLargePdfUpload.useMutation();
+  const appendLargePdfChunk = trpc.curriculum.appendLargePdfChunk.useMutation();
+  const completeLargePdfUpload = trpc.curriculum.completeLargePdfUpload.useMutation();
   const ingestPaperPatternSource = trpc.curriculum.ingestPaperPatternSource.useMutation();
   const activatePaperPatternSource = trpc.curriculum.activatePaperPatternSource.useMutation();
   const savePaperPatternProfile = trpc.curriculum.savePaperPatternProfile.useMutation();
@@ -363,7 +351,18 @@ export default function CurriculumManagement() {
     setIsUploading(true);
     try {
       const source = file.type === "application/pdf" && file.size > DIRECT_PDF_UPLOAD_THRESHOLD_BYTES
-        ? await uploadLargeCurriculumPdf(file, selectedSetId)
+        ? await (async () => {
+          const prepared = await prepareLargePdfUpload.mutateAsync({ curriculumSetId: selectedSetId, fileName: file.name, fileSize: file.size });
+          for (let offset = 0, chunkIndex = 0; offset < file.size; offset += prepared.chunkBytes, chunkIndex += 1) {
+            const chunk = file.slice(offset, Math.min(offset + prepared.chunkBytes, file.size));
+            await appendLargePdfChunk.mutateAsync({
+              uploadToken: prepared.uploadToken,
+              chunkIndex,
+              fileBuffer: await fileToBase64(chunk),
+            });
+          }
+          return completeLargePdfUpload.mutateAsync({ uploadToken: prepared.uploadToken });
+        })()
         : await (async () => {
           const fileBuffer = await fileToBase64(file);
           return ingestSource.mutateAsync({
@@ -831,7 +830,7 @@ export default function CurriculumManagement() {
               {activePortalPanel === "curriculum" && activeCurriculumTask === "edition" && <Card>
                 <CardHeader><CardTitle className="flex items-center gap-2"><Upload className="h-5 w-5 text-accent" />1. Add One Source File</CardTitle><CardDescription>{details.curriculumSet.label} is currently <strong>{details.curriculumSet.status}</strong>. PDF, TXT, and photographed textbook pages are stored securely; scans enter Urdu-and-English OCR review before activation.</CardDescription></CardHeader>
                 <CardContent className="space-y-4">
-                  <p className="text-sm text-muted-foreground">PDF textbooks up to 150MB are accepted. PDFs over 30MB use direct binary transfer instead of browser base64 conversion; scanned pages continue through the existing reviewable OCR queue.</p>
+                  <p className="text-sm text-muted-foreground">PDF textbooks up to 150MB are accepted. PDFs over 30MB are transferred in protected small chunks so they remain compatible with the published site; scanned pages continue through the existing reviewable OCR queue.</p>
                   <Input aria-label="Curriculum source upload" type="file" accept=".pdf,.txt,.jpg,.jpeg,.png,.webp" onChange={handleSourceUpload} disabled={isUploading} />
                   {isUploading && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Storing source and preparing extraction…</p>}
                   <div className="space-y-2">{details.sources.map((source) => { const ocrJob = details.ocrJobs?.find((job) => job.sourceId === source.id); return <button key={source.id} onClick={() => loadSourceForReview(source.id)} className="flex w-full items-center justify-between rounded-lg border border-border/60 p-3 text-left hover:border-accent/50"><span className="flex min-w-0 items-center gap-2"><FileText className="h-4 w-4 shrink-0 text-accent" /><span className="truncate text-sm">{source.originalFileName}</span></span><span className="text-right text-xs text-muted-foreground">{source.extractionStatus}{source.pageCount ? ` • ${source.pageCount} pages` : ""}{ocrJob && ocrJob.status !== "completed" ? ` • OCR page ${ocrJob.nextPage}/${ocrJob.totalPages}` : ""}</span></button>; })}</div>

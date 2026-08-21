@@ -552,6 +552,40 @@ export const appRouter = router({
         });
       }),
 
+    prepareLargePdfUpload: adminProcedure
+      .input(z.object({
+        curriculumSetId: z.number().int().positive(),
+        fileName: z.string().trim().min(1).max(255),
+        fileSize: z.number().int().min(1).max(150 * 1024 * 1024),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { prepareCurriculumPdfChunkUpload } = await import("./curriculumChunkUpload");
+        return prepareCurriculumPdfChunkUpload({ ...input, userId: ctx.user.id });
+      }),
+
+    appendLargePdfChunk: adminProcedure
+      .input(z.object({
+        uploadToken: z.string().min(20).max(4_000),
+        chunkIndex: z.number().int().min(0),
+        fileBuffer: z.string().min(4).max(800_000),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { appendCurriculumPdfChunk } = await import("./curriculumChunkUpload");
+        return appendCurriculumPdfChunk({
+          userId: ctx.user.id,
+          uploadToken: input.uploadToken,
+          chunkIndex: input.chunkIndex,
+          fileBuffer: decodeStrictBase64(input.fileBuffer, "textbook upload chunk"),
+        });
+      }),
+
+    completeLargePdfUpload: adminProcedure
+      .input(z.object({ uploadToken: z.string().min(20).max(4_000) }))
+      .mutation(async ({ ctx, input }) => {
+        const { completeCurriculumPdfChunkUpload } = await import("./curriculumChunkUpload");
+        return completeCurriculumPdfChunkUpload({ userId: ctx.user.id, uploadToken: input.uploadToken, sessionCookie: ctx.req.headers.cookie });
+      }),
+
     proposeChaptersFromSource: adminProcedure
       .input(z.object({ curriculumSetId: z.number().int().positive(), sourceId: z.number().int().positive() }))
       .query(async ({ input }) => {

@@ -686,3 +686,8 @@
 - [x] Trace the raw programme-catalogue insert failure shown during Grade 9 Chemistry subject intake.
 - [x] Make duplicate subject selection safe and actionable, without exposing database internals to Portal Admin.
 - [x] Add regressions, validate, checkpoint, and report the repaired Grade 9 intake flow.
+
+## Phase 117: Large-PDF Upload Fetch Failure Investigation
+- [x] Capture the actual request path, runtime/deployment evidence, and payload boundary behind the Portal Admin large-PDF “failed to fetch” error.
+- [x] Replace only the proven incompatible upload transport or route boundary while retaining Portal Admin authorization, file-signature checks, and OCR review safeguards.
+- [x] Reproduce the large-upload path within the supported boundary, add regression coverage, validate, checkpoint, and report the root-cause repair.
