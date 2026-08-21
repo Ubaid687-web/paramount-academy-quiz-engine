@@ -57,6 +57,8 @@ type ChunkUploadProgress = {
   receivedBytes: number;
   totalBytes: number;
   phase: "preparing" | "uploading" | "finalizing";
+  lastAcknowledgedAtMs?: number;
+  speedBytesPerSecond?: number;
 };
 
 const formatSubjectLabel = (subject: string) => subjectLabels[subject] ?? subject.replace(/[_-]+/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
@@ -102,6 +104,19 @@ function sourceUploadErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : "The source could not be stored or extracted.";
 }
 
+function formatUploadSpeed(speedBytesPerSecond?: number) {
+  if (!speedBytesPerSecond || !Number.isFinite(speedBytesPerSecond) || speedBytesPerSecond <= 0) return "Calculating…";
+  return `${(speedBytesPerSecond / (1024 * 1024)).toFixed(speedBytesPerSecond >= 10 * 1024 * 1024 ? 1 : 2)} MB/s`;
+}
+
+function formatRemainingTime(seconds?: number) {
+  if (seconds === undefined || !Number.isFinite(seconds) || seconds < 0) return "Calculating…";
+  if (seconds < 5) return "Less than 5 seconds";
+  if (seconds < 60) return `About ${Math.ceil(seconds)} seconds`;
+  const minutes = Math.ceil(seconds / 60);
+  return `About ${minutes} minute${minutes === 1 ? "" : "s"}`;
+}
+
 function ChunkUploadProgressBar({ progress }: { progress: ChunkUploadProgress | null }) {
   if (!progress) return null;
   const percent = Math.min(100, Math.max(0, Math.round((progress.receivedBytes / progress.totalBytes) * 100)));
@@ -110,6 +125,10 @@ function ChunkUploadProgressBar({ progress }: { progress: ChunkUploadProgress | 
     : progress.phase === "finalizing"
       ? "Final file check"
       : "Uploading protected chunks";
+  const remainingBytes = Math.max(0, progress.totalBytes - progress.receivedBytes);
+  const estimatedSeconds = progress.phase === "uploading" && progress.speedBytesPerSecond
+    ? remainingBytes / progress.speedBytesPerSecond
+    : undefined;
 
   return (
     <div className="rounded-xl border border-primary/20 bg-primary/[0.04] p-3" data-testid="chunk-upload-progress" aria-live="polite">
@@ -121,6 +140,10 @@ function ChunkUploadProgressBar({ progress }: { progress: ChunkUploadProgress | 
         <div className="h-full rounded-full bg-primary transition-[width] duration-300" style={{ width: `${percent}%` }} />
       </div>
       <p className="mt-2 text-xs leading-5 text-muted-foreground">{progress.receivedBytes.toLocaleString()} of {progress.totalBytes.toLocaleString()} bytes acknowledged by the server.</p>
+      <div className="mt-3 grid grid-cols-2 gap-2 text-xs" aria-label="Measured upload transfer metrics">
+        <div className="rounded-lg bg-background/70 px-2.5 py-2"><span className="block text-muted-foreground">Upload speed</span><strong data-testid="chunk-upload-speed" className="mt-0.5 block text-foreground">{formatUploadSpeed(progress.speedBytesPerSecond)}</strong></div>
+        <div className="rounded-lg bg-background/70 px-2.5 py-2"><span className="block text-muted-foreground">Time remaining</span><strong data-testid="chunk-upload-remaining" className="mt-0.5 block text-foreground">{progress.phase === "finalizing" ? "Checking final file" : formatRemainingTime(estimatedSeconds)}</strong></div>
+      </div>
     </div>
   );
 }
@@ -419,9 +442,20 @@ export default function CurriculumManagement() {
               chunkIndex,
               fileBuffer: await fileToBase64(chunk),
             }));
-            setChunkUploadProgress({ receivedBytes: acknowledgement.receivedBytes, totalBytes: acknowledgement.fileSize, phase: acknowledgement.complete ? "finalizing" : "uploading" });
+            const acknowledgedAtMs = performance.now();
+            setChunkUploadProgress((current) => {
+              const elapsedMs = current?.lastAcknowledgedAtMs === undefined ? undefined : acknowledgedAtMs - current.lastAcknowledgedAtMs;
+              const acknowledgedDelta = acknowledgement.receivedBytes - (current?.receivedBytes ?? 0);
+              const speedBytesPerSecond = elapsedMs && elapsedMs > 0 && acknowledgedDelta > 0 ? (acknowledgedDelta * 1000) / elapsedMs : undefined;
+              return {
+                receivedBytes: acknowledgement.receivedBytes,
+                totalBytes: acknowledgement.fileSize,
+                phase: acknowledgement.complete ? "finalizing" : "uploading",
+                lastAcknowledgedAtMs: acknowledgedAtMs,
+                speedBytesPerSecond,
+              };
+            });
           }
-          setChunkUploadProgress({ receivedBytes: file.size, totalBytes: file.size, phase: "finalizing" });
           return retryTemporaryUploadRequest(() => completeLargePdfUpload.mutateAsync({ uploadToken: prepared.uploadToken }));
         })()
         : await (async () => {

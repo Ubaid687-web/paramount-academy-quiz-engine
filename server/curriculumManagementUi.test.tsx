@@ -1,6 +1,6 @@
 import React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import CurriculumManagement from "../client/src/pages/CurriculumManagement";
 
 const noOpMutation = { mutateAsync: vi.fn(), isPending: false };
@@ -174,18 +174,18 @@ describe("Curriculum Library Release 1", () => {
     expect(screen.queryByText(/transfer directly without browser base64 conversion/i)).toBeNull();
   });
 
-  it("shows only server-acknowledged chunk percentage while a large Grade 9 textbook is uploading", async () => {
+  it("shows only server-acknowledged chunk percentage, speed, and time remaining while a large Grade 9 textbook is uploading", async () => {
     window.history.pushState({}, "", "/curriculum?grade=9&intake=subject");
-    let acknowledgeChunk!: (value: { receivedBytes: number; fileSize: number; complete: boolean }) => void;
+    const acknowledgements: Array<(value: { receivedBytes: number; fileSize: number; complete: boolean }) => void> = [];
     let finishUpload!: (value: { id: number; extractedText: string; extractionStatus: "extracted" }) => void;
-    const chunkAcknowledgement = new Promise<{ receivedBytes: number; fileSize: number; complete: boolean }>((resolve) => { acknowledgeChunk = resolve; });
     const completion = new Promise<{ id: number; extractedText: string; extractionStatus: "extracted" }>((resolve) => { finishUpload = resolve; });
     noOpMutation.mutateAsync.mockImplementation((input: Record<string, unknown>) => {
-      if ("fileSize" in input) return Promise.resolve({ uploadToken: "test-token", chunkBytes: Number(input.fileSize) });
-      if ("chunkIndex" in input) return chunkAcknowledgement;
+      if ("fileSize" in input) return Promise.resolve({ uploadToken: "test-token", chunkBytes: Math.ceil(Number(input.fileSize) / 3) });
+      if ("chunkIndex" in input) return new Promise((resolve) => { acknowledgements.push(resolve); });
       if ("uploadToken" in input) return completion;
       return Promise.resolve(undefined);
     });
+    vi.spyOn(performance, "now").mockReturnValueOnce(100).mockReturnValueOnce(1100).mockReturnValueOnce(2100);
     render(<CurriculumManagement />);
 
     fireEvent.change(screen.getByLabelText("Subject name"), { target: { value: "Chemistry" } });
@@ -196,11 +196,25 @@ describe("Curriculum Library Release 1", () => {
     expect(await screen.findByTestId("chunk-upload-progress")).toBeTruthy();
     expect(screen.getByRole("progressbar", { name: "Textbook upload progress" }).getAttribute("aria-valuenow")).toBe("0");
     expect(screen.getByTestId("chunk-upload-percent").textContent).toBe("0%");
+    expect(screen.getByTestId("chunk-upload-speed").textContent).toBe("Calculating…");
+    expect(screen.getByTestId("chunk-upload-remaining").textContent).toBe("Calculating…");
 
-    await act(async () => { acknowledgeChunk({ receivedBytes: file.size, fileSize: file.size, complete: true }); });
+    const chunkBytes = Math.ceil(file.size / 3);
+    await waitFor(() => expect(acknowledgements).toHaveLength(1));
+    await act(async () => { acknowledgements[0]({ receivedBytes: chunkBytes, fileSize: file.size, complete: false }); });
+    expect(screen.getByTestId("chunk-upload-speed").textContent).toBe("Calculating…");
+
+    await waitFor(() => expect(acknowledgements).toHaveLength(2));
+    await act(async () => { acknowledgements[1]({ receivedBytes: chunkBytes * 2, fileSize: file.size, complete: false }); });
+    expect(screen.getByTestId("chunk-upload-speed").textContent).toMatch(/MB\/s/);
+    expect(screen.getByTestId("chunk-upload-remaining").textContent).toMatch(/Less than 5 seconds|About/);
+
+    await waitFor(() => expect(acknowledgements).toHaveLength(3));
+    await act(async () => { acknowledgements[2]({ receivedBytes: file.size, fileSize: file.size, complete: true }); });
     expect(await screen.findByText("Final file check")).toBeTruthy();
     expect(screen.getByRole("progressbar", { name: "Textbook upload progress" }).getAttribute("aria-valuenow")).toBe("100");
     expect(screen.getByTestId("chunk-upload-percent").textContent).toBe("100%");
+    expect(screen.getByTestId("chunk-upload-remaining").textContent).toBe("Checking final file");
 
     await act(async () => { finishUpload({ id: 20, extractedText: "Reviewed source text", extractionStatus: "extracted" }); });
   });

@@ -705,3 +705,8 @@
 - [x] Inspect the acknowledged chunk response and current Portal Admin upload state before adding visual progress.
 - [x] Show an accessible percentage bar and status based only on server-acknowledged upload bytes, without simulated completion.
 - [x] Add regressions, validate, checkpoint, and report the chunk-upload progress enhancement.
+
+## Phase 121: Truthful Upload Speed and Time Remaining
+- [x] Inspect the acknowledged-byte progress state and define measured speed and remaining-time calculations without simulated values.
+- [x] Show current acknowledged upload speed and an estimated remaining time only after enough real transfer data is available.
+- [x] Add regressions, validate, checkpoint, and report the upload-metrics enhancement.
