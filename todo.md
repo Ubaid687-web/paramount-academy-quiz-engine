@@ -715,3 +715,8 @@
 - [x] Inspect the acknowledged chunk sequencing, retry behavior, and session lifetime before adding pause and resume controls.
 - [x] Let Portal Admin pause before the next protected chunk, preserve the server-acknowledged state, and resume safely from that point.
 - [x] Add pause-resume regressions, validate, checkpoint, and report the protected-upload enhancement.
+
+## Phase 123: Textbook Upload Drag and Drop
+- [x] Inspect the existing Portal Admin textbook upload controls and shared upload handler before adding drag-and-drop.
+- [x] Add an accessible drag-and-drop target with true hover feedback and the same source validation and protected upload path as file selection.
+- [x] Add drag-and-drop regressions, validate, checkpoint, and report the upload-interface enhancement.

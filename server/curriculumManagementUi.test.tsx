@@ -253,6 +253,29 @@ describe("Curriculum Library Release 1", () => {
     await act(async () => { finishUpload({ id: 21, extractedText: "Reviewed source text", extractionStatus: "extracted" }); });
   });
 
+  it("shows drag feedback and routes a dropped textbook through the same secure intake handler", async () => {
+    window.history.pushState({}, "", "/curriculum?grade=9&intake=subject");
+    noOpMutation.mutateAsync.mockResolvedValue({ id: 22, extractedText: "Reviewed source text", extractionStatus: "extracted" });
+    render(<CurriculumManagement />);
+
+    fireEvent.change(screen.getByLabelText("Subject name"), { target: { value: "Chemistry" } });
+    fireEvent.click(screen.getByRole("button", { name: "Continue to textbook upload" }));
+    const dropZone = await screen.findByTestId("textbook-upload-drop-zone");
+    const file = new File(["Grade 9 Chemistry source"], "grade-9-chemistry.txt", { type: "text/plain" });
+
+    fireEvent.dragOver(dropZone, { dataTransfer: { files: [file] } });
+    expect(screen.getByText("Drop the textbook to start secure upload")).toBeTruthy();
+    fireEvent.dragLeave(dropZone, { dataTransfer: { files: [file] } });
+    expect(screen.getByText("Drag a textbook here or choose a file")).toBeTruthy();
+
+    fireEvent.drop(dropZone, { dataTransfer: { files: [file] } });
+    await waitFor(() => expect(noOpMutation.mutateAsync).toHaveBeenCalledWith(expect.objectContaining({
+      curriculumSetId: grade9ChemistrySet.id,
+      fileName: "grade-9-chemistry.txt",
+      mimeType: "text/plain",
+    })));
+  });
+
   it("offers approved photographed textbook formats in the controlled upload control", () => {
     render(<CurriculumManagement />);
 

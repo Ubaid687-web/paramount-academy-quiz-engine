@@ -155,6 +155,45 @@ function ChunkUploadProgressBar({ progress, onPause, onResume }: { progress: Chu
   );
 }
 
+function TextbookUploadDropZone({
+  ariaLabel,
+  disabled,
+  isDragActive,
+  onDragOver,
+  onDragLeave,
+  onDrop,
+  onFileChange,
+}: {
+  ariaLabel: string;
+  disabled: boolean;
+  isDragActive: boolean;
+  onDragOver: (event: React.DragEvent<HTMLDivElement>) => void;
+  onDragLeave: () => void;
+  onDrop: (event: React.DragEvent<HTMLDivElement>) => void;
+  onFileChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+}) {
+  return (
+    <div
+      data-testid="textbook-upload-drop-zone"
+      role="group"
+      aria-label="Textbook file drop zone"
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+      className={`rounded-xl border-2 border-dashed p-4 transition-colors ${isDragActive ? "border-primary bg-primary/10" : "border-border/70 bg-muted/20"} ${disabled ? "opacity-70" : ""}`}
+    >
+      <div className="flex items-start gap-3">
+        <Upload className={`mt-0.5 h-5 w-5 ${isDragActive ? "text-primary" : "text-muted-foreground"}`} aria-hidden="true" />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium text-foreground">{isDragActive ? "Drop the textbook to start secure upload" : "Drag a textbook here or choose a file"}</p>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">PDF, TXT, JPG, PNG, or WEBP · one source at a time · up to 150MB</p>
+          <Input aria-label={ariaLabel} className="mt-3 bg-background" type="file" accept=".pdf,.txt,.jpg,.jpeg,.png,.webp" onChange={onFileChange} disabled={disabled} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function CurriculumManagement() {
   const [, navigate] = useLocation();
   const { user, loading: authLoading } = useAuth();
@@ -175,6 +214,7 @@ export default function CurriculumManagement() {
   const [replacementEditionLabel, setReplacementEditionLabel] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [chunkUploadProgress, setChunkUploadProgress] = useState<ChunkUploadProgress | null>(null);
+  const [isTextbookDropActive, setIsTextbookDropActive] = useState(false);
   const uploadPauseControllerRef = React.useRef<{ pauseRequested: boolean; resume?: () => void } | null>(null);
   const [isUploadingPattern, setIsUploadingPattern] = useState(false);
   const [paperPatternKind, setPaperPatternKind] = useState<PaperPatternKind>("past_paper");
@@ -440,8 +480,7 @@ export default function CurriculumManagement() {
     }
   };
 
-  const handleSourceUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+  const uploadSourceFile = async (file?: File) => {
     if (!file || !selectedSetId) return;
     if (!["application/pdf", "text/plain", "image/jpeg", "image/png", "image/webp"].includes(file.type)) {
       toast.error("Upload a PDF, TXT, JPG, PNG, or WEBP textbook source.");
@@ -508,8 +547,29 @@ export default function CurriculumManagement() {
       uploadPauseControllerRef.current = null;
       setIsUploading(false);
       setChunkUploadProgress(null);
-      event.target.value = "";
     }
+  };
+
+  const handleSourceUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    void uploadSourceFile(file);
+  };
+
+  const handleTextbookDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    if (!isUploading) setIsTextbookDropActive(true);
+  };
+
+  const handleTextbookDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setIsTextbookDropActive(false);
+    if (isUploading) return;
+    if (event.dataTransfer.files.length !== 1) {
+      toast.error("Drop one textbook source file at a time.");
+      return;
+    }
+    void uploadSourceFile(event.dataTransfer.files[0]);
   };
 
   const handleCreateReplacement = async () => {
@@ -816,7 +876,7 @@ export default function CurriculumManagement() {
 
             {focusedStep === 1 && <Card className="border-primary/15"><CardHeader><CardTitle>What subject are you adding?</CardTitle><CardDescription>Enter one clear subject name. Grade and board are already set to Grade {requestedGrade} and FBISE.</CardDescription></CardHeader><CardContent className="space-y-4"><div><Label htmlFor="focused-subject-name">Subject name</Label><Input id="focused-subject-name" value={programmeSubject} onChange={(event) => setProgrammeSubject(event.target.value)} placeholder="e.g. Biology" autoFocus /></div><Button type="button" className="w-full" onClick={handleCreateFocusedProgramme} disabled={createProgramme.isPending || createSet.isPending}>{createProgramme.isPending || createSet.isPending ? "Creating subject…" : "Continue to textbook upload"}</Button></CardContent></Card>}
 
-            {focusedStep === 2 && <Card className="border-primary/15"><CardHeader><CardTitle className="flex items-center gap-2"><Upload className="h-5 w-5 text-primary" />Upload the textbook</CardTitle><CardDescription>Upload the official book as a PDF, TXT, JPG, PNG, or WEBP file. Scanned pages are queued for Urdu-and-English OCR before review.</CardDescription></CardHeader><CardContent className="space-y-4"><p className="text-sm text-muted-foreground">PDF textbooks up to 150MB are accepted. PDFs above 30MB transfer in protected small chunks that remain compatible with the published site.</p><Input aria-label="Focused curriculum source upload" type="file" accept=".pdf,.txt,.jpg,.jpeg,.png,.webp" onChange={handleSourceUpload} disabled={isUploading} />{chunkUploadProgress ? <ChunkUploadProgressBar progress={chunkUploadProgress} onPause={requestUploadPause} onResume={resumeUpload} /> : isUploading && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Storing the textbook and preparing extraction…</p>}<p className="text-xs leading-5 text-muted-foreground">Scanned PDFs and photographed pages are read in small Urdu-and-English OCR batches. Weak pages remain blocked for Portal Admin review before activation.</p></CardContent></Card>}
+            {focusedStep === 2 && <Card className="border-primary/15"><CardHeader><CardTitle className="flex items-center gap-2"><Upload className="h-5 w-5 text-primary" />Upload the textbook</CardTitle><CardDescription>Upload the official book as a PDF, TXT, JPG, PNG, or WEBP file. Scanned pages are queued for Urdu-and-English OCR before review.</CardDescription></CardHeader><CardContent className="space-y-4"><p className="text-sm text-muted-foreground">PDF textbooks up to 150MB are accepted. PDFs above 30MB transfer in protected small chunks that remain compatible with the published site.</p><TextbookUploadDropZone ariaLabel="Focused curriculum source upload" disabled={isUploading} isDragActive={isTextbookDropActive} onDragOver={handleTextbookDragOver} onDragLeave={() => setIsTextbookDropActive(false)} onDrop={handleTextbookDrop} onFileChange={handleSourceUpload} />{chunkUploadProgress ? <ChunkUploadProgressBar progress={chunkUploadProgress} onPause={requestUploadPause} onResume={resumeUpload} /> : isUploading && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Storing the textbook and preparing extraction…</p>}<p className="text-xs leading-5 text-muted-foreground">Scanned PDFs and photographed pages are read in small Urdu-and-English OCR batches. Weak pages remain blocked for Portal Admin review before activation.</p></CardContent></Card>}
 
             {focusedStep === 3 && <Card className={hasPendingTextbookOcr ? "border-primary/30 bg-primary/[0.04]" : hasFailedTextbookOcr || !details?.readiness.ocrReviewComplete ? "border-amber-300/70 bg-amber-50/40" : "border-emerald-300/60 bg-emerald-50/40"}><CardHeader><CardTitle>{hasPendingTextbookOcr ? "Textbook OCR in progress" : hasFailedTextbookOcr ? "Textbook extraction needs attention" : details?.readiness.ocrReviewComplete ? "Textbook intake complete" : "Textbook quality review"}</CardTitle><CardDescription>{hasPendingTextbookOcr ? "The stored scan is being read in small batches. This page refreshes automatically; chapter review remains unavailable until extraction finishes." : hasFailedTextbookOcr ? "Extraction did not complete. Open the detailed review workspace to see the recorded failure before re-uploading or correcting the source." : details?.readiness.ocrReviewComplete ? "The source was stored and extraction checks completed. Continue to the controlled chapter-review workspace." : "Some pages need review before this book can be activated for teachers."}</CardDescription></CardHeader><CardContent className="space-y-4"><div className="rounded-xl border border-border/60 bg-background/70 p-3 text-sm text-foreground"><strong>{details?.sources.length ?? 0} textbook file</strong> stored for this subject.{hasPendingTextbookOcr && details?.ocrJobs?.length ? ` OCR progress: page ${details.ocrJobs[0].nextPage} of ${details.ocrJobs[0].totalPages}.` : details?.readiness.weakOcrPages ? ` ${details.readiness.weakOcrPages} page${details.readiness.weakOcrPages === 1 ? "" : "s"} still need review.` : ""}</div><Button type="button" className="w-full" onClick={() => navigate(`/curriculum?set=${focusedIntakeSetId}`)} disabled={hasPendingTextbookOcr}>{hasPendingTextbookOcr ? "OCR in progress" : "Continue to book review"}</Button></CardContent></Card>}
           </section>
@@ -959,7 +1019,7 @@ export default function CurriculumManagement() {
                 <CardHeader><CardTitle className="flex items-center gap-2"><Upload className="h-5 w-5 text-accent" />1. Add One Source File</CardTitle><CardDescription>{details.curriculumSet.label} is currently <strong>{details.curriculumSet.status}</strong>. PDF, TXT, and photographed textbook pages are stored securely; scans enter Urdu-and-English OCR review before activation.</CardDescription></CardHeader>
                 <CardContent className="space-y-4">
                   <p className="text-sm text-muted-foreground">PDF textbooks up to 150MB are accepted. PDFs over 30MB are transferred in protected small chunks so they remain compatible with the published site; scanned pages continue through the existing reviewable OCR queue.</p>
-                  <Input aria-label="Curriculum source upload" type="file" accept=".pdf,.txt,.jpg,.jpeg,.png,.webp" onChange={handleSourceUpload} disabled={isUploading} />
+                  <TextbookUploadDropZone ariaLabel="Curriculum source upload" disabled={isUploading} isDragActive={isTextbookDropActive} onDragOver={handleTextbookDragOver} onDragLeave={() => setIsTextbookDropActive(false)} onDrop={handleTextbookDrop} onFileChange={handleSourceUpload} />
                   {chunkUploadProgress ? <ChunkUploadProgressBar progress={chunkUploadProgress} onPause={requestUploadPause} onResume={resumeUpload} /> : isUploading && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Storing source and preparing extraction…</p>}
                   <div className="space-y-2">{details.sources.map((source) => { const ocrJob = details.ocrJobs?.find((job) => job.sourceId === source.id); return <button key={source.id} onClick={() => loadSourceForReview(source.id)} className="flex w-full items-center justify-between rounded-lg border border-border/60 p-3 text-left hover:border-accent/50"><span className="flex min-w-0 items-center gap-2"><FileText className="h-4 w-4 shrink-0 text-accent" /><span className="truncate text-sm">{source.originalFileName}</span></span><span className="text-right text-xs text-muted-foreground">{source.extractionStatus}{source.pageCount ? ` • ${source.pageCount} pages` : ""}{ocrJob && ocrJob.status !== "completed" ? ` • OCR page ${ocrJob.nextPage}/${ocrJob.totalPages}` : ""}</span></button>; })}</div>
                 </CardContent>
