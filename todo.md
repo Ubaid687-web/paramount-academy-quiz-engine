@@ -720,3 +720,8 @@
 - [x] Inspect the existing Portal Admin textbook upload controls and shared upload handler before adding drag-and-drop.
 - [x] Add an accessible drag-and-drop target with true hover feedback and the same source validation and protected upload path as file selection.
 - [x] Add drag-and-drop regressions, validate, checkpoint, and report the upload-interface enhancement.
+
+## Phase 124: Mobile Background Upload Recovery
+- [x] Inspect protected upload session expiry, acknowledged-byte speed calculation, and browser lifecycle handling behind the reported background-tab failure.
+- [x] Preserve resumable client metadata and offer safe foreground recovery from the last server-acknowledged chunk when the tab returns.
+- [x] Add lifecycle and measured-speed regressions, validate, checkpoint, and report the mobile upload-resume enhancement.

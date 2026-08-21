@@ -579,6 +579,13 @@ export const appRouter = router({
         });
       }),
 
+    getLargePdfUploadStatus: adminProcedure
+      .input(z.object({ uploadToken: z.string().min(20).max(4_000) }))
+      .query(async ({ ctx, input }) => {
+        const { getCurriculumPdfChunkUploadStatus } = await import("./curriculumChunkUpload");
+        return getCurriculumPdfChunkUploadStatus({ userId: ctx.user.id, uploadToken: input.uploadToken });
+      }),
+
     completeLargePdfUpload: adminProcedure
       .input(z.object({ uploadToken: z.string().min(20).max(4_000) }))
       .mutation(async ({ ctx, input }) => {

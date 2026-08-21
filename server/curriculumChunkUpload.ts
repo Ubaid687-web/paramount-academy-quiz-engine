@@ -1,13 +1,10 @@
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
-import { mkdir, readFile, rm, stat, writeFile, appendFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { ENV } from "./_core/env";
 import { ingestPortalAdminCurriculumSource, MAX_PORTAL_ADMIN_SOURCE_BYTES } from "./curriculumSourceIntake";
+import { storageGet, storagePut } from "./storage";
 
-const CHUNK_UPLOAD_DIRECTORY = join(tmpdir(), "paramount-curriculum-chunks");
 export const CURRICULUM_UPLOAD_CHUNK_BYTES = 512 * 1024;
-const UPLOAD_TOKEN_TTL_MS = 30 * 60 * 1000;
+const UPLOAD_TOKEN_TTL_MS = 12 * 60 * 60 * 1000;
 
 type UploadTicket = {
   uploadId: string;
@@ -33,12 +30,16 @@ function sign(encodedPayload: string) {
   return createHmac("sha256", ENV.cookieSecret).update(encodedPayload).digest("base64url");
 }
 
-function statePath(uploadId: string) {
-  return join(CHUNK_UPLOAD_DIRECTORY, `${uploadId}.json`);
+function uploadPrefix(uploadId: string) {
+  return `curriculum-uploads/${uploadId}`;
 }
 
-function bytesPath(uploadId: string) {
-  return join(CHUNK_UPLOAD_DIRECTORY, `${uploadId}.pdf`);
+function stateKey(uploadId: string) {
+  return `${uploadPrefix(uploadId)}/state.json`;
+}
+
+function chunkKey(uploadId: string, chunkIndex: number) {
+  return `${uploadPrefix(uploadId)}/chunks/${chunkIndex}`;
 }
 
 function assertValidTicket(ticket: UploadTicket) {
@@ -73,9 +74,16 @@ function parseTicket(token: string, userId: number): UploadTicket {
   return ticket;
 }
 
+async function readStoredBytes(key: string) {
+  const { url } = await storageGet(key);
+  const response = await fetch(url);
+  if (!response.ok) throw new Error("The upload session is unavailable. Start the textbook upload again.");
+  return Buffer.from(await response.arrayBuffer());
+}
+
 async function readState(ticket: UploadTicket): Promise<UploadState> {
   try {
-    const state = JSON.parse(await readFile(statePath(ticket.uploadId), "utf8")) as UploadState;
+    const state = JSON.parse((await readStoredBytes(stateKey(ticket.uploadId))).toString("utf8")) as UploadState;
     assertValidTicket(state);
     if (state.userId !== ticket.userId || state.curriculumSetId !== ticket.curriculumSetId || state.fileSize !== ticket.fileSize || state.fileName !== ticket.fileName) {
       throw new Error("The upload session is invalid. Start the textbook upload again.");
@@ -88,7 +96,17 @@ async function readState(ticket: UploadTicket): Promise<UploadState> {
 }
 
 async function saveState(state: UploadState) {
-  await writeFile(statePath(state.uploadId), JSON.stringify(state), "utf8");
+  await storagePut(stateKey(state.uploadId), JSON.stringify(state), "application/json");
+}
+
+function sessionStatus(state: UploadState) {
+  return {
+    receivedBytes: state.receivedBytes,
+    fileSize: state.fileSize,
+    nextChunkIndex: state.nextChunkIndex,
+    complete: state.receivedBytes === state.fileSize,
+    expiresAt: state.expiresAt,
+  };
 }
 
 export async function prepareCurriculumPdfChunkUpload(input: { userId: number; curriculumSetId: number; fileName: string; fileSize: number }) {
@@ -101,10 +119,14 @@ export async function prepareCurriculumPdfChunkUpload(input: { userId: number; c
     expiresAt: Date.now() + UPLOAD_TOKEN_TTL_MS,
   };
   assertValidTicket(ticket);
-  await mkdir(CHUNK_UPLOAD_DIRECTORY, { recursive: true });
   await saveState({ ...ticket, nextChunkIndex: 0, receivedBytes: 0 });
   const encodedPayload = encodeBase64Url(JSON.stringify(ticket));
-  return { uploadToken: `${encodedPayload}.${sign(encodedPayload)}`, chunkBytes: CURRICULUM_UPLOAD_CHUNK_BYTES };
+  return { uploadToken: `${encodedPayload}.${sign(encodedPayload)}`, chunkBytes: CURRICULUM_UPLOAD_CHUNK_BYTES, expiresAt: ticket.expiresAt };
+}
+
+export async function getCurriculumPdfChunkUploadStatus(input: { userId: number; uploadToken: string }) {
+  const ticket = parseTicket(input.uploadToken, input.userId);
+  return sessionStatus(await readState(ticket));
 }
 
 export async function appendCurriculumPdfChunk(input: { userId: number; uploadToken: string; chunkIndex: number; fileBuffer: Buffer }) {
@@ -112,9 +134,7 @@ export async function appendCurriculumPdfChunk(input: { userId: number; uploadTo
   const state = await readState(ticket);
   const chunkHash = createHmac("sha256", ENV.cookieSecret).update(input.fileBuffer).digest("hex");
   if (input.chunkIndex === state.lastChunk?.index && state.lastChunk.sha256 === chunkHash && state.lastChunk.byteLength === input.fileBuffer.length) {
-    // A response may be lost after the server saved a chunk. Accept an identical retry so the
-    // browser can safely recover without duplicating bytes or corrupting the textbook.
-    return { receivedBytes: state.receivedBytes, fileSize: ticket.fileSize, complete: state.receivedBytes === ticket.fileSize, retried: true };
+    return { ...sessionStatus(state), retried: true };
   }
   if (!Number.isSafeInteger(input.chunkIndex) || input.chunkIndex !== state.nextChunkIndex) {
     throw new Error("This textbook chunk arrived out of order. Restart the upload so no pages are lost.");
@@ -123,15 +143,15 @@ export async function appendCurriculumPdfChunk(input: { userId: number; uploadTo
   if (!input.fileBuffer.length || input.fileBuffer.length > CURRICULUM_UPLOAD_CHUNK_BYTES || input.fileBuffer.length > remainingBytes) {
     throw new Error("A textbook upload chunk has an invalid size. Restart the upload.");
   }
-  await appendFile(bytesPath(ticket.uploadId), input.fileBuffer);
-  const nextState = {
+  await storagePut(chunkKey(ticket.uploadId, input.chunkIndex), input.fileBuffer, "application/octet-stream");
+  const nextState: UploadState = {
     ...state,
     nextChunkIndex: state.nextChunkIndex + 1,
     receivedBytes: state.receivedBytes + input.fileBuffer.length,
     lastChunk: { index: input.chunkIndex, sha256: chunkHash, byteLength: input.fileBuffer.length },
   };
   await saveState(nextState);
-  return { receivedBytes: nextState.receivedBytes, fileSize: ticket.fileSize, complete: nextState.receivedBytes === ticket.fileSize };
+  return sessionStatus(nextState);
 }
 
 export async function completeCurriculumPdfChunkUpload(input: { userId: number; uploadToken: string; sessionCookie?: string }) {
@@ -140,12 +160,10 @@ export async function completeCurriculumPdfChunkUpload(input: { userId: number; 
   if (state.receivedBytes !== ticket.fileSize) {
     throw new Error(`Upload is incomplete: received ${state.receivedBytes} of ${ticket.fileSize} bytes.`);
   }
-  const byteFile = bytesPath(ticket.uploadId);
-  const fileInfo = await stat(byteFile).catch(() => null);
-  if (!fileInfo || fileInfo.size !== ticket.fileSize) throw new Error("The assembled textbook file is incomplete. Restart the upload.");
-
-  const fileBuffer = await readFile(byteFile);
-  const source = await ingestPortalAdminCurriculumSource({
+  const chunks = await Promise.all(Array.from({ length: state.nextChunkIndex }, (_, index) => readStoredBytes(chunkKey(ticket.uploadId, index))));
+  const fileBuffer = Buffer.concat(chunks);
+  if (fileBuffer.length !== ticket.fileSize) throw new Error("The assembled textbook file is incomplete. Restart the upload.");
+  return ingestPortalAdminCurriculumSource({
     curriculumSetId: ticket.curriculumSetId,
     fileName: ticket.fileName,
     mimeType: "application/pdf",
@@ -153,6 +171,4 @@ export async function completeCurriculumPdfChunkUpload(input: { userId: number; 
     uploadedBy: input.userId,
     sessionCookie: input.sessionCookie,
   });
-  await Promise.allSettled([rm(byteFile, { force: true }), rm(statePath(ticket.uploadId), { force: true })]);
-  return source;
 }

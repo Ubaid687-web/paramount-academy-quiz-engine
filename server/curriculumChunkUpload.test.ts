@@ -1,21 +1,39 @@
-import { describe, expect, it, vi, afterEach } from "vitest";
+import { describe, expect, it, vi, afterEach, beforeEach } from "vitest";
 
-const mocks = vi.hoisted(() => ({ ingestPortalAdminCurriculumSource: vi.fn() }));
+const mocks = vi.hoisted(() => ({ ingestPortalAdminCurriculumSource: vi.fn(), storagePut: vi.fn(), storageGet: vi.fn(), stored: new Map<string, Buffer>() }));
 
 vi.mock("./_core/env", () => ({ ENV: { cookieSecret: "phase117-test-secret" } }));
 vi.mock("./curriculumSourceIntake", () => ({
   MAX_PORTAL_ADMIN_SOURCE_BYTES: 150 * 1024 * 1024,
   ingestPortalAdminCurriculumSource: mocks.ingestPortalAdminCurriculumSource,
 }));
+vi.mock("./storage", () => ({ storagePut: mocks.storagePut, storageGet: mocks.storageGet }));
 
 import {
   appendCurriculumPdfChunk,
   completeCurriculumPdfChunkUpload,
+  getCurriculumPdfChunkUploadStatus,
   prepareCurriculumPdfChunkUpload,
 } from "./curriculumChunkUpload";
 
 describe("chunked curriculum PDF intake", () => {
-  afterEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    mocks.stored.clear();
+    mocks.storagePut.mockImplementation(async (key: string, data: Buffer | Uint8Array | string) => {
+      mocks.stored.set(key, Buffer.from(data));
+      return { key, url: `memory://${key}` };
+    });
+    mocks.storageGet.mockImplementation(async (key: string) => ({ key, url: `memory://${key}` }));
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      const bytes = mocks.stored.get(url.replace("memory://", ""));
+      return new Response(bytes, { status: bytes ? 200 : 404 });
+    }));
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.clearAllMocks();
+  });
 
   it("accepts small ordered chunks, assembles their exact bytes, and completes through the existing safeguarded source intake", async () => {
     mocks.ingestPortalAdminCurriculumSource.mockResolvedValue({ id: 77, extractionStatus: "pending" });
@@ -52,5 +70,17 @@ describe("chunked curriculum PDF intake", () => {
       retried: true,
     });
     await expect(appendCurriculumPdfChunk({ userId: 8, uploadToken: prepared.uploadToken, chunkIndex: 0, fileBuffer: Buffer.from("fail") })).rejects.toThrow("out of order");
+  });
+
+  it("retains an acknowledged upload status in durable storage for a later foreground resume", async () => {
+    const prepared = await prepareCurriculumPdfChunkUpload({ userId: 8, curriculumSetId: 41, fileName: "grade-9-chemistry.pdf", fileSize: 8 });
+    await appendCurriculumPdfChunk({ userId: 8, uploadToken: prepared.uploadToken, chunkIndex: 0, fileBuffer: Buffer.from("%PDF") });
+
+    await expect(getCurriculumPdfChunkUploadStatus({ userId: 8, uploadToken: prepared.uploadToken })).resolves.toMatchObject({
+      receivedBytes: 4,
+      fileSize: 8,
+      nextChunkIndex: 1,
+      complete: false,
+    });
   });
 });

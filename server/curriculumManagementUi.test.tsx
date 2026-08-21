@@ -5,6 +5,8 @@ import CurriculumManagement from "../client/src/pages/CurriculumManagement";
 
 const noOpMutation = { mutateAsync: vi.fn(), isPending: false };
 const invalidate = vi.fn();
+const getLargePdfUploadStatus = vi.fn();
+type ChunkAcknowledgement = { receivedBytes: number; fileSize: number; complete: boolean; nextChunkIndex: number; expiresAt: number };
 const authMock = vi.hoisted(() => ({ role: "admin" as "admin" | "teacher" }));
 const queryOptions = vi.hoisted(() => ({ listSets: [] as boolean[], listProgrammes: [] as boolean[], staffDirectory: [] as boolean[] }));
 
@@ -45,7 +47,7 @@ const grade9ChemistryDetails = {
 
 vi.mock("@/lib/trpc", () => ({
   trpc: {
-    useUtils: () => ({ curriculum: { listSets: { invalidate }, listProgrammes: { invalidate }, getManagementDetails: { invalidate } }, generation: { getProviderSettings: { invalidate }, listHistory: { invalidate }, getStyleAnchor: { invalidate } } }),
+    useUtils: () => ({ curriculum: { listSets: { invalidate }, listProgrammes: { invalidate }, getManagementDetails: { invalidate }, getLargePdfUploadStatus: { fetch: getLargePdfUploadStatus } }, generation: { getProviderSettings: { invalidate }, listHistory: { invalidate }, getStyleAnchor: { invalidate } } }),
     curriculum: {
       listSets: { useQuery: (_input?: unknown, options?: { enabled?: boolean }) => { queryOptions.listSets.push(Boolean(options?.enabled)); return { data: [managementDetails.curriculumSet, grade9ChemistrySet, archivedChemistrySet], isLoading: false, error: null }; } },
       listProgrammes: { useQuery: (_input?: unknown, options?: { enabled?: boolean }) => { queryOptions.listProgrammes.push(Boolean(options?.enabled)); return { data: [{ id: 11, board: "FBISE", grade: "10", subject: "physics", teacherLabel: "Physics", status: "ready" }, grade9ChemistryProgramme], isLoading: false, error: null }; } },
@@ -76,7 +78,7 @@ vi.mock("@/_core/hooks/useAuth", () => ({ useAuth: () => ({ user: { id: 1, role:
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 describe("Curriculum Library Release 1", () => {
-  afterEach(() => { cleanup(); invalidate.mockReset(); noOpMutation.mutateAsync.mockReset(); queryOptions.listSets.length = 0; queryOptions.listProgrammes.length = 0; queryOptions.staffDirectory.length = 0; authMock.role = "admin"; window.history.pushState({}, "", "/"); });
+  afterEach(() => { cleanup(); invalidate.mockReset(); getLargePdfUploadStatus.mockReset(); noOpMutation.mutateAsync.mockReset(); window.sessionStorage.clear(); Object.defineProperty(document, "hidden", { configurable: true, value: false }); Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" }); queryOptions.listSets.length = 0; queryOptions.listProgrammes.length = 0; queryOptions.staffDirectory.length = 0; authMock.role = "admin"; window.history.pushState({}, "", "/"); });
 
   it("shows one focused Portal Admin task at a time while preserving every administrative workflow", async () => {
     render(<CurriculumManagement />);
@@ -251,6 +253,65 @@ describe("Curriculum Library Release 1", () => {
     await waitFor(() => expect(acknowledgements).toHaveLength(2));
     await act(async () => { acknowledgements[1]({ receivedBytes: file.size, fileSize: file.size, complete: true }); });
     await act(async () => { finishUpload({ id: 21, extractedText: "Reviewed source text", extractionStatus: "extracted" }); });
+  });
+
+  it("auto-pauses a protected upload while Chrome backgrounds the page and continues when it returns", async () => {
+    window.history.pushState({}, "", "/curriculum?grade=9&intake=subject");
+    const acknowledgements: Array<(value: ChunkAcknowledgement) => void> = [];
+    let finishUpload!: (value: { id: number; extractedText: string; extractionStatus: "extracted" }) => void;
+    const completion = new Promise<{ id: number; extractedText: string; extractionStatus: "extracted" }>((resolve) => { finishUpload = resolve; });
+    noOpMutation.mutateAsync.mockImplementation((input: Record<string, unknown>) => {
+      if ("fileSize" in input) return Promise.resolve({ uploadToken: "background-token", chunkBytes: Math.ceil(Number(input.fileSize) / 2), expiresAt: 9999999999999 });
+      if ("chunkIndex" in input) return new Promise((resolve) => { acknowledgements.push(resolve); });
+      if ("uploadToken" in input) return completion;
+      return Promise.resolve(undefined);
+    });
+    render(<CurriculumManagement />);
+
+    fireEvent.change(screen.getByLabelText("Subject name"), { target: { value: "Chemistry" } });
+    fireEvent.click(screen.getByRole("button", { name: "Continue to textbook upload" }));
+    const file = new File([new Uint8Array((30 * 1024 * 1024) + 1)], "grade-9-chemistry.pdf", { type: "application/pdf" });
+    fireEvent.change(await screen.findByLabelText("Focused curriculum source upload"), { target: { files: [file] } });
+    await waitFor(() => expect(acknowledgements).toHaveLength(1));
+
+    Object.defineProperty(document, "hidden", { configurable: true, value: true });
+    Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" });
+    await act(async () => { document.dispatchEvent(new Event("visibilitychange")); });
+    const chunkBytes = Math.ceil(file.size / 2);
+    await act(async () => { acknowledgements[0]({ receivedBytes: chunkBytes, fileSize: file.size, complete: false, nextChunkIndex: 1, expiresAt: 9999999999999 }); });
+    expect(await screen.findByText("Paused while Chrome is in the background")).toBeTruthy();
+    expect(acknowledgements).toHaveLength(1);
+
+    Object.defineProperty(document, "hidden", { configurable: true, value: false });
+    Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" });
+    await act(async () => { document.dispatchEvent(new Event("visibilitychange")); });
+    await waitFor(() => expect(acknowledgements).toHaveLength(2));
+    await act(async () => { acknowledgements[1]({ receivedBytes: file.size, fileSize: file.size, complete: true, nextChunkIndex: 2, expiresAt: 9999999999999 }); });
+    await act(async () => { finishUpload({ id: 23, extractedText: "Reviewed source text", extractionStatus: "extracted" }); });
+  });
+
+  it("shows saved-session guidance and continues a reselected PDF from the last server-acknowledged chunk", async () => {
+    window.history.pushState({}, "", "/curriculum?grade=9&intake=subject");
+    const fileSize = (30 * 1024 * 1024) + 1;
+    const chunkBytes = 20 * 1024 * 1024;
+    window.sessionStorage.setItem("paramount-resumable-textbook-upload", JSON.stringify({ uploadToken: "saved-token", chunkBytes, curriculumSetId: grade9ChemistrySet.id, fileName: "grade-9-chemistry.pdf", fileSize, receivedBytes: chunkBytes, nextChunkIndex: 1, expiresAt: 9999999999999 }));
+    getLargePdfUploadStatus.mockResolvedValue({ fileSize, receivedBytes: chunkBytes, nextChunkIndex: 1, complete: false, expiresAt: 9999999999999 });
+    noOpMutation.mutateAsync.mockImplementation((input: Record<string, unknown>) => {
+      if ("chunkIndex" in input) return Promise.resolve({ receivedBytes: fileSize, fileSize, complete: true, nextChunkIndex: 2, expiresAt: 9999999999999 });
+      if ("uploadToken" in input) return Promise.resolve({ id: 24, extractedText: "Reviewed source text", extractionStatus: "extracted" });
+      return Promise.resolve(undefined);
+    });
+    render(<CurriculumManagement />);
+
+    fireEvent.change(screen.getByLabelText("Subject name"), { target: { value: "Chemistry" } });
+    fireEvent.click(screen.getByRole("button", { name: "Continue to textbook upload" }));
+    expect(await screen.findByTestId("saved-upload-resume-guidance")).toBeTruthy();
+    const file = new File([new Uint8Array(fileSize)], "grade-9-chemistry.pdf", { type: "application/pdf" });
+    fireEvent.change(screen.getByLabelText("Focused curriculum source upload"), { target: { files: [file] } });
+
+    await waitFor(() => expect(getLargePdfUploadStatus).toHaveBeenCalledWith({ uploadToken: "saved-token" }));
+    await waitFor(() => expect(noOpMutation.mutateAsync).toHaveBeenCalledWith(expect.objectContaining({ uploadToken: "saved-token", chunkIndex: 1 })));
+    expect(noOpMutation.mutateAsync).not.toHaveBeenCalledWith(expect.objectContaining({ curriculumSetId: grade9ChemistrySet.id, fileSize }));
   });
 
   it("shows drag feedback and routes a dropped textbook through the same secure intake handler", async () => {
