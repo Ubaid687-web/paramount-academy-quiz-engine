@@ -51,6 +51,7 @@ const subjectLabels: Record<string, string> = {
 
 const MAX_PORTAL_ADMIN_SOURCE_BYTES = 150 * 1024 * 1024;
 const DIRECT_PDF_UPLOAD_THRESHOLD_BYTES = 30 * 1024 * 1024;
+const TRANSIENT_UPLOAD_RETRY_ATTEMPTS = 3;
 
 const formatSubjectLabel = (subject: string) => subjectLabels[subject] ?? subject.replace(/[_-]+/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 
@@ -67,6 +68,32 @@ function fileToBase64(file: Blob): Promise<string> {
     reader.onerror = () => reject(new Error("The file could not be read."));
     reader.readAsDataURL(file);
   });
+}
+
+function isTemporaryUploadServiceError(error: unknown) {
+  const message = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
+  return message.includes("service unavailable") || message.includes("unexpected token") || message.includes("failed to fetch") || message.includes("networkerror") || message.includes("fetch failed");
+}
+
+async function retryTemporaryUploadRequest<T>(request: () => Promise<T>): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < TRANSIENT_UPLOAD_RETRY_ATTEMPTS; attempt += 1) {
+    try {
+      return await request();
+    } catch (error) {
+      lastError = error;
+      if (!isTemporaryUploadServiceError(error) || attempt === TRANSIENT_UPLOAD_RETRY_ATTEMPTS - 1) break;
+      await new Promise((resolve) => window.setTimeout(resolve, 750 * (attempt + 1)));
+    }
+  }
+  throw lastError;
+}
+
+function sourceUploadErrorMessage(error: unknown) {
+  if (isTemporaryUploadServiceError(error)) {
+    return "The published upload service was temporarily unavailable before the textbook could be received. No source was saved. Refresh once and retry the upload.";
+  }
+  return error instanceof Error ? error.message : "The source could not be stored or extracted.";
 }
 
 export default function CurriculumManagement() {
@@ -352,16 +379,16 @@ export default function CurriculumManagement() {
     try {
       const source = file.type === "application/pdf" && file.size > DIRECT_PDF_UPLOAD_THRESHOLD_BYTES
         ? await (async () => {
-          const prepared = await prepareLargePdfUpload.mutateAsync({ curriculumSetId: selectedSetId, fileName: file.name, fileSize: file.size });
+          const prepared = await retryTemporaryUploadRequest(() => prepareLargePdfUpload.mutateAsync({ curriculumSetId: selectedSetId, fileName: file.name, fileSize: file.size }));
           for (let offset = 0, chunkIndex = 0; offset < file.size; offset += prepared.chunkBytes, chunkIndex += 1) {
             const chunk = file.slice(offset, Math.min(offset + prepared.chunkBytes, file.size));
-            await appendLargePdfChunk.mutateAsync({
+            await retryTemporaryUploadRequest(async () => appendLargePdfChunk.mutateAsync({
               uploadToken: prepared.uploadToken,
               chunkIndex,
               fileBuffer: await fileToBase64(chunk),
-            });
+            }));
           }
-          return completeLargePdfUpload.mutateAsync({ uploadToken: prepared.uploadToken });
+          return retryTemporaryUploadRequest(() => completeLargePdfUpload.mutateAsync({ uploadToken: prepared.uploadToken }));
         })()
         : await (async () => {
           const fileBuffer = await fileToBase64(file);
@@ -377,7 +404,7 @@ export default function CurriculumManagement() {
       await utils.curriculum.getManagementDetails.invalidate({ curriculumSetId: selectedSetId });
       toast.success(source.extractionStatus === "pending" ? "Scanned source stored. OCR is queued in reviewable page batches and this screen will update as pages are processed." : "Source stored and extracted. Review it before saving a chapter.");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "The source could not be stored or extracted.");
+      toast.error(sourceUploadErrorMessage(error));
     } finally {
       setIsUploading(false);
       event.target.value = "";
@@ -688,7 +715,7 @@ export default function CurriculumManagement() {
 
             {focusedStep === 1 && <Card className="border-primary/15"><CardHeader><CardTitle>What subject are you adding?</CardTitle><CardDescription>Enter one clear subject name. Grade and board are already set to Grade {requestedGrade} and FBISE.</CardDescription></CardHeader><CardContent className="space-y-4"><div><Label htmlFor="focused-subject-name">Subject name</Label><Input id="focused-subject-name" value={programmeSubject} onChange={(event) => setProgrammeSubject(event.target.value)} placeholder="e.g. Biology" autoFocus /></div><Button type="button" className="w-full" onClick={handleCreateFocusedProgramme} disabled={createProgramme.isPending || createSet.isPending}>{createProgramme.isPending || createSet.isPending ? "Creating subject…" : "Continue to textbook upload"}</Button></CardContent></Card>}
 
-            {focusedStep === 2 && <Card className="border-primary/15"><CardHeader><CardTitle className="flex items-center gap-2"><Upload className="h-5 w-5 text-primary" />Upload the textbook</CardTitle><CardDescription>Upload the official book as a PDF, TXT, JPG, PNG, or WEBP file. Scanned pages are queued for Urdu-and-English OCR before review.</CardDescription></CardHeader><CardContent className="space-y-4"><p className="text-sm text-muted-foreground">PDF textbooks up to 150MB are accepted. PDFs above 30MB transfer directly without browser base64 conversion.</p><Input aria-label="Focused curriculum source upload" type="file" accept=".pdf,.txt,.jpg,.jpeg,.png,.webp" onChange={handleSourceUpload} disabled={isUploading} />{isUploading && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Storing the textbook and preparing extraction…</p>}<p className="text-xs leading-5 text-muted-foreground">Scanned PDFs and photographed pages are read in small Urdu-and-English OCR batches. Weak pages remain blocked for Portal Admin review before activation.</p></CardContent></Card>}
+            {focusedStep === 2 && <Card className="border-primary/15"><CardHeader><CardTitle className="flex items-center gap-2"><Upload className="h-5 w-5 text-primary" />Upload the textbook</CardTitle><CardDescription>Upload the official book as a PDF, TXT, JPG, PNG, or WEBP file. Scanned pages are queued for Urdu-and-English OCR before review.</CardDescription></CardHeader><CardContent className="space-y-4"><p className="text-sm text-muted-foreground">PDF textbooks up to 150MB are accepted. PDFs above 30MB transfer in protected small chunks that remain compatible with the published site.</p><Input aria-label="Focused curriculum source upload" type="file" accept=".pdf,.txt,.jpg,.jpeg,.png,.webp" onChange={handleSourceUpload} disabled={isUploading} />{isUploading && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Storing the textbook and preparing extraction…</p>}<p className="text-xs leading-5 text-muted-foreground">Scanned PDFs and photographed pages are read in small Urdu-and-English OCR batches. Weak pages remain blocked for Portal Admin review before activation.</p></CardContent></Card>}
 
             {focusedStep === 3 && <Card className={hasPendingTextbookOcr ? "border-primary/30 bg-primary/[0.04]" : hasFailedTextbookOcr || !details?.readiness.ocrReviewComplete ? "border-amber-300/70 bg-amber-50/40" : "border-emerald-300/60 bg-emerald-50/40"}><CardHeader><CardTitle>{hasPendingTextbookOcr ? "Textbook OCR in progress" : hasFailedTextbookOcr ? "Textbook extraction needs attention" : details?.readiness.ocrReviewComplete ? "Textbook intake complete" : "Textbook quality review"}</CardTitle><CardDescription>{hasPendingTextbookOcr ? "The stored scan is being read in small batches. This page refreshes automatically; chapter review remains unavailable until extraction finishes." : hasFailedTextbookOcr ? "Extraction did not complete. Open the detailed review workspace to see the recorded failure before re-uploading or correcting the source." : details?.readiness.ocrReviewComplete ? "The source was stored and extraction checks completed. Continue to the controlled chapter-review workspace." : "Some pages need review before this book can be activated for teachers."}</CardDescription></CardHeader><CardContent className="space-y-4"><div className="rounded-xl border border-border/60 bg-background/70 p-3 text-sm text-foreground"><strong>{details?.sources.length ?? 0} textbook file</strong> stored for this subject.{hasPendingTextbookOcr && details?.ocrJobs?.length ? ` OCR progress: page ${details.ocrJobs[0].nextPage} of ${details.ocrJobs[0].totalPages}.` : details?.readiness.weakOcrPages ? ` ${details.readiness.weakOcrPages} page${details.readiness.weakOcrPages === 1 ? "" : "s"} still need review.` : ""}</div><Button type="button" className="w-full" onClick={() => navigate(`/curriculum?set=${focusedIntakeSetId}`)} disabled={hasPendingTextbookOcr}>{hasPendingTextbookOcr ? "OCR in progress" : "Continue to book review"}</Button></CardContent></Card>}
           </section>

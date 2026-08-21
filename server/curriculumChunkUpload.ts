@@ -18,7 +18,11 @@ type UploadTicket = {
   expiresAt: number;
 };
 
-type UploadState = UploadTicket & { nextChunkIndex: number; receivedBytes: number };
+type UploadState = UploadTicket & {
+  nextChunkIndex: number;
+  receivedBytes: number;
+  lastChunk?: { index: number; sha256: string; byteLength: number };
+};
 
 function encodeBase64Url(value: string) {
   return Buffer.from(value).toString("base64url");
@@ -106,6 +110,12 @@ export async function prepareCurriculumPdfChunkUpload(input: { userId: number; c
 export async function appendCurriculumPdfChunk(input: { userId: number; uploadToken: string; chunkIndex: number; fileBuffer: Buffer }) {
   const ticket = parseTicket(input.uploadToken, input.userId);
   const state = await readState(ticket);
+  const chunkHash = createHmac("sha256", ENV.cookieSecret).update(input.fileBuffer).digest("hex");
+  if (input.chunkIndex === state.lastChunk?.index && state.lastChunk.sha256 === chunkHash && state.lastChunk.byteLength === input.fileBuffer.length) {
+    // A response may be lost after the server saved a chunk. Accept an identical retry so the
+    // browser can safely recover without duplicating bytes or corrupting the textbook.
+    return { receivedBytes: state.receivedBytes, fileSize: ticket.fileSize, complete: state.receivedBytes === ticket.fileSize, retried: true };
+  }
   if (!Number.isSafeInteger(input.chunkIndex) || input.chunkIndex !== state.nextChunkIndex) {
     throw new Error("This textbook chunk arrived out of order. Restart the upload so no pages are lost.");
   }
@@ -114,7 +124,12 @@ export async function appendCurriculumPdfChunk(input: { userId: number; uploadTo
     throw new Error("A textbook upload chunk has an invalid size. Restart the upload.");
   }
   await appendFile(bytesPath(ticket.uploadId), input.fileBuffer);
-  const nextState = { ...state, nextChunkIndex: state.nextChunkIndex + 1, receivedBytes: state.receivedBytes + input.fileBuffer.length };
+  const nextState = {
+    ...state,
+    nextChunkIndex: state.nextChunkIndex + 1,
+    receivedBytes: state.receivedBytes + input.fileBuffer.length,
+    lastChunk: { index: input.chunkIndex, sha256: chunkHash, byteLength: input.fileBuffer.length },
+  };
   await saveState(nextState);
   return { receivedBytes: nextState.receivedBytes, fileSize: ticket.fileSize, complete: nextState.receivedBytes === ticket.fileSize };
 }

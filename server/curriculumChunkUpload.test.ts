@@ -41,4 +41,16 @@ describe("chunked curriculum PDF intake", () => {
     await expect(appendCurriculumPdfChunk({ userId: 8, uploadToken: prepared.uploadToken, chunkIndex: 1, fileBuffer: Buffer.from("test") })).rejects.toThrow("out of order");
     await expect(appendCurriculumPdfChunk({ userId: 9, uploadToken: prepared.uploadToken, chunkIndex: 0, fileBuffer: Buffer.from("test") })).rejects.toThrow("another account");
   });
+
+  it("treats an identical retried chunk as idempotent when the response was lost after persistence", async () => {
+    const prepared = await prepareCurriculumPdfChunkUpload({ userId: 8, curriculumSetId: 41, fileName: "grade-9-computer.pdf", fileSize: 4 });
+    await appendCurriculumPdfChunk({ userId: 8, uploadToken: prepared.uploadToken, chunkIndex: 0, fileBuffer: Buffer.from("test") });
+
+    await expect(appendCurriculumPdfChunk({ userId: 8, uploadToken: prepared.uploadToken, chunkIndex: 0, fileBuffer: Buffer.from("test") })).resolves.toMatchObject({
+      receivedBytes: 4,
+      complete: true,
+      retried: true,
+    });
+    await expect(appendCurriculumPdfChunk({ userId: 8, uploadToken: prepared.uploadToken, chunkIndex: 0, fileBuffer: Buffer.from("fail") })).rejects.toThrow("out of order");
+  });
 });

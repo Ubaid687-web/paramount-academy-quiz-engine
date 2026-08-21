@@ -1,0 +1,103 @@
+{
+  "count": 19,
+  "entries": [
+    {
+      "timestamp": "2026-08-21T11:16:14Z",
+      "severity": "Default",
+      "message": "[OAuth] Initialized with baseURL: https://api.manus.ai"
+    },
+    {
+      "timestamp": "2026-08-21T11:16:14Z",
+      "severity": "Default",
+      "message": "Server running on http://localhost:3000/"
+    },
+    {
+      "timestamp": "2026-08-21T11:16:27Z",
+      "severity": "Default",
+      "message": "[OAuth] Initialized with baseURL: https://api.manus.ai"
+    },
+    {
+      "timestamp": "2026-08-21T11:16:27Z",
+      "severity": "Default",
+      "message": "Server running on http://localhost:3000/"
+    },
+    {
+      "timestamp": "2026-08-21T11:16:30Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-21T11:16:31Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-21T11:20:50Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-21T11:30:54Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-21T11:40:51Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-21T11:50:52Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-21T11:52:40Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-21T11:55:56Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-21T12:00:59Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-21T12:02:29Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-21T12:02:50Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-21T12:11:04Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    },
+    {
+      "timestamp": "2026-08-21T12:19:35Z",
+      "severity": "Default",
+      "message": "[OAuth] Initialized with baseURL: https://api.manus.ai"
+    },
+    {
+      "timestamp": "2026-08-21T12:19:35Z",
+      "severity": "Default",
+      "message": "Server running on http://localhost:3000/"
+    },
+    {
+      "timestamp": "2026-08-21T12:21:00Z",
+      "severity": "Default",
+      "message": "[Auth] Missing session cookie"
+    }
+  ],
+  "has_more": false,
+  "oldest_time": "",
+  "project_id": "g2y5mutEzwdHvruUz8MtKx"
+}

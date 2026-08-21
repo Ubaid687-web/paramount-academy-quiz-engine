@@ -691,3 +691,12 @@
 - [x] Capture the actual request path, runtime/deployment evidence, and payload boundary behind the Portal Admin large-PDF “failed to fetch” error.
 - [x] Replace only the proven incompatible upload transport or route boundary while retaining Portal Admin authorization, file-signature checks, and OCR review safeguards.
 - [x] Reproduce the large-upload path within the supported boundary, add regression coverage, validate, checkpoint, and report the root-cause repair.
+
+## Phase 118: Published-Link Access Verification
+- [x] Verify the public production domain and the project-checkpoint handoff link after the reported access failure.
+- [x] Repair only any confirmed public-link or routing issue, then provide the correct opening path.
+
+## Phase 119: Upload 503 and Non-JSON Error Repair
+- [x] Capture the production route, payload, and response evidence behind the Portal Admin large-PDF “Service Unavailable” failure.
+- [x] Remove the client-side raw JSON parsing failure and give a precise, safe message when an upstream response is unavailable.
+- [x] Replace only the proven incompatible transport boundary, add end-to-end regressions, validate, checkpoint, and report the repair.

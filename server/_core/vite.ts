@@ -58,10 +58,19 @@ export function serveStatic(app: Express) {
     );
   }
 
+  // The HTML shell must never outlive a deployment. Its script assets are content-hashed, but a
+  // cached index.html can otherwise keep a phone on an older upload implementation.
+  app.use((req, res, next) => {
+    if (req.method === "GET" && (req.path === "/" || req.path.endsWith(".html"))) {
+      res.setHeader("Cache-Control", "no-store, max-age=0");
+    }
+    next();
+  });
   app.use(express.static(distPath));
 
   // fall through to index.html if the file doesn't exist
   app.use("/{*splat}", (_req, res) => {
+    res.setHeader("Cache-Control", "no-store, max-age=0");
     res.sendFile(path.resolve(distPath, "index.html"));
   });
 }

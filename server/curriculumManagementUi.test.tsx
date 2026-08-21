@@ -170,6 +170,8 @@ describe("Curriculum Library Release 1", () => {
     expect(noOpMutation.mutateAsync).not.toHaveBeenCalled();
     expect(await screen.findByText("Upload the textbook")).toBeTruthy();
     expect(screen.getByText(/PDF textbooks up to 150MB are accepted/i)).toBeTruthy();
+    expect(screen.getByText(/protected small chunks/i)).toBeTruthy();
+    expect(screen.queryByText(/transfer directly without browser base64 conversion/i)).toBeNull();
   });
 
   it("offers approved photographed textbook formats in the controlled upload control", () => {
