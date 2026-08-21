@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildDraftQualityChecks, validateGeneratedMcqs } from "./quizDraftValidator";
+import { buildDraftQualityChecks, hasTextbookAnchorEvidence, validateGeneratedMcqs } from "./quizDraftValidator";
 
 const validQuestion = {
   question: "Which quantity measures the rate of change of velocity?",
@@ -42,6 +42,16 @@ describe("quiz draft validation", () => {
       sourceCitation: { ...citationCandidates[0], textAnchor: "rate of change of velocity" },
     }], 1, [], citationCandidates);
     expect(cited).toEqual({ valid: true, issues: [] });
+  });
+
+  it("requires a curriculum citation anchor that is actually present in the selected textbook scope", () => {
+    const citationCandidates = [{ citationKey: "chapter:10", curriculumSetId: 77, chapterId: 10, chapterCode: "Unit 1", chapterTitle: "Kinematics", segmentId: null, segmentLabel: null, startPage: 1, endPage: 14 }];
+    const citedQuestion = { ...validQuestion, sourceCitation: { ...citationCandidates[0], textAnchor: "rate of change of velocity" } };
+    const sourceText = "Acceleration is the rate of change of velocity with time.";
+
+    expect(hasTextbookAnchorEvidence(sourceText, "rate of change of velocity")).toBe(true);
+    expect(validateGeneratedMcqs([citedQuestion], 1, [], citationCandidates, sourceText)).toEqual({ valid: true, issues: [] });
+    expect(validateGeneratedMcqs([{ ...citedQuestion, sourceCitation: { ...citedQuestion.sourceCitation, textAnchor: "invented supporting sentence" } }], 1, [], citationCandidates, sourceText).issues).toContain("Question 1 has a textbook text anchor that does not appear in the selected source scope.");
   });
 
   it("rejects duplicate, incomplete, and ungrounded questions", () => {

@@ -83,4 +83,15 @@ describe("chunked curriculum PDF intake", () => {
       complete: false,
     });
   });
+
+  it("returns the original stored source when a mobile client retries final completion after the first success", async () => {
+    mocks.ingestPortalAdminCurriculumSource.mockResolvedValue({ id: 88, curriculumSetId: 41, extractionStatus: "pending" });
+    const prepared = await prepareCurriculumPdfChunkUpload({ userId: 8, curriculumSetId: 41, fileName: "grade-9-chemistry.pdf", fileSize: 9 });
+    await appendCurriculumPdfChunk({ userId: 8, uploadToken: prepared.uploadToken, chunkIndex: 0, fileBuffer: Buffer.from("%PDF-") });
+    await appendCurriculumPdfChunk({ userId: 8, uploadToken: prepared.uploadToken, chunkIndex: 1, fileBuffer: Buffer.from("book") });
+
+    await expect(completeCurriculumPdfChunkUpload({ userId: 8, uploadToken: prepared.uploadToken })).resolves.toMatchObject({ id: 88 });
+    await expect(completeCurriculumPdfChunkUpload({ userId: 8, uploadToken: prepared.uploadToken })).resolves.toMatchObject({ id: 88 });
+    expect(mocks.ingestPortalAdminCurriculumSource).toHaveBeenCalledTimes(1);
+  });
 });

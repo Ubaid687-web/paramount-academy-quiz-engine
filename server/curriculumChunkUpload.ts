@@ -1,4 +1,5 @@
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
+import type { CurriculumSource } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 import { ingestPortalAdminCurriculumSource, MAX_PORTAL_ADMIN_SOURCE_BYTES } from "./curriculumSourceIntake";
 import { storageGet, storagePut } from "./storage";
@@ -19,6 +20,7 @@ type UploadState = UploadTicket & {
   nextChunkIndex: number;
   receivedBytes: number;
   lastChunk?: { index: number; sha256: string; byteLength: number };
+  completedSource?: CurriculumSource;
 };
 
 function encodeBase64Url(value: string) {
@@ -157,13 +159,19 @@ export async function appendCurriculumPdfChunk(input: { userId: number; uploadTo
 export async function completeCurriculumPdfChunkUpload(input: { userId: number; uploadToken: string; sessionCookie?: string }) {
   const ticket = parseTicket(input.uploadToken, input.userId);
   const state = await readState(ticket);
+  if (state.completedSource) {
+    if (state.completedSource.curriculumSetId !== ticket.curriculumSetId) {
+      throw new Error("The completed textbook receipt is unavailable. Contact Portal Admin before retrying this upload.");
+    }
+    return state.completedSource;
+  }
   if (state.receivedBytes !== ticket.fileSize) {
     throw new Error(`Upload is incomplete: received ${state.receivedBytes} of ${ticket.fileSize} bytes.`);
   }
   const chunks = await Promise.all(Array.from({ length: state.nextChunkIndex }, (_, index) => readStoredBytes(chunkKey(ticket.uploadId, index))));
   const fileBuffer = Buffer.concat(chunks);
   if (fileBuffer.length !== ticket.fileSize) throw new Error("The assembled textbook file is incomplete. Restart the upload.");
-  return ingestPortalAdminCurriculumSource({
+  const source = await ingestPortalAdminCurriculumSource({
     curriculumSetId: ticket.curriculumSetId,
     fileName: ticket.fileName,
     mimeType: "application/pdf",
@@ -171,4 +179,6 @@ export async function completeCurriculumPdfChunkUpload(input: { userId: number; 
     uploadedBy: input.userId,
     sessionCookie: input.sessionCookie,
   });
+  await saveState({ ...state, completedSource: source });
+  return source;
 }

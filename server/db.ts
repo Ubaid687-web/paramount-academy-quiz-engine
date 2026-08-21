@@ -1088,7 +1088,7 @@ export async function listAssessmentPatternSources(programme: ProgrammeKey) {
     eq(assessmentPatternSources.board, programme.board),
     eq(assessmentPatternSources.grade, programme.grade),
     eq(assessmentPatternSources.subject, programme.subject),
-  )).orderBy(asc(assessmentPatternSources.id));
+  )).orderBy(asc(assessmentPatternSources.sourceKind), asc(assessmentPatternSources.timelineOrder), asc(assessmentPatternSources.id));
 }
 
 export async function createAssessmentPatternSource(values: InsertAssessmentPatternSource) {
@@ -1154,7 +1154,7 @@ export async function listActiveAssessmentPatternSources(programme: ProgrammeKey
     eq(assessmentPatternSources.subject, programme.subject),
     eq(assessmentPatternSources.status, "active"),
     eq(assessmentPatternSources.extractionStatus, "extracted"),
-  )).orderBy(asc(assessmentPatternSources.id));
+  )).orderBy(asc(assessmentPatternSources.sourceKind), asc(assessmentPatternSources.timelineOrder), asc(assessmentPatternSources.id));
 }
 
 export async function listReviewedAssessmentPatternGuidance(programme: ProgrammeKey) {

@@ -6,6 +6,9 @@ const mocks = vi.hoisted(() => ({
   getAssessmentPatternSource: vi.fn(),
   saveAssessmentPatternProfile: vi.fn(),
   createProgrammeCatalogue: vi.fn(),
+  getProgrammeCatalogue: vi.fn(),
+  createCurriculumSet: vi.fn(),
+  createAssessmentPatternSource: vi.fn(),
   activateProgrammeCatalogue: vi.fn(),
   getCurriculumSet: vi.fn(),
   getCurriculumSource: vi.fn(),
@@ -24,6 +27,9 @@ vi.mock("./db", () => ({
   getAssessmentPatternSource: mocks.getAssessmentPatternSource,
   saveAssessmentPatternProfile: mocks.saveAssessmentPatternProfile,
   createProgrammeCatalogue: mocks.createProgrammeCatalogue,
+  getProgrammeCatalogue: mocks.getProgrammeCatalogue,
+  createCurriculumSet: mocks.createCurriculumSet,
+  createAssessmentPatternSource: mocks.createAssessmentPatternSource,
   activateProgrammeCatalogue: mocks.activateProgrammeCatalogue,
   getCurriculumSet: mocks.getCurriculumSet,
   getCurriculumSource: mocks.getCurriculumSource,
@@ -83,6 +89,45 @@ describe("curriculum lifecycle administration", () => {
       status: "intake_only",
       subject: "chemistry",
     });
+  });
+
+  it("normalizes programme identity at the Portal Admin boundary instead of allowing case or whitespace variants", async () => {
+    mocks.createProgrammeCatalogue.mockResolvedValue({ id: 82, board: "FBISE", grade: "9", subject: "computer_science", teacherLabel: "Computer Science", status: "intake_only" });
+    const caller = appRouter.createCaller(createContext("admin"));
+
+    await caller.curriculum.createProgramme({ board: " fbise ", grade: "9", subject: "Computer   Science", teacherLabel: "Computer Science" });
+    expect(mocks.createProgrammeCatalogue).toHaveBeenCalledWith({ board: "FBISE", grade: "9", subject: "computer_science", teacherLabel: "Computer Science", createdBy: 77 });
+  });
+
+  it("rejects a curriculum replacement relationship that crosses grade or subject boundaries", async () => {
+    mocks.getProgrammeCatalogue.mockResolvedValue({ id: 71, board: "FBISE", grade: "9", subject: "physics" });
+    mocks.getCurriculumSet.mockResolvedValue({ id: 901, board: "FBISE", grade: "10", subject: "physics" });
+    const caller = appRouter.createCaller(createContext("admin"));
+
+    await expect(caller.curriculum.createSet({ programmeId: 71, label: "Grade 9 Physics", replacesSetId: 901 })).rejects.toThrow("same board, grade, and subject");
+    expect(mocks.createCurriculumSet).not.toHaveBeenCalled();
+  });
+
+  it("requires strict file evidence and a chronological number before accepting a past-paper reference", async () => {
+    const caller = appRouter.createCaller(createContext("admin"));
+    await expect(caller.curriculum.ingestPaperPatternSource({
+      programmeId: 71,
+      sourceKind: "past_paper",
+      academicYear: "2026",
+      fileName: "annual.pdf",
+      mimeType: "application/pdf",
+      fileBuffer: Buffer.from("not a PDF").toString("base64"),
+    })).rejects.toThrow("timeline number");
+
+    await expect(caller.curriculum.ingestPaperPatternSource({
+      programmeId: 71,
+      sourceKind: "past_paper",
+      academicYear: "2026",
+      timelineOrder: 1,
+      fileName: "annual.pdf",
+      mimeType: "application/pdf",
+      fileBuffer: Buffer.from("not a PDF").toString("base64"),
+    })).rejects.toThrow("does not match the selected PDF format");
   });
 
   it("does not allow a non-admin to activate a programme", async () => {

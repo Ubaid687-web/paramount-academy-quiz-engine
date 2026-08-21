@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { createGenerationJob, updateGenerationJob, createAiGeneratedQuiz, addQuestionsToQuiz, getGenerationJob, getCachedGenerationResponse, putCachedGenerationResponse } from "./db";
 import { analyzeContent } from "./contentAnalyzer";
-import { buildDraftQualityChecks, validateGeneratedMcqs, type GeneratedMcq } from "./quizDraftValidator";
+import { buildDraftQualityChecks, hasTextbookAnchorEvidence, validateGeneratedMcqs, type GeneratedMcq } from "./quizDraftValidator";
 import type { InsertGenerationJob } from "../drizzle/schema";
 import type { FbiseSubject, ScopeType, TextbookCitationCandidate } from "./curriculumScope";
 import { buildPriorHistoryExclusion, type PriorQuestionHistory } from "./generationDiversity";
@@ -389,7 +389,7 @@ REQUIREMENTS:
     const finalMcqs = sourceContext.sourceType === "curriculum_scope"
       ? hydrateTextbookCitations(mcqs.slice(0, finalNumQuestions), citationCandidates)
       : mcqs.slice(0, finalNumQuestions);
-    const validation = validateGeneratedMcqs(finalMcqs, finalNumQuestions, sourceContext.priorQuestionHistory ?? [], citationCandidates);
+    const validation = validateGeneratedMcqs(finalMcqs, finalNumQuestions, sourceContext.priorQuestionHistory ?? [], citationCandidates, contentText);
     if (!validation.valid) {
       throw new Error(`Generated draft failed validation: ${validation.issues.join(" ")}`);
     }
@@ -516,7 +516,7 @@ export async function saveGeneratedQuizToDatabase(
         const mcq = mcqs[index];
         const citation = mcq.sourceCitation;
         const candidate = citation && citationCandidates.find((entry) => entry.citationKey === citation.citationKey);
-        if (!candidate || citation.curriculumSetId !== candidate.curriculumSetId || citation.chapterId !== candidate.chapterId || !citation.textAnchor?.trim()) {
+        if (!candidate || citation.curriculumSetId !== candidate.curriculumSetId || citation.chapterId !== candidate.chapterId || !citation.textAnchor?.trim() || !hasTextbookAnchorEvidence(job.contentText, citation.textAnchor)) {
           throw new Error(`Question ${index + 1} is missing a valid approved-textbook citation and cannot be saved.`);
         }
       }
@@ -537,7 +537,17 @@ export async function saveGeneratedQuizToDatabase(
       generationMetadata: JSON.stringify({
         difficulty,
         numQuestions: mcqs.length,
-        model: "gpt-4",
+        generationProvider: job.generationProvider,
+        fallbackUsed: Boolean(job.fallbackUsed),
+        primaryFailureType: job.primaryFailureType,
+        managedRetryAttempts: job.managedRetryAttempts,
+        geminiRetryAttempts: job.geminiRetryAttempts,
+        providerTokenUsage: {
+          inputTokens: job.providerInputTokens,
+          outputTokens: job.providerOutputTokens,
+          cachedTokens: job.providerCachedTokens,
+          totalTokens: job.providerTotalTokens,
+        },
         generatedAt: new Date().toISOString(),
         scopeType: job.scopeType,
         curriculumSetId: job.curriculumSetId,

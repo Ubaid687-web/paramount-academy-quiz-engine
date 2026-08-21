@@ -126,7 +126,10 @@ describe("Curriculum Library Release 1", () => {
     expect(screen.getByDisplayValue("Page 1 confirms the MCQ section.")).toBeTruthy();
 
     fireEvent.click(screen.getByRole("tab", { name: /^Curriculum/i }));
-    expect(screen.getByText("Add another grade or subject")).toBeTruthy();
+    expect(screen.getByText("Choose a grade, then one subject")).toBeTruthy();
+    expect(screen.getByText("Grade 9")).toBeTruthy();
+    expect(screen.getByText("Grade 10")).toBeTruthy();
+    expect(screen.getAllByRole("button", { name: /Add subject/i })).toHaveLength(2);
     expect(screen.getByText(/PDF textbooks up to 150MB are accepted/i)).toBeTruthy();
     expect(screen.queryByText("FBISE Grade 10 Chemistry — retired 2020 edition")).toBeNull();
     expect(screen.getByRole("button", { name: "Back to Quiz Centre" })).toBeTruthy();
@@ -142,7 +145,7 @@ describe("Curriculum Library Release 1", () => {
     render(<CurriculumManagement />);
 
     expect(screen.getByText("Portal Admin access required")).toBeTruthy();
-    expect(screen.queryByText("Add another grade or subject")).toBeNull();
+    expect(screen.queryByText("Choose a grade, then one subject")).toBeNull();
     expect(queryOptions.listSets.length).toBeGreaterThan(0);
     expect(queryOptions.listProgrammes.length).toBeGreaterThan(0);
     expect(queryOptions.staffDirectory.length).toBeGreaterThan(0);

@@ -41,7 +41,18 @@ function normalise(value: string) {
   return value.toLowerCase().replace(/\s+/g, " ").replace(/[^a-z0-9 ]/g, "").trim();
 }
 
-export function validateGeneratedMcqs(mcqs: unknown[], expectedCount: number, priorHistory: PriorQuestionHistory[] = [], citationCandidates: TextbookCitationCandidate[] = []) {
+export function hasTextbookAnchorEvidence(sourceText: string, textAnchor: string) {
+  const normalizedAnchor = normalise(textAnchor);
+  return Boolean(normalizedAnchor && normalise(sourceText).includes(normalizedAnchor));
+}
+
+export function validateGeneratedMcqs(
+  mcqs: unknown[],
+  expectedCount: number,
+  priorHistory: PriorQuestionHistory[] = [],
+  citationCandidates: TextbookCitationCandidate[] = [],
+  sourceText?: string,
+) {
   const issues: string[] = [];
 
   if (mcqs.length !== expectedCount) {
@@ -73,6 +84,9 @@ export function validateGeneratedMcqs(mcqs: unknown[], expectedCount: number, pr
       const matchingCandidate = citation && citationCandidates.find((candidate) => candidate.citationKey === citation.citationKey);
       if (!matchingCandidate) issues.push(`Question ${number} has no approved textbook citation.`);
       if (!citation?.textAnchor?.trim()) issues.push(`Question ${number} has no textbook text anchor.`);
+      if (citation?.textAnchor?.trim() && sourceText && !hasTextbookAnchorEvidence(sourceText, citation.textAnchor)) {
+        issues.push(`Question ${number} has a textbook text anchor that does not appear in the selected source scope.`);
+      }
     }
 
     const layout = diagnoseMcqLayout(question as GeneratedMcq, number);

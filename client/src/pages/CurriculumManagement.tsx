@@ -238,6 +238,9 @@ export default function CurriculumManagement() {
   const isPortalAdmin = user?.role === "admin";
   const requestedGrade = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("grade") : null;
   const requestedSetId = typeof window !== "undefined" ? Number(new URLSearchParams(window.location.search).get("set")) || null : null;
+  const requestedPanel = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("panel") : null;
+  const requestedReviewTask = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("task") : null;
+  const requestedPaperKind = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("paper") : null;
   const isFocusedSubjectIntake = requestedGrade !== null && new URLSearchParams(window.location.search).get("intake") === "subject";
   const utils = trpc.useUtils();
   const [selectedSetId, setSelectedSetId] = useState<number | null>(null);
@@ -246,6 +249,7 @@ export default function CurriculumManagement() {
   const [programmeGrade, setProgrammeGrade] = useState("");
   const [programmeSubject, setProgrammeSubject] = useState("");
   const [programmeTeacherLabel, setProgrammeTeacherLabel] = useState("");
+  const [showFutureGradeForm, setShowFutureGradeForm] = useState(false);
   const [setLabel, setSetLabel] = useState("");
   const [editionLabel, setEditionLabel] = useState("");
   const [replacementLabel, setReplacementLabel] = useState("");
@@ -258,6 +262,8 @@ export default function CurriculumManagement() {
   const [isUploadingPattern, setIsUploadingPattern] = useState(false);
   const [paperPatternKind, setPaperPatternKind] = useState<PaperPatternKind>("past_paper");
   const [paperPatternYear, setPaperPatternYear] = useState("");
+  const [paperPatternTimelineOrder, setPaperPatternTimelineOrder] = useState("");
+  const [paperPatternTimelineLabel, setPaperPatternTimelineLabel] = useState("");
   const [selectedPatternSourceId, setSelectedPatternSourceId] = useState<number | null>(null);
   const [paperPatternProfile, setPaperPatternProfile] = useState<PaperPatternProfileForm>(emptyPaperPatternProfile);
   const [chapterSourceId, setChapterSourceId] = useState<number | null>(null);
@@ -277,9 +283,9 @@ export default function CurriculumManagement() {
   const [styleAnchorProgrammeKey, setStyleAnchorProgrammeKey] = useState("");
   const [ocrReviewTarget, setOcrReviewTarget] = useState<{ sourceId: number; pageNumber: number } | null>(null);
   const [correctedOcrText, setCorrectedOcrText] = useState("");
-  const [activePortalPanel, setActivePortalPanel] = useState<PortalAdminPanel>(() => requestedSetId ? "review" : "home");
+  const [activePortalPanel, setActivePortalPanel] = useState<PortalAdminPanel>(() => requestedPanel === "curriculum" || requestedPanel === "review" ? requestedPanel : requestedSetId ? "review" : "home");
   const [activeCurriculumTask, setActiveCurriculumTask] = useState<CurriculumTask>("edition");
-  const [activeReviewTask, setActiveReviewTask] = useState<ReviewTask>("source");
+  const [activeReviewTask, setActiveReviewTask] = useState<ReviewTask>(() => requestedReviewTask === "pattern" ? "pattern" : "source");
   const [activeAiTask, setActiveAiTask] = useState<AiTask>("routing");
   const [resumableTextbookUpload, setResumableTextbookUpload] = useState<ResumableTextbookUpload | null>(() => loadResumableTextbookUpload());
 
@@ -385,6 +391,12 @@ export default function CurriculumManagement() {
   useEffect(() => {
     if (isFocusedSubjectIntake && requestedGrade) setProgrammeGrade(requestedGrade);
   }, [isFocusedSubjectIntake, requestedGrade]);
+
+  useEffect(() => {
+    if (requestedPanel === "curriculum" || requestedPanel === "review") setActivePortalPanel(requestedPanel);
+    if (requestedReviewTask === "pattern") setActiveReviewTask("pattern");
+    if (requestedPaperKind === "model" || requestedPaperKind === "past") setPaperPatternKind(requestedPaperKind === "model" ? "model_paper" : "past_paper");
+  }, [requestedPanel, requestedPaperKind, requestedReviewTask]);
 
   useEffect(() => {
     if (setProgrammeId === null && programmesQuery.data?.length) setSetProgrammeId(programmesQuery.data[0].id);
@@ -687,12 +699,18 @@ export default function CurriculumManagement() {
     if (!selectedSetProgramme) return toast.error("Create the matching Programme Catalogue entry before adding paper-pattern sources.");
     if (!["application/pdf", "text/plain"].includes(file.type)) return toast.error("Only text-based PDF and TXT paper sources are supported.");
     if (file.size > 30 * 1024 * 1024) return toast.error("Keep each paper source under 30MB.");
+    const timelineOrder = paperPatternKind === "past_paper" ? Number(paperPatternTimelineOrder) : undefined;
+    if (paperPatternKind === "past_paper" && (!Number.isInteger(timelineOrder) || timelineOrder! < 1)) {
+      return toast.error("Give this past paper a timeline number. Use 1 for the oldest supplied paper.");
+    }
     setIsUploadingPattern(true);
     try {
       const fileBuffer = await fileToBase64(file);
-      const created = await ingestPaperPatternSource.mutateAsync({ programmeId: selectedSetProgramme.id, sourceKind: paperPatternKind, academicYear: paperPatternYear.trim() || undefined, fileName: file.name, mimeType: file.type as "application/pdf" | "text/plain", fileBuffer });
+      const created = await ingestPaperPatternSource.mutateAsync({ programmeId: selectedSetProgramme.id, sourceKind: paperPatternKind, academicYear: paperPatternYear.trim() || undefined, timelineOrder, timelineLabel: paperPatternTimelineLabel.trim() || undefined, fileName: file.name, mimeType: file.type as "application/pdf" | "text/plain", fileBuffer });
       setSelectedPatternSourceId(created.id);
       setPaperPatternYear("");
+      setPaperPatternTimelineOrder("");
+      setPaperPatternTimelineLabel("");
       await utils.curriculum.getManagementDetails.invalidate({ curriculumSetId: details.curriculumSet.id });
       toast.success("Paper-pattern source stored as a draft. Review it, then activate it only when the file and year are correct.");
     } catch (error) {
@@ -1012,13 +1030,9 @@ export default function CurriculumManagement() {
           </div>
         </section>}
 
-        {activePortalPanel === "curriculum" && <section id="programme-catalogue" className="mb-6 scroll-mt-24" aria-label="Add another grade"><Card className="border-primary/20 bg-primary/[0.025]">
-          <CardHeader><CardTitle className="flex items-center gap-2"><BookMarked className="h-5 w-5 text-primary" />Add another grade or subject</CardTitle><CardDescription>Create one separate programme for each board, grade, and subject. Use this Portal Admin control for a future grade; it remains intake-only until its own textbook chapters are reviewed. Grade 9 never shares Grade 10 evidence.</CardDescription></CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[130px_100px_1fr_1fr_auto]"><Input aria-label="Programme board" value={programmeBoard} onChange={(event) => setProgrammeBoard(event.target.value)} placeholder="Board" /><Input aria-label="Programme grade" value={programmeGrade} onChange={(event) => setProgrammeGrade(event.target.value)} placeholder="Grade" /><Input aria-label="Programme subject identifier" value={programmeSubject} onChange={(event) => setProgrammeSubject(event.target.value)} placeholder="Subject identifier" /><Input aria-label="Programme teacher label" value={programmeTeacherLabel} onChange={(event) => setProgrammeTeacherLabel(event.target.value)} placeholder="Teacher-facing subject label" /><Button type="button" onClick={handleCreateProgramme} disabled={createProgramme.isPending}><Plus className="mr-2 h-4 w-4" />Add programme</Button></div>
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{programmes.map((programme) => { const hasActiveEdition = curriculumSets.some((set) => set.board === programme.board && set.grade === programme.grade && set.subject === programme.subject && set.status === "active"); return <div key={programme.id} className="rounded-xl border border-border/70 bg-background/75 p-4"><div className="flex items-start justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[0.12em] text-primary">{programme.board} · Grade {programme.grade}</p><p className="mt-1 font-semibold text-foreground">{programme.teacherLabel}</p><p className="mt-1 text-xs text-muted-foreground">{programme.subject}</p></div><span className={`rounded-full px-2 py-1 text-[11px] font-bold ${programme.status === "ready" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>{programme.status === "ready" ? "teacher-ready" : "intake only"}</span></div><p className="mt-3 text-xs text-muted-foreground">{hasActiveEdition ? "Reviewed active edition available" : "Requires an active reviewed edition"}</p>{programme.status === "intake_only" && <Button type="button" size="sm" variant="outline" className="mt-3" onClick={() => handleActivateProgramme(programme.id)} disabled={!hasActiveEdition || activateProgramme.isPending}>Activate programme</Button>}</div>; })}</div>
-              {!programmes.length && !programmesQuery.isLoading && <p className="rounded-lg border border-dashed border-border p-3 text-sm text-muted-foreground">No programmes exist yet. Create one above before creating its first curriculum edition.</p>}
-            </CardContent>
+        {activePortalPanel === "curriculum" && <section id="programme-catalogue" className="mb-6 scroll-mt-24" aria-label="Grade-specific subject intake"><Card className="border-primary/20 bg-primary/[0.025]">
+          <CardHeader><CardTitle className="flex items-center gap-2"><BookMarked className="h-5 w-5 text-primary" />Choose a grade, then one subject</CardTitle><CardDescription>Each grade keeps its own textbooks and paper references. Add a subject inside the correct grade; it stays intake-only until the textbook is reviewed and activated.</CardDescription></CardHeader>
+            <CardContent className="space-y-4"><div className="grid gap-3 md:grid-cols-2">{["9", "10"].map((grade) => { const gradeProgrammes = programmes.filter((programme) => programme.grade === grade); return <div key={grade} className="rounded-xl border border-border/70 bg-background/75 p-4"><div className="flex items-start justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[0.12em] text-primary">Grade {grade}</p><p className="mt-1 font-semibold text-foreground">{gradeProgrammes.length ? `${gradeProgrammes.length} subject${gradeProgrammes.length === 1 ? "" : "s"} in the library` : "No subject source yet"}</p></div><Button type="button" size="sm" onClick={() => navigate(`/curriculum?grade=${grade}&intake=subject`)}><Plus className="mr-1 h-4 w-4" />Add subject</Button></div><div className="mt-3 space-y-2">{gradeProgrammes.map((programme) => { const set = curriculumSets.filter((candidate) => candidate.board === programme.board && candidate.grade === programme.grade && candidate.subject === programme.subject).at(-1); return <div key={programme.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/60 px-3 py-2"><span className="text-sm font-medium text-foreground">{programme.teacherLabel}</span>{set ? <div className="flex gap-2"><Button type="button" size="sm" variant="outline" onClick={() => navigate(`/curriculum?set=${set.id}&panel=curriculum`)}>Textbook</Button><Button type="button" size="sm" variant="outline" onClick={() => navigate(`/curriculum?set=${set.id}&panel=review&task=pattern`)}>Papers</Button></div> : <span className="text-xs text-muted-foreground">Subject draft pending</span>}</div>; })}{!gradeProgrammes.length && <p className="rounded-lg border border-dashed border-border px-3 py-2 text-sm text-muted-foreground">Add the first subject for Grade {grade}.</p>}</div></div>; })}</div><Button type="button" variant="ghost" size="sm" onClick={() => setShowFutureGradeForm((open) => !open)}>{showFutureGradeForm ? "Hide future-grade setup" : "Set up another grade"}</Button>{showFutureGradeForm && <div className="grid gap-3 rounded-xl border border-border/70 bg-background/75 p-4 sm:grid-cols-2 xl:grid-cols-[130px_100px_1fr_1fr_auto]"><Input aria-label="Programme board" value={programmeBoard} onChange={(event) => setProgrammeBoard(event.target.value)} placeholder="Board" /><Input aria-label="Programme grade" value={programmeGrade} onChange={(event) => setProgrammeGrade(event.target.value)} placeholder="Grade" /><Input aria-label="Programme subject identifier" value={programmeSubject} onChange={(event) => setProgrammeSubject(event.target.value)} placeholder="Subject identifier" /><Input aria-label="Programme teacher label" value={programmeTeacherLabel} onChange={(event) => setProgrammeTeacherLabel(event.target.value)} placeholder="Teacher-facing subject label" /><Button type="button" onClick={handleCreateProgramme} disabled={createProgramme.isPending}><Plus className="mr-2 h-4 w-4" />Add grade subject</Button></div>}</CardContent>
         </Card></section>}
 
         {activePortalPanel === "staff" && <section id="staff-access" className="mb-6 scroll-mt-24" aria-label="Staff access">
@@ -1147,9 +1161,9 @@ export default function CurriculumManagement() {
               <Card>
                 <CardHeader><CardTitle className="flex items-center gap-2"><FileText className="h-5 w-5 text-accent" />Paper-pattern sources</CardTitle><CardDescription>Upload supplied model or past papers to guide section balance and question style. They never become question-content sources.</CardDescription></CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid gap-3 sm:grid-cols-3"><Select value={paperPatternKind} onValueChange={(value) => setPaperPatternKind(value as PaperPatternKind)}><SelectTrigger aria-label="Paper pattern source kind"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="past_paper">Past paper</SelectItem><SelectItem value="model_paper">Model paper</SelectItem></SelectContent></Select><Input aria-label="Paper pattern academic year" value={paperPatternYear} onChange={(event) => setPaperPatternYear(event.target.value)} placeholder="e.g. 2026" /><Input aria-label="Paper pattern source upload" type="file" accept=".pdf,.txt" onChange={handlePaperPatternUpload} disabled={isUploadingPattern} /></div>
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5"><Select value={paperPatternKind} onValueChange={(value) => setPaperPatternKind(value as PaperPatternKind)}><SelectTrigger aria-label="Paper pattern source kind"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="past_paper">Past paper</SelectItem><SelectItem value="model_paper">Model paper</SelectItem></SelectContent></Select><Input aria-label="Paper pattern academic year" value={paperPatternYear} onChange={(event) => setPaperPatternYear(event.target.value)} placeholder="e.g. 2026" />{paperPatternKind === "past_paper" && <Input aria-label="Past paper timeline order" type="number" min="1" value={paperPatternTimelineOrder} onChange={(event) => setPaperPatternTimelineOrder(event.target.value)} placeholder="Timeline: 1 = oldest" />}<Input aria-label="Paper pattern timeline label" value={paperPatternTimelineLabel} onChange={(event) => setPaperPatternTimelineLabel(event.target.value)} placeholder="Optional: morning / evening" /><Input aria-label="Paper pattern source upload" type="file" accept=".pdf,.txt" onChange={handlePaperPatternUpload} disabled={isUploadingPattern} /></div>
                   {isUploadingPattern && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Storing and extracting paper text…</p>}
-                  <div className="space-y-2">{details.paperPatternSources.length ? details.paperPatternSources.map((source) => <div key={source.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/60 p-3"><div className="min-w-0"><p className="truncate text-sm font-semibold text-foreground">{source.originalFileName}</p><p className="mt-1 text-xs text-muted-foreground">{source.sourceKind === "model_paper" ? "Model paper" : "Past paper"}{source.academicYear ? ` · ${source.academicYear}` : ""} · extraction: {source.extractionStatus}</p></div><div className="flex items-center gap-2"><span className={`rounded-full px-2 py-1 text-xs font-bold ${source.status === "active" ? "bg-emerald-100 text-emerald-800" : source.status === "draft" ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-700"}`}>{source.status}</span>{source.status === "draft" && source.extractionStatus === "extracted" && <Button type="button" size="sm" variant="outline" onClick={() => handleActivatePaperPattern(source.id)} disabled={activatePaperPatternSource.isPending}>Activate</Button>}</div></div>) : <p className="rounded-lg border border-dashed border-border p-3 text-sm text-muted-foreground">No paper-pattern source is attached to this subject yet.</p>}</div>
+                  <div className="space-y-2">{details.paperPatternSources.length ? details.paperPatternSources.map((source) => <div key={source.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/60 p-3"><div className="min-w-0"><p className="truncate text-sm font-semibold text-foreground">{source.originalFileName}</p><p className="mt-1 text-xs text-muted-foreground">{source.sourceKind === "model_paper" ? "Model paper" : `Past paper ${source.timelineOrder ? `· timeline ${source.timelineOrder}` : ""}`}{source.academicYear ? ` · ${source.academicYear}` : ""}{source.timelineLabel ? ` · ${source.timelineLabel}` : ""} · extraction: {source.extractionStatus}</p></div><div className="flex items-center gap-2"><span className={`rounded-full px-2 py-1 text-xs font-bold ${source.status === "active" ? "bg-emerald-100 text-emerald-800" : source.status === "draft" ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-700"}`}>{source.status}</span>{source.status === "draft" && source.extractionStatus === "extracted" && <Button type="button" size="sm" variant="outline" onClick={() => handleActivatePaperPattern(source.id)} disabled={activatePaperPatternSource.isPending}>Activate</Button>}</div></div>) : <p className="rounded-lg border border-dashed border-border p-3 text-sm text-muted-foreground">No paper-pattern source is attached to this subject yet.</p>}</div>
                 </CardContent>
               </Card>
 

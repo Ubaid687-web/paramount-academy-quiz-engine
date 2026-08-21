@@ -725,3 +725,10 @@
 - [x] Inspect protected upload session expiry, acknowledged-byte speed calculation, and browser lifecycle handling behind the reported background-tab failure.
 - [x] Preserve resumable client metadata and offer safe foreground recovery from the last server-acknowledged chunk when the tab returns.
 - [x] Add lifecycle and measured-speed regressions, validate, checkpoint, and report the mobile upload-resume enhancement.
+
+## Phase 125: Evidence-Led Security, Source Integrity, and Curriculum Flow Audit
+- [x] Record a version-pinned evidence register covering security, source governance, model routing, reliability, and Portal Admin workflow findings.
+- [x] Harden paper-pattern intake, chunk-upload completion, programme normalization, and edition lineage against verified integrity defects.
+- [x] Strengthen source-citation evidence and generated-paper provider provenance without changing the approved model-routing policy.
+- [x] Repair signed-out draft-library access and reorganize curriculum intake as Grade 9/10 → subject → textbook/model/past-paper source actions.
+- [x] Add ordered past-paper metadata, migrate safely, add regressions, validate the full system, checkpoint, and report the audit release.

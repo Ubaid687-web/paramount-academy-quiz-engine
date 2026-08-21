@@ -7,6 +7,7 @@ const quizzesQuery = vi.fn();
 const programmesQuery = vi.fn();
 const quizQueryOptions = vi.fn();
 const deleteMutation = vi.fn();
+const navigateMock = vi.fn();
 let authUser: { role: "admin" | "teacher" | "user" } | null = null;
 
 const grade10Programmes = [
@@ -30,7 +31,7 @@ vi.mock("@/lib/trpc", () => ({
 }));
 
 vi.mock("wouter", () => ({
-  useLocation: () => ["/", vi.fn()],
+  useLocation: () => ["/", navigateMock],
   Link: ({ href, children, ...props }: { href: string; children: React.ReactNode }) => <a href={href} {...props}>{children}</a>,
 }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
@@ -43,6 +44,7 @@ describe("Quiz Centre entry experience", () => {
     programmesQuery.mockReset();
     quizQueryOptions.mockReset();
     deleteMutation.mockReset();
+    navigateMock.mockReset();
     authUser = null;
   });
 
@@ -64,6 +66,7 @@ describe("Quiz Centre entry experience", () => {
 
   it("defers the draft-library request until a ready class is selected", () => {
     setReadyGrade10();
+    authUser = { role: "teacher" };
     render(<QuizList />);
     expect(quizQueryOptions.mock.calls[0]?.[1]).toMatchObject({ enabled: false, staleTime: 300000, refetchOnWindowFocus: false });
     fireEvent.click(screen.getByRole("button", { name: /Open draft library/i }));
@@ -73,6 +76,7 @@ describe("Quiz Centre entry experience", () => {
   it("shows three accessible skeleton draft cards while the deferred library request is loading", () => {
     programmesQuery.mockReturnValue({ data: grade10Programmes, isLoading: false, error: null });
     quizzesQuery.mockReturnValue({ data: undefined, isLoading: true, error: null, refetch: vi.fn() });
+    authUser = { role: "teacher" };
     render(<QuizList />);
     fireEvent.click(screen.getByRole("button", { name: /Open draft library/i }));
     expect(screen.getByRole("status", { name: /loading recent mcq drafts/i }).getAttribute("aria-busy")).toBe("true");
@@ -121,6 +125,14 @@ describe("Quiz Centre entry experience", () => {
     setReadyGrade10();
     render(<QuizList />);
     expect(screen.getByRole("link", { name: "Staff sign in" }).getAttribute("href")).toBe("/staff-sign-in");
+  });
+
+  it("routes a signed-out draft-library request to staff sign-in without enabling the protected query", () => {
+    setReadyGrade10();
+    render(<QuizList />);
+    fireEvent.click(screen.getByRole("button", { name: /staff sign in to open drafts/i }));
+    expect(navigateMock).toHaveBeenCalledWith("/staff-sign-in");
+    expect(quizQueryOptions.mock.calls.at(-1)?.[1]).toMatchObject({ enabled: false });
   });
 
   it("shows the Curriculum Library navigation entry only to a signed-in Portal Admin", () => {

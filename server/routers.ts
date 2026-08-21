@@ -21,6 +21,20 @@ const programmeKeySchema = z.object({
   subject: z.string().trim().min(2).max(100),
 });
 
+function normalizeProgrammeKey(input: z.infer<typeof programmeKeySchema>) {
+  const subject = input.subject
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+  if (subject.length < 2) throw new Error("Enter a clear subject name using letters or numbers.");
+  return {
+    board: input.board.trim().toLocaleUpperCase(),
+    grade: input.grade.trim(),
+    subject,
+  };
+}
+
 const printableGenerationInputSchema = z.object({
   paperType: z.enum(["short", "long"]),
   title: z.string().trim().min(3).max(160),
@@ -438,7 +452,8 @@ export const appRouter = router({
       .input(programmeKeySchema.extend({ teacherLabel: z.string().trim().min(2).max(255) }))
       .mutation(async ({ ctx, input }) => {
         const { createProgrammeCatalogue } = await import("./db");
-        return createProgrammeCatalogue({ ...input, createdBy: ctx.user.id });
+        const programme = normalizeProgrammeKey(input);
+        return createProgrammeCatalogue({ ...programme, teacherLabel: input.teacherLabel.trim(), createdBy: ctx.user.id });
       }),
 
     activateProgramme: adminProcedure
@@ -502,6 +517,13 @@ export const appRouter = router({
         const { createCurriculumSet, getProgrammeCatalogue } = await import("./db");
         const programme = await getProgrammeCatalogue(input.programmeId);
         if (!programme) throw new Error("Select a Programme Catalogue entry before creating its curriculum edition.");
+        if (input.replacesSetId) {
+          const { getCurriculumSet } = await import("./db");
+          const replacedSet = await getCurriculumSet(input.replacesSetId);
+          if (!replacedSet || replacedSet.board !== programme.board || replacedSet.grade !== programme.grade || replacedSet.subject !== programme.subject) {
+            throw new Error("A replacement edition must belong to the same board, grade, and subject.");
+          }
+        }
         return createCurriculumSet({
           board: programme.board,
           grade: programme.grade,
@@ -620,16 +642,22 @@ export const appRouter = router({
         programmeId: z.number().int().positive(),
         sourceKind: z.enum(["model_paper", "past_paper"]),
         academicYear: z.string().min(4).max(20).optional(),
+        timelineOrder: z.number().int().positive().max(10_000).optional(),
+        timelineLabel: z.string().trim().min(1).max(255).optional(),
         fileName: z.string().min(1).max(255),
         mimeType: z.enum(["application/pdf", "text/plain"]),
-        fileBuffer: z.string().min(1),
+        fileBuffer: z.string().min(4).max(42_000_000),
       }))
       .mutation(async ({ ctx, input }) => {
         const { createAssessmentPatternSource, getProgrammeCatalogue } = await import("./db");
-        const { extractCurriculumSourceText } = await import("./curriculumIngestion");
+        const { extractCurriculumSourceText, validateCurriculumSourceFileSignature } = await import("./curriculumIngestion");
         const { storagePut } = await import("./storage");
-        const fileBuffer = Buffer.from(input.fileBuffer, "base64");
+        if (input.sourceKind === "past_paper" && !input.timelineOrder) {
+          throw new Error("Give each past paper a timeline number. Use 1 for the oldest supplied paper.");
+        }
+        const fileBuffer = decodeStrictBase64(input.fileBuffer, "paper-pattern source");
         if (!fileBuffer.length || fileBuffer.length > 30 * 1024 * 1024) throw new Error("Paper-pattern source must be between 1 byte and 30MB.");
+        validateCurriculumSourceFileSignature(fileBuffer, input.mimeType);
         const programme = await getProgrammeCatalogue(input.programmeId);
         if (!programme) throw new Error("Select a Programme Catalogue entry before uploading its paper-pattern source.");
         const extracted = await extractCurriculumSourceText({ fileBuffer, fileName: input.fileName, mimeType: input.mimeType });
@@ -644,6 +672,8 @@ export const appRouter = router({
           subject: programme.subject,
           sourceKind: input.sourceKind,
           academicYear: input.academicYear || null,
+          timelineOrder: input.sourceKind === "past_paper" ? input.timelineOrder! : null,
+          timelineLabel: input.timelineLabel || null,
           storageKey: stored.key,
           storageUrl: stored.url,
           originalFileName: input.fileName,

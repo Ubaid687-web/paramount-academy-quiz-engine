@@ -261,6 +261,8 @@ export const assessmentPatternSources = mysqlTable("assessmentPatternSources", {
   subject: varchar("subject", { length: 100 }).notNull(),
   sourceKind: mysqlEnum("sourceKind", ["model_paper", "past_paper"]).notNull(),
   academicYear: varchar("academicYear", { length: 20 }),
+  timelineOrder: int("timelineOrder"), // Required for past papers by the application; lowest value is the oldest supplied reference.
+  timelineLabel: varchar("timelineLabel", { length: 255 }), // Optional supplied session, shift, or paper label; never inferred.
   storageKey: varchar("storageKey", { length: 512 }).notNull(),
   storageUrl: text("storageUrl").notNull(),
   originalFileName: varchar("originalFileName", { length: 255 }).notNull(),
@@ -272,7 +274,9 @@ export const assessmentPatternSources = mysqlTable("assessmentPatternSources", {
   activatedAt: timestamp("activatedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+}, (table) => [
+  uniqueIndex("assessmentPatternSources_programme_timeline_unique").on(table.board, table.grade, table.subject, table.timelineOrder),
+]);
 
 export type AssessmentPatternSource = typeof assessmentPatternSources.$inferSelect;
 export type InsertAssessmentPatternSource = typeof assessmentPatternSources.$inferInsert;

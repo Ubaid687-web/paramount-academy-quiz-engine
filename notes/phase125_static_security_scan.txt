@@ -1,0 +1,33 @@
+## PUBLIC PROCEDURES
+7:import { adminProcedure, publicProcedure, protectedProcedure, router, teacherProcedure } from "./_core/trpc";
+200:    me: publicProcedure.query(opts => opts.ctx.user),
+201:    logout: publicProcedure.mutation(({ ctx }) => {
+432:    listReadyProgrammes: publicProcedure.query(async () => {
+877:    getActiveScopeCatalog: publicProcedure
+927:    getAvailability: publicProcedure
+## DIRECT BASE64 DECODING
+server/_core/imageGeneration.ts:81:  const buffer = Buffer.from(base64Data, "base64");
+server/pdfUpload.test.ts:108:      fileBuffer: Buffer.from("not a PDF").toString("base64"),
+server/routers.ts:66:  return Buffer.from(normalized, "base64");
+server/routers.ts:631:        const fileBuffer = Buffer.from(input.fileBuffer, "base64");
+server/curriculumChunkUpload.ts:25:  return Buffer.from(value).toString("base64url");
+server/curriculumChunkUpload.ts:68:    ticket = JSON.parse(Buffer.from(encodedPayload, "base64url").toString("utf8")) as UploadTicket;
+## STALE MODEL LABELS
+server/aiAgent.ts:540:        model: "gpt-4",
+server/geminiCredential.test.ts:25:        model: "gemini-3.6-flash",
+server/generationProvider.test.ts:51:    fetchMock.mockResolvedValue(new Response(JSON.stringify({ created: "2026-08-19T00:00:00Z", model: "gemini-3.6-flash", steps: [{ type: "model_output", content: [{ type: "text", text: '{"mcqs":[]}' }] }], usage: { total_input_tokens: 100, total_output_tokens: 20, total_cached_tokens: 60, total_tokens: 120 } }), { status: 200 }));
+server/generationProvider.test.ts:76:    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ created: "2026-08-19T00:00:00Z", model: "gemini-3.6-flash", steps: [{ type: "model_output", content: [{ type: "text", text: '{"mcqs":[]}' }] }] }), { status: 200 }));
+server/generationProvider.ts:43:const GEMINI_MODEL = "gemini-3.6-flash";
+## SOURCE SIGNATURE VALIDATION CALLS
+server/curriculumIngestion.ts:8:export function validateCurriculumSourceFileSignature(fileBuffer: Buffer, mimeType: SupportedCurriculumMimeType) {
+server/curriculumIngestion.test.ts:2:import { extractCurriculumSourceText, isOcrRequiredMimeType, validateCurriculumSourceFileSignature } from "./curriculumIngestion";
+server/curriculumIngestion.test.ts:24:    expect(() => validateCurriculumSourceFileSignature(Buffer.from("%PDF-1.7"), "application/pdf")).not.toThrow();
+server/curriculumIngestion.test.ts:25:    expect(() => validateCurriculumSourceFileSignature(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), "image/png")).not.toThrow();
+server/curriculumIngestion.test.ts:26:    expect(() => validateCurriculumSourceFileSignature(Buffer.from("not a PDF"), "application/pdf")).toThrow("does not match the selected PDF format");
+server/curriculumIngestion.test.ts:27:    expect(() => validateCurriculumSourceFileSignature(Buffer.from("not an image"), "image/jpeg")).toThrow("does not match the selected JPEG format");
+server/curriculumIngestion.test.ts:28:    expect(() => validateCurriculumSourceFileSignature(Buffer.from([0xff, 0x00, 0x61]), "text/plain")).toThrow("not valid UTF-8 text");
+server/curriculumSourceIntake.ts:10:  validateCurriculumSourceFileSignature,
+server/curriculumSourceIntake.ts:37:  validateCurriculumSourceFileSignature(input.fileBuffer, input.mimeType);
+server/curriculumSourceIntake.test.ts:8:  validateCurriculumSourceFileSignature: vi.fn(),
+server/curriculumSourceIntake.test.ts:22:  validateCurriculumSourceFileSignature: mocks.validateCurriculumSourceFileSignature,
+server/curriculumSourceIntake.test.ts:60:    expect(mocks.validateCurriculumSourceFileSignature).toHaveBeenCalledWith(expect.any(Buffer), "application/pdf");
