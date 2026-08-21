@@ -700,3 +700,8 @@
 - [x] Capture the production route, payload, and response evidence behind the Portal Admin large-PDF “Service Unavailable” failure.
 - [x] Remove the client-side raw JSON parsing failure and give a precise, safe message when an upstream response is unavailable.
 - [x] Replace only the proven incompatible transport boundary, add end-to-end regressions, validate, checkpoint, and report the repair.
+
+## Phase 120: Truthful Chunk-Upload Progress
+- [x] Inspect the acknowledged chunk response and current Portal Admin upload state before adding visual progress.
+- [x] Show an accessible percentage bar and status based only on server-acknowledged upload bytes, without simulated completion.
+- [x] Add regressions, validate, checkpoint, and report the chunk-upload progress enhancement.

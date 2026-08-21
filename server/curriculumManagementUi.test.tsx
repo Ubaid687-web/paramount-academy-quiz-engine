@@ -1,6 +1,6 @@
 import React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import CurriculumManagement from "../client/src/pages/CurriculumManagement";
 
 const noOpMutation = { mutateAsync: vi.fn(), isPending: false };
@@ -76,7 +76,7 @@ vi.mock("@/_core/hooks/useAuth", () => ({ useAuth: () => ({ user: { id: 1, role:
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 describe("Curriculum Library Release 1", () => {
-  afterEach(() => { cleanup(); invalidate.mockReset(); queryOptions.listSets.length = 0; queryOptions.listProgrammes.length = 0; queryOptions.staffDirectory.length = 0; authMock.role = "admin"; window.history.pushState({}, "", "/"); });
+  afterEach(() => { cleanup(); invalidate.mockReset(); noOpMutation.mutateAsync.mockReset(); queryOptions.listSets.length = 0; queryOptions.listProgrammes.length = 0; queryOptions.staffDirectory.length = 0; authMock.role = "admin"; window.history.pushState({}, "", "/"); });
 
   it("shows one focused Portal Admin task at a time while preserving every administrative workflow", async () => {
     render(<CurriculumManagement />);
@@ -172,6 +172,37 @@ describe("Curriculum Library Release 1", () => {
     expect(screen.getByText(/PDF textbooks up to 150MB are accepted/i)).toBeTruthy();
     expect(screen.getByText(/protected small chunks/i)).toBeTruthy();
     expect(screen.queryByText(/transfer directly without browser base64 conversion/i)).toBeNull();
+  });
+
+  it("shows only server-acknowledged chunk percentage while a large Grade 9 textbook is uploading", async () => {
+    window.history.pushState({}, "", "/curriculum?grade=9&intake=subject");
+    let acknowledgeChunk!: (value: { receivedBytes: number; fileSize: number; complete: boolean }) => void;
+    let finishUpload!: (value: { id: number; extractedText: string; extractionStatus: "extracted" }) => void;
+    const chunkAcknowledgement = new Promise<{ receivedBytes: number; fileSize: number; complete: boolean }>((resolve) => { acknowledgeChunk = resolve; });
+    const completion = new Promise<{ id: number; extractedText: string; extractionStatus: "extracted" }>((resolve) => { finishUpload = resolve; });
+    noOpMutation.mutateAsync.mockImplementation((input: Record<string, unknown>) => {
+      if ("fileSize" in input) return Promise.resolve({ uploadToken: "test-token", chunkBytes: Number(input.fileSize) });
+      if ("chunkIndex" in input) return chunkAcknowledgement;
+      if ("uploadToken" in input) return completion;
+      return Promise.resolve(undefined);
+    });
+    render(<CurriculumManagement />);
+
+    fireEvent.change(screen.getByLabelText("Subject name"), { target: { value: "Chemistry" } });
+    fireEvent.click(screen.getByRole("button", { name: "Continue to textbook upload" }));
+    const file = new File([new Uint8Array((30 * 1024 * 1024) + 1)], "grade-9-chemistry.pdf", { type: "application/pdf" });
+    fireEvent.change(await screen.findByLabelText("Focused curriculum source upload"), { target: { files: [file] } });
+
+    expect(await screen.findByTestId("chunk-upload-progress")).toBeTruthy();
+    expect(screen.getByRole("progressbar", { name: "Textbook upload progress" }).getAttribute("aria-valuenow")).toBe("0");
+    expect(screen.getByTestId("chunk-upload-percent").textContent).toBe("0%");
+
+    await act(async () => { acknowledgeChunk({ receivedBytes: file.size, fileSize: file.size, complete: true }); });
+    expect(await screen.findByText("Final file check")).toBeTruthy();
+    expect(screen.getByRole("progressbar", { name: "Textbook upload progress" }).getAttribute("aria-valuenow")).toBe("100");
+    expect(screen.getByTestId("chunk-upload-percent").textContent).toBe("100%");
+
+    await act(async () => { finishUpload({ id: 20, extractedText: "Reviewed source text", extractionStatus: "extracted" }); });
   });
 
   it("offers approved photographed textbook formats in the controlled upload control", () => {
