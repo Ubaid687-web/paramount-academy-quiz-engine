@@ -710,3 +710,8 @@
 - [x] Inspect the acknowledged-byte progress state and define measured speed and remaining-time calculations without simulated values.
 - [x] Show current acknowledged upload speed and an estimated remaining time only after enough real transfer data is available.
 - [x] Add regressions, validate, checkpoint, and report the upload-metrics enhancement.
+
+## Phase 122: Protected Upload Pause and Resume
+- [x] Inspect the acknowledged chunk sequencing, retry behavior, and session lifetime before adding pause and resume controls.
+- [x] Let Portal Admin pause before the next protected chunk, preserve the server-acknowledged state, and resume safely from that point.
+- [x] Add pause-resume regressions, validate, checkpoint, and report the protected-upload enhancement.

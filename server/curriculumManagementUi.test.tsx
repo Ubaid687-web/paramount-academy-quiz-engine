@@ -219,6 +219,40 @@ describe("Curriculum Library Release 1", () => {
     await act(async () => { finishUpload({ id: 20, extractedText: "Reviewed source text", extractionStatus: "extracted" }); });
   });
 
+  it("pauses after the current acknowledged chunk and resumes the protected Grade 9 textbook upload", async () => {
+    window.history.pushState({}, "", "/curriculum?grade=9&intake=subject");
+    const acknowledgements: Array<(value: { receivedBytes: number; fileSize: number; complete: boolean }) => void> = [];
+    let finishUpload!: (value: { id: number; extractedText: string; extractionStatus: "extracted" }) => void;
+    const completion = new Promise<{ id: number; extractedText: string; extractionStatus: "extracted" }>((resolve) => { finishUpload = resolve; });
+    noOpMutation.mutateAsync.mockImplementation((input: Record<string, unknown>) => {
+      if ("fileSize" in input) return Promise.resolve({ uploadToken: "test-token", chunkBytes: Math.ceil(Number(input.fileSize) / 2) });
+      if ("chunkIndex" in input) return new Promise((resolve) => { acknowledgements.push(resolve); });
+      if ("uploadToken" in input) return completion;
+      return Promise.resolve(undefined);
+    });
+    render(<CurriculumManagement />);
+
+    fireEvent.change(screen.getByLabelText("Subject name"), { target: { value: "Chemistry" } });
+    fireEvent.click(screen.getByRole("button", { name: "Continue to textbook upload" }));
+    const file = new File([new Uint8Array((30 * 1024 * 1024) + 1)], "grade-9-chemistry.pdf", { type: "application/pdf" });
+    fireEvent.change(await screen.findByLabelText("Focused curriculum source upload"), { target: { files: [file] } });
+
+    await waitFor(() => expect(acknowledgements).toHaveLength(1));
+    fireEvent.click(screen.getByRole("button", { name: "Pause upload" }));
+    expect(screen.getByText("Pause requested — finishing current chunk")).toBeTruthy();
+
+    const chunkBytes = Math.ceil(file.size / 2);
+    await act(async () => { acknowledgements[0]({ receivedBytes: chunkBytes, fileSize: file.size, complete: false }); });
+    expect(await screen.findByText("Upload paused")).toBeTruthy();
+    expect(acknowledgements).toHaveLength(1);
+    expect(screen.getByRole("progressbar", { name: "Textbook upload progress" }).getAttribute("aria-valuenow")).toBe("50");
+
+    fireEvent.click(screen.getByRole("button", { name: "Resume upload" }));
+    await waitFor(() => expect(acknowledgements).toHaveLength(2));
+    await act(async () => { acknowledgements[1]({ receivedBytes: file.size, fileSize: file.size, complete: true }); });
+    await act(async () => { finishUpload({ id: 21, extractedText: "Reviewed source text", extractionStatus: "extracted" }); });
+  });
+
   it("offers approved photographed textbook formats in the controlled upload control", () => {
     render(<CurriculumManagement />);
 

@@ -56,7 +56,7 @@ const TRANSIENT_UPLOAD_RETRY_ATTEMPTS = 3;
 type ChunkUploadProgress = {
   receivedBytes: number;
   totalBytes: number;
-  phase: "preparing" | "uploading" | "finalizing";
+  phase: "preparing" | "uploading" | "pause_requested" | "paused" | "finalizing";
   lastAcknowledgedAtMs?: number;
   speedBytesPerSecond?: number;
 };
@@ -117,11 +117,15 @@ function formatRemainingTime(seconds?: number) {
   return `About ${minutes} minute${minutes === 1 ? "" : "s"}`;
 }
 
-function ChunkUploadProgressBar({ progress }: { progress: ChunkUploadProgress | null }) {
+function ChunkUploadProgressBar({ progress, onPause, onResume }: { progress: ChunkUploadProgress | null; onPause?: () => void; onResume?: () => void }) {
   if (!progress) return null;
   const percent = Math.min(100, Math.max(0, Math.round((progress.receivedBytes / progress.totalBytes) * 100)));
   const phaseLabel = progress.phase === "preparing"
     ? "Opening protected upload"
+    : progress.phase === "pause_requested"
+      ? "Pause requested — finishing current chunk"
+      : progress.phase === "paused"
+        ? "Upload paused"
     : progress.phase === "finalizing"
       ? "Final file check"
       : "Uploading protected chunks";
@@ -144,6 +148,9 @@ function ChunkUploadProgressBar({ progress }: { progress: ChunkUploadProgress | 
         <div className="rounded-lg bg-background/70 px-2.5 py-2"><span className="block text-muted-foreground">Upload speed</span><strong data-testid="chunk-upload-speed" className="mt-0.5 block text-foreground">{formatUploadSpeed(progress.speedBytesPerSecond)}</strong></div>
         <div className="rounded-lg bg-background/70 px-2.5 py-2"><span className="block text-muted-foreground">Time remaining</span><strong data-testid="chunk-upload-remaining" className="mt-0.5 block text-foreground">{progress.phase === "finalizing" ? "Checking final file" : formatRemainingTime(estimatedSeconds)}</strong></div>
       </div>
+      {progress.phase === "uploading" && onPause && <Button type="button" variant="outline" size="sm" className="mt-3 w-full" onClick={onPause}>Pause upload</Button>}
+      {progress.phase === "pause_requested" && <Button type="button" variant="outline" size="sm" className="mt-3 w-full" disabled>Pausing after this chunk…</Button>}
+      {progress.phase === "paused" && onResume && <Button type="button" size="sm" className="mt-3 w-full" onClick={onResume}>Resume upload</Button>}
     </div>
   );
 }
@@ -168,6 +175,7 @@ export default function CurriculumManagement() {
   const [replacementEditionLabel, setReplacementEditionLabel] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [chunkUploadProgress, setChunkUploadProgress] = useState<ChunkUploadProgress | null>(null);
+  const uploadPauseControllerRef = React.useRef<{ pauseRequested: boolean; resume?: () => void } | null>(null);
   const [isUploadingPattern, setIsUploadingPattern] = useState(false);
   const [paperPatternKind, setPaperPatternKind] = useState<PaperPatternKind>("past_paper");
   const [paperPatternYear, setPaperPatternYear] = useState("");
@@ -236,6 +244,21 @@ export default function CurriculumManagement() {
   const generationHistoryQuery = trpc.generation.listHistory.useQuery({ limit: 30 }, { enabled: isPortalAdmin });
   const setGeminiFallbackEnabled = trpc.generation.setGeminiFallbackEnabled.useMutation();
   const styleAnchorProgramme = (programmesQuery.data ?? []).find((programme) => `${programme.board}|${programme.grade}|${programme.subject}` === styleAnchorProgrammeKey);
+
+  const requestUploadPause = () => {
+    if (!uploadPauseControllerRef.current) return;
+    uploadPauseControllerRef.current.pauseRequested = true;
+    setChunkUploadProgress((current) => current && current.phase === "uploading" ? { ...current, phase: "pause_requested" } : current);
+  };
+
+  const resumeUpload = () => {
+    const controller = uploadPauseControllerRef.current;
+    if (!controller) return;
+    controller.pauseRequested = false;
+    controller.resume?.();
+    controller.resume = undefined;
+    setChunkUploadProgress((current) => current ? { ...current, phase: "uploading", lastAcknowledgedAtMs: undefined, speedBytesPerSecond: undefined } : current);
+  };
   const styleAnchorQuery = trpc.generation.getStyleAnchor.useQuery(
     { programme: styleAnchorProgramme ? { board: styleAnchorProgramme.board, grade: styleAnchorProgramme.grade, subject: styleAnchorProgramme.subject } : { board: "FBISE", grade: "10", subject: "physics" } },
     { enabled: isPortalAdmin && Boolean(styleAnchorProgramme) },
@@ -432,6 +455,7 @@ export default function CurriculumManagement() {
     try {
       const source = file.type === "application/pdf" && file.size > DIRECT_PDF_UPLOAD_THRESHOLD_BYTES
         ? await (async () => {
+          uploadPauseControllerRef.current = { pauseRequested: false };
           setChunkUploadProgress({ receivedBytes: 0, totalBytes: file.size, phase: "preparing" });
           const prepared = await retryTemporaryUploadRequest(() => prepareLargePdfUpload.mutateAsync({ curriculumSetId: selectedSetId, fileName: file.name, fileSize: file.size }));
           setChunkUploadProgress({ receivedBytes: 0, totalBytes: file.size, phase: "uploading" });
@@ -455,6 +479,12 @@ export default function CurriculumManagement() {
                 speedBytesPerSecond,
               };
             });
+            if (uploadPauseControllerRef.current?.pauseRequested) {
+              setChunkUploadProgress((current) => current ? { ...current, phase: "paused" } : current);
+              await new Promise<void>((resolve) => {
+                if (uploadPauseControllerRef.current) uploadPauseControllerRef.current.resume = resolve;
+              });
+            }
           }
           return retryTemporaryUploadRequest(() => completeLargePdfUpload.mutateAsync({ uploadToken: prepared.uploadToken }));
         })()
@@ -474,6 +504,8 @@ export default function CurriculumManagement() {
     } catch (error) {
       toast.error(sourceUploadErrorMessage(error));
     } finally {
+      uploadPauseControllerRef.current?.resume?.();
+      uploadPauseControllerRef.current = null;
       setIsUploading(false);
       setChunkUploadProgress(null);
       event.target.value = "";
@@ -784,7 +816,7 @@ export default function CurriculumManagement() {
 
             {focusedStep === 1 && <Card className="border-primary/15"><CardHeader><CardTitle>What subject are you adding?</CardTitle><CardDescription>Enter one clear subject name. Grade and board are already set to Grade {requestedGrade} and FBISE.</CardDescription></CardHeader><CardContent className="space-y-4"><div><Label htmlFor="focused-subject-name">Subject name</Label><Input id="focused-subject-name" value={programmeSubject} onChange={(event) => setProgrammeSubject(event.target.value)} placeholder="e.g. Biology" autoFocus /></div><Button type="button" className="w-full" onClick={handleCreateFocusedProgramme} disabled={createProgramme.isPending || createSet.isPending}>{createProgramme.isPending || createSet.isPending ? "Creating subject…" : "Continue to textbook upload"}</Button></CardContent></Card>}
 
-            {focusedStep === 2 && <Card className="border-primary/15"><CardHeader><CardTitle className="flex items-center gap-2"><Upload className="h-5 w-5 text-primary" />Upload the textbook</CardTitle><CardDescription>Upload the official book as a PDF, TXT, JPG, PNG, or WEBP file. Scanned pages are queued for Urdu-and-English OCR before review.</CardDescription></CardHeader><CardContent className="space-y-4"><p className="text-sm text-muted-foreground">PDF textbooks up to 150MB are accepted. PDFs above 30MB transfer in protected small chunks that remain compatible with the published site.</p><Input aria-label="Focused curriculum source upload" type="file" accept=".pdf,.txt,.jpg,.jpeg,.png,.webp" onChange={handleSourceUpload} disabled={isUploading} />{chunkUploadProgress ? <ChunkUploadProgressBar progress={chunkUploadProgress} /> : isUploading && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Storing the textbook and preparing extraction…</p>}<p className="text-xs leading-5 text-muted-foreground">Scanned PDFs and photographed pages are read in small Urdu-and-English OCR batches. Weak pages remain blocked for Portal Admin review before activation.</p></CardContent></Card>}
+            {focusedStep === 2 && <Card className="border-primary/15"><CardHeader><CardTitle className="flex items-center gap-2"><Upload className="h-5 w-5 text-primary" />Upload the textbook</CardTitle><CardDescription>Upload the official book as a PDF, TXT, JPG, PNG, or WEBP file. Scanned pages are queued for Urdu-and-English OCR before review.</CardDescription></CardHeader><CardContent className="space-y-4"><p className="text-sm text-muted-foreground">PDF textbooks up to 150MB are accepted. PDFs above 30MB transfer in protected small chunks that remain compatible with the published site.</p><Input aria-label="Focused curriculum source upload" type="file" accept=".pdf,.txt,.jpg,.jpeg,.png,.webp" onChange={handleSourceUpload} disabled={isUploading} />{chunkUploadProgress ? <ChunkUploadProgressBar progress={chunkUploadProgress} onPause={requestUploadPause} onResume={resumeUpload} /> : isUploading && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Storing the textbook and preparing extraction…</p>}<p className="text-xs leading-5 text-muted-foreground">Scanned PDFs and photographed pages are read in small Urdu-and-English OCR batches. Weak pages remain blocked for Portal Admin review before activation.</p></CardContent></Card>}
 
             {focusedStep === 3 && <Card className={hasPendingTextbookOcr ? "border-primary/30 bg-primary/[0.04]" : hasFailedTextbookOcr || !details?.readiness.ocrReviewComplete ? "border-amber-300/70 bg-amber-50/40" : "border-emerald-300/60 bg-emerald-50/40"}><CardHeader><CardTitle>{hasPendingTextbookOcr ? "Textbook OCR in progress" : hasFailedTextbookOcr ? "Textbook extraction needs attention" : details?.readiness.ocrReviewComplete ? "Textbook intake complete" : "Textbook quality review"}</CardTitle><CardDescription>{hasPendingTextbookOcr ? "The stored scan is being read in small batches. This page refreshes automatically; chapter review remains unavailable until extraction finishes." : hasFailedTextbookOcr ? "Extraction did not complete. Open the detailed review workspace to see the recorded failure before re-uploading or correcting the source." : details?.readiness.ocrReviewComplete ? "The source was stored and extraction checks completed. Continue to the controlled chapter-review workspace." : "Some pages need review before this book can be activated for teachers."}</CardDescription></CardHeader><CardContent className="space-y-4"><div className="rounded-xl border border-border/60 bg-background/70 p-3 text-sm text-foreground"><strong>{details?.sources.length ?? 0} textbook file</strong> stored for this subject.{hasPendingTextbookOcr && details?.ocrJobs?.length ? ` OCR progress: page ${details.ocrJobs[0].nextPage} of ${details.ocrJobs[0].totalPages}.` : details?.readiness.weakOcrPages ? ` ${details.readiness.weakOcrPages} page${details.readiness.weakOcrPages === 1 ? "" : "s"} still need review.` : ""}</div><Button type="button" className="w-full" onClick={() => navigate(`/curriculum?set=${focusedIntakeSetId}`)} disabled={hasPendingTextbookOcr}>{hasPendingTextbookOcr ? "OCR in progress" : "Continue to book review"}</Button></CardContent></Card>}
           </section>
@@ -928,7 +960,7 @@ export default function CurriculumManagement() {
                 <CardContent className="space-y-4">
                   <p className="text-sm text-muted-foreground">PDF textbooks up to 150MB are accepted. PDFs over 30MB are transferred in protected small chunks so they remain compatible with the published site; scanned pages continue through the existing reviewable OCR queue.</p>
                   <Input aria-label="Curriculum source upload" type="file" accept=".pdf,.txt,.jpg,.jpeg,.png,.webp" onChange={handleSourceUpload} disabled={isUploading} />
-                  {chunkUploadProgress ? <ChunkUploadProgressBar progress={chunkUploadProgress} /> : isUploading && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Storing source and preparing extraction…</p>}
+                  {chunkUploadProgress ? <ChunkUploadProgressBar progress={chunkUploadProgress} onPause={requestUploadPause} onResume={resumeUpload} /> : isUploading && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Storing source and preparing extraction…</p>}
                   <div className="space-y-2">{details.sources.map((source) => { const ocrJob = details.ocrJobs?.find((job) => job.sourceId === source.id); return <button key={source.id} onClick={() => loadSourceForReview(source.id)} className="flex w-full items-center justify-between rounded-lg border border-border/60 p-3 text-left hover:border-accent/50"><span className="flex min-w-0 items-center gap-2"><FileText className="h-4 w-4 shrink-0 text-accent" /><span className="truncate text-sm">{source.originalFileName}</span></span><span className="text-right text-xs text-muted-foreground">{source.extractionStatus}{source.pageCount ? ` • ${source.pageCount} pages` : ""}{ocrJob && ocrJob.status !== "completed" ? ` • OCR page ${ocrJob.nextPage}/${ocrJob.totalPages}` : ""}</span></button>; })}</div>
                 </CardContent>
               </Card>}
