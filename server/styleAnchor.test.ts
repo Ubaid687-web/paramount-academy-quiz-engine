@@ -50,4 +50,21 @@ describe("shared FBISE style anchor", () => {
     expect(computerScienceAnchor.instruction).toContain("Never copy a past-paper stem, task, code sample, or answer");
     expect(physicsAnchor.instruction).not.toContain("GRADE 10 COMPUTER SCIENCE CALIBRATION");
   });
+
+  it("keeps Grade 9 reviewed paper-pattern wording programme-local and separate from Grade 10 calibration", () => {
+    const grade9Pattern = [{
+      sourceKind: "model_paper" as const,
+      academicYear: "2027",
+      sectionAInstruction: "Choose the best answer for each compact MCQ.",
+      profileEvidenceNotes: "Grade 9 model-paper structure reviewed by Portal Admin.",
+    }];
+    const grade9Anchor = buildSharedStyleAnchor({ board: "FBISE", grade: "9", subject: "computer_science", paperPatternGuidance: grade9Pattern, approvedExamples: [] });
+    const grade10Anchor = buildSharedStyleAnchor({ board: "FBISE", grade: "10", subject: "computer_science", paperPatternGuidance, approvedExamples: [] });
+
+    expect(grade9Anchor.instruction).toContain("Programme: FBISE, Grade 9, computer_science.");
+    expect(grade9Anchor.instruction).toContain("Choose the best answer for each compact MCQ.");
+    expect(grade9Anchor.instruction).toContain("Grade 9 model-paper structure reviewed by Portal Admin.");
+    expect(grade9Anchor.instruction).not.toContain("GRADE 10 COMPUTER SCIENCE CALIBRATION");
+    expect(grade9Anchor.fingerprint).not.toBe(grade10Anchor.fingerprint);
+  });
 });

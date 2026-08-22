@@ -750,3 +750,10 @@
 - [x] Review measured printable-generation telemetry and retain existing output limits unless a specific no-regression adjustment is justified.
 - [x] Preflight and run one smallest valid approved Grade 10 printable-generation verification, recording only truthful provider and completion telemetry.
 - [x] Apply only an evidence-backed repair if required, validate, checkpoint, synchronize the private GitHub backup, and report the result.
+
+## Phase 129: Grade 9 Subject-Local Curriculum and Pattern Rollout
+- [x] Audit the Grade 9 subject hub, existing Chemistry draft, teacher availability boundary, and private GitHub recovery mirror before changing behavior.
+- [x] Refine Grade 9 subject-local textbook, model-paper, and chronological past-paper intake actions without mixing factual source authority.
+- [x] Add a reviewable Grade 9 pattern profile and ensure only approved Grade 9 wording/format guidance reaches the Grade 9 style anchor.
+- [x] Add subject-isolation, intake, chronology, activation, capacity, and role-boundary regressions; validate through production build and role-based browser checks.
+- [x] Publish and synchronize the verified Grade 9 rollout, then document the next safe Chemistry intake action.

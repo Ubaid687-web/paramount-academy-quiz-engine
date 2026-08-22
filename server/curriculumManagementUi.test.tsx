@@ -130,6 +130,9 @@ describe("Curriculum Library Release 1", () => {
     expect(screen.getByText("Grade 9")).toBeTruthy();
     expect(screen.getByText("Grade 10")).toBeTruthy();
     expect(screen.getAllByRole("button", { name: /Add subject/i })).toHaveLength(2);
+    expect(screen.getAllByRole("button", { name: "Textbook" })).toHaveLength(2);
+    expect(screen.getAllByRole("button", { name: "Model paper" })).toHaveLength(2);
+    expect(screen.getAllByRole("button", { name: "Past papers" })).toHaveLength(2);
     expect(screen.getByText(/PDF textbooks up to 150MB are accepted/i)).toBeTruthy();
     expect(screen.queryByText("FBISE Grade 10 Chemistry — retired 2020 edition")).toBeNull();
     expect(screen.getByRole("button", { name: "Back to Quiz Centre" })).toBeTruthy();
@@ -163,6 +166,24 @@ describe("Curriculum Library Release 1", () => {
     expect(screen.getByRole("button", { name: "Continue to textbook upload" })).toBeTruthy();
     expect(screen.queryByText("Add a grade or subject")).toBeNull();
     expect(screen.queryByText("Edition readiness checklist")).toBeNull();
+  });
+
+  it("routes Grade 9 paper actions to separate model-paper and chronological past-paper workspaces", () => {
+    render(<CurriculumManagement />);
+    fireEvent.click(screen.getByRole("tab", { name: /^Curriculum/i }));
+
+    fireEvent.click(screen.getAllByRole("button", { name: "Model paper" })[0]);
+    expect(window.location.search).toContain("set=13");
+    expect(window.location.search).toContain("panel=review");
+    expect(window.location.search).toContain("task=pattern");
+    expect(window.location.search).toContain("paper=model");
+
+    cleanup();
+    window.history.pushState({}, "", "/curriculum?panel=curriculum");
+    render(<CurriculumManagement />);
+    fireEvent.click(screen.getByRole("tab", { name: /^Curriculum/i }));
+    fireEvent.click(screen.getAllByRole("button", { name: "Past papers" })[0]);
+    expect(window.location.search).toContain("paper=past");
   });
 
   it("resumes an existing Grade 9 Chemistry intake instead of attempting another programme insert", async () => {
