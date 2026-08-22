@@ -6,6 +6,8 @@ import CurriculumManagement from "../client/src/pages/CurriculumManagement";
 const noOpMutation = { mutateAsync: vi.fn(), isPending: false };
 const invalidate = vi.fn();
 const getLargePdfUploadStatus = vi.fn();
+const getPaperPatternSourceDownload = vi.fn();
+const setPaperSourceStudentLibraryStatus = { mutateAsync: vi.fn(), isPending: false };
 type ChunkAcknowledgement = { receivedBytes: number; fileSize: number; complete: boolean; nextChunkIndex: number; expiresAt: number };
 const authMock = vi.hoisted(() => ({ role: "admin" as "admin" | "teacher" }));
 const queryOptions = vi.hoisted(() => ({ listSets: [] as boolean[], listProgrammes: [] as boolean[], staffDirectory: [] as boolean[] }));
@@ -15,7 +17,7 @@ const managementDetails = {
   sources: [{ id: 2, originalFileName: "physics.pdf", extractionStatus: "extracted", extractedText: "Approved textbook text", pageCount: 200 }],
   sourcePageReviews: [{ sourceId: 2, pageNumber: 7, qualityScore: 28, reviewStatus: "needs_review", reviewReasons: "very little extracted text" }],
   ocrJobs: [],
-  paperPatternSources: [{ id: 3, originalFileName: "physics-2025.pdf", sourceKind: "past_paper", academicYear: "2025", extractionStatus: "extracted", status: "draft" }],
+  paperPatternSources: [{ id: 3, originalFileName: "physics-2025.pdf", sourceKind: "past_paper", academicYear: "2025", timelineOrder: 1, timelineLabel: null, mimeType: "application/pdf", extractionStatus: "extracted", status: "active", studentLibraryStatus: "hidden" }],
   paperPatternProfiles: [{ patternSourceId: 3, sectionAInstruction: "Attempt all MCQs.", sectionBInstruction: null, sectionCInstruction: null, mcqCount: 12, mcqMarksEach: 1, shortOrPairCount: null, shortMarksEach: null, longOrPairCount: null, longMarksEach: null, totalMarks: 60, durationMinutes: 180, orRule: null, profileEvidenceNotes: "Page 1 confirms the MCQ section.", reviewStatus: "reviewed" }],
   chapters: [{ id: 4, sourceId: 2, code: "Ch. 1", title: "Motion", startPage: 1, endPage: 12, isActive: 1, contentText: "A reviewed source chapter containing sufficient source content for the management interface." }],
   chapterSegments: [],
@@ -47,13 +49,13 @@ const grade9ChemistryDetails = {
 
 vi.mock("@/lib/trpc", () => ({
   trpc: {
-    useUtils: () => ({ curriculum: { listSets: { invalidate }, listProgrammes: { invalidate }, getManagementDetails: { invalidate }, getLargePdfUploadStatus: { fetch: getLargePdfUploadStatus } }, generation: { getProviderSettings: { invalidate }, listHistory: { invalidate }, getStyleAnchor: { invalidate } } }),
+    useUtils: () => ({ curriculum: { listSets: { invalidate }, listProgrammes: { invalidate }, getManagementDetails: { invalidate }, getLargePdfUploadStatus: { fetch: getLargePdfUploadStatus }, getPaperPatternSourceDownload: { fetch: getPaperPatternSourceDownload } }, generation: { getProviderSettings: { invalidate }, listHistory: { invalidate }, getStyleAnchor: { invalidate } } }),
     curriculum: {
       listSets: { useQuery: (_input?: unknown, options?: { enabled?: boolean }) => { queryOptions.listSets.push(Boolean(options?.enabled)); return { data: [managementDetails.curriculumSet, grade9ChemistrySet, archivedChemistrySet], isLoading: false, error: null }; } },
       listProgrammes: { useQuery: (_input?: unknown, options?: { enabled?: boolean }) => { queryOptions.listProgrammes.push(Boolean(options?.enabled)); return { data: [{ id: 11, board: "FBISE", grade: "10", subject: "physics", teacherLabel: "Physics", status: "ready" }, grade9ChemistryProgramme], isLoading: false, error: null }; } },
       getManagementDetails: { useQuery: (input: { curriculumSetId: number }) => ({ data: input.curriculumSetId === grade9ChemistrySet.id ? grade9ChemistryDetails : managementDetails, isLoading: false }) },
       proposeChaptersFromSource: { useQuery: () => ({ data: undefined, isLoading: false, isFetching: false, error: null, refetch: vi.fn() }) },
-      createProgramme: { useMutation: () => noOpMutation }, activateProgramme: { useMutation: () => noOpMutation }, createSet: { useMutation: () => noOpMutation }, replaceActiveSet: { useMutation: () => noOpMutation }, ingestSource: { useMutation: () => noOpMutation }, prepareLargePdfUpload: { useMutation: () => noOpMutation }, appendLargePdfChunk: { useMutation: () => noOpMutation }, completeLargePdfUpload: { useMutation: () => noOpMutation }, ingestPaperPatternSource: { useMutation: () => noOpMutation }, activatePaperPatternSource: { useMutation: () => noOpMutation }, savePaperPatternProfile: { useMutation: () => noOpMutation }, createChapter: { useMutation: () => noOpMutation }, saveHalfChapterSegments: { useMutation: () => noOpMutation }, createScopeTemplate: { useMutation: () => noOpMutation }, activateSet: { useMutation: () => noOpMutation }, reviewSourcePage: { useMutation: () => noOpMutation }, getOcrReviewPage: { useQuery: () => ({ data: { pageNumber: 7, pageText: "Extracted source text for review.", previewUrl: "/api/ocr-review/source/2/page/7" }, isLoading: false, error: null }) }, correctOcrReviewPage: { useMutation: () => noOpMutation }, setChapterGenerationAvailability: { useMutation: () => noOpMutation },
+      createProgramme: { useMutation: () => noOpMutation }, activateProgramme: { useMutation: () => noOpMutation }, createSet: { useMutation: () => noOpMutation }, replaceActiveSet: { useMutation: () => noOpMutation }, ingestSource: { useMutation: () => noOpMutation }, prepareLargePdfUpload: { useMutation: () => noOpMutation }, appendLargePdfChunk: { useMutation: () => noOpMutation }, completeLargePdfUpload: { useMutation: () => noOpMutation }, ingestPaperPatternSource: { useMutation: () => noOpMutation }, activatePaperPatternSource: { useMutation: () => noOpMutation }, setPaperSourceStudentLibraryStatus: { useMutation: () => setPaperSourceStudentLibraryStatus }, savePaperPatternProfile: { useMutation: () => noOpMutation }, createChapter: { useMutation: () => noOpMutation }, saveHalfChapterSegments: { useMutation: () => noOpMutation }, createScopeTemplate: { useMutation: () => noOpMutation }, activateSet: { useMutation: () => noOpMutation }, reviewSourcePage: { useMutation: () => noOpMutation }, getOcrReviewPage: { useQuery: () => ({ data: { pageNumber: 7, pageText: "Extracted source text for review.", previewUrl: "/api/ocr-review/source/2/page/7" }, isLoading: false, error: null }) }, correctOcrReviewPage: { useMutation: () => noOpMutation }, setChapterGenerationAvailability: { useMutation: () => noOpMutation },
     },
     staff: {
       listRoleDirectory: { useQuery: (_input?: unknown, options?: { enabled?: boolean }) => { queryOptions.staffDirectory.push(Boolean(options?.enabled)); return { data: [{ id: 1, name: "Portal Admin", email: "admin@example.com", role: "admin" }, { id: 2, name: "Teacher", email: "teacher@example.com", role: "teacher" }], isLoading: false, error: null, refetch: vi.fn() }; } },
@@ -78,7 +80,7 @@ vi.mock("@/_core/hooks/useAuth", () => ({ useAuth: () => ({ user: { id: 1, role:
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 describe("Curriculum Library Release 1", () => {
-  afterEach(() => { cleanup(); invalidate.mockReset(); getLargePdfUploadStatus.mockReset(); noOpMutation.mutateAsync.mockReset(); window.sessionStorage.clear(); Object.defineProperty(document, "hidden", { configurable: true, value: false }); Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" }); queryOptions.listSets.length = 0; queryOptions.listProgrammes.length = 0; queryOptions.staffDirectory.length = 0; authMock.role = "admin"; window.history.pushState({}, "", "/"); });
+  afterEach(() => { cleanup(); invalidate.mockReset(); getLargePdfUploadStatus.mockReset(); getPaperPatternSourceDownload.mockReset(); noOpMutation.mutateAsync.mockReset(); setPaperSourceStudentLibraryStatus.mutateAsync.mockReset(); window.sessionStorage.clear(); Object.defineProperty(document, "hidden", { configurable: true, value: false }); Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" }); queryOptions.listSets.length = 0; queryOptions.listProgrammes.length = 0; queryOptions.staffDirectory.length = 0; authMock.role = "admin"; window.history.pushState({}, "", "/"); });
 
   it("shows one focused Portal Admin task at a time while preserving every administrative workflow", async () => {
     render(<CurriculumManagement />);
@@ -184,6 +186,19 @@ describe("Curriculum Library Release 1", () => {
     fireEvent.click(screen.getByRole("tab", { name: /^Curriculum/i }));
     fireEvent.click(screen.getAllByRole("button", { name: "Past papers" })[0]);
     expect(window.location.search).toContain("paper=past");
+  });
+
+  it("keeps signed student publication separate from Grade 10 paper-pattern activation and exposes the stored original PDF to Portal Admin", async () => {
+    setPaperSourceStudentLibraryStatus.mutateAsync.mockResolvedValue({ id: 3, studentLibraryStatus: "published" });
+    render(<CurriculumManagement />);
+
+    fireEvent.click(screen.getByRole("tab", { name: /^Review/i }));
+    fireEvent.click(screen.getByRole("tab", { name: "Paper pattern" }));
+
+    expect(screen.getByRole("button", { name: "PDF" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Publish to students" }));
+    await waitFor(() => expect(setPaperSourceStudentLibraryStatus.mutateAsync).toHaveBeenCalledWith({ sourceId: 3, studentLibraryStatus: "published" }));
+    expect(invalidate).toHaveBeenCalledWith({ curriculumSetId: 1 });
   });
 
   it("resumes an existing Grade 9 Chemistry intake instead of attempting another programme insert", async () => {

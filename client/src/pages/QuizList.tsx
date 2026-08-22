@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { ArrowLeft, Atom, Beaker, BookOpenCheck, ChevronRight, ClipboardCheck, FileQuestion, LaptopMinimal, Loader2, Sparkles, Trash2 } from "lucide-react";
+import { ArrowLeft, Atom, Beaker, BookOpenCheck, ChevronRight, ClipboardCheck, Download, FileQuestion, LaptopMinimal, Loader2, Sparkles, Trash2 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
 import { AcademyShell } from "@/components/AcademyShell";
@@ -18,6 +18,12 @@ const subjectPresentation: Record<string, SubjectPresentation> = {
   physics: { eyebrow: "Matter & motion", Icon: Atom, iconTone: "bg-sky-100 text-sky-700", cardTone: "border-sky-100 hover:border-sky-300", accentTone: "bg-sky-500" },
   chemistry: { eyebrow: "Matter & change", Icon: Beaker, iconTone: "bg-violet-100 text-violet-700", cardTone: "border-violet-100 hover:border-violet-300", accentTone: "bg-violet-500" },
   computer_science: { eyebrow: "Logic & systems", Icon: LaptopMinimal, iconTone: "bg-emerald-100 text-emerald-700", cardTone: "border-emerald-100 hover:border-emerald-300", accentTone: "bg-emerald-500" },
+};
+
+const subjectLabels: Record<string, string> = {
+  physics: "Physics",
+  chemistry: "Chemistry",
+  computer_science: "Computer Science",
 };
 
 const wizardSteps: Array<{ id: WizardStep; label: string }> = [
@@ -49,6 +55,12 @@ export default function QuizList() {
   const [selectedGrade, setSelectedGrade] = useState<string | null>(null);
   const [selectedProgramme, setSelectedProgramme] = useState<ReadyProgramme | null>(null);
   const [showLibrary, setShowLibrary] = useState(false);
+  const [showPaperLibrary, setShowPaperLibrary] = useState(false);
+  const [paperGradeFilter, setPaperGradeFilter] = useState("all");
+  const [paperSubjectFilter, setPaperSubjectFilter] = useState("all");
+  const [paperYearFilter, setPaperYearFilter] = useState("all");
+  const [paperTypeFilter, setPaperTypeFilter] = useState("past_paper");
+  const [downloadingPaperId, setDownloadingPaperId] = useState<number | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
@@ -65,6 +77,12 @@ export default function QuizList() {
     refetchOnWindowFocus: false,
   });
   const deleteQuizMutation = trpc.quiz.deleteQuiz.useMutation();
+  const paperLibraryQuery = trpc.paperLibrary.list.useQuery(undefined, {
+    enabled: showPaperLibrary && isAuthenticated,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+  const utils = trpc.useUtils();
 
   const currentStep: WizardStep = selectedProgramme ? 3 : selectedGrade ? 2 : 1;
   const isGrade9 = selectedGrade === "9";
@@ -97,6 +115,44 @@ export default function QuizList() {
     setConfirmDelete(null);
   };
 
+  const openPaperLibrary = () => {
+    if (!isAuthenticated) {
+      navigate("/staff-sign-in");
+      return;
+    }
+    setShowLibrary(false);
+    setShowPaperLibrary(true);
+    setPaperGradeFilter("all");
+    setPaperSubjectFilter("all");
+    setPaperYearFilter("all");
+    setPaperTypeFilter("past_paper");
+  };
+
+  const paperSources = paperLibraryQuery.data ?? [];
+  const paperGrades = useMemo(() => Array.from(new Set(paperSources.map((paper) => paper.grade))).sort((left, right) => Number(right) - Number(left) || left.localeCompare(right)), [paperSources]);
+  const paperSubjects = useMemo(() => Array.from(new Set(paperSources.filter((paper) => paperGradeFilter === "all" || paper.grade === paperGradeFilter).map((paper) => paper.subject))).sort(), [paperSources, paperGradeFilter]);
+  const paperYears = useMemo(() => Array.from(new Set(paperSources.filter((paper) => (paperGradeFilter === "all" || paper.grade === paperGradeFilter) && (paperSubjectFilter === "all" || paper.subject === paperSubjectFilter)).map((paper) => paper.academicYear).filter((year): year is string => Boolean(year)))).sort((left, right) => right.localeCompare(left, undefined, { numeric: true })), [paperSources, paperGradeFilter, paperSubjectFilter]);
+  const visiblePapers = useMemo(() => paperSources.filter((paper) => (paperGradeFilter === "all" || paper.grade === paperGradeFilter) && (paperSubjectFilter === "all" || paper.subject === paperSubjectFilter) && (paperYearFilter === "all" || paper.academicYear === paperYearFilter) && paper.sourceKind === paperTypeFilter), [paperSources, paperGradeFilter, paperSubjectFilter, paperYearFilter, paperTypeFilter]);
+
+  const handlePaperDownload = async (sourceId: number) => {
+    setDownloadingPaperId(sourceId);
+    try {
+      const download = await utils.paperLibrary.download.fetch({ sourceId });
+      const link = document.createElement("a");
+      link.href = download.url;
+      link.download = download.fileName;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "The paper PDF could not be opened.");
+    } finally {
+      setDownloadingPaperId(null);
+    }
+  };
+
   const handleReturnKey = (event: React.KeyboardEvent<HTMLButtonElement>, action: () => void) => {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
@@ -122,7 +178,21 @@ export default function QuizList() {
     <AcademyShell eyebrow="Teacher MCQ Workspace" showAdministration={user?.role === "admin"}>
       <main className="container py-6 sm:py-10">
         <section className="mx-auto max-w-5xl">
-          {showLibrary ? (
+          {showPaperLibrary ? (
+            <div className="space-y-5">
+              <Button type="button" variant="ghost" className="academy-back-button" onClick={() => setShowPaperLibrary(false)} aria-label="Return to quiz preparation"><ArrowLeft className="h-4 w-4" />Back to preparation</Button>
+              <div className="rounded-[1.5rem] border border-primary/10 bg-card px-5 py-6 shadow-sm sm:px-8">
+                <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-primary">FBISE paper library</p>
+                <h1 className="mt-2 text-[2rem] font-extrabold tracking-[-0.055em] text-foreground sm:text-4xl">Find an approved paper.</h1>
+                <p className="mt-2 text-sm text-muted-foreground">Only Portal Admin-published original PDFs appear here.</p>
+              </div>
+              <Card className="border-primary/15 bg-primary/[0.025]"><CardContent className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4"><label className="text-xs font-bold text-muted-foreground">Grade<select aria-label="Filter paper library by grade" value={paperGradeFilter} onChange={(event) => { setPaperGradeFilter(event.target.value); setPaperSubjectFilter("all"); setPaperYearFilter("all"); }} className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground"><option value="all">All grades</option>{paperGrades.map((grade) => <option key={grade} value={grade}>Grade {grade}</option>)}</select></label><label className="text-xs font-bold text-muted-foreground">Subject<select aria-label="Filter paper library by subject" value={paperSubjectFilter} onChange={(event) => { setPaperSubjectFilter(event.target.value); setPaperYearFilter("all"); }} className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground"><option value="all">All subjects</option>{paperSubjects.map((subject) => <option key={subject} value={subject}>{subjectLabels[subject] ?? subject.replace(/_/g, " ")}</option>)}</select></label><label className="text-xs font-bold text-muted-foreground">Year<select aria-label="Filter paper library by year" value={paperYearFilter} onChange={(event) => setPaperYearFilter(event.target.value)} className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground"><option value="all">All years</option>{paperYears.map((year) => <option key={year} value={year}>{year}</option>)}</select></label><label className="text-xs font-bold text-muted-foreground">Paper type<select aria-label="Filter paper library by type" value={paperTypeFilter} onChange={(event) => setPaperTypeFilter(event.target.value as "model_paper" | "past_paper")} className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground"><option value="past_paper">Past papers</option><option value="model_paper">Model papers</option></select></label></CardContent></Card>
+              {paperLibraryQuery.isLoading && <Card><CardContent className="flex min-h-36 items-center justify-center gap-2 p-6 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Loading approved paper PDFs…</CardContent></Card>}
+              {paperLibraryQuery.error && <Card className="border-destructive/40"><CardContent className="p-6 text-sm text-destructive">The paper library could not be loaded. {paperLibraryQuery.error.message}</CardContent></Card>}
+              {!paperLibraryQuery.isLoading && !paperLibraryQuery.error && !visiblePapers.length && <Card className="border-dashed border-border bg-card/70"><CardContent className="flex gap-3 p-6 text-sm leading-6 text-muted-foreground"><FileQuestion className="h-5 w-5 shrink-0 text-primary" />No published PDF matches these filters. Ask Portal Admin to publish an uploaded original PDF when it is ready for students.</CardContent></Card>}
+              {!paperLibraryQuery.isLoading && !paperLibraryQuery.error && Boolean(visiblePapers.length) && <div className="grid gap-3 md:grid-cols-2">{visiblePapers.map((paper) => <Card key={paper.id} className="border-border/80"><CardContent className="flex items-center justify-between gap-4 p-4"><div className="min-w-0"><p className="text-sm font-extrabold text-foreground">Grade {paper.grade} · {subjectLabels[paper.subject] ?? paper.subject.replace(/_/g, " ")}</p><p className="mt-1 text-xs text-muted-foreground">{paper.sourceKind === "model_paper" ? "Model paper" : "Past paper"}{paper.academicYear ? ` · ${paper.academicYear}` : ""}{paper.timelineLabel ? ` · ${paper.timelineLabel}` : ""}</p><p className="mt-2 truncate text-xs text-muted-foreground">{paper.originalFileName}</p></div><Button type="button" size="sm" onClick={() => handlePaperDownload(paper.id)} disabled={downloadingPaperId === paper.id}><Download className="mr-1.5 h-4 w-4" />{downloadingPaperId === paper.id ? "Opening…" : "PDF"}</Button></CardContent></Card>)}</div>}
+            </div>
+          ) : showLibrary ? (
             <div className="space-y-5">
               <Button type="button" variant="ghost" className="academy-back-button" onClick={() => setShowLibrary(false)} onKeyDown={(event) => handleReturnKey(event, () => setShowLibrary(false))} aria-label="Return to quiz preparation"><ArrowLeft className="h-4 w-4" />Back to preparation</Button>
               <div className="rounded-[1.5rem] border border-primary/10 bg-card px-5 py-6 shadow-sm sm:px-8">
@@ -159,7 +229,7 @@ export default function QuizList() {
                 </CardContent>
               </Card>}
 
-              {readyProgrammesQuery.isLoading ? <Card><CardContent className="flex min-h-48 items-center justify-center gap-2 p-6 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Loading approved programmes…</CardContent></Card> : currentStep === 1 ? <div className="space-y-4"><div className="grid gap-4 md:grid-cols-2" aria-label="Choose a class">{grades.map((grade) => { const count = readyProgrammes.filter((programme) => programme.grade === grade).length; const isReady = count > 0; return <button key={grade} type="button" onClick={() => selectGrade(grade)} className={`group rounded-[1.5rem] border p-5 text-left shadow-sm transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:p-7 ${isReady ? "border-border/80 bg-card hover:border-primary/35" : "border-dashed border-border/90 bg-muted/20 hover:border-primary/30"}`}><div className="flex items-start justify-between gap-4"><div className={`flex h-10 w-10 items-center justify-center rounded-xl ${isReady ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}><BookOpenCheck className="h-5 w-5" /></div><span className={`rounded-full px-2.5 py-1 text-[11px] font-extrabold ${isReady ? "border border-emerald-200 bg-emerald-50 text-emerald-700" : "border border-amber-200 bg-amber-50 text-amber-800"}`}>{isReady ? "Ready to prepare" : "Subject setup"}</span></div><h2 className="mt-6 text-xl font-extrabold tracking-[-0.035em] text-foreground sm:text-2xl">Grade {grade}</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">{isReady ? `${count} approved ${count === 1 ? "subject" : "subjects"} available.` : "Start by naming the subject and uploading its textbook."}</p><p className="mt-5 flex items-center gap-1 text-sm font-extrabold text-primary">{isReady ? `Choose Grade ${grade}` : `Set up Grade ${grade}`}<ChevronRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" /></p></button>; })}</div><Button type="button" variant="outline" className="w-full sm:w-auto" onClick={openLibrary}><ClipboardCheck className="mr-2 h-4 w-4" />{isAuthenticated ? "Open draft library" : "Staff sign in to open drafts"}</Button></div> : <>
+                {readyProgrammesQuery.isLoading ? <Card><CardContent className="flex min-h-48 items-center justify-center gap-2 p-6 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Loading approved programmes…</CardContent></Card> : currentStep === 1 ? <div className="space-y-4"><div className="grid gap-4 md:grid-cols-2" aria-label="Choose a class">{grades.map((grade) => { const count = readyProgrammes.filter((programme) => programme.grade === grade).length; const isReady = count > 0; return <button key={grade} type="button" onClick={() => selectGrade(grade)} className={`group rounded-[1.5rem] border p-5 text-left shadow-sm transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:p-7 ${isReady ? "border-border/80 bg-card hover:border-primary/35" : "border-dashed border-border/90 bg-muted/20 hover:border-primary/30"}`}><div className="flex items-start justify-between gap-4"><div className={`flex h-10 w-10 items-center justify-center rounded-xl ${isReady ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}><BookOpenCheck className="h-5 w-5" /></div><span className={`rounded-full px-2.5 py-1 text-[11px] font-extrabold ${isReady ? "border border-emerald-200 bg-emerald-50 text-emerald-700" : "border border-amber-200 bg-amber-50 text-amber-800"}`}>{isReady ? "Ready to prepare" : "Subject setup"}</span></div><h2 className="mt-6 text-xl font-extrabold tracking-[-0.035em] text-foreground sm:text-2xl">Grade {grade}</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">{isReady ? `${count} approved ${count === 1 ? "subject" : "subjects"} available.` : "Start by naming the subject and uploading its textbook."}</p><p className="mt-5 flex items-center gap-1 text-sm font-extrabold text-primary">{isReady ? `Choose Grade ${grade}` : `Set up Grade ${grade}`}<ChevronRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" /></p></button>; })}</div><div className="flex flex-wrap gap-2"><Button type="button" variant="outline" onClick={openLibrary}><ClipboardCheck className="mr-2 h-4 w-4" />{isAuthenticated ? "Open draft library" : "Staff sign in to open drafts"}</Button><Button type="button" variant="outline" onClick={openPaperLibrary}><BookOpenCheck className="mr-2 h-4 w-4" />{isAuthenticated ? "Browse paper PDFs" : "Staff sign in for papers"}</Button></div></div> : <>
                 <Button type="button" variant="ghost" className="academy-back-button" onClick={isGrade9 ? returnToGrades : returnToGrades} onKeyDown={(event) => handleReturnKey(event, returnToGrades)} aria-label="Return to class selection"><ArrowLeft className="h-4 w-4" />Back to grades</Button>
                 {isGrade9 ? <Card className="border-primary/15 bg-card shadow-sm"><CardContent className="p-7 sm:p-10"><p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-primary">Grade 9 · Curriculum intake</p>{canManageGrade9Intake ? <><h2 className="mt-3 text-2xl font-extrabold tracking-[-0.04em] text-foreground">What subject are you adding?</h2><p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">Add one subject at a time. Portal Admin uploads the textbook, reviews extraction quality, and explicitly activates the approved edition before teachers can generate anything.</p><Link href="/curriculum?grade=9&intake=subject" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-extrabold text-primary-foreground no-underline shadow-sm hover:bg-primary/90">Add Grade 9 subject <ChevronRight className="h-4 w-4" /></Link></> : <><h2 className="mt-3 text-2xl font-extrabold tracking-[-0.04em] text-foreground">Grade 9 is being prepared.</h2><p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">Grade 9 remains unavailable for generation until Portal Admin uploads and reviews each subject’s approved textbook. This protects teachers and students from incomplete or unverified source material.</p></>}</CardContent></Card> : currentStep === 2 ? <div className="grid gap-3 sm:grid-cols-3" aria-label="Choose a subject">{programmesForSelectedGrade.map((programme) => { const presentation = subjectPresentation[programme.subject] ?? { eyebrow: programme.board, Icon: BookOpenCheck, iconTone: "bg-primary/10 text-primary", cardTone: "border-primary/15 hover:border-primary/35", accentTone: "bg-primary" }; const SubjectIcon = presentation.Icon; return <button key={programme.id} type="button" onClick={() => setSelectedProgramme(programme)} className={`group relative overflow-hidden rounded-[1.35rem] border bg-card p-5 text-left shadow-sm transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 active:scale-[0.985] ${presentation.cardTone}`}><span className={`absolute inset-x-0 top-0 h-1 ${presentation.accentTone}`} aria-hidden="true" /><div className={`flex h-10 w-10 items-center justify-center rounded-xl ${presentation.iconTone}`}><SubjectIcon className="h-5 w-5" /></div><p className="mt-5 text-[10px] font-extrabold uppercase tracking-[0.16em] text-muted-foreground">{presentation.eyebrow}</p><h2 className="mt-1 text-xl font-extrabold tracking-[-0.04em] text-foreground sm:text-2xl">{programme.teacherLabel}</h2><p className="mt-2 text-sm leading-5 text-muted-foreground">Approved source-grounded preparation</p><p className="mt-5 flex items-center gap-1 text-sm font-extrabold text-primary">Continue <ChevronRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" /></p></button>; })}</div> : <Card className="overflow-hidden border-primary/15 bg-card shadow-[0_18px_55px_oklch(0.36_0.12_255_/_0.08)]"><CardContent className="p-6 sm:p-9"><p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-primary">Selected subject</p><h2 className="mt-3 text-2xl font-extrabold tracking-[-0.045em] text-foreground sm:text-4xl">Grade {selectedProgramme?.grade} · {selectedProgramme?.teacherLabel}</h2><p className="mt-2 text-sm font-semibold text-primary">Open the builder.</p><p className="mt-2 text-sm text-muted-foreground">Assessment type and approved source are selected inside the next focused step.</p><div className="mt-6 flex flex-col gap-3 sm:flex-row"><Button type="button" variant="outline" onClick={returnToSubjects} onKeyDown={(event) => handleReturnKey(event, returnToSubjects)} aria-label="Return to subject selection"><ArrowLeft className="mr-2 h-4 w-4" />Back to subjects</Button><Link href={`/generate?board=${encodeURIComponent(selectedProgramme!.board)}&grade=${encodeURIComponent(selectedProgramme!.grade)}&subject=${encodeURIComponent(selectedProgramme!.subject)}`} className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-extrabold text-primary-foreground no-underline shadow-lg shadow-primary/20 transition-transform duration-200 hover:bg-primary/90 active:scale-[0.98]" aria-label="Open builder"><Sparkles className="h-4 w-4" />Open builder</Link></div></CardContent></Card>}
               </>}

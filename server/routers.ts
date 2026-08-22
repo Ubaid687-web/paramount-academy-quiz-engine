@@ -220,6 +220,40 @@ export const appRouter = router({
       } as const;
     }),
   }),
+  paperLibrary: router({
+    list: protectedProcedure
+      .input(z.object({
+        grade: z.string().trim().min(1).max(20).optional(),
+        subject: z.string().trim().min(2).max(100).optional(),
+        academicYear: z.string().trim().min(2).max(20).optional(),
+        sourceKind: z.enum(["model_paper", "past_paper"]).optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        const { listStudentPublishedPaperSources } = await import("./db");
+        const sources = await listStudentPublishedPaperSources(input);
+        return sources.map((source) => ({
+          id: source.id,
+          grade: source.grade,
+          subject: source.subject,
+          sourceKind: source.sourceKind,
+          academicYear: source.academicYear,
+          timelineOrder: source.timelineOrder,
+          timelineLabel: source.timelineLabel,
+          originalFileName: source.originalFileName,
+          publishedAt: source.studentPublishedAt,
+        }));
+      }),
+    download: protectedProcedure
+      .input(z.object({ sourceId: z.number().int().positive() }))
+      .query(async ({ input }) => {
+        const { getStudentPublishedPaperSource } = await import("./db");
+        const source = await getStudentPublishedPaperSource(input.sourceId);
+        if (!source) throw new Error("This paper is not available in the student library.");
+        const { storageGet } = await import("./storage");
+        const download = await storageGet(source.storageKey);
+        return { url: download.url, fileName: source.originalFileName };
+      }),
+  }),
   staff: router({
     listRoleDirectory: adminProcedure.query(async () => {
       const { listStaffRoleDirectory } = await import("./db");
@@ -690,6 +724,30 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const { activateAssessmentPatternSource } = await import("./db");
         return activateAssessmentPatternSource(input.sourceId);
+      }),
+
+    setPaperSourceStudentLibraryStatus: adminProcedure
+      .input(z.object({
+        sourceId: z.number().int().positive(),
+        studentLibraryStatus: z.enum(["hidden", "published"]),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { setAssessmentPatternSourceStudentLibraryStatus } = await import("./db");
+        return setAssessmentPatternSourceStudentLibraryStatus(input.sourceId, input.studentLibraryStatus, ctx.user.id);
+      }),
+
+    getPaperPatternSourceDownload: adminProcedure
+      .input(z.object({ sourceId: z.number().int().positive() }))
+      .query(async ({ input }) => {
+        const { getAssessmentPatternSource } = await import("./db");
+        const source = await getAssessmentPatternSource(input.sourceId);
+        if (!source) throw new Error("Paper-pattern source not found.");
+        if (source.mimeType !== "application/pdf") {
+          throw new Error("This paper reference was saved as text, not as an original PDF.");
+        }
+        const { storageGet } = await import("./storage");
+        const download = await storageGet(source.storageKey);
+        return { url: download.url, fileName: source.originalFileName };
       }),
 
     savePaperPatternProfile: adminProcedure

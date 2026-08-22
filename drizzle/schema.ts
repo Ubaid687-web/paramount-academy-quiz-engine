@@ -270,6 +270,11 @@ export const assessmentPatternSources = mysqlTable("assessmentPatternSources", {
   extractedText: longtext("extractedText"),
   extractionStatus: mysqlEnum("extractionStatus", ["pending", "extracted", "needs_review", "failed"]).default("pending").notNull(),
   status: mysqlEnum("status", ["draft", "active", "archived"]).default("draft").notNull(),
+  // Student access is an independent Portal Admin publication decision. An active source can guide
+  // generation without being downloadable by learners.
+  studentLibraryStatus: mysqlEnum("studentLibraryStatus", ["hidden", "published"]).default("hidden").notNull(),
+  studentPublishedBy: int("studentPublishedBy"),
+  studentPublishedAt: timestamp("studentPublishedAt"),
   uploadedBy: int("uploadedBy").notNull(),
   activatedAt: timestamp("activatedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

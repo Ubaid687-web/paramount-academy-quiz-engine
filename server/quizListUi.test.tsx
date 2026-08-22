@@ -7,6 +7,8 @@ const quizzesQuery = vi.fn();
 const programmesQuery = vi.fn();
 const quizQueryOptions = vi.fn();
 const deleteMutation = vi.fn();
+const paperLibraryQuery = vi.fn();
+const paperDownload = vi.fn();
 const navigateMock = vi.fn();
 let authUser: { role: "admin" | "teacher" | "user" } | null = null;
 
@@ -20,12 +22,16 @@ Object.defineProperty(HTMLElement.prototype, "scrollIntoView", { writable: true,
 
 vi.mock("@/lib/trpc", () => ({
   trpc: {
+    useUtils: () => ({ paperLibrary: { download: { fetch: paperDownload } } }),
     quiz: {
       getAll: { useQuery: (...args: unknown[]) => { quizQueryOptions(...args); return quizzesQuery(); } },
       deleteQuiz: { useMutation: () => ({ mutateAsync: deleteMutation }) },
     },
     curriculum: {
       listReadyProgrammes: { useQuery: () => programmesQuery() },
+    },
+    paperLibrary: {
+      list: { useQuery: () => paperLibraryQuery() ?? { data: [], isLoading: false, error: null } },
     },
   },
 }));
@@ -44,6 +50,8 @@ describe("Quiz Centre entry experience", () => {
     programmesQuery.mockReset();
     quizQueryOptions.mockReset();
     deleteMutation.mockReset();
+    paperLibraryQuery.mockReset();
+    paperDownload.mockReset();
     navigateMock.mockReset();
     authUser = null;
   });
@@ -51,6 +59,7 @@ describe("Quiz Centre entry experience", () => {
   const setReadyGrade10 = () => {
     quizzesQuery.mockReturnValue({ data: [], isLoading: false, error: null, refetch: vi.fn() });
     programmesQuery.mockReturnValue({ data: grade10Programmes, isLoading: false, error: null });
+    paperLibraryQuery.mockReturnValue({ data: [], isLoading: false, error: null });
   };
 
   it("guides teachers from a ready grade to a ready subject and then the builder", () => {

@@ -757,3 +757,9 @@
 - [x] Add a reviewable Grade 9 pattern profile and ensure only approved Grade 9 wording/format guidance reaches the Grade 9 style anchor.
 - [x] Add subject-isolation, intake, chronology, activation, capacity, and role-boundary regressions; validate through production build and role-based browser checks.
 - [x] Publish and synchronize the verified Grade 9 rollout, then document the next safe Chemistry intake action.
+
+## Phase 130: Source-Governed Paper Library and Grade 10 Paper Management
+- [x] Audit existing model/past-paper records, stored original PDFs, access rules, and student-facing surfaces before adding a paper library.
+- [x] Define and implement approved-only student filtering by grade, subject, year, and paper type without exposing draft or unreviewed references.
+- [x] Refine Grade 10 Portal Admin paper-source intake and controlled original-PDF download management using the existing paper records.
+- [x] Add access, filtering, download, and responsive regressions; validate, publish, synchronize GitHub, and document the resulting paper-library workflow.

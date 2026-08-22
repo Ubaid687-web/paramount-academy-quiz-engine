@@ -1106,6 +1106,75 @@ export async function getAssessmentPatternSource(sourceId: number) {
   return rows[0];
 }
 
+export type StudentPaperLibraryFilters = {
+  grade?: string;
+  subject?: string;
+  academicYear?: string;
+  sourceKind?: "model_paper" | "past_paper";
+};
+
+export async function listStudentPublishedPaperSources(filters: StudentPaperLibraryFilters = {}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const conditions = [
+    eq(assessmentPatternSources.board, "FBISE"),
+    eq(assessmentPatternSources.status, "active"),
+    eq(assessmentPatternSources.extractionStatus, "extracted"),
+    eq(assessmentPatternSources.studentLibraryStatus, "published"),
+    eq(assessmentPatternSources.mimeType, "application/pdf"),
+  ];
+  if (filters.grade) conditions.push(eq(assessmentPatternSources.grade, filters.grade));
+  if (filters.subject) conditions.push(eq(assessmentPatternSources.subject, filters.subject));
+  if (filters.academicYear) conditions.push(eq(assessmentPatternSources.academicYear, filters.academicYear));
+  if (filters.sourceKind) conditions.push(eq(assessmentPatternSources.sourceKind, filters.sourceKind));
+  return db.select().from(assessmentPatternSources).where(and(...conditions)).orderBy(
+    desc(assessmentPatternSources.academicYear),
+    asc(assessmentPatternSources.subject),
+    asc(assessmentPatternSources.sourceKind),
+    asc(assessmentPatternSources.timelineOrder),
+    asc(assessmentPatternSources.id),
+  );
+}
+
+export async function getStudentPublishedPaperSource(sourceId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const rows = await db.select().from(assessmentPatternSources).where(and(
+    eq(assessmentPatternSources.id, sourceId),
+    eq(assessmentPatternSources.board, "FBISE"),
+    eq(assessmentPatternSources.status, "active"),
+    eq(assessmentPatternSources.extractionStatus, "extracted"),
+    eq(assessmentPatternSources.studentLibraryStatus, "published"),
+    eq(assessmentPatternSources.mimeType, "application/pdf"),
+  )).limit(1);
+  return rows[0];
+}
+
+export async function setAssessmentPatternSourceStudentLibraryStatus(
+  sourceId: number,
+  studentLibraryStatus: "hidden" | "published",
+  publishedBy: number,
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const source = await getAssessmentPatternSource(sourceId);
+  if (!source) throw new Error("Paper-pattern source not found.");
+  if (studentLibraryStatus === "published") {
+    if (source.status !== "active" || source.extractionStatus !== "extracted") {
+      throw new Error("Activate the successfully extracted paper before publishing it to students.");
+    }
+    if (source.mimeType !== "application/pdf") {
+      throw new Error("Only an uploaded PDF can be published in the student paper library.");
+    }
+  }
+  await db.update(assessmentPatternSources).set({
+    studentLibraryStatus,
+    studentPublishedBy: studentLibraryStatus === "published" ? publishedBy : null,
+    studentPublishedAt: studentLibraryStatus === "published" ? new Date() : null,
+  }).where(eq(assessmentPatternSources.id, sourceId));
+  return getAssessmentPatternSource(sourceId);
+}
+
 export async function listAssessmentPatternProfilesBySourceIds(patternSourceIds: number[]) {
   if (!patternSourceIds.length) return [];
   const db = await getDb();

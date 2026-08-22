@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import React from "react";
-import { AlertTriangle, ArrowLeft, BookMarked, CheckCircle2, FileText, FolderPlus, Loader2, Plus, ShieldCheck, Upload } from "lucide-react";
+import { AlertTriangle, ArrowLeft, BookMarked, CheckCircle2, Download, FileText, FolderPlus, Loader2, Plus, ShieldCheck, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -307,6 +307,7 @@ export default function CurriculumManagement() {
   const completeLargePdfUpload = trpc.curriculum.completeLargePdfUpload.useMutation();
   const ingestPaperPatternSource = trpc.curriculum.ingestPaperPatternSource.useMutation();
   const activatePaperPatternSource = trpc.curriculum.activatePaperPatternSource.useMutation();
+  const setPaperSourceStudentLibraryStatus = trpc.curriculum.setPaperSourceStudentLibraryStatus.useMutation();
   const savePaperPatternProfile = trpc.curriculum.savePaperPatternProfile.useMutation();
   const createChapter = trpc.curriculum.createChapter.useMutation();
   const saveSegments = trpc.curriculum.saveHalfChapterSegments.useMutation();
@@ -729,6 +730,33 @@ export default function CurriculumManagement() {
       toast.success("Paper-pattern source activated. It can guide style but never supply question content.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "The paper-pattern source could not be activated.");
+    }
+  };
+
+  const handleSetStudentPaperPublication = async (sourceId: number, studentLibraryStatus: "hidden" | "published") => {
+    if (!details) return;
+    try {
+      await setPaperSourceStudentLibraryStatus.mutateAsync({ sourceId, studentLibraryStatus });
+      await utils.curriculum.getManagementDetails.invalidate({ curriculumSetId: details.curriculumSet.id });
+      toast.success(studentLibraryStatus === "published" ? "Paper PDF published to the signed-in student library." : "Paper PDF removed from the student library.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "The paper publication setting could not be updated.");
+    }
+  };
+
+  const handlePaperPatternDownload = async (sourceId: number) => {
+    try {
+      const download = await utils.curriculum.getPaperPatternSourceDownload.fetch({ sourceId });
+      const link = document.createElement("a");
+      link.href = download.url;
+      link.download = download.fileName;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "The original paper PDF could not be opened.");
     }
   };
 
@@ -1163,7 +1191,7 @@ export default function CurriculumManagement() {
                 <CardContent className="space-y-4">
                   <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5"><Select value={paperPatternKind} onValueChange={(value) => setPaperPatternKind(value as PaperPatternKind)}><SelectTrigger aria-label="Paper pattern source kind"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="past_paper">Past paper</SelectItem><SelectItem value="model_paper">Model paper</SelectItem></SelectContent></Select><Input aria-label="Paper pattern academic year" value={paperPatternYear} onChange={(event) => setPaperPatternYear(event.target.value)} placeholder="e.g. 2026" />{paperPatternKind === "past_paper" && <Input aria-label="Past paper timeline order" type="number" min="1" value={paperPatternTimelineOrder} onChange={(event) => setPaperPatternTimelineOrder(event.target.value)} placeholder="Timeline: 1 = oldest" />}<Input aria-label="Paper pattern timeline label" value={paperPatternTimelineLabel} onChange={(event) => setPaperPatternTimelineLabel(event.target.value)} placeholder="Optional: morning / evening" /><Input aria-label="Paper pattern source upload" type="file" accept=".pdf,.txt" onChange={handlePaperPatternUpload} disabled={isUploadingPattern} /></div>
                   {isUploadingPattern && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Storing and extracting paper text…</p>}
-                  <div className="space-y-2">{details.paperPatternSources.length ? details.paperPatternSources.map((source) => <div key={source.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/60 p-3"><div className="min-w-0"><p className="truncate text-sm font-semibold text-foreground">{source.originalFileName}</p><p className="mt-1 text-xs text-muted-foreground">{source.sourceKind === "model_paper" ? "Model paper" : `Past paper ${source.timelineOrder ? `· timeline ${source.timelineOrder}` : ""}`}{source.academicYear ? ` · ${source.academicYear}` : ""}{source.timelineLabel ? ` · ${source.timelineLabel}` : ""} · extraction: {source.extractionStatus}</p></div><div className="flex items-center gap-2"><span className={`rounded-full px-2 py-1 text-xs font-bold ${source.status === "active" ? "bg-emerald-100 text-emerald-800" : source.status === "draft" ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-700"}`}>{source.status}</span>{source.status === "draft" && source.extractionStatus === "extracted" && <Button type="button" size="sm" variant="outline" onClick={() => handleActivatePaperPattern(source.id)} disabled={activatePaperPatternSource.isPending}>Activate</Button>}</div></div>) : <p className="rounded-lg border border-dashed border-border p-3 text-sm text-muted-foreground">No paper-pattern source is attached to this subject yet.</p>}</div>
+                  <div className="space-y-2">{details.paperPatternSources.length ? details.paperPatternSources.map((source) => <div key={source.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/60 p-3"><div className="min-w-0"><p className="truncate text-sm font-semibold text-foreground">{source.originalFileName}</p><p className="mt-1 text-xs text-muted-foreground">{source.sourceKind === "model_paper" ? "Model paper" : `Past paper ${source.timelineOrder ? `· timeline ${source.timelineOrder}` : ""}`}{source.academicYear ? ` · ${source.academicYear}` : ""}{source.timelineLabel ? ` · ${source.timelineLabel}` : ""} · extraction: {source.extractionStatus}</p><p className="mt-1 text-xs text-muted-foreground">Student library: {source.studentLibraryStatus === "published" ? "published PDF" : "hidden"}</p></div><div className="flex flex-wrap items-center gap-2"><span className={`rounded-full px-2 py-1 text-xs font-bold ${source.status === "active" ? "bg-emerald-100 text-emerald-800" : source.status === "draft" ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-700"}`}>{source.status}</span>{source.mimeType === "application/pdf" && <Button type="button" size="sm" variant="outline" onClick={() => handlePaperPatternDownload(source.id)}><Download className="mr-1 h-3.5 w-3.5" />PDF</Button>}{source.status === "draft" && source.extractionStatus === "extracted" && <Button type="button" size="sm" variant="outline" onClick={() => handleActivatePaperPattern(source.id)} disabled={activatePaperPatternSource.isPending}>Activate</Button>}{source.status === "active" && source.extractionStatus === "extracted" && source.mimeType === "application/pdf" && <Button type="button" size="sm" variant={source.studentLibraryStatus === "published" ? "outline" : "default"} onClick={() => handleSetStudentPaperPublication(source.id, source.studentLibraryStatus === "published" ? "hidden" : "published")} disabled={setPaperSourceStudentLibraryStatus.isPending}>{source.studentLibraryStatus === "published" ? "Hide from students" : "Publish to students"}</Button>}</div></div>) : <p className="rounded-lg border border-dashed border-border p-3 text-sm text-muted-foreground">No paper-pattern source is attached to this subject yet.</p>}</div>
                 </CardContent>
               </Card>
 
