@@ -12,6 +12,7 @@ import {
 import { assessExtractedSourceQuality } from "./ocrQuality";
 import { extractOcrBatch, mergeOcrTranscript, parseOcrTranscript } from "./ocrPipeline";
 import type { SupportedCurriculumMimeType } from "./curriculumIngestion";
+import { notifyOwnerException } from "./ownerExceptionAlerts";
 
 const supportedOcrMimeTypes = new Set<SupportedCurriculumMimeType>(["application/pdf", "image/jpeg", "image/png", "image/webp"]);
 
@@ -29,6 +30,10 @@ export async function runOcrExtractionWorker(req: Request, res: Response) {
     if (!source || !supportedOcrMimeTypes.has(source.mimeType as SupportedCurriculumMimeType)) {
       await updateOcrExtractionJob(job.id, { status: "failed", errorMessage: "The queued source is unavailable or is not an OCR-supported file." });
       if (source) await updateCurriculumSourceExtraction(source.id, { extractionStatus: "failed", extractionError: "The queued source is unavailable or is not an OCR-supported file." });
+      await notifyOwnerException({
+        title: "Curriculum OCR could not start",
+        content: "A queued curriculum OCR job reached a terminal source error. Open Curriculum Library to inspect the source and upload state.",
+      });
       return res.json({ ok: true, failedJobId: job.id });
     }
 
@@ -63,6 +68,12 @@ export async function runOcrExtractionWorker(req: Request, res: Response) {
       const terminal = job.attemptCount >= 3;
       await updateOcrExtractionJob(job.id, { status: terminal ? "failed" : "pending", errorMessage: message });
       await updateCurriculumSourceExtraction(source.id, { extractionStatus: terminal ? "failed" : "pending", extractionError: message });
+      if (terminal) {
+        await notifyOwnerException({
+          title: "Curriculum OCR failed after retries",
+          content: "A curriculum OCR job reached its terminal retry limit. Open Curriculum Library to inspect and recover the affected source.",
+        });
+      }
       return res.status(terminal ? 200 : 500).json({ ok: false, jobId: job.id, error: message, terminal });
     }
   } catch (error) {

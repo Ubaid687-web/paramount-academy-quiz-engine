@@ -12,6 +12,7 @@ import {
 } from "./curriculumIngestion";
 import { assessExtractedSourceQuality } from "./ocrQuality";
 import { ensureOcrScheduler } from "./ocrScheduler";
+import { notifyOwnerException } from "./ownerExceptionAlerts";
 import { storagePut } from "./storage";
 
 export const MAX_PORTAL_ADMIN_SOURCE_BYTES = 150 * 1024 * 1024;
@@ -64,7 +65,14 @@ export async function ingestPortalAdminCurriculumSource(input: {
     await createOcrExtractionJob({ sourceId: source.id, totalPages: extracted.pageCount ?? 1 });
     await ensureOcrScheduler(input.sessionCookie);
   } else {
-    await replaceCurriculumSourcePageReviews(source.id, assessExtractedSourceQuality(extracted.pages));
+    const pageReviews = assessExtractedSourceQuality(extracted.pages);
+    await replaceCurriculumSourcePageReviews(source.id, pageReviews);
+    if (pageReviews.some((page) => page.reviewStatus === "needs_review")) {
+      await notifyOwnerException({
+        title: "Curriculum source requires review",
+        content: "A newly uploaded curriculum source has weak extracted pages. Open Curriculum Library and complete the existing page review before activation.",
+      });
+    }
   }
   return source;
 }

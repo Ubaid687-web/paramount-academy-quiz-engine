@@ -7,6 +7,7 @@ import type { FbiseSubject, ScopeType, TextbookCitationCandidate } from "./curri
 import { buildPriorHistoryExclusion, type PriorQuestionHistory } from "./generationDiversity";
 import { buildBudgetedSourceText, buildGenerationRequestFingerprint } from "./generationOptimization";
 import { invokeGenerationProvider, type GenerationProviderTelemetry } from "./generationProvider";
+import { notifyOwnerException } from "./ownerExceptionAlerts";
 import { buildSharedStyleAnchor, type SharedStyleAnchor } from "./styleAnchor";
 
 export type GenerationSourceContext = {
@@ -472,7 +473,14 @@ REQUIREMENTS:
       ? "The connected AI generation service has hit a usage quota limit or billing pause. Please check account credits or try again later when usage resets. No quiz draft was saved."
       : isRateLimitError
         ? "The AI generation service is temporarily rate-limited. The system retried automatically; please wait a moment and try again. No quiz draft was saved."
-      : "Check the source text for readability, reduce the requested question count if necessary, and try again. No quiz draft was saved.";
+        : "Check the source text for readability, reduce the requested question count if necessary, and try again. No quiz draft was saved.";
+
+    if (isQuotaError || isRateLimitError || errorType === "timeout" || errorType === "generation") {
+      await notifyOwnerException({
+        title: "Quiz generation needs attention",
+        content: `A generation job reached a terminal ${errorType.replace(/_/g, " ")} state. Open AI Generation History to review provider telemetry and retry guidance.`,
+      });
+    }
 
     return {
       jobId: job.id,

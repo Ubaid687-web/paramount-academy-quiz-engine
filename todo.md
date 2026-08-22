@@ -732,3 +732,16 @@
 - [x] Strengthen source-citation evidence and generated-paper provider provenance without changing the approved model-routing policy.
 - [x] Repair signed-out draft-library access and reorganize curriculum intake as Grade 9/10 → subject → textbook/model/past-paper source actions.
 - [x] Add ordered past-paper metadata, migrate safely, add regressions, validate the full system, checkpoint, and report the audit release.
+
+## Phase 126: Controlled Capability and Integration Assessment
+- [x] Inventory existing connectors, skills, integrations, and operational gaps without changing configuration.
+- [x] Evaluate only source-governed, cost-conscious capabilities that improve staff workflow, intake reliability, or FBISE preparation quality.
+- [x] Produce a ranked Portal Admin decision plan with explicit security, privacy, cost, and UX effects before enabling anything.
+- [x] Implement, validate, checkpoint, and document only the capabilities that Portal Admin explicitly approves.
+
+## Phase 127: Layered Hardening, Owner Recovery, and Approved Operational Controls
+- [x] Establish a version-pinned, layered hardening plan covering static analysis, secrets, dependencies, authorization, data flow, runtime behavior, regressions, builds, and visual paths.
+- [x] Add deduplicated Portal Admin exception alerts for verified OCR and generation operational failures without exposing sensitive content.
+- [x] Create and validate a concise Paramount Academy curriculum-governance maintenance skill.
+- [x] Configure an owner-controlled GitHub export route and verify repository safety boundaries without placing secrets, database data, or curriculum source files in version control.
+- [x] Execute the layered hardening audit, repair only evidence-backed defects, add regressions, validate, checkpoint, and deliver recovery guidance.

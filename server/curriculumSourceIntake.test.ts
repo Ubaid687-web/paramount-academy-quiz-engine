@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   extractCurriculumSourceText: vi.fn(),
   assessExtractedSourceQuality: vi.fn(),
   ensureOcrScheduler: vi.fn(),
+  notifyOwnerException: vi.fn(),
   storagePut: vi.fn(),
 }));
 
@@ -24,6 +25,7 @@ vi.mock("./curriculumIngestion", () => ({
 }));
 vi.mock("./ocrQuality", () => ({ assessExtractedSourceQuality: mocks.assessExtractedSourceQuality }));
 vi.mock("./ocrScheduler", () => ({ ensureOcrScheduler: mocks.ensureOcrScheduler }));
+vi.mock("./ownerExceptionAlerts", () => ({ notifyOwnerException: mocks.notifyOwnerException }));
 vi.mock("./storage", () => ({ storagePut: mocks.storagePut }));
 
 import {
@@ -62,5 +64,30 @@ describe("Portal Admin large curriculum source intake", () => {
     expect(mocks.createOcrExtractionJob).toHaveBeenCalledWith({ sourceId: 901, totalPages: 180 });
     expect(mocks.ensureOcrScheduler).toHaveBeenCalledWith("session=secure");
     expect(source).toMatchObject({ id: 901, extractionStatus: "pending" });
+  });
+
+  it("alerts the owner once when a newly extracted source enters the existing page-review workflow", async () => {
+    mocks.extractCurriculumSourceText.mockResolvedValue({
+      text: "Extracted text",
+      pageCount: 1,
+      pages: [{ pageNumber: 1, text: "weak" }],
+      mode: "native_text",
+    });
+    mocks.createCurriculumSource.mockResolvedValue({ id: 902, extractionStatus: "extracted" });
+    mocks.assessExtractedSourceQuality.mockReturnValue([{ pageNumber: 1, reviewStatus: "needs_review" }]);
+
+    await ingestPortalAdminCurriculumSource({
+      curriculumSetId: 71,
+      fileName: "grade-9-physics.txt",
+      mimeType: "text/plain",
+      fileBuffer: Buffer.from("Extracted text"),
+      uploadedBy: 22,
+    });
+
+    expect(mocks.notifyOwnerException).toHaveBeenCalledTimes(1);
+    expect(mocks.notifyOwnerException).toHaveBeenCalledWith(expect.objectContaining({
+      title: "Curriculum source requires review",
+      content: expect.not.stringContaining("Extracted text"),
+    }));
   });
 });

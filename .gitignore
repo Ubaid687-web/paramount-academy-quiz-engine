@@ -112,3 +112,17 @@ temp/
 # Manus version file (auto-generated, not part of source)
 client/public/__manus__/version.json
 .project-config.json
+
+# Academy private runtime and source artifacts — curriculum files remain in protected S3, never Git.
+.manus-logs/
+Downloads/
+upload/
+uploads/
+storage/
+*.pdf
+*.doc
+*.docx
+*.ppt
+*.pptx
+*.xlsx
+.env.*

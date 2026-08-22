@@ -10,10 +10,12 @@ const mocks = vi.hoisted(() => ({
   getGenerationJob: vi.fn(),
   getCachedGenerationResponse: vi.fn(),
   putCachedGenerationResponse: vi.fn(),
+  notifyOwnerException: vi.fn(),
 }));
 
 vi.mock("./_core/llm", () => ({ invokeLLM: mocks.invokeLLM }));
 vi.mock("./generationProvider", () => ({ invokeGenerationProvider: mocks.invokeGenerationProvider }));
+vi.mock("./ownerExceptionAlerts", () => ({ notifyOwnerException: mocks.notifyOwnerException }));
 vi.mock("./db", () => ({
   createGenerationJob: mocks.createGenerationJob,
   updateGenerationJob: mocks.updateGenerationJob,
@@ -59,6 +61,7 @@ describe("AI Agent - MCQ Generation", () => {
     mocks.getGenerationJob.mockReset();
     mocks.getCachedGenerationResponse.mockReset();
     mocks.putCachedGenerationResponse.mockReset();
+    mocks.notifyOwnerException.mockReset();
     mocks.invokeLLM.mockReset();
     mocks.invokeGenerationProvider.mockReset();
     mocks.createGenerationJob.mockResolvedValue({ id: 501 });
@@ -382,6 +385,10 @@ describe("AI Agent - MCQ Generation", () => {
     expect(result.draft.safeRetryAdvice).toContain("usage quota limit or billing pause");
     expect(result.draft.safeRetryAdvice).not.toContain("Check the source text for readability");
     expect(mocks.updateGenerationJob).toHaveBeenCalledWith(501, expect.objectContaining({ primaryFailureType: "quota_exhaustion" }));
+    expect(mocks.notifyOwnerException).toHaveBeenCalledWith(expect.objectContaining({
+      title: "Quiz generation needs attention",
+      content: expect.not.stringContaining("usage exhausted"),
+    }));
   });
 
   it("keeps an exhausted transient rate limit distinct from account quota exhaustion", async () => {
