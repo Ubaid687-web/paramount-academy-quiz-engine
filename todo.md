@@ -597,7 +597,7 @@
 - [x] Add additive, provider-reported token and cache-hit telemetry to generation records and Portal Admin history without changing generation behavior.
 - [x] Validate telemetry through MCQ and printable paths while preserving source grounding, validation, diversity, exclusion, retries, and cache correctness.
 - [x] Assess an approved-scope source-span selector only after telemetry is available; retain current source budgets until provenance and coverage are demonstrated.
-- [ ] Revisit output limits only after measured data and separate Portal Admin approval.
+- [x] Revisit output limits only after measured data and separate Portal Admin approval.
 
 ## Phase 102: Chemistry Short-Paper Completion Failure
 - [x] Inspect the reported short-paper job, selected approved scope, provider telemetry, and exact server error.
@@ -615,7 +615,7 @@
 - [x] Add regression tests, validate with build and test suite, and publish.
 
 ## Phase 105: Controlled Printable Generation Telemetry Test
-- [ ] Verify deployed printable batching and select the smallest valid approved scope for one real test request.
+- [x] Verify deployed printable batching and select the smallest valid approved scope for one real test request.
 - [x] Run a real source-scoped printable-generation request and capture available timing evidence, provider route, retries, token use, and failure evidence.
 - [x] Report measured results without changing grounding, validation, diversity, exclusion, or cache behavior.
 
@@ -745,3 +745,8 @@
 - [x] Create and validate a concise Paramount Academy curriculum-governance maintenance skill.
 - [x] Configure an owner-controlled GitHub export route and verify repository safety boundaries without placing secrets, database data, or curriculum source files in version control.
 - [x] Execute the layered hardening audit, repair only evidence-backed defects, add regressions, validate, checkpoint, and deliver recovery guidance.
+
+## Phase 128: Measured Output-Limit Review and Deployed Printable Verification
+- [x] Review measured printable-generation telemetry and retain existing output limits unless a specific no-regression adjustment is justified.
+- [x] Preflight and run one smallest valid approved Grade 10 printable-generation verification, recording only truthful provider and completion telemetry.
+- [x] Apply only an evidence-backed repair if required, validate, checkpoint, synchronize the private GitHub backup, and report the result.
