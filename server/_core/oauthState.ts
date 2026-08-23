@@ -23,7 +23,8 @@ export function normalizeTrustedOrigin(value: unknown) {
 }
 
 export function getTrustedRequestOrigin(req: Request) {
-  const host = req.get("host") ?? "";
+  const forwardedHost = req.headers["x-forwarded-host"];
+  const host = (Array.isArray(forwardedHost) ? forwardedHost[0] : forwardedHost?.split(",")[0])?.trim() || req.get("host") || "";
   const forwardedProto = req.headers["x-forwarded-proto"];
   const protocol = (Array.isArray(forwardedProto) ? forwardedProto[0] : forwardedProto?.split(",")[0])?.trim().toLowerCase() || req.protocol;
   return normalizeTrustedOrigin(`${protocol}://${host}`);

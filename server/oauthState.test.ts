@@ -34,4 +34,24 @@ describe("browser-bound OAuth state", () => {
     expect(getOAuthStartOrigin(proxiedRequest, "https://aiquizhub-g2y5mute.manus.space")).toBe("https://aiquizhub-g2y5mute.manus.space");
     expect(getOAuthStartOrigin(proxiedRequest, "https://attacker.example")).toBeNull();
   });
+
+  it("uses the managed proxy's forwarded public host for same-origin mutation checks", () => {
+    const proxiedRequest = requestWith({
+      host: "service.internal",
+      "x-forwarded-host": "aiquizhub-g2y5mute.manus.space",
+      "x-forwarded-proto": "https",
+    }, "http");
+
+    expect(getTrustedRequestOrigin(proxiedRequest)).toBe("https://aiquizhub-g2y5mute.manus.space");
+  });
+
+  it("does not convert an untrusted forwarded host into a trusted mutation origin", () => {
+    const proxiedRequest = requestWith({
+      host: "service.internal",
+      "x-forwarded-host": "attacker.example",
+      "x-forwarded-proto": "https",
+    }, "http");
+
+    expect(getTrustedRequestOrigin(proxiedRequest)).toBeNull();
+  });
 });
