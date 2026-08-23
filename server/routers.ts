@@ -38,10 +38,8 @@ function normalizeProgrammeKey(input: z.infer<typeof programmeKeySchema>) {
 const printableGenerationInputSchema = z.object({
   paperType: z.enum(["short", "long"]),
   title: z.string().trim().min(3).max(160),
-  contentText: z.string().min(100, "Content must be at least 100 characters").optional(),
   pairCount: z.number().int().min(1).max(30),
   difficulty: z.enum(["balanced", "easy", "medium", "hard"]).default("balanced"),
-  patternProgramme: programmeKeySchema.optional(),
   scope: z.object({
     board: z.string().trim().min(2).max(50).default("FBISE"),
     grade: z.string().trim().min(1).max(20),
@@ -50,7 +48,7 @@ const printableGenerationInputSchema = z.object({
     chapterIds: z.array(z.number().int().positive()).optional(),
     segmentIds: z.array(z.number().int().positive()).optional(),
     scopeTemplateId: z.number().int().positive().optional(),
-  }).optional(),
+  }),
 });
 
 type PrintableGenerationInput = z.infer<typeof printableGenerationInputSchema>;
@@ -123,59 +121,37 @@ async function buildStyleAnchorForProgramme(
 }
 
 async function resolvePrintableGenerationSource(userId: number, input: PrintableGenerationInput) {
-  let contentText = input.contentText;
-  let sourceContext: GenerationSourceContext | undefined;
-  if (input.scope) {
-    const { getActiveCurriculumScopeCatalog, listActiveAssessmentPatternSources, listReviewedAssessmentPatternGuidance, listPriorGeneratedQuestionHistory } = await import("./db");
-    const { resolveCurriculumScope } = await import("./curriculumScope");
-    const [catalog, paperPatternSources, paperPatternGuidance] = await Promise.all([
-      getActiveCurriculumScopeCatalog(input.scope),
-      listActiveAssessmentPatternSources(input.scope),
-      listReviewedAssessmentPatternGuidance(input.scope),
-    ]);
-    if (!catalog) throw new Error("No active reviewed textbook source is available for the selected subject.");
-    const styleAnchor = await buildStyleAnchorForProgramme(input.scope, paperPatternGuidance);
-    const resolvedScope = resolveCurriculumScope(catalog, input.scope);
-    const priorQuestionHistory = await listPriorGeneratedQuestionHistory({
-      userId,
-      curriculumSetId: catalog.curriculumSet.id,
-      scopeSnapshot: resolvedScope.snapshot,
-    });
-    contentText = resolvedScope.sourceText;
-    sourceContext = {
-      sourceType: "curriculum_scope",
-      sourceTitle: resolvedScope.displayLabel,
-      styleAnchor,
-      subject: catalog.curriculumSet.subject,
-      classLevel: catalog.curriculumSet.grade,
-      curriculumSetId: catalog.curriculumSet.id,
-      scopeTemplateId: resolvedScope.scopeTemplateId,
-      scopeType: resolvedScope.scopeType,
-      selectedChapterIds: resolvedScope.chapterIds,
-      selectedSegmentIds: resolvedScope.segmentIds,
-      scopeSnapshot: resolvedScope.snapshot,
-      paperPatternGuidance: paperPatternGuidance.length ? paperPatternGuidance : paperPatternSources.map((source) => ({ sourceKind: source.sourceKind, academicYear: source.academicYear })),
-      priorQuestionHistory,
-    };
-  } else if (input.patternProgramme) {
-    const { listActiveAssessmentPatternSources, listReviewedAssessmentPatternGuidance, listPriorGeneratedQuestionHistory } = await import("./db");
-    const [paperSources, paperPatternGuidance, priorQuestionHistory] = await Promise.all([
-      listActiveAssessmentPatternSources(input.patternProgramme),
-      listReviewedAssessmentPatternGuidance(input.patternProgramme),
-      listPriorGeneratedQuestionHistory({ userId, contentText: input.contentText }),
-    ]);
-    const styleAnchor = await buildStyleAnchorForProgramme(input.patternProgramme, paperPatternGuidance);
-    sourceContext = {
-      sourceType: "raw_text",
-      sourceTitle: "Teacher-provided custom source",
-      styleAnchor,
-      subject: input.patternProgramme.subject,
-      classLevel: input.patternProgramme.grade,
-      paperPatternGuidance: paperPatternGuidance.length ? paperPatternGuidance : paperSources.map((source) => ({ sourceKind: source.sourceKind, academicYear: source.academicYear })),
-      priorQuestionHistory,
-    };
-  }
-  if (!contentText || !sourceContext) throw new Error("Upload or paste at least 100 characters of material, or choose a reviewed curriculum scope.");
+  const { getActiveCurriculumScopeCatalog, listActiveAssessmentPatternSources, listReviewedAssessmentPatternGuidance, listPriorGeneratedQuestionHistory } = await import("./db");
+  const { resolveCurriculumScope } = await import("./curriculumScope");
+  const [catalog, paperPatternSources, paperPatternGuidance] = await Promise.all([
+    getActiveCurriculumScopeCatalog(input.scope),
+    listActiveAssessmentPatternSources(input.scope),
+    listReviewedAssessmentPatternGuidance(input.scope),
+  ]);
+  if (!catalog) throw new Error("No active reviewed textbook source is available for the selected subject.");
+  const styleAnchor = await buildStyleAnchorForProgramme(input.scope, paperPatternGuidance);
+  const resolvedScope = resolveCurriculumScope(catalog, input.scope);
+  const priorQuestionHistory = await listPriorGeneratedQuestionHistory({
+    userId,
+    curriculumSetId: catalog.curriculumSet.id,
+    scopeSnapshot: resolvedScope.snapshot,
+  });
+  const contentText = resolvedScope.sourceText;
+  const sourceContext: GenerationSourceContext = {
+    sourceType: "curriculum_scope",
+    sourceTitle: resolvedScope.displayLabel,
+    styleAnchor,
+    subject: catalog.curriculumSet.subject,
+    classLevel: catalog.curriculumSet.grade,
+    curriculumSetId: catalog.curriculumSet.id,
+    scopeTemplateId: resolvedScope.scopeTemplateId,
+    scopeType: resolvedScope.scopeType,
+    selectedChapterIds: resolvedScope.chapterIds,
+    selectedSegmentIds: resolvedScope.segmentIds,
+    scopeSnapshot: resolvedScope.snapshot,
+    paperPatternGuidance: paperPatternGuidance.length ? paperPatternGuidance : paperPatternSources.map((source) => ({ sourceKind: source.sourceKind, academicYear: source.academicYear })),
+    priorQuestionHistory,
+  };
   return { contentText, sourceContext };
 }
 
@@ -809,10 +785,17 @@ export const appRouter = router({
       }))
       .mutation(async ({ input }) => {
         const { getCurriculumSet, getCurriculumSource, createCurriculumChapter } = await import("./db");
+        const { hasTextbookAnchorEvidence } = await import("./quizDraftValidator");
         const curriculumSet = await getCurriculumSet(input.curriculumSetId);
         const source = await getCurriculumSource(input.sourceId);
         if (!curriculumSet || !source || source.curriculumSetId !== input.curriculumSetId) {
           throw new Error("The selected chapter source does not belong to this curriculum set.");
+        }
+        if (source.extractionStatus !== "extracted" || !source.extractedText?.trim()) {
+          throw new Error("Complete textbook extraction before saving a reviewed chapter.");
+        }
+        if (!hasTextbookAnchorEvidence(source.extractedText, input.contentText)) {
+          throw new Error("Chapter text must be copied from the selected extracted textbook source. Use the OCR correction workspace to amend a weak page first.");
         }
         if (input.endPage && input.startPage && input.endPage < input.startPage) {
           throw new Error("The chapter end page cannot be before its start page.");
@@ -839,7 +822,13 @@ export const appRouter = router({
         secondHalf: z.object({ label: z.string().min(1).max(100), contentText: z.string().min(100), startPage: z.number().int().positive().optional(), endPage: z.number().int().positive().optional() }),
       }))
       .mutation(async ({ input }) => {
-        const { replaceChapterSegments } = await import("./db");
+        const { getCurriculumChapter, replaceChapterSegments } = await import("./db");
+        const { hasTextbookAnchorEvidence } = await import("./quizDraftValidator");
+        const chapter = await getCurriculumChapter(input.chapterId);
+        if (!chapter) throw new Error("The selected textbook chapter was not found.");
+        if (!hasTextbookAnchorEvidence(chapter.contentText, input.firstHalf.contentText) || !hasTextbookAnchorEvidence(chapter.contentText, input.secondHalf.contentText)) {
+          throw new Error("Each segment must be copied from the reviewed chapter text. Correct the textbook source before changing source wording.");
+        }
         return replaceChapterSegments(input.chapterId, [
           { sequence: 1, label: input.firstHalf.label, contentText: input.firstHalf.contentText, startPage: input.firstHalf.startPage, endPage: input.firstHalf.endPage, startOffset: 0, endOffset: input.firstHalf.contentText.length },
           { sequence: 2, label: input.secondHalf.label, contentText: input.secondHalf.contentText, startPage: input.secondHalf.startPage, endPage: input.secondHalf.endPage, startOffset: 0, endOffset: input.secondHalf.contentText.length },
@@ -1055,60 +1044,8 @@ export const appRouter = router({
         paperPatternSourceIds: z.array(z.number().int().positive()).default([]),
         payload: z.unknown(),
       }))
-      .mutation(async ({ ctx, input }) => {
-        const { getActiveCurriculumScopeCatalog, listAssessmentPatternSourcesByIds, createAssessmentDraft } = await import("./db");
-        const { resolveCurriculumScope } = await import("./curriculumScope");
-        const { validateAssessmentDraftPayload } = await import("@shared/assessmentDraftContract");
-
-        const catalogueKey = { board: input.scope.board, grade: input.scope.grade, subject: input.scope.subject };
-        const catalog = await getActiveCurriculumScopeCatalog(catalogueKey);
-        if (!catalog) {
-          throw new Error("No active reviewed textbook source is available for the selected subject.");
-        }
-        const resolvedScope = resolveCurriculumScope(catalog, input.scope);
-        const validation = validateAssessmentDraftPayload(input.payload, input.assessmentMode);
-        if (!validation.valid) {
-          throw new Error(`Assessment draft failed validation: ${validation.issues.join(" ")}`);
-        }
-
-        const patternSources = await listAssessmentPatternSourcesByIds(catalogueKey, input.paperPatternSourceIds);
-        if (input.assessmentMode === "full_paper") {
-          if (!input.paperPatternSourceIds.length || patternSources.length !== input.paperPatternSourceIds.length) {
-            throw new Error("A full-paper draft requires active, extracted paper-pattern sources supplied for the selected subject.");
-          }
-        }
-
-        const reviewWarnings = [
-          "Draft only: Portal Admin review is required before publication or assignment.",
-          "Verify every item source reference against the approved textbook scope before approval.",
-          ...(input.assessmentMode === "full_paper"
-            ? ["Verify the full-paper structure against the attached approved paper-pattern sources before approval."]
-            : ["No examination-pattern claim is made unless an approved paper source is attached during review."]),
-        ];
-
-        const draft = await createAssessmentDraft({
-          title: validation.payload.title,
-          assessmentMode: input.assessmentMode,
-          sourceState: "ready",
-          curriculumSetId: catalog.curriculumSet.id,
-          scopeSnapshot: JSON.stringify(resolvedScope.snapshot),
-          paperPatternReferences: patternSources.length
-            ? JSON.stringify(patternSources.map((source) => ({
-              id: source.id,
-              sourceKind: source.sourceKind,
-              academicYear: source.academicYear,
-              originalFileName: source.originalFileName,
-            })))
-            : undefined,
-          draftPayload: JSON.stringify(validation.payload),
-          totalMarks: validation.totalMarks,
-          estimatedDurationMinutes: validation.payload.estimatedDurationMinutes,
-          status: "draft",
-          reviewWarnings: JSON.stringify(reviewWarnings),
-          createdBy: ctx.user.id,
-        });
-
-        return { success: true, assessmentDraftId: draft.id, reviewWarnings };
+      .mutation(async () => {
+        throw new Error("Manual assessment composition is unavailable because every issued paper item must come from a server-validated textbook generation result.");
       }),
 
     getDraft: teacherProcedure
@@ -1127,76 +1064,8 @@ export const appRouter = router({
         assessmentDraftId: z.number().int().positive(),
         payload: z.unknown(),
       }))
-      .mutation(async ({ ctx, input }) => {
-        const { getAssessmentDraft, updateAssessmentDraft } = await import("./db");
-        const { validateAssessmentDraftPayload } = await import("@shared/assessmentDraftContract");
-        const existing = await getAssessmentDraft(input.assessmentDraftId);
-        if (!existing || existing.createdBy !== ctx.user.id) {
-          throw new Error("Assessment draft not found or unauthorized");
-        }
-        const validation = validateAssessmentDraftPayload(input.payload, existing.assessmentMode);
-        if (!validation.valid) {
-          throw new Error(`Assessment draft failed validation: ${validation.issues.join(" ")}`);
-        }
-        const reviewWarnings = [
-          "Draft revised: Portal Admin review is required before publication or assignment.",
-          "Verify every item source reference against the original approved source snapshot before approval.",
-          ...(existing.assessmentMode === "full_paper" ? ["Verify the revised paper structure against the preserved approved paper-pattern references."] : []),
-        ];
-        const draft = await updateAssessmentDraft(existing.id, {
-          title: validation.payload.title,
-          draftPayload: JSON.stringify(validation.payload),
-          totalMarks: validation.totalMarks,
-          estimatedDurationMinutes: validation.payload.estimatedDurationMinutes,
-          status: "in_review",
-          reviewWarnings: JSON.stringify(reviewWarnings),
-          reviewedBy: ctx.user.id,
-          reviewedAt: new Date(),
-        });
-        return { success: true, assessmentDraftId: draft?.id, reviewWarnings };
-      }),
-  }),
-
-  printablePaper: router({
-    renderMcqPaper: teacherProcedure.input(z.object({ title: z.string().min(1), mcqs: z.array(z.object({ question: z.string().min(1), options: z.object({ A: z.string().min(1), B: z.string().min(1), C: z.string().min(1), D: z.string().min(1) }), answer: z.enum(["A", "B", "C", "D"]), explanation: z.string().min(1), sourceReference: z.string().min(1), learningObjective: z.string().min(1) })).min(1) })).mutation(async ({ input }) => {
-      const { renderMcqPaperPdf } = await import("./printablePaperExport");
-      const pdf = await renderMcqPaperPdf(input.title, input.mcqs);
-      return { fileName: `${input.title.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-mcq-paper.pdf`, data: pdf.toString("base64") };
-    }),
-    renderMcqSolutionKey: teacherProcedure.input(z.object({ title: z.string().min(1), mcqs: z.array(z.object({ question: z.string().min(1), options: z.object({ A: z.string().min(1), B: z.string().min(1), C: z.string().min(1), D: z.string().min(1) }), answer: z.enum(["A", "B", "C", "D"]), explanation: z.string().min(1), sourceReference: z.string().min(1), learningObjective: z.string().min(1) })).min(1) })).mutation(async ({ input }) => {
-      const { renderMcqSolutionPdf } = await import("./printablePaperExport");
-      const pdf = await renderMcqSolutionPdf(input.title, input.mcqs);
-      return { fileName: `${input.title.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-mcq-solution-key.pdf`, data: pdf.toString("base64") };
-    }),
-    renderPaper: teacherProcedure
-      .input(z.object({ payload: z.unknown() }))
-      .mutation(async ({ input }) => {
-        const { validateAssessmentDraftPayload } = await import("@shared/assessmentDraftContract");
-        const { renderPrintablePaperPdf } = await import("./printablePaperExport");
-        const validation = validateAssessmentDraftPayload(input.payload);
-        if (!validation.valid || (validation.payload.mode !== "short" && validation.payload.mode !== "long")) {
-          throw new Error("Only a valid short- or long-question printable draft can be exported.");
-        }
-        const pdf = await renderPrintablePaperPdf(validation.payload);
-        return {
-          fileName: `${validation.payload.title.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase() || "assessment"}-paper.pdf`,
-          data: pdf.toString("base64"),
-        };
-      }),
-    renderSolutionKey: teacherProcedure
-      .input(z.object({ payload: z.unknown() }))
-      .mutation(async ({ input }) => {
-        const { validateAssessmentDraftPayload } = await import("@shared/assessmentDraftContract");
-        const { renderPrintableSolutionPdf } = await import("./printablePaperExport");
-        const validation = validateAssessmentDraftPayload(input.payload);
-        if (!validation.valid || (validation.payload.mode !== "short" && validation.payload.mode !== "long")) {
-          throw new Error("Only a valid short- or long-question printable draft can have a solution key exported.");
-        }
-        const pdf = await renderPrintableSolutionPdf(validation.payload);
-        return {
-          fileName: `${validation.payload.title.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase() || "assessment"}-solution-key.pdf`,
-          data: pdf.toString("base64"),
-        };
+      .mutation(async () => {
+        throw new Error("Manual assessment revision is unavailable because every issued paper item must remain tied to a server-validated textbook generation result.");
       }),
   }),
 
@@ -1204,11 +1073,8 @@ export const appRouter = router({
     generateMCQs: teacherProcedure
       .input(
         z.object({
-          contentText: z.string().min(100, "Content must be at least 100 characters").optional(),
           numQuestions: z.number().int().min(1).max(100),
           difficulty: z.enum(["balanced", "easy", "medium", "hard"]).default("balanced"),
-          patternProgramme: programmeKeySchema.optional(),
-          patternSubject: z.string().trim().min(2).max(100).optional(),
           scope: z.object({
             board: z.string().trim().min(2).max(50).default("FBISE"),
             grade: z.string().trim().min(1).max(20).default("10"),
@@ -1217,71 +1083,41 @@ export const appRouter = router({
             chapterIds: z.array(z.number().int().positive()).optional(),
             segmentIds: z.array(z.number().int().positive()).optional(),
             scopeTemplateId: z.number().int().positive().optional(),
-          }).optional(),
+          }),
         })
       )
       .mutation(async ({ ctx, input }) => {
         const { generateMCQsFromContent } = await import("./aiAgent");
-        let contentText = input.contentText;
-        let sourceContext;
-
-        if (input.scope) {
-          const { getActiveCurriculumScopeCatalog, listActiveAssessmentPatternSources, listReviewedAssessmentPatternGuidance, listPriorGeneratedQuestionHistory } = await import("./db");
-          const { resolveCurriculumScope } = await import("./curriculumScope");
-          const [catalog, paperPatternSources, paperPatternGuidance] = await Promise.all([
-            getActiveCurriculumScopeCatalog(input.scope),
-            listActiveAssessmentPatternSources(input.scope),
-            listReviewedAssessmentPatternGuidance(input.scope),
-          ]);
-          if (!catalog) {
-            throw new Error("No active reviewed curriculum is available for the selected subject.");
-          }
-          const styleAnchor = await buildStyleAnchorForProgramme(input.scope, paperPatternGuidance);
-          const resolvedScope = resolveCurriculumScope(catalog, input.scope);
-          const priorQuestionHistory = await listPriorGeneratedQuestionHistory({
-            userId: ctx.user.id,
-            curriculumSetId: catalog.curriculumSet.id,
-            scopeSnapshot: resolvedScope.snapshot,
-          });
-          contentText = resolvedScope.sourceText;
-          sourceContext = {
-            sourceType: "curriculum_scope" as const,
-            sourceTitle: resolvedScope.displayLabel,
-            styleAnchor,
-            subject: catalog.curriculumSet.subject,
-            classLevel: catalog.curriculumSet.grade,
-            curriculumSetId: catalog.curriculumSet.id,
-            scopeTemplateId: resolvedScope.scopeTemplateId,
-            scopeType: resolvedScope.scopeType,
-            selectedChapterIds: resolvedScope.chapterIds,
-            selectedSegmentIds: resolvedScope.segmentIds,
-            scopeSnapshot: resolvedScope.snapshot,
-            paperPatternGuidance: paperPatternGuidance.length ? paperPatternGuidance : paperPatternSources.map((source) => ({ sourceKind: source.sourceKind, academicYear: source.academicYear })),
-            priorQuestionHistory,
-          };
-        } else if (input.patternProgramme || input.patternSubject) {
-          const { listActiveAssessmentPatternSources, listReviewedAssessmentPatternGuidance, listPriorGeneratedQuestionHistory } = await import("./db");
-          const patternProgramme = input.patternProgramme ?? { board: "FBISE", grade: "10", subject: input.patternSubject! };
-          const [paperPatternSources, paperPatternGuidance, priorQuestionHistory] = await Promise.all([
-            listActiveAssessmentPatternSources(patternProgramme),
-            listReviewedAssessmentPatternGuidance(patternProgramme),
-            listPriorGeneratedQuestionHistory({ userId: ctx.user.id, contentText: input.contentText }),
-          ]);
-          const styleAnchor = await buildStyleAnchorForProgramme(patternProgramme, paperPatternGuidance);
-          sourceContext = {
-            sourceType: "raw_text" as const,
-            sourceTitle: "Teacher-provided custom source",
-            styleAnchor,
-            subject: patternProgramme.subject,
-            classLevel: patternProgramme.grade,
-            paperPatternGuidance: paperPatternGuidance.length ? paperPatternGuidance : paperPatternSources.map((source) => ({ sourceKind: source.sourceKind, academicYear: source.academicYear })),
-            priorQuestionHistory,
-          };
-        }
-
-        if (!contentText) {
-          throw new Error("Upload or paste at least 100 characters of material, or choose a reviewed curriculum scope.");
-        }
+        const { getActiveCurriculumScopeCatalog, listActiveAssessmentPatternSources, listReviewedAssessmentPatternGuidance, listPriorGeneratedQuestionHistory } = await import("./db");
+        const { resolveCurriculumScope } = await import("./curriculumScope");
+        const [catalog, paperPatternSources, paperPatternGuidance] = await Promise.all([
+          getActiveCurriculumScopeCatalog(input.scope),
+          listActiveAssessmentPatternSources(input.scope),
+          listReviewedAssessmentPatternGuidance(input.scope),
+        ]);
+        if (!catalog) throw new Error("No active reviewed curriculum is available for the selected subject.");
+        const resolvedScope = resolveCurriculumScope(catalog, input.scope);
+        const priorQuestionHistory = await listPriorGeneratedQuestionHistory({
+          userId: ctx.user.id,
+          curriculumSetId: catalog.curriculumSet.id,
+          scopeSnapshot: resolvedScope.snapshot,
+        });
+        const contentText = resolvedScope.sourceText;
+        const sourceContext: GenerationSourceContext = {
+          sourceType: "curriculum_scope",
+          sourceTitle: resolvedScope.displayLabel,
+          styleAnchor: await buildStyleAnchorForProgramme(input.scope, paperPatternGuidance),
+          subject: catalog.curriculumSet.subject,
+          classLevel: catalog.curriculumSet.grade,
+          curriculumSetId: catalog.curriculumSet.id,
+          scopeTemplateId: resolvedScope.scopeTemplateId,
+          scopeType: resolvedScope.scopeType,
+          selectedChapterIds: resolvedScope.chapterIds,
+          selectedSegmentIds: resolvedScope.segmentIds,
+          scopeSnapshot: resolvedScope.snapshot,
+          paperPatternGuidance: paperPatternGuidance.length ? paperPatternGuidance : paperPatternSources.map((source) => ({ sourceKind: source.sourceKind, academicYear: source.academicYear })),
+          priorQuestionHistory,
+        };
         return generateMCQsFromContent(
           ctx.user.id,
           contentText,
@@ -1292,78 +1128,10 @@ export const appRouter = router({
       }),
 
     generatePrintablePaper: teacherProcedure
-      .input(z.object({
-        paperType: z.enum(["short", "long"]),
-        title: z.string().trim().min(3).max(160),
-        contentText: z.string().min(100, "Content must be at least 100 characters").optional(),
-        pairCount: z.number().int().min(1).max(30),
-        difficulty: z.enum(["balanced", "easy", "medium", "hard"]).default("balanced"),
-        patternProgramme: programmeKeySchema.optional(),
-        scope: z.object({
-          board: z.string().trim().min(2).max(50).default("FBISE"),
-          grade: z.string().trim().min(1).max(20),
-          subject: z.string().trim().min(2).max(100),
-          scopeType: z.enum(["single_chapter", "half_chapter", "multiple_chapters", "half_syllabus", "block"]),
-          chapterIds: z.array(z.number().int().positive()).optional(),
-          segmentIds: z.array(z.number().int().positive()).optional(),
-          scopeTemplateId: z.number().int().positive().optional(),
-        }).optional(),
-      }))
+      .input(printableGenerationInputSchema)
       .mutation(async ({ ctx, input }) => {
         const { generatePrintablePaperFromContent } = await import("./printablePaper");
-        let contentText = input.contentText;
-        let sourceContext: import("./aiAgent").GenerationSourceContext | undefined;
-        if (input.scope) {
-          const { getActiveCurriculumScopeCatalog, listActiveAssessmentPatternSources, listReviewedAssessmentPatternGuidance, listPriorGeneratedQuestionHistory } = await import("./db");
-          const { resolveCurriculumScope } = await import("./curriculumScope");
-          const [catalog, paperPatternSources, paperPatternGuidance] = await Promise.all([
-            getActiveCurriculumScopeCatalog(input.scope),
-            listActiveAssessmentPatternSources(input.scope),
-            listReviewedAssessmentPatternGuidance(input.scope),
-          ]);
-          if (!catalog) throw new Error("No active reviewed textbook source is available for the selected subject.");
-          const styleAnchor = await buildStyleAnchorForProgramme(input.scope, paperPatternGuidance);
-          const resolvedScope = resolveCurriculumScope(catalog, input.scope);
-          const priorQuestionHistory = await listPriorGeneratedQuestionHistory({
-            userId: ctx.user.id,
-            curriculumSetId: catalog.curriculumSet.id,
-            scopeSnapshot: resolvedScope.snapshot,
-          });
-          contentText = resolvedScope.sourceText;
-          sourceContext = {
-            sourceType: "curriculum_scope",
-            sourceTitle: resolvedScope.displayLabel,
-            styleAnchor,
-            subject: catalog.curriculumSet.subject,
-            classLevel: catalog.curriculumSet.grade,
-            curriculumSetId: catalog.curriculumSet.id,
-            scopeTemplateId: resolvedScope.scopeTemplateId,
-            scopeType: resolvedScope.scopeType,
-            selectedChapterIds: resolvedScope.chapterIds,
-            selectedSegmentIds: resolvedScope.segmentIds,
-            scopeSnapshot: resolvedScope.snapshot,
-            paperPatternGuidance: paperPatternGuidance.length ? paperPatternGuidance : paperPatternSources.map((source) => ({ sourceKind: source.sourceKind, academicYear: source.academicYear })),
-            priorQuestionHistory,
-          };
-        } else if (input.patternProgramme) {
-          const { listActiveAssessmentPatternSources, listReviewedAssessmentPatternGuidance, listPriorGeneratedQuestionHistory } = await import("./db");
-          const [paperSources, paperPatternGuidance, priorQuestionHistory] = await Promise.all([
-            listActiveAssessmentPatternSources(input.patternProgramme),
-            listReviewedAssessmentPatternGuidance(input.patternProgramme),
-            listPriorGeneratedQuestionHistory({ userId: ctx.user.id, contentText: input.contentText }),
-          ]);
-          const styleAnchor = await buildStyleAnchorForProgramme(input.patternProgramme, paperPatternGuidance);
-          sourceContext = {
-            sourceType: "raw_text",
-            sourceTitle: "Teacher-provided custom source",
-            styleAnchor,
-            subject: input.patternProgramme.subject,
-            classLevel: input.patternProgramme.grade,
-            paperPatternGuidance: paperPatternGuidance.length ? paperPatternGuidance : paperSources.map((source) => ({ sourceKind: source.sourceKind, academicYear: source.academicYear })),
-            priorQuestionHistory,
-          };
-        }
-        if (!contentText || !sourceContext) throw new Error("Upload or paste at least 100 characters of material, or choose a reviewed curriculum scope.");
+        const { contentText, sourceContext } = await resolvePrintableGenerationSource(ctx.user.id, input);
         const { getCachedGenerationResponse, putCachedGenerationResponse, createGenerationJob, updateGenerationJob } = await import("./db");
         const { buildGenerationRequestFingerprint } = await import("./generationOptimization");
         const requestFingerprint = buildGenerationRequestFingerprint({
@@ -1757,35 +1525,6 @@ export const appRouter = router({
         z.object({
           jobId: z.number(),
           quizTitle: z.string().min(1),
-          mcqs: z.array(z.object({
-            question: z.string(),
-            options: z.object({
-              A: z.string(),
-              B: z.string(),
-              C: z.string(),
-              D: z.string(),
-            }),
-            answer: z.string(),
-            explanation: z.string(),
-            difficulty: z.string(),
-            conceptKey: z.string().min(2),
-            facetKey: z.string().min(2),
-            answerTarget: z.string().min(2),
-            sourceReference: z.string().min(1),
-            learningObjective: z.string().min(1),
-            sourceCitation: z.object({
-              citationKey: z.string().min(1),
-              curriculumSetId: z.number().int().positive(),
-              chapterId: z.number().int().positive(),
-              chapterCode: z.string().nullable(),
-              chapterTitle: z.string().min(1),
-              segmentId: z.number().int().positive().nullable(),
-              segmentLabel: z.string().nullable(),
-              startPage: z.number().int().positive().nullable(),
-              endPage: z.number().int().positive().nullable(),
-              textAnchor: z.string().min(1).max(220),
-            }).nullable().optional(),
-          })),
           difficulty: z.string(),
         })
       )
@@ -1802,7 +1541,6 @@ export const appRouter = router({
           ctx.user.id,
           input.jobId,
           input.quizTitle,
-          input.mcqs,
           input.difficulty
         );
 

@@ -215,6 +215,7 @@ export async function generateMCQsFromContent(
       status: "completed",
       progress: 100,
       completedAt: new Date(),
+      resultPayload: JSON.stringify({ mcqs: cachedPayload.mcqs, draft: cachedPayload.draft }),
     });
     return {
       ...cachedPayload,
@@ -397,7 +398,12 @@ REQUIREMENTS:
 
     const qualityChecks = buildDraftQualityChecks(finalMcqs, finalNumQuestions);
 
-    await updateGenerationJob(job.id, { progress: 100, status: "completed", completedAt: new Date() });
+    await updateGenerationJob(job.id, {
+      progress: 100,
+      status: "completed",
+      completedAt: new Date(),
+      resultPayload: JSON.stringify({ mcqs: finalMcqs }),
+    });
 
     const result = {
       jobId: job.id,
@@ -506,7 +512,6 @@ export async function saveGeneratedQuizToDatabase(
   userId: number,
   jobId: number,
   quizTitle: string,
-  mcqs: any[],
   difficulty: string
 ) {
   try {
@@ -514,21 +519,24 @@ export async function saveGeneratedQuizToDatabase(
     if (!job || job.userId !== userId) {
       throw new Error("Generation job not found or unauthorized");
     }
+    if (job.generationMode !== "mcq" || job.status !== "completed" || !job.resultPayload) {
+      throw new Error("A completed server-validated MCQ generation result is required before this quiz can be saved.");
+    }
+    let mcqs: GeneratedMcq[];
+    try {
+      const storedResult = JSON.parse(job.resultPayload) as { mcqs?: GeneratedMcq[] };
+      if (!Array.isArray(storedResult.mcqs) || !storedResult.mcqs.length) throw new Error("missing MCQs");
+      mcqs = storedResult.mcqs;
+    } catch {
+      throw new Error("The completed MCQ generation result is unavailable or invalid. Generate a new source-bound draft before saving.");
+    }
 
     const sourceSnapshot = job.sourceSnapshot ? JSON.parse(job.sourceSnapshot) : undefined;
     const citationCandidates = job.curriculumSetId
       ? citationCandidatesFromScopeSnapshot({ sourceType: "curriculum_scope", sourceTitle: "Approved textbook scope", scopeSnapshot: sourceSnapshot })
       : [];
-    if (citationCandidates.length) {
-      for (let index = 0; index < mcqs.length; index += 1) {
-        const mcq = mcqs[index];
-        const citation = mcq.sourceCitation;
-        const candidate = citation && citationCandidates.find((entry) => entry.citationKey === citation.citationKey);
-        if (!candidate || citation.curriculumSetId !== candidate.curriculumSetId || citation.chapterId !== candidate.chapterId || !citation.textAnchor?.trim() || !hasTextbookAnchorEvidence(job.contentText, citation.textAnchor)) {
-          throw new Error(`Question ${index + 1} is missing a valid approved-textbook citation and cannot be saved.`);
-        }
-      }
-    }
+    const validation = validateGeneratedMcqs(mcqs, job.numQuestions, [], citationCandidates, job.contentText);
+    if (!validation.valid) throw new Error(`The completed MCQ result is no longer source-valid and cannot be saved. ${validation.issues.join(" ")}`);
 
     // Create the quiz
     const quiz = await createAiGeneratedQuiz({

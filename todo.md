@@ -801,3 +801,18 @@
 - [ ] Complete full validation, controlled owner Grade 9 Chemistry upload acceptance when the owner supplies the file, reviewer-readiness record, checkpoint, and GitHub synchronization.
 - [x] Repair the confirmed Drizzle migration-ledger gap only after verifying live schema features match committed migrations, then prove the standard migration command has no pending replay.
 - [x] Make the Portal Admin generation history intrinsically newest-first at the data boundary and remove compensating client reversal with regression coverage.
+
+## Phase 137: Independent Professional Re-Audit
+- [x] Re-establish and record an independent baseline, treating prior audit conclusions as claims to verify rather than proof.
+- [x] Review architecture, migrations, database integrity, security, identity, authorization, and source-isolation boundaries.
+- [x] Review textbook intake, protected storage, OCR, durable recovery, Grade 9 readiness, AI-generation controls, provider reliability, citations, and diversity.
+- [x] Review PDF/download and publication boundaries, frontend/mobile/accessibility flows, dependencies/configuration/integrations, performance evidence, and repository hygiene.
+- [x] Repair only evidence-backed P0/P1 findings with focused regression coverage and record accepted P2/P3 observations privately.
+- [ ] Complete release validation, synchronized private backup, and the owner-run Grade 9 Chemistry actual-PDF acceptance step before inviting academic review.
+- [x] P0: Remove every teacher raw-text/uploaded-custom-material generation path so only explicit active textbook scopes can be factual input.
+- [x] P0: Prevent client-supplied MCQ payloads from being saved under an unrelated valid textbook citation.
+- [x] P0: Prevent arbitrary Portal Admin chapter or segment text from becoming active generation source content.
+- [x] P1: Apply prior-paper concept/facet/answer exclusion across all authorised teachers for the exact curriculum scope.
+- [x] P1: Remove the reachable process-local prepared-PDF export path; retain the protected direct streaming/download route only.
+- [x] P0: Bind printable PDF exports to an owned, completed server-held generation result rather than a browser-authored payload.
+- [x] P0: Remove or source-validate manual short/long/full-paper composition so browser-authored facts cannot enter reviewed drafts.

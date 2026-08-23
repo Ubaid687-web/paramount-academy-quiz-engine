@@ -96,4 +96,17 @@ describe("scoped curriculum draft generation", () => {
       })
     );
   });
+
+  it("rejects raw teacher text before the generation provider can be called", async () => {
+    mocks.generateMCQsFromContent.mockClear();
+    const caller = appRouter.createCaller(createAdminContext());
+
+    await expect((caller.aiAgent.generateMCQs as any)({
+      numQuestions: 2,
+      difficulty: "balanced",
+      contentText: "Unreviewed teacher material must never become factual source text. ".repeat(3),
+    })).rejects.toThrow("scope");
+
+    expect(mocks.generateMCQsFromContent).not.toHaveBeenCalled();
+  });
 });

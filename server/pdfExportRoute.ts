@@ -1,29 +1,22 @@
-import { randomUUID } from "node:crypto";
 import type { Express, Request, Response } from "express";
 import { z } from "zod";
 import { sdk } from "./_core/sdk";
 import { validateAssessmentDraftPayload } from "@shared/assessmentDraftContract";
 import { renderMcqPaperPdf, renderMcqSolutionPdf, renderPrintablePaperPdf, renderPrintableSolutionPdf } from "./printablePaperExport";
 
-type PreparedExport = { ownerId: number; fileName: string; pdf: Buffer; expiresAt: number };
-const preparedExports = new Map<string, PreparedExport>();
-const EXPORT_TTL_MS = 5 * 60 * 1000;
-
-const mcqSchema = z.object({
-  question: z.string().min(1),
-  options: z.object({ A: z.string().min(1), B: z.string().min(1), C: z.string().min(1), D: z.string().min(1) }),
-  answer: z.enum(["A", "B", "C", "D"]),
-  explanation: z.string().min(1),
-  sourceReference: z.string().min(1),
-  learningObjective: z.string().min(1),
+const exportRequestSchema = z.object({
+  kind: z.enum(["paper", "solution", "mcq-paper", "mcq-solution"]),
+  jobId: z.number().int().positive(),
 });
 
-const exportRequestSchema = z.discriminatedUnion("kind", [
-  z.object({ kind: z.literal("paper"), payload: z.unknown() }),
-  z.object({ kind: z.literal("solution"), payload: z.unknown() }),
-  z.object({ kind: z.literal("mcq-paper"), title: z.string().min(1), mcqs: z.array(mcqSchema).min(1) }),
-  z.object({ kind: z.literal("mcq-solution"), title: z.string().min(1), mcqs: z.array(mcqSchema).min(1) }),
-]);
+type StoredMcq = {
+  question: string;
+  options: { A: string; B: string; C: string; D: string };
+  answer: "A" | "B" | "C" | "D";
+  explanation: string;
+  sourceReference: string;
+  learningObjective: string;
+};
 
 function safeFileName(value: string, suffix: string) {
   const clean = value.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase() || "assessment";
@@ -34,28 +27,58 @@ export function getPdfContentDisposition(fileName: string, isInAppPreview: boole
   return `${isInAppPreview ? "inline" : "attachment"}; filename="${fileName}"`;
 }
 
-export async function renderExport(input: z.infer<typeof exportRequestSchema>) {
-  if (input.kind === "mcq-paper") return { fileName: safeFileName(input.title, "mcq-paper"), pdf: await renderMcqPaperPdf(input.title, input.mcqs) };
-  if (input.kind === "mcq-solution") return { fileName: safeFileName(input.title, "mcq-solution-key"), pdf: await renderMcqSolutionPdf(input.title, input.mcqs) };
-  const validation = validateAssessmentDraftPayload(input.payload);
-  if (!validation.valid || (validation.payload.mode !== "short" && validation.payload.mode !== "long")) {
-    throw new Error("This printable draft is no longer valid. Generate it again before downloading.");
-  }
-  return input.kind === "paper"
-    ? { fileName: safeFileName(validation.payload.title, "paper"), pdf: await renderPrintablePaperPdf(validation.payload) }
-    : { fileName: safeFileName(validation.payload.title, "solution-key"), pdf: await renderPrintableSolutionPdf(validation.payload) };
-}
-
 function parseNativeFormExport(body: unknown) {
   const raw = body && typeof body === "object" ? (body as Record<string, unknown>).exportRequest : null;
-  if (typeof raw !== "string") throw new Error("The PDF download request was missing its assessment data.");
+  if (typeof raw !== "string") throw new Error("The PDF download request was missing its completed generation reference.");
   return exportRequestSchema.parse(JSON.parse(raw));
+}
+
+function parseStoredMcqs(raw: string | null): StoredMcq[] {
+  if (!raw) throw new Error("The completed MCQ generation result is unavailable. Generate the source-bound draft again before downloading.");
+  const parsed = JSON.parse(raw) as { mcqs?: StoredMcq[] };
+  if (!Array.isArray(parsed.mcqs) || !parsed.mcqs.length) throw new Error("The completed MCQ generation result is invalid. Generate the source-bound draft again before downloading.");
+  return parsed.mcqs;
+}
+
+function parseStoredPrintable(raw: string | null) {
+  if (!raw) throw new Error("The completed printable generation result is unavailable. Generate the source-bound draft again before downloading.");
+  const state = JSON.parse(raw) as { final?: { payload?: unknown } };
+  const validation = validateAssessmentDraftPayload(state.final?.payload);
+  if (!validation.valid || (validation.payload.mode !== "short" && validation.payload.mode !== "long")) {
+    throw new Error("The completed printable generation result is invalid. Generate the source-bound draft again before downloading.");
+  }
+  return validation.payload;
+}
+
+export async function renderStoredGenerationExport(userId: number, input: z.infer<typeof exportRequestSchema>) {
+  const { getGenerationJob } = await import("./db");
+  const job = await getGenerationJob(input.jobId);
+  if (!job || job.userId !== userId || job.status !== "completed") {
+    throw new Error("The completed generation result was not found or is not available to this account.");
+  }
+
+  if (input.kind === "mcq-paper" || input.kind === "mcq-solution") {
+    if (job.generationMode !== "mcq") throw new Error("This completed generation is not an MCQ draft.");
+    const mcqs = parseStoredMcqs(job.resultPayload);
+    const title = "AI-generated MCQ draft";
+    return input.kind === "mcq-paper"
+      ? { fileName: safeFileName(title, "mcq-paper"), pdf: await renderMcqPaperPdf(title, mcqs) }
+      : { fileName: safeFileName(title, "mcq-solution-key"), pdf: await renderMcqSolutionPdf(title, mcqs) };
+  }
+
+  if (job.generationMode !== "short" && job.generationMode !== "long") {
+    throw new Error("This completed generation is not a printable paper draft.");
+  }
+  const payload = parseStoredPrintable(job.printableState);
+  return input.kind === "paper"
+    ? { fileName: safeFileName(payload.title, "paper"), pdf: await renderPrintablePaperPdf(payload) }
+    : { fileName: safeFileName(payload.title, "solution-key"), pdf: await renderPrintableSolutionPdf(payload) };
 }
 
 async function requireTeacherOrAdmin(req: Request, res: Response) {
   try {
     const user = await sdk.authenticateRequest(req);
-    if (!user || (user.role !== "teacher" && user.role !== "admin")) {
+    if (user.role !== "teacher" && user.role !== "admin") {
       res.status(403).json({ message: "Teacher or Portal Admin access is required for assessment exports." });
       return null;
     }
@@ -70,50 +93,18 @@ export function registerPdfExportRoutes(app: Express) {
   app.post("/api/pdf-export/download", async (req, res) => {
     const user = await requireTeacherOrAdmin(req, res);
     if (!user) return;
-    console.info(`[pdf-export] native request received user=${user.id} destination=${req.get("sec-fetch-dest") || "unknown"} origin=${req.get("origin") || "none"}`);
     try {
-      const rendered = await renderExport(parseNativeFormExport(req.body));
+      const request = parseNativeFormExport(req.body);
+      const rendered = await renderStoredGenerationExport(user.id, request);
       const isInAppPreview = req.get("sec-fetch-dest") === "iframe" && Boolean(req.get("origin")?.includes(".manus.computer"));
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader("Content-Disposition", getPdfContentDisposition(rendered.fileName, isInAppPreview));
       res.setHeader("Content-Length", String(rendered.pdf.length));
       res.setHeader("Cache-Control", "private, no-store, max-age=0");
-      console.info(`[pdf-export] native response sent file=${rendered.fileName} bytes=${rendered.pdf.length} disposition=${isInAppPreview ? "inline" : "attachment"}`);
       res.status(200).send(rendered.pdf);
     } catch (error) {
-      console.warn(`[pdf-export] native request failed reason=${error instanceof Error ? error.message : "unknown"}`);
+      console.warn(`[pdf-export] direct request failed reason=${error instanceof Error ? error.message : "unknown"}`);
       res.status(400).json({ message: error instanceof Error ? error.message : "The PDF could not be prepared." });
     }
-  });
-
-  app.post("/api/pdf-export", async (req, res) => {
-    const user = await requireTeacherOrAdmin(req, res);
-    if (!user) return;
-    try {
-      const input = exportRequestSchema.parse(req.body);
-      const rendered = await renderExport(input);
-      const exportId = randomUUID();
-      preparedExports.set(exportId, { ownerId: user.id, fileName: rendered.fileName, pdf: rendered.pdf, expiresAt: Date.now() + EXPORT_TTL_MS });
-      res.status(201).json({ downloadUrl: `/api/pdf-export/${exportId}`, fileName: rendered.fileName });
-    } catch (error) {
-      res.status(400).json({ message: error instanceof Error ? error.message : "The PDF could not be prepared." });
-    }
-  });
-
-  app.get("/api/pdf-export/:exportId", async (req, res) => {
-    const user = await requireTeacherOrAdmin(req, res);
-    if (!user) return;
-    const prepared = preparedExports.get(req.params.exportId);
-    if (!prepared || prepared.expiresAt < Date.now() || prepared.ownerId !== user.id) {
-      preparedExports.delete(req.params.exportId);
-      res.status(404).json({ message: "This PDF download has expired. Generate it again." });
-      return;
-    }
-    preparedExports.delete(req.params.exportId);
-    res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", `attachment; filename="${prepared.fileName}"`);
-    res.setHeader("Content-Length", String(prepared.pdf.length));
-    res.setHeader("Cache-Control", "private, no-store, max-age=0");
-    res.status(200).send(prepared.pdf);
   });
 }

@@ -162,6 +162,7 @@ export const generationJobs = mysqlTable("generationJobs", {
   providerCachedTokens: int("providerCachedTokens"),
   providerTotalTokens: int("providerTotalTokens"),
   generationMode: mysqlEnum("generationMode", ["mcq", "short", "long"]),
+  resultPayload: longtext("resultPayload"), // Server-validated generation result used for safe saving and PDF export.
   providerFailure: text("providerFailure"), // Private JSON: provider, status, classification, retry/circuit facts. Never shown to teachers.
   printableState: longtext("printableState"), // Private resumable printable-batch state. Never exposed as a completed paper.
   createdAt: timestamp("createdAt").defaultNow().notNull(),

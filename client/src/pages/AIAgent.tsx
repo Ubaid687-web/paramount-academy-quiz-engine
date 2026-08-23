@@ -21,10 +21,9 @@ import { toast } from "sonner";
 
 type FbiseSubject = string;
 type GradeLevel = string;
-type GenerationScope = "uploaded_content" | "single_chapter" | "half_chapter" | "multiple_chapters" | "half_syllabus" | "block";
+type GenerationScope = "single_chapter" | "half_chapter" | "multiple_chapters" | "half_syllabus" | "block";
 type AssessmentMode = "mcq" | "short" | "long" | "full_paper";
-type SourceView = "choice" | "approved" | "custom";
-type CustomInputMode = "upload" | "paste";
+type SourceView = "choice" | "approved";
 type FullPaperDraftItem = {
   id: string;
   kind: "short" | "long";
@@ -96,7 +95,7 @@ export default function AIAgent() {
   const [subject, setSubject] = useState<FbiseSubject>(() => requestedSubjectIsValid ? requestedSubject! : "physics");
   const [gradeLevel, setGradeLevel] = useState<GradeLevel>(() => requestedGrade?.trim() || "10");
   const [isContextEditing, setIsContextEditing] = useState(() => !requestedSubjectIsValid);
-  const [scopeType, setScopeType] = useState<GenerationScope>("uploaded_content");
+  const [scopeType, setScopeType] = useState<GenerationScope>("multiple_chapters");
   const [selectedChapterIds, setSelectedChapterIds] = useState<number[]>([]);
   const [selectedSegmentId, setSelectedSegmentId] = useState<number | null>(null);
   const [selectedScopeTemplateId, setSelectedScopeTemplateId] = useState<number | null>(null);
@@ -117,7 +116,6 @@ export default function AIAgent() {
   const [selectedPatternSourceIds, setSelectedPatternSourceIds] = useState<number[]>([]);
   const [activeStep, setActiveStep] = useState<1 | 2 | 3 | 4>(1);
   const [sourceView, setSourceView] = useState<SourceView>("choice");
-  const [customInputMode, setCustomInputMode] = useState<CustomInputMode>("upload");
   const [settingsView, setSettingsView] = useState<"count" | "difficulty">("count");
   const [showSavedDraftLoader, setShowSavedDraftLoader] = useState(false);
   const [showLeaveGenerationConfirm, setShowLeaveGenerationConfirm] = useState(() => new URLSearchParams(window.location.search).get("previewLeaveConfirm") === "1");
@@ -150,8 +148,8 @@ export default function AIAgent() {
   const hasActiveApprovedTextbook = Boolean(scopeCatalogQuery.data);
 
   useEffect(() => {
-    if (!scopeCatalogQuery.isLoading && !scopeCatalogQuery.data && scopeType !== "uploaded_content") {
-      setScopeType("uploaded_content");
+    if (!scopeCatalogQuery.isLoading && !scopeCatalogQuery.data) {
+      setScopeType("multiple_chapters");
       setSelectedChapterIds([]);
       setSelectedSegmentId(null);
       setSelectedScopeTemplateId(null);
@@ -262,7 +260,6 @@ export default function AIAgent() {
 
   const activeScopeCatalog = scopeCatalogQuery.data;
   const estimatedTopicCapacity = (() => {
-    if (scopeType === "uploaded_content") return contentAnalysis?.topicCount ?? null;
     if (!activeScopeCatalog) return null;
 
     const chapterTopicCount = (chapterId: number) => activeScopeCatalog.chapters.find((chapter) => chapter.id === chapterId)?.estimatedTopicCount ?? 0;
@@ -303,10 +300,8 @@ export default function AIAgent() {
   );
   const generationScopeType = (scopeType === "multiple_chapters" && selectedChapterIds.length === 1
     ? "single_chapter"
-    : scopeType) as Exclude<GenerationScope, "uploaded_content">;
-  const hasGenerationSource = isProgrammeReady && (scopeType === "uploaded_content"
-    ? customInputMode === "upload" ? Boolean(uploadedFile && contentText.trim()) : Boolean(contentText.trim())
-    : hasValidStoredScope);
+    : scopeType) as GenerationScope;
+  const hasGenerationSource = isProgrammeReady && hasValidStoredScope;
   const assessmentAvailability = assessmentAvailabilityQuery.data;
   const isSelectedModeAvailable = assessmentAvailability
     ? assessmentAvailability.supportedModes[assessmentMode]
@@ -316,20 +311,11 @@ export default function AIAgent() {
   const canAdvanceToDraft = isProgrammeReady
     && !isProcessingFile
     && Boolean(quizTitle.trim())
-    && ((isAutomaticMcqMode || isPrintablePaperMode) ? hasGenerationSource : scopeType !== "uploaded_content" && hasValidStoredScope);
+    && hasValidStoredScope;
   const activeFullPaperSection = fullPaperSections.find((section) => section.id === activeFullPaperSectionId) ?? fullPaperSections[0];
-  const sourceInputReady = scopeType === "uploaded_content"
-    ? customInputMode === "upload" ? Boolean(uploadedFile && contentText.trim()) : Boolean(contentText.trim())
-    : hasValidStoredScope;
+  const sourceInputReady = hasValidStoredScope;
   const builderStepLabel = activeStep === 1 ? "Quiz type" : activeStep === 2 ? "Source" : activeStep === 3 ? "Quiz settings" : "Review";
   const builderProgress = Math.round((activeStep / 4) * 100);
-
-  const changeCustomInputMode = (mode: CustomInputMode) => {
-    setCustomInputMode(mode);
-    setUploadedFile(null);
-    setContentText("");
-    setQuizTitle("");
-  };
 
   const toggleChapter = (chapterId: number, checked: boolean) => {
     setSelectedChapterIds((currentIds) => {
@@ -456,14 +442,7 @@ export default function AIAgent() {
       toast.error("This programme is not ready for teacher generation. Portal Admin must activate a reviewed curriculum edition first.");
       return;
     }
-    const usesStoredScope = scopeType !== "uploaded_content";
-
-    if (!hasGenerationSource && !usesStoredScope) {
-      toast.error("Please upload, paste, or select reviewed curriculum content first");
-      return;
-    }
-
-    if (usesStoredScope && !hasValidStoredScope) {
+    if (!hasValidStoredScope) {
       toast.error("Complete the selected curriculum scope before generating a draft");
       return;
     }
@@ -492,20 +471,15 @@ export default function AIAgent() {
       const result = await generateMutation.mutateAsync({
         numQuestions: requestedQuestionCount,
         difficulty,
-        patternProgramme: { board: "FBISE", grade: gradeLevel, subject },
-        ...(usesStoredScope
-          ? {
-              scope: {
-                board: "FBISE",
-                grade: gradeLevel,
-                subject,
-                scopeType: generationScopeType,
-                chapterIds: selectedChapterIds,
-                segmentIds: selectedSegmentId ? [selectedSegmentId] : [],
-                scopeTemplateId: selectedScopeTemplateId ?? undefined,
-              },
-            }
-          : { contentText }),
+        scope: {
+          board: "FBISE",
+          grade: gradeLevel,
+          subject,
+          scopeType: generationScopeType,
+          chapterIds: selectedChapterIds,
+          segmentIds: selectedSegmentId ? [selectedSegmentId] : [],
+          scopeTemplateId: selectedScopeTemplateId ?? undefined,
+        },
       });
 
       if (result.draft?.status === "error") {
@@ -544,7 +518,6 @@ export default function AIAgent() {
     try {
       await saveMutation.mutateAsync({
         quizTitle,
-        mcqs: generatedMcqs,
         difficulty,
         jobId: jobId || 0,
       });
@@ -598,8 +571,7 @@ export default function AIAgent() {
   const handleGeneratePrintablePaper = async () => {
     if (!isPrintablePaperMode) return;
     if (!quizTitle.trim()) return toast.error("Please enter a paper title.");
-    if (!hasGenerationSource) return toast.error("Please upload, paste, or select reviewed curriculum content first.");
-    if (scopeType !== "uploaded_content" && !hasValidStoredScope) return toast.error("Complete the selected curriculum scope before generating a printable paper.");
+    if (!hasValidStoredScope) return toast.error("Complete the selected approved textbook scope before generating a printable paper.");
     const requestedPairCount = Number.parseInt(paperPairCountInput, 10);
     if (!/^\d+$/.test(paperPairCountInput) || !Number.isInteger(requestedPairCount) || requestedPairCount < 1 || requestedPairCount > 30) {
       setPaperPairCountError("Enter a whole number from 1 to 30.");
@@ -619,8 +591,7 @@ export default function AIAgent() {
         title: quizTitle.trim(),
         pairCount: requestedPairCount,
         difficulty,
-        patternProgramme: { board: "FBISE", grade: gradeLevel, subject },
-        ...(scopeType !== "uploaded_content" ? { scope: { board: "FBISE", grade: gradeLevel, subject, scopeType: generationScopeType, chapterIds: selectedChapterIds, segmentIds: selectedSegmentId ? [selectedSegmentId] : [], scopeTemplateId: selectedScopeTemplateId ?? undefined } } : { contentText }),
+        scope: { board: "FBISE", grade: gradeLevel, subject, scopeType: generationScopeType, chapterIds: selectedChapterIds, segmentIds: selectedSegmentId ? [selectedSegmentId] : [], scopeTemplateId: selectedScopeTemplateId ?? undefined },
       });
       setJobId(start.jobId);
       if (start.status === "completed") {
@@ -652,54 +623,17 @@ export default function AIAgent() {
   };
 
   const handlePrintableDownload = (kind: "paper" | "solution") => {
-    if (!generatedPrintablePaper) return;
-    submitNativePdfExport({ kind, payload: generatedPrintablePaper });
+    if (!generatedPrintablePaper || !jobId) return;
+    submitNativePdfExport({ kind, jobId });
   };
 
   const handleMcqDownload = (kind: "paper" | "solution") => {
-    if (!generatedMcqs.length) return;
-    submitNativePdfExport({ kind: kind === "paper" ? "mcq-paper" : "mcq-solution", title: quizTitle, mcqs: generatedMcqs });
+    if (!generatedMcqs.length || !jobId) return;
+    submitNativePdfExport({ kind: kind === "paper" ? "mcq-paper" : "mcq-solution", jobId });
   };
 
   const handleSaveManualAssessmentDraft = async () => {
-    if (assessmentMode === "mcq" || assessmentMode === "full_paper") return;
-    if (!savedAssessmentDraftId && (scopeType === "uploaded_content" || !hasValidStoredScope)) {
-      toast.error("Short and long drafts must use selected approved textbook chapters.");
-      return;
-    }
-    if (!quizTitle.trim() || !draftQuestion.trim() || !draftMarks || !draftSourceReference.trim() || !draftLearningObjective.trim()) {
-      toast.error("Add a title, question, marks, source reference, and learning objective before saving the draft.");
-      return;
-    }
-
-    const item = buildManualDraftItem(assessmentMode);
-    if (!item) return;
-
-    try {
-      const payload = { mode: assessmentMode, title: quizTitle.trim(), estimatedDurationMinutes: null, items: [item] };
-      if (savedAssessmentDraftId) {
-        await reviseAssessmentDraftMutation.mutateAsync({ assessmentDraftId: savedAssessmentDraftId, payload });
-        toast.success(`${ASSESSMENT_MODE_LABELS[assessmentMode]} draft updated for Portal Admin review.`);
-      } else {
-        const result = await saveAssessmentDraftMutation.mutateAsync({
-          assessmentMode,
-          scope: {
-            board: "FBISE",
-            grade: gradeLevel,
-            subject,
-            scopeType: generationScopeType,
-            chapterIds: selectedChapterIds,
-            segmentIds: selectedSegmentId ? [selectedSegmentId] : [],
-            scopeTemplateId: selectedScopeTemplateId ?? undefined,
-          },
-          payload,
-        });
-        setSavedAssessmentDraftId(result.assessmentDraftId);
-        toast.success(`${ASSESSMENT_MODE_LABELS[assessmentMode]} draft saved for Portal Admin review.`);
-      }
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "The assessment draft could not be saved.");
-    }
+    toast.error("Manual paper composition is unavailable. Generate a source-bound printable draft from the selected textbook scope instead.");
   };
 
   const buildManualDraftItem = (mode: "short" | "long") => {
@@ -735,56 +669,7 @@ export default function AIAgent() {
   };
 
   const handleSaveFullPaperDraft = async () => {
-    if (!savedAssessmentDraftId && (scopeType === "uploaded_content" || !hasValidStoredScope)) {
-      toast.error("A full-paper draft must use selected approved textbook chapters.");
-      return;
-    }
-    if (!selectedPatternSourceIds.length || !quizTitle.trim()) {
-      toast.error("Select an approved paper source and enter a draft title before saving.");
-      return;
-    }
-    if (!fullPaperSections.length || fullPaperSections.some((section) => !section.label.trim() || !section.instructions.trim() || !section.items.length)) {
-      toast.error("Every full-paper section needs a label, instructions, and at least one saved item.");
-      return;
-    }
-    const selectedPatternReferences = (assessmentAvailability?.paperSources ?? [])
-      .filter((source) => selectedPatternSourceIds.includes(source.id))
-      .map((source) => `${source.sourceKind}${source.academicYear ? ` ${source.academicYear}` : ""}: ${source.originalFileName}`);
-    const totalMarks = fullPaperSections.reduce((paperTotal, section) => paperTotal + section.items.reduce((sectionTotal, item) => sectionTotal + item.marks, 0), 0);
-
-    try {
-      const payload = {
-        mode: "full_paper" as const,
-        title: quizTitle.trim(),
-        estimatedDurationMinutes: null,
-        patternReferences: selectedPatternReferences,
-        totalMarks,
-        sections: fullPaperSections.map(({ label, instructions, items }) => ({ label, instructions, items })),
-      };
-      if (savedAssessmentDraftId) {
-        await reviseAssessmentDraftMutation.mutateAsync({ assessmentDraftId: savedAssessmentDraftId, payload });
-        toast.success("Full-paper draft updated for Portal Admin review.");
-      } else {
-        const result = await saveAssessmentDraftMutation.mutateAsync({
-          assessmentMode: "full_paper",
-          scope: {
-            board: "FBISE",
-            grade: gradeLevel,
-            subject,
-            scopeType: generationScopeType,
-            chapterIds: selectedChapterIds,
-            segmentIds: selectedSegmentId ? [selectedSegmentId] : [],
-            scopeTemplateId: selectedScopeTemplateId ?? undefined,
-          },
-          paperPatternSourceIds: selectedPatternSourceIds,
-          payload,
-        });
-        setSavedAssessmentDraftId(result.assessmentDraftId);
-        toast.success("Full-paper review draft saved for Portal Admin review.");
-      }
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "The full-paper draft could not be saved.");
-    }
+    toast.error("Manual full-paper composition is unavailable. Use source-bound printable draft generation for the selected textbook scope.");
   };
 
   const updateActiveFullPaperSection = (updates: Partial<Pick<FullPaperSection, "label" | "instructions">>) => {
@@ -877,10 +762,7 @@ export default function AIAgent() {
             {activeStep === 2 && <Card className="border-border/80 bg-card shadow-sm motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-200">
               <CardHeader className="p-5 pb-3">
                 <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <CardTitle className="text-xl">Select source</CardTitle>
-                    <CardDescription>{sourceView === "choice" ? "Choose one path." : sourceView === "approved" ? "Choose reviewed textbook chapters." : "Choose one custom input method."}</CardDescription>
-                  </div>
+                  <div><CardTitle className="text-xl">Select source</CardTitle><CardDescription>{sourceView === "choice" ? "Choose the approved source path." : "Choose reviewed textbook chapters."}</CardDescription></div>
                   {sourceView !== "choice" && <Button type="button" variant="ghost" size="sm" onClick={() => setSourceView("choice")} aria-label="Change source">Change</Button>}
                 </div>
               </CardHeader>
@@ -889,10 +771,6 @@ export default function AIAgent() {
                   <button type="button" disabled={!hasActiveApprovedTextbook || scopeCatalogQuery.isLoading} onClick={() => { setScopeType("multiple_chapters"); setSourceView("approved"); }} className={`w-full rounded-xl border p-4 text-left transition-[background-color,border-color,box-shadow] ${hasActiveApprovedTextbook ? "border-primary/25 bg-primary/[0.04] hover:border-primary/50 hover:shadow-sm" : "cursor-not-allowed border-border bg-muted/30 opacity-65"}`}>
                     <div className="flex items-start justify-between gap-3"><div className="flex items-center gap-2"><LibraryBig className="h-4 w-4 text-primary" /><span className="text-sm font-bold text-foreground">Approved textbook chapters</span></div><span className="rounded-full bg-primary/10 px-2 py-1 text-[10px] font-extrabold uppercase tracking-wide text-primary">{hasActiveApprovedTextbook ? "Recommended" : "Unavailable"}</span></div>
                     <p className="mt-2 text-xs leading-5 text-muted-foreground">Use the reviewed source already prepared by Portal Admin.</p>
-                  </button>
-                  <button type="button" onClick={() => { setScopeType("uploaded_content"); setSourceView("custom"); }} className={`w-full rounded-xl border p-4 text-left transition-[background-color,border-color,box-shadow] ${!hasActiveApprovedTextbook ? "border-primary/25 bg-primary/[0.04]" : "border-border bg-muted/30 hover:border-primary/40 hover:shadow-sm"}`}>
-                    <div className="flex items-start justify-between gap-3"><div className="flex items-center gap-2"><FileText className="h-4 w-4 text-primary" /><span className="text-sm font-bold text-foreground">My custom lesson material</span></div><span className="rounded-full bg-muted px-2 py-1 text-[10px] font-extrabold uppercase tracking-wide text-muted-foreground">{hasActiveApprovedTextbook ? "Alternative" : "Recommended"}</span></div>
-                    <p className="mt-2 text-xs leading-5 text-muted-foreground">Bring one PDF/TXT file or paste a source excerpt.</p>
                   </button>
                   {!hasActiveApprovedTextbook && !scopeCatalogQuery.isLoading && <p className="text-xs text-muted-foreground">No verified {SUBJECT_LABELS[subject]} textbook is active.</p>}
                 </div>}
@@ -905,12 +783,6 @@ export default function AIAgent() {
                   <div className="flex items-center justify-between gap-3 border-t border-border pt-3"><p className="text-xs text-muted-foreground">{sourceInputReady ? (quizTitle.trim() ? "Ready" : "Add a title to continue.") : "Select a chapter first."}</p><Button type="button" variant="outline" size="sm" onClick={() => setActiveStep(1)}><ChevronLeft className="mr-1 h-4 w-4" />Back</Button><Button type="button" size="sm" disabled={!canAdvanceToDraft} onClick={() => { setSettingsView("count"); setActiveStep(3); }}>Continue<ChevronRight className="ml-1 h-4 w-4" /></Button></div>
                 </div>}
 
-                {sourceView === "custom" && <div className="space-y-4">
-                  <div className="grid grid-cols-2 rounded-xl border border-border bg-muted/40 p-1" role="tablist" aria-label="Custom source input method"><button type="button" role="tab" aria-selected={customInputMode === "upload"} onClick={() => changeCustomInputMode("upload")} className={`rounded-lg px-3 py-2 text-sm font-bold transition-colors ${customInputMode === "upload" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}>Upload file</button><button type="button" role="tab" aria-selected={customInputMode === "paste"} onClick={() => changeCustomInputMode("paste")} className={`rounded-lg px-3 py-2 text-sm font-bold transition-colors ${customInputMode === "paste" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}>Paste text</button></div>
-                  {customInputMode === "upload" ? <div className="space-y-3"><label className="flex min-h-32 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-border bg-muted/35 p-5 text-center hover:border-primary/45 hover:bg-primary/[0.03]"><input type="file" id="file-upload" className="hidden" accept=".txt,.pdf" onChange={handleFileUpload} /><div className="flex flex-col items-center gap-2">{isProcessingFile ? <Loader2 className="h-7 w-7 animate-spin text-primary" /> : <Upload className="h-7 w-7 text-primary" />}<p className="text-sm font-semibold text-foreground">{isProcessingFile ? "Extracting document…" : "Choose PDF or TXT"}</p><p className="text-xs text-muted-foreground">One source file</p></div></label>{uploadedFile ? <div className="flex items-center justify-between rounded-lg bg-accent/10 p-3"><div className="flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-accent" /><div><p className="text-sm font-medium">{uploadedFile.name}</p><p className="text-xs text-muted-foreground">{(uploadedFile.size / 1024 / 1024).toFixed(2)} MB</p></div></div><Button onClick={() => { setUploadedFile(null); setContentText(""); setQuizTitle(""); }} variant="ghost" size="icon" className="h-6 w-6" aria-label="Remove uploaded source"><X className="h-4 w-4" /></Button></div> : null}</div> : <div><Label htmlFor="content" className="mb-2 block text-sm font-medium">Paste source text</Label><Textarea id="content" aria-label="Paste source text" placeholder="Paste source text" value={contentText} onChange={(event) => setContentText(event.target.value)} className="min-h-32 resize-none" /></div>}
-                  {sourceInputReady && <div><Label htmlFor="custom-title" className="mb-2 block text-sm font-medium">Quiz title</Label><Input id="custom-title" placeholder="e.g., Grade 10 Physics revision" value={quizTitle} onChange={(event) => setQuizTitle(event.target.value)} /></div>}
-                  <div className="flex items-center justify-between gap-3 border-t border-border pt-3"><p className="text-xs text-muted-foreground">{!sourceInputReady ? "Add source material to continue." : quizTitle.trim() ? "Ready" : "Add a title to continue."}</p><div className="flex gap-2"><Button type="button" variant="outline" size="sm" onClick={() => setActiveStep(1)}><ChevronLeft className="mr-1 h-4 w-4" />Back</Button><Button type="button" size="sm" disabled={!canAdvanceToDraft} onClick={() => { setSettingsView("count"); setActiveStep(3); }}>Continue<ChevronRight className="ml-1 h-4 w-4" /></Button></div></div>
-                </div>}
               </CardContent>
             </Card>}
             {false && activeStep === 3 && assessmentMode === "full_paper" && isSelectedModeAvailable && <Card className="border-primary/20 bg-card shadow-sm motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-200">
@@ -922,7 +794,7 @@ export default function AIAgent() {
                 <CardDescription>Start a reviewable paper section only from selected approved textbook chapters and active supplied paper sources. The structure remains a draft until Portal Admin review.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {!savedAssessmentDraftId && (scopeType === "uploaded_content" || !hasValidStoredScope) ? <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm leading-6 text-muted-foreground">Select at least one approved textbook chapter above before starting a full-paper draft.</div> : <>
+                {!savedAssessmentDraftId && !hasValidStoredScope ? <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm leading-6 text-muted-foreground">Select at least one approved textbook chapter above before starting a full-paper draft.</div> : <>
                   <fieldset className="space-y-2" aria-label="Select approved paper sources">
                     <legend className="text-sm font-medium text-foreground">Approved paper evidence</legend>
                     <p className="text-xs leading-5 text-muted-foreground">Select every reviewed model or past paper that supports this paper structure.</p>
@@ -1117,8 +989,6 @@ export default function AIAgent() {
                                 {mcq.sourceCitation.startPage && mcq.sourceCitation.endPage ? `, pp. ${mcq.sourceCitation.startPage}–${mcq.sourceCitation.endPage}` : ""}
                                 {` · “${mcq.sourceCitation.textAnchor}”`}
                               </p>
-                            ) : scopeType === "uploaded_content" ? (
-                              <p className="mt-1 text-muted-foreground">Custom material — no approved textbook citation.</p>
                             ) : null}
                           </div>
                         )}
@@ -1273,7 +1143,6 @@ export default function AIAgent() {
                     <Select value={scopeType} onValueChange={(value) => setScopeType(value as GenerationScope)}>
                       <SelectTrigger id="generation-scope" aria-label="Generation scope"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="uploaded_content">My uploaded or pasted lesson material</SelectItem>
                         <SelectItem value="single_chapter">An approved chapter</SelectItem>
                         <SelectItem value="half_chapter">Part of an approved chapter</SelectItem>
                         <SelectItem value="multiple_chapters">Several approved chapters</SelectItem>
@@ -1283,7 +1152,7 @@ export default function AIAgent() {
                     </Select>
                   </div>}
 
-                  {gradeLevel === "10" && scopeType !== "uploaded_content" && !activeScopeCatalog && !scopeCatalogQuery.isLoading && (
+                  {gradeLevel === "10" && !activeScopeCatalog && !scopeCatalogQuery.isLoading && (
                     <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-2.5 text-xs text-muted-foreground">
                       {scopeCatalogQuery.error
                         ? "This account cannot load reviewed curriculum scopes. Sign in with an administrator account to use stored sources."
@@ -1341,7 +1210,7 @@ export default function AIAgent() {
                     </div>
                   )}
 
-                  {gradeLevel === "10" && scopeType !== "uploaded_content" && activeScopeCatalog && (
+                  {gradeLevel === "10" && activeScopeCatalog && (
                     <p className="text-xs text-muted-foreground">Active source: <span className="font-medium text-foreground">{activeScopeCatalog.curriculumSet.label}</span>{activeScopeCatalog.curriculumSet.editionLabel ? ` — ${activeScopeCatalog.curriculumSet.editionLabel}` : ""}</p>
                   )}
                 </div>

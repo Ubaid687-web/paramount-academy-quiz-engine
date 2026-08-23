@@ -20,23 +20,10 @@ function createContext(role: "user" | "teacher" | "admin"): TrpcContext {
   };
 }
 
-const exportInput = {
-  title: "Teacher export check",
-  mcqs: [{
-    question: "Which statement is supported by the approved source?",
-    options: { A: "Supported", B: "Distractor one", C: "Distractor two", D: "Distractor three" },
-    answer: "A" as const,
-    explanation: "The approved source supports option A.",
-    sourceReference: "Chapter 1, page 1",
-    learningObjective: "Verify a source-supported statement.",
-  }],
-};
-
 describe("teacher and Portal Admin separation", () => {
-  it("allows a teacher to export an assessment paper without granting curriculum administration", async () => {
+  it("keeps curriculum administration and staff role management outside a teacher account", async () => {
     const teacher = appRouter.createCaller(createContext("teacher"));
 
-    await expect(teacher.printablePaper.renderMcqPaper(exportInput)).resolves.toBeDefined();
     await expect(teacher.curriculum.listSets()).rejects.toMatchObject({ code: "FORBIDDEN" });
     await expect(teacher.staff.listRoleDirectory()).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
@@ -44,7 +31,6 @@ describe("teacher and Portal Admin separation", () => {
   it("keeps ordinary accounts outside teacher and Portal Admin workflows", async () => {
     const ordinaryUser = appRouter.createCaller(createContext("user"));
 
-    await expect(ordinaryUser.printablePaper.renderMcqPaper(exportInput)).rejects.toMatchObject({ code: "FORBIDDEN" });
     await expect(ordinaryUser.curriculum.listSets()).rejects.toMatchObject({ code: "FORBIDDEN" });
     await expect(ordinaryUser.staff.listRoleDirectory()).rejects.toMatchObject({ code: "FORBIDDEN" });
   });

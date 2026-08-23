@@ -284,7 +284,7 @@ export async function getQuestionForQuiz(quizId: number, questionId: number) {
 }
 
 export async function listPriorGeneratedQuestionHistory(params: {
-  userId: number;
+  userId?: number;
   curriculumSetId?: number;
   scopeSnapshot?: unknown;
   contentText?: string;
@@ -296,17 +296,10 @@ export async function listPriorGeneratedQuestionHistory(params: {
   const scopedQuizRows = params.curriculumSetId && exactScope
     ? await db.select().from(quizzes).where(and(
       eq(quizzes.isAiGenerated, 1),
-      eq(quizzes.createdBy, params.userId),
       eq(quizzes.curriculumSetId, params.curriculumSetId),
       eq(quizzes.scopeSnapshot, exactScope),
     ))
-    : params.contentText
-      ? await db.select().from(quizzes).where(and(
-        eq(quizzes.isAiGenerated, 1),
-        eq(quizzes.createdBy, params.userId),
-        eq(quizzes.sourceContent, params.contentText),
-      ))
-      : [];
+    : [];
 
   const history: PriorQuestionHistory[] = [];
   for (const quiz of scopedQuizRows) {
@@ -322,7 +315,6 @@ export async function listPriorGeneratedQuestionHistory(params: {
 
   const scopedDraftRows = params.curriculumSetId && exactScope
     ? await db.select().from(assessmentDrafts).where(and(
-      eq(assessmentDrafts.createdBy, params.userId),
       eq(assessmentDrafts.curriculumSetId, params.curriculumSetId),
       eq(assessmentDrafts.scopeSnapshot, exactScope),
     ))

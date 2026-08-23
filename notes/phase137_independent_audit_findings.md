@@ -1,0 +1,63 @@
+# Phase 137 — Independent Professional Re-Audit Findings
+
+This is a private, evidence-led audit record. It treats prior audit notes as historical claims and records new observations separately. It must not contain textbook pages, OCR transcripts, user uploads, credentials, database dumps, or other protected source material.
+
+## Baseline: 23 August 2026
+
+| Surface | Independent observation | Audit implication |
+| --- | --- | --- |
+| Application server | 72 top-level TypeScript modules, including implementation and regression suites; 16 protected framework/core modules were separately identified. | The audit will use focused, feature-by-feature reads and tests rather than a superficial monolithic scan. |
+| Client | 18 React page/component/context/hook modules were identified, including the assessment builder, Curriculum Management, Quiz List, practice/results, and staff sign-in. | The UI review will prioritise high-state workflows and role-boundary screens. |
+| Schema history | 24 SQL migrations (`0000`–`0023`), 24 matching snapshots, and a Drizzle journal exist in the tracked repository. | The earlier migration-ledger repair must be verified again against the live migration table and no-replay command before release acceptance. |
+| Prior evidence | Phase 136 records a repaired migration ledger, newest-first generation history, passing type/test/build checks, a direct native PDF download path, and an untested owner Grade 9 Chemistry PDF acceptance flow. | None of these statements are relied on without targeted corroboration in this phase. |
+
+## Baseline constraints
+
+1. Grade 9 Chemistry source acceptance remains deliberately pending because the owner controls the original PDF. No simulated or substitute source will be used.
+2. The audit retains the platform's textbook-only factual authority and Grade 9/10 scope isolation as non-negotiable release controls.
+3. No new external connector is presumed necessary. Any proposed integration must follow a demonstrated P0/P1 gap, least-privilege permission model, defined data flow, cost, and recovery criteria.
+
+## Open audit work
+
+The following work remains open under Phase 137: architecture and authorization review; upload/OCR/recovery review; AI and provider-control review; printable/download, frontend/accessibility, dependency/configuration, and Git hygiene review; and any narrow repairs/validation that evidence requires.
+
+## Confirmed findings
+
+| ID | Severity | Evidence | Required disposition |
+| --- | --- | --- | --- |
+| P137-01 | **P0 — factual-authority bypass** | `AIAgent.tsx` presents a teacher-facing **My custom lesson material** path that accepts uploaded PDF/TXT or pasted text. `aiAgent.generateMCQs`, `aiAgent.generatePrintablePaper`, and printable source resolution accept the same unreviewed `contentText` as `raw_text`; printable progressive-job state can also retain it. These requests may create questions without an active curriculum-set ID or source snapshot. | Remove the unsupported custom-source UI and reject raw-text generation at every server entry point. Preserve previously saved non-source data without treating it as approved evidence. Add negative route tests showing that a teacher cannot create MCQs, printable papers, or progressive printable jobs from arbitrary text. |
+| P137-02 | **P0 — saved-payload authority bypass** | `saveGeneratedQuiz` accepts a full client-supplied `mcqs` array after checking only job ownership and whether each provided anchor occurs somewhere in stored source text. `validateGeneratedMcqs` likewise checks structure, uniqueness, and anchor presence, but does not prove the edited question/options/answer/explanation are the verified generated payload or semantically supported by that anchor. | Save only a server-held, validated generation result identified by job/fingerprint, or separately validate a narrowly permitted review edit against the exact selected source before persistence. Do not let a browser replace an approved generated item while retaining an unrelated anchor. Add a negative test for altered question/answer payloads. |
+| P137-03 | **P0 — curriculum-text injection** | Portal Admin `createChapter` accepts arbitrary browser-supplied `contentText` once a source ID belongs to the curriculum set; it does not require an extracted source or verify that the chapter text is present in that source. `saveHalfChapterSegments` likewise accepts arbitrary segment text for an existing chapter. These records feed active scope resolution and therefore become factual generation input after activation. | Require an extracted textbook source and source-derived chapter text; require segment text/ranges to be derived from the persisted chapter. Preserve the dedicated, audited OCR page-correction path for genuine transcription corrections. Add negative tests for foreign chapter/segment text and a positive test for an exact source-derived excerpt. |
+| P137-06 | **P1 — duplicate exclusion is per teacher, not per Academy scope** | `listPriorGeneratedQuestionHistory` limits saved quizzes and assessment drafts by `createdBy = userId` before comparing concept/facet/answer records. Two authorised teachers can therefore produce reworded or identical work for the same active textbook scope without the later request receiving the earlier record. | Make prior-generation exclusion academy-wide for the exact immutable curriculum-set/scope snapshot while keeping response caches and private operational history owner-specific. Add a two-user regression proving that a saved prior target blocks a duplicate for another teacher. |
+| P137-07 | **P1 — reachable process-local PDF export** | `POST /api/pdf-export` stores an entire rendered PDF in `preparedExports`, a process-local `Map`, and `GET /api/pdf-export/:exportId` retrieves it later. Autoscaling, cold restarts, or another instance can make a valid user receive a false expiry. The direct `/api/pdf-export/download` form route is the proven resilient active browser path. | Remove the legacy prepared-export endpoints and their in-memory PDF state rather than leave a fragile alternate API reachable. Preserve the direct one-request route, its role check, no-store headers, and safe content-disposition behavior. Update the route tests to prove the legacy endpoints are unavailable. |
+| P137-08 | **P0 — printable export accepts browser-authored assessment content** | `AIAgent.tsx` posts generated MCQs/printable payloads back to `/api/pdf-export/download`; the HTTP route and parallel tRPC render routes validate only structure, then render that client-provided content. A teacher can alter questions/answers or submit a non-source payload for a printable PDF without a server-held generation result or immutable draft. | Bind all printable downloads to an owned, completed server generation job (or a persisted, source-bound draft). Resolve MCQs through the exact cached job fingerprint and printable papers through the final persisted job state; reject client-supplied question/paper payloads. Remove the redundant direct tRPC render routes if no user flow needs them. |
+| P137-09 | **P0 — manual draft/editor content is not source-verified** | The Assessment Builder permits browser-authored short, long, and full-paper items. `assessment.saveDraft` and `assessment.reviseDraft` bind a scope snapshot but accept the question, answers, rubrics, and source reference as an opaque valid-shape payload; no citation/anchor validation proves the item follows that scope. | Remove unrestricted manual question composition from the release workflow, or introduce server-side exact-textbook citation/anchor validation for every manual item before any save/review/export. The narrow release repair will retain server-generated, source-cited drafts only. |
+
+## Accepted observations
+
+| ID | Severity | Evidence | Disposition |
+| --- | --- | --- | --- |
+| P137-04 | P2 — dormant schema and misleading test residue | The schema retains sharing/spaced-repetition tables, but no corresponding live server implementation was found. `sharing-spaced.test.ts` calls absent router properties inside broad `try/catch` blocks and treats any thrown error—including a missing property—as a pass. | Do not remove persisted tables in a release-hardening audit. Mark the test as obsolete or replace it only when the feature is restored with a defined product scope. It is not a current reachable data-exposure path. |
+| P137-05 | P2 — resumable-file identity is browser metadata, not a full cryptographic match | The chunk state is durable, HMAC-ticketed, owner-bound, strictly ordered, idempotent for an identical last chunk, and size-checked. On browser resume, however, equality is based on file name, size, and last-modified metadata; the signed server ticket has no full-file digest established at preparation time. | Keep the current safety/recovery workflow for this release; final PDF signature/extraction validation still rejects malformed assembly. If a future product requirement needs adversarially strong same-file resume proof, add a memory-conscious streaming/full-file identity strategy before the first chunk—not an arbitrary 150 MB browser buffer. |
+
+## Remediation status
+
+| Finding | Status | Evidence-led repair |
+| --- | --- | --- |
+| P137-01 | **Resolved** | Removed custom lesson upload/paste controls from the Assessment Builder. MCQ and printable generation schemas now require an explicit active curriculum scope, and their server resolvers no longer construct `raw_text` source contexts. A negative router regression confirms raw content is rejected before the generation provider is invoked. |
+| P137-02 | **Resolved** | Added `generationJobs.resultPayload` and persist the validated MCQ result on successful or cache-reused jobs. Saving now reads and revalidates only that server-held result; the save route no longer accepts an MCQ array. |
+| P137-03 | **Resolved** | Chapter persistence now requires an extracted source and source-derived text. Half-chapter segment persistence verifies each segment against the persisted reviewed chapter. The page-correction route remains the controlled exception for an approved OCR correction. |
+| P137-06 | **Resolved** | Prior concept/facet/answer history is now read across all authorised teachers for the exact curriculum set and immutable scope snapshot. Private response caching and operational history remain user-specific. |
+| P137-07 | **Resolved** | Removed the legacy prepared-export `Map` and its two-step routes. The only HTTP export is a direct, no-store attachment response. A regression confirms no prepared-export routes are registered. |
+| P137-08 | **Resolved** | The direct PDF form now carries only a generation job ID and export kind. The server verifies job ownership/completion and renders stored MCQ or printable state; legacy tRPC renderers that accepted browser-authored content were removed. |
+| P137-09 | **Resolved for this release** | Manual short/long/full-paper persistence is explicitly unavailable until each manual item can be independently source-validated. The released workflow permits server-generated, source-bound MCQ and printable drafts only. |
+
+## Migration and validation evidence
+
+The additive `0024_plain_nightmare` migration added `generationJobs.resultPayload`. The column had already been applied by the reviewed schema operation, so the initial standard migration run stopped on a duplicate-column error without changing data. The verified SQL hash `ce237ca843c9f879991a851318dca703a0c664f2db4bc9de9105a9e9483da3a0` and journal timestamp were then inserted once into the Drizzle ledger. A subsequent standard migration run completed without replay. The live ledger now contains **25 distinct hashes across 25 rows**.
+
+Type checking, the full regression suite, and the production build passed after the repair set: **233 passing tests, 3 credential-gated skips**, `pnpm check`, and `pnpm build`. The production build retains one non-blocking main-client chunk-size warning; it is an established performance follow-up rather than a security or source-governance bypass. Mobile screenshots of `/generate` and `/curriculum` show the signed-out assessment entry and focused Portal Admin navigation render cleanly after the changes.
+
+## Release gate
+
+The only remaining release evidence is the owner-controlled **Grade 9 Chemistry actual-PDF acceptance**: create/continue the existing Grade 9 Chemistry intake, upload the real textbook, confirm recovery through Drafts if interrupted, and review the resulting extraction/OCR state before activating any curriculum set. No substitute source, mocked upload, or academic-review invitation should be used to satisfy that gate.

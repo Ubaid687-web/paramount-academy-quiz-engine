@@ -329,20 +329,6 @@ describe("AI Agent - MCQ Generation", () => {
       chapters: [{ id: 10, code: "Unit 1", title: "Kinematics", startPage: 1, endPage: 14 }],
       segments: [],
     };
-    mocks.getGenerationJob.mockResolvedValue({
-      id: 501,
-      userId: 1,
-      contentText: validContent,
-      curriculumSetId: 77,
-      scopeType: "single_chapter",
-      scopeTemplateId: null,
-      selectedChapterIds: "[10]",
-      selectedSegmentIds: null,
-      sourceSnapshot: JSON.stringify(snapshot),
-      difficulty: "hard",
-    });
-    mocks.createAiGeneratedQuiz.mockResolvedValue({ id: 900 });
-
     const mcqs = createValidMcqs(1).map((mcq) => ({
       ...mcq,
       sourceCitation: {
@@ -358,7 +344,24 @@ describe("AI Agent - MCQ Generation", () => {
         textAnchor: "displacement, velocity, and acceleration",
       },
     }));
-    const quiz = await saveGeneratedQuizToDatabase(1, 501, "Kinematics Draft", mcqs, "hard");
+    mocks.getGenerationJob.mockResolvedValue({
+      id: 501,
+      userId: 1,
+      contentText: validContent,
+      numQuestions: 1,
+      curriculumSetId: 77,
+      scopeType: "single_chapter",
+      scopeTemplateId: null,
+      selectedChapterIds: "[10]",
+      selectedSegmentIds: null,
+      sourceSnapshot: JSON.stringify(snapshot),
+      difficulty: "hard",
+      generationMode: "mcq",
+      status: "completed",
+      resultPayload: JSON.stringify({ mcqs }),
+    });
+    mocks.createAiGeneratedQuiz.mockResolvedValue({ id: 900 });
+    const quiz = await saveGeneratedQuizToDatabase(1, 501, "Kinematics Draft", "hard");
 
     expect(quiz).toEqual({ id: 900 });
     expect(mocks.createAiGeneratedQuiz).toHaveBeenCalledWith(expect.objectContaining({

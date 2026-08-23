@@ -1,0 +1,1 @@
+ALTER TABLE `generationJobs` ADD `resultPayload` longtext;

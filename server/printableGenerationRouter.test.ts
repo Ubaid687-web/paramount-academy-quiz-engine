@@ -208,14 +208,22 @@ describe("printable paper history persistence", () => {
       })
       ;
 
+    mocks.getActiveCurriculumScopeCatalog.mockResolvedValue({
+      curriculumSet: { id: 77, grade: "10", subject: "physics", label: "FBISE Grade 10 Physics", editionLabel: "2026" },
+      chapters: [{ id: 10, curriculumSetId: 77, sequence: 1, code: "Ch. 10", title: "Motion", blockKey: null, partKey: null, startPage: 1, endPage: 20, contentText: "Motion describes speed, velocity, acceleration, momentum, force, work, power, and energy. ".repeat(4), isActive: 1 }],
+      segments: [], templates: [], templateMemberships: [],
+    });
+    mocks.listActiveAssessmentPatternSources.mockResolvedValue([]);
+    mocks.listReviewedAssessmentPatternGuidance.mockResolvedValue([]);
+    mocks.listApprovedStyleAnchorExamples.mockResolvedValue([]);
+    mocks.listPriorGeneratedQuestionHistory.mockResolvedValue([]);
     const caller = appRouter.createCaller(createAdminContext());
     const start = await caller.aiAgent.startPrintableGeneration({
       paperType: "short",
       title: "Motion revision",
       pairCount: 5,
       difficulty: "balanced",
-      contentText: "Motion describes speed, velocity, acceleration, momentum, force, work, power, and energy. ".repeat(4),
-      patternProgramme: { board: "FBISE", grade: "10", subject: "physics" },
+      scope: { grade: "10", subject: "physics", scopeType: "single_chapter", chapterIds: [10] },
     });
 
     expect(start).toMatchObject({ status: "pending", completedPairs: 0, totalPairs: 5, totalBatches: 2 });
