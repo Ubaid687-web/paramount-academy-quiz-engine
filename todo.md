@@ -791,3 +791,13 @@
 ## Phase 135: In-App Incomplete Upload Deletion Confirmation
 - [x] Replace the browser deletion prompt with an accessible in-app modal that states the exact safe removal boundary.
 - [x] Add confirmation and cancellation regressions; validate, publish, and synchronize GitHub.
+
+## Phase 136: Final Reviewer-Readiness Deep Audit
+- [x] Establish a reproducible baseline: repository inventory, live/schema/migration state, runtime routes, test/build baseline, Git status, and private backup head.
+- [x] Audit every owned backend, schema, migration, shared contract, and test module for authorization, input validation, source isolation, data integrity, unused/duplicated paths, and regressions.
+- [x] Audit source intake, OCR, Grade 9 durable upload/recovery, activation/readiness, generation/AI/provider controls, printable/PDF/download flows, student-paper publication, frontend/mobile/accessibility, and staff workflow boundaries.
+- [x] Audit dependencies, secrets, logs, storage/Git hygiene, deployment evidence, and connector fit; introduce no external integration without an evidenced, least-privilege need.
+- [x] Repair only confirmed P0/P1 findings with focused regressions; record observations and accepted risks without speculative rewrites.
+- [ ] Complete full validation, controlled owner Grade 9 Chemistry upload acceptance when the owner supplies the file, reviewer-readiness record, checkpoint, and GitHub synchronization.
+- [x] Repair the confirmed Drizzle migration-ledger gap only after verifying live schema features match committed migrations, then prove the standard migration command has no pending replay.
+- [x] Make the Portal Admin generation history intrinsically newest-first at the data boundary and remove compensating client reversal with regression coverage.

@@ -493,7 +493,7 @@ export async function listAdminGenerationHistory(limit = 30) {
     sourceTitle: generationJobs.scopeType,
     staffName: users.name,
     staffEmail: users.email,
-  }).from(generationJobs).leftJoin(users, eq(users.id, generationJobs.userId)).orderBy(generationJobs.id).limit(Math.min(Math.max(limit, 1), 100));
+  }).from(generationJobs).leftJoin(users, eq(users.id, generationJobs.userId)).orderBy(desc(generationJobs.id)).limit(Math.min(Math.max(limit, 1), 100));
 }
 
 export async function getCachedGenerationResponse(userId: number, requestFingerprint: string) {
