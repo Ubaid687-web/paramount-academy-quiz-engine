@@ -1,0 +1,10 @@
+$ repository hygiene scan
+Tracked environment files:
+Tracked protected-source extensions:
+notes/mobile-review/builder-mobile.png
+notes/mobile-review/curriculum-mobile.png
+notes/mobile-review/quiz-centre-mobile.png
+notes/mobile-review/staff-sign-in-mobile.png
+notes/mobile-review/staff-sign-in-settled-mobile.png
+Potential credential markers (count only):
+0

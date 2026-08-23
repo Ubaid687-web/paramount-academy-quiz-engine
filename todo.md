@@ -816,3 +816,9 @@
 - [x] P1: Remove the reachable process-local prepared-PDF export path; retain the protected direct streaming/download route only.
 - [x] P0: Bind printable PDF exports to an owned, completed server-held generation result rather than a browser-authored payload.
 - [x] P0: Remove or source-validate manual short/long/full-paper composition so browser-authored facts cannot enter reviewed drafts.
+
+## Phase 138: External Technical Audit Package
+- [x] Classify every tracked project file for full inclusion, metadata-only inclusion, or security redaction in the external audit package.
+- [x] Produce the sanitized architecture, dependency, environment, security-control, external-service, and reproducibility inventory.
+- [x] Assemble the single Markdown package with full in-scope source/configuration content, checksums, and sanitized diagnostics.
+- [x] Verify the completed package for secret/source-data leakage, scope completeness, and structural integrity, then deliver it with a checksum manifest.

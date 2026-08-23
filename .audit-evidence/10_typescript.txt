@@ -1,0 +1,5 @@
+$ pnpm check
+
+> ai-quiz-platform@1.0.0 check /home/ubuntu/ai-quiz-platform
+> tsc --noEmit
+

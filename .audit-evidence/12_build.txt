@@ -1,0 +1,32 @@
+$ pnpm build
+
+> ai-quiz-platform@1.0.0 build /home/ubuntu/ai-quiz-platform
+> vite build && esbuild server/_core/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+
+vite v7.1.9 building for production...
+transforming...
+✓ 1785 modules transformed.
+rendering chunks...
+computing gzip size...
+../dist/public/index.html                               367.77 kB │ gzip: 105.58 kB
+../dist/public/assets/index-Bb2ochPq.css                167.00 kB │ gzip:  24.24 kB
+../dist/public/assets/circle-check-oq0VXEcW.js            0.34 kB │ gzip:   0.27 kB
+../dist/public/assets/circle-x-CvvU4XBJ.js                0.37 kB │ gzip:   0.28 kB
+../dist/public/assets/shield-check-Brsq_KDq.js            0.49 kB │ gzip:   0.35 kB
+../dist/public/assets/StaffSignIn-CFqRS-SK.js            13.76 kB │ gzip:   2.81 kB
+../dist/public/assets/QuizResults-CORAPtyz.js            17.90 kB │ gzip:   2.83 kB
+../dist/public/assets/QuizPractice-mR8E76aa.js           29.21 kB │ gzip:   4.96 kB
+../dist/public/assets/alert-dialog-Ctf5ugiG.js           62.41 kB │ gzip:  18.77 kB
+../dist/public/assets/AIAgent-B2CXc16B.js               119.39 kB │ gzip:  22.47 kB
+../dist/public/assets/CurriculumManagement-BoeYNL3p.js  205.55 kB │ gzip:  30.91 kB
+../dist/public/assets/index-DzVqAAVf.js                 698.75 kB │ gzip: 200.57 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 2.62s
+
+  dist/index.js  361.1kb
+
+⚡ Done in 25ms

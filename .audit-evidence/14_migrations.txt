@@ -1,0 +1,4 @@
+$ pnpm drizzle-kit migrate
+No config path provided, using default 'drizzle.config.ts'
+Reading config file '/home/ubuntu/ai-quiz-platform/drizzle.config.ts'
+[⣷] applying migrations...[2K[1G[⣯] applying migrations...[2K[1G[✓] migrations applied successfully!

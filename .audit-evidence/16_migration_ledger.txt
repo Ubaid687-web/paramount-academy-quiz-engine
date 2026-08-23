@@ -1,0 +1,6 @@
+$ read-only migration-ledger verification
+migration_count: 25
+distinct_hash_count: 25
+result_payload_migration_present: 1
+
+Interpretation: the committed migration ledger has 25 distinct recorded hashes, including the reviewed result-payload migration. The standard Drizzle migration command completed successfully without replay.

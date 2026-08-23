@@ -1,0 +1,13 @@
+Package structure
+Full source entries: 301
+Manifest full classifications: 300
+Package redaction markers: 25
+Prohibited-content count-only scans
+Unredacted private-key blocks: 0
+Unredacted database DSN candidates: 0
+Gemini-style key candidates: 0
+Storage URL candidates: 0
+Known protected transcript phrase candidates: 0
+Environment file content headings: 0
+Manifest package hash:
+| Package SHA-256 | `b6386ec827228450b6615ece09721184d3e0582ddbfc0cf87864d52173c74134` |

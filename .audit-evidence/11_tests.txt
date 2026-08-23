@@ -1,0 +1,78 @@
+$ pnpm test
+
+> ai-quiz-platform@1.0.0 test /home/ubuntu/ai-quiz-platform
+> vitest run
+
+
+ RUN  v2.1.9 /home/ubuntu/ai-quiz-platform
+
+ ✓ server/staffSignInUi.test.tsx (2 tests) 149ms
+ ✓ server/quizListPaperLibrary.test.tsx (1 test) 221ms
+ ✓ server/printablePaper.test.ts (20 tests) 22ms
+ ✓ server/pdfDownload.test.ts (2 tests) 40ms
+ ✓ server/quizListUi.test.tsx (16 tests) 850ms
+ ✓ server/aiAgent.test.ts (17 tests) 31ms
+ ✓ server/printableGenerationRouter.test.ts (5 tests) 73ms
+ ✓ server/aiAgentProgressUi.test.tsx (6 tests) 1250ms
+   ✓ approved-textbook assessment builder > shows only the approved textbook source path and keeps later settings out of view until a chapter is selected 388ms
+   ✓ approved-textbook assessment builder > sends only the exact reviewed textbook scope when generating an MCQ draft 312ms
+ ✓ server/curriculumLifecycleRouter.test.ts (17 tests) 328ms
+ ✓ server/curriculumChunkUpload.test.ts (6 tests) 32ms
+ ✓ server/quizDraftValidator.test.ts (7 tests) 5ms
+ ✓ server/printablePaperExport.test.ts (7 tests) 267ms
+ ✓ server/generationProvider.test.ts (5 tests) 28ms
+ ✓ server/pdfUpload.test.ts (7 tests) 378ms
+   ✓ PDF Upload > extracts text from a real PDF buffer through the tRPC upload route 365ms
+ ✓ server/generationAdminRouter.test.ts (3 tests) 6ms
+ ✓ server/scopedGenerationRouter.test.ts (2 tests) 8ms
+ ✓ server/styleAnchor.test.ts (4 tests) 3ms
+ ✓ server/curriculumSourceIntake.test.ts (3 tests) 6ms
+ ✓ server/ocrWorkerRoute.test.ts (2 tests) 4ms
+ ✓ server/sharing-spaced.test.ts (6 tests) 3ms
+ ✓ server/generationDiversity.test.ts (5 tests) 4ms
+ ↓ server/geminiCredential.test.ts (3 tests | 3 skipped)
+ ✓ server/curriculumScope.test.ts (3 tests) 3ms
+ ✓ server/curriculumManagementUi.test.tsx (16 tests) 2800ms
+   ✓ Curriculum Library Release 1 > shows one focused Portal Admin task at a time while preserving every administrative workflow 708ms
+   ✓ Curriculum Library Release 1 > offers a safe fresh-session recovery inside the existing Grade 9 Chemistry draft when a stale upload cannot be reconciled 670ms
+ ✓ server/assessmentDraftContract.test.ts (3 tests) 8ms
+ ✓ server/chapterProposal.test.ts (3 tests) 4ms
+ ✓ server/futureGradeWorkflow.test.ts (1 test) 6ms
+ ✓ server/ocrQuality.test.ts (5 tests) 5ms
+ ✓ server/curriculumLargeUploadRoute.test.ts (2 tests) 5ms
+ ✓ server/generationOptimization.test.ts (4 tests) 4ms
+stdout | server/pdfExportRoute.test.ts
+[OAuth] Initialized with baseURL: https://api.manus.im
+
+ ✓ server/ocrPipeline.test.ts (4 tests) 3ms
+ ✓ server/pdfExportRoute.test.ts (4 tests) 26ms
+ ✓ server/llmRetry.test.ts (2 tests) 35ms
+ ✓ server/ocrScheduler.test.ts (2 tests) 3ms
+ ✓ server/curriculumIngestion.test.ts (3 tests) 3ms
+ ✓ server/auth.logout.test.ts (1 test) 3ms
+ ✓ server/quiz.test.ts (13 tests) 2707ms
+ ✓ server/assessmentRouter.test.ts (3 tests) 604ms
+   ✓ assessment router source governance > keeps all assessment modes unavailable for a subject without an active approved textbook 591ms
+ ✓ server/roleSeparation.test.ts (2 tests) 3ms
+ ✓ server/generationProgress.test.ts (3 tests) 2ms
+ ✓ server/staffProvisioning.test.ts (3 tests) 2ms
+ ✓ server/questionRecommendation.test.ts (3 tests) 3ms
+ ✓ server/contentAnalyzer.test.ts (1 test) 2ms
+ ✓ server/generationFailureContract.test.ts (1 test) 2ms
+ ✓ server/pdfProcessor.test.ts (3 tests) 3ms
+stdout | server/ocrReviewRoute.test.ts
+[OAuth] Initialized with baseURL: https://api.manus.im
+
+ ✓ server/ocrReviewRoute.test.ts (1 test) 4ms
+ ✓ server/e2e.test.ts (2 tests) 2950ms
+   ✓ End-to-End: Quiz Submit and Results > should submit quiz attempt and retrieve results with correct calculations 2586ms
+   ✓ End-to-End: Quiz Submit and Results > should delete quiz and related data 363ms
+ ✓ server/curriculumRouter.test.ts (2 tests) 1805ms
+   ✓ teacher-facing curriculum catalog > returns the read-only active chapter catalog without requiring an administrator role 1012ms
+   ✓ teacher-facing curriculum catalog > returns read-only MCQ source readiness without exposing curriculum management actions 793ms
+
+ Test Files  47 passed | 1 skipped (48)
+      Tests  233 passed | 3 skipped (236)
+   Start at  08:30:21
+   Duration  7.07s (transform 1.06s, setup 0ms, collect 5.55s, tests 14.71s, environment 2.97s, prepare 2.22s)
+
