@@ -646,6 +646,7 @@ export default function CurriculumManagement() {
           saveResumableTextbookUpload(activeUpload);
           setChunkUploadProgress({ receivedBytes: activeUpload.receivedBytes, totalBytes: file.size, phase: "uploading" });
           let reconciledOrderConflict = false;
+          let automaticOrderRetryAttempts = 0;
           while (activeUpload.receivedBytes < file.size) {
             const offset = activeUpload.receivedBytes;
             const chunkIndex = activeUpload.nextChunkIndex;
@@ -666,6 +667,11 @@ export default function CurriculumManagement() {
                   setResumableTextbookUpload(activeUpload);
                   saveResumableTextbookUpload(activeUpload);
                   setChunkUploadProgress({ receivedBytes: activeUpload.receivedBytes, totalBytes: file.size, phase: activeUpload.receivedBytes === file.size ? "finalizing" : "uploading" });
+                  continue;
+                }
+                if (automaticOrderRetryAttempts < 1) {
+                  automaticOrderRetryAttempts += 1;
+                  await new Promise((resolve) => window.setTimeout(resolve, 500));
                   continue;
                 }
               }

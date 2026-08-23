@@ -390,6 +390,32 @@ describe("Curriculum Library Release 1", () => {
     expect(noOpMutation.mutateAsync).not.toHaveBeenCalledWith(expect.objectContaining({ subject: "chemistry", teacherLabel: "Chemistry" }));
   });
 
+  it("automatically retries one unchanged chunk-order conflict before showing manual upload recovery", async () => {
+    window.history.pushState({}, "", "/curriculum?grade=9&intake=subject");
+    const fileSize = (30 * 1024 * 1024) + 1;
+    const file = new File([new Uint8Array(fileSize)], "grade-9-chemistry.pdf", { type: "application/pdf" });
+    let appendAttempts = 0;
+    getLargePdfUploadStatus.mockResolvedValue({ fileSize, receivedBytes: 0, nextChunkIndex: 0, complete: false, expiresAt: 9999999999999 });
+    noOpMutation.mutateAsync.mockImplementation((input: Record<string, unknown>) => {
+      if ("fileSize" in input) return Promise.resolve({ uploadToken: "automatic-retry-token", chunkBytes: fileSize, expiresAt: 9999999999999 });
+      if ("chunkIndex" in input) {
+        appendAttempts += 1;
+        return appendAttempts === 1
+          ? Promise.reject(new Error("This textbook chunk arrived out of order. Restart the upload so no pages are lost."))
+          : Promise.resolve({ receivedBytes: fileSize, fileSize, complete: true, nextChunkIndex: 1, expiresAt: 9999999999999 });
+      }
+      if ("uploadToken" in input) return Promise.resolve({ id: 26, extractedText: "Reviewed source text", extractionStatus: "extracted" });
+      return Promise.resolve(undefined);
+    });
+    render(<CurriculumManagement />);
+
+    fireEvent.click(await screen.findByRole("button", { name: /Chemistry.*Continue textbook intake/i }));
+    fireEvent.change(await screen.findByLabelText("Focused curriculum source upload"), { target: { files: [file] } });
+
+    await waitFor(() => expect(appendAttempts).toBe(2));
+    expect(screen.queryByTestId("textbook-upload-recovery")).toBeNull();
+  });
+
   it("shows drag feedback and routes a dropped textbook through the same secure intake handler", async () => {
     window.history.pushState({}, "", "/curriculum?grade=9&intake=subject");
     noOpMutation.mutateAsync.mockResolvedValue({ id: 22, extractedText: "Reviewed source text", extractionStatus: "extracted" });

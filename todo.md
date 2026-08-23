@@ -776,3 +776,8 @@
 - [x] Retain strict server chunk integrity while exposing authoritative recovery state for safe client reconciliation.
 - [x] Add a focused recovery UI that continues the existing Chemistry draft, retries only when safe, and offers a clear fresh-session action when needed.
 - [x] Add stale-session, interrupted acknowledgement, duplicate-subject continuation, and mobile recovery regressions; validate, publish, and synchronize GitHub.
+
+## Phase 133: Safe Automatic Textbook Upload Retry
+- [x] Audit current transient and resumable-conflict retry boundaries; retain manual recovery for unsafe/expired/mismatched sessions.
+- [x] Add bounded automatic retries with server-authoritative reconciliation before showing Portal Admin retry or fresh-session actions.
+- [x] Add automatic-retry, exhaustion, and manual-fallback regressions; validate, publish, and synchronize GitHub.
