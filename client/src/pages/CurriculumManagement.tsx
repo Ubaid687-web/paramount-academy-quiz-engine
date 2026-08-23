@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import React from "react";
-import { AlertTriangle, ArrowLeft, BookMarked, CheckCircle2, Download, FileText, FolderPlus, Loader2, Plus, ShieldCheck, Upload } from "lucide-react";
+import { AlertTriangle, ArrowLeft, BookMarked, CheckCircle2, Download, FileText, FolderPlus, Loader2, Plus, RefreshCw, ShieldCheck, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -68,16 +68,23 @@ type ResumableTextbookUpload = {
   curriculumSetId: number;
   fileName: string;
   fileSize: number;
+  fileLastModified: number;
   receivedBytes: number;
   nextChunkIndex: number;
   expiresAt: number;
+};
+
+type TextbookUploadRecovery = {
+  kind: "resume_conflict" | "session_unavailable";
+  fileName: string;
+  message: string;
 };
 
 function loadResumableTextbookUpload(): ResumableTextbookUpload | null {
   if (typeof window === "undefined") return null;
   try {
     const value = JSON.parse(window.sessionStorage.getItem(RESUMABLE_TEXTBOOK_UPLOAD_STORAGE_KEY) ?? "null") as ResumableTextbookUpload | null;
-    if (!value || !value.uploadToken || !Number.isSafeInteger(value.curriculumSetId) || !Number.isSafeInteger(value.fileSize) || !Number.isSafeInteger(value.nextChunkIndex) || value.expiresAt <= Date.now()) {
+    if (!value || !value.uploadToken || !Number.isSafeInteger(value.curriculumSetId) || !Number.isSafeInteger(value.fileSize) || !Number.isSafeInteger(value.fileLastModified) || !Number.isSafeInteger(value.nextChunkIndex) || value.expiresAt <= Date.now()) {
       window.sessionStorage.removeItem(RESUMABLE_TEXTBOOK_UPLOAD_STORAGE_KEY);
       return null;
     }
@@ -131,10 +138,18 @@ async function retryTemporaryUploadRequest<T>(request: () => Promise<T>): Promis
 }
 
 function sourceUploadErrorMessage(error: unknown) {
+  if (isChunkOrderError(error)) {
+    return "The upload paused safely because the browser and server disagreed about one chunk. Use the recovery action below; do not add Chemistry again.";
+  }
   if (isTemporaryUploadServiceError(error)) {
     return "The published upload service was temporarily unavailable before the textbook could be received. No source was saved. Refresh once and retry the upload.";
   }
   return error instanceof Error ? error.message : "The source could not be stored or extracted.";
+}
+
+function isChunkOrderError(error: unknown) {
+  const message = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
+  return message.includes("chunk arrived out of order") || message.includes("chunk out of order");
 }
 
 function formatUploadSpeed(speedBytesPerSecond?: number) {
@@ -232,6 +247,25 @@ function TextbookUploadDropZone({
   );
 }
 
+function TextbookUploadRecoveryCard({ recovery, isUploading, onRetry, onStartFresh }: { recovery: TextbookUploadRecovery; isUploading: boolean; onRetry: () => void; onStartFresh: () => void }) {
+  return (
+    <div className="rounded-xl border border-amber-300/70 bg-amber-50/50 p-4" role="status" aria-live="polite" data-testid="textbook-upload-recovery">
+      <div className="flex gap-3">
+        <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" aria-hidden="true" />
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold text-foreground">Textbook upload needs one recovery step</p>
+          <p className="mt-1 text-sm leading-5 text-muted-foreground"><strong>{recovery.fileName}</strong> was not stored as a textbook source, and Chemistry remains the same draft subject. {recovery.message}</p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            {recovery.kind === "resume_conflict" && <Button type="button" variant="outline" onClick={onRetry} disabled={isUploading}><RefreshCw className="mr-2 h-4 w-4" />Retry safely</Button>}
+            <Button type="button" onClick={onStartFresh} disabled={isUploading}>Start a fresh upload</Button>
+          </div>
+          <p className="mt-3 text-xs leading-5 text-muted-foreground">A fresh upload creates a new protected transfer session for this existing Chemistry draft. It does not create another subject or change teacher access.</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function CurriculumManagement() {
   const [, navigate] = useLocation();
   const { user, loading: authLoading } = useAuth();
@@ -288,6 +322,8 @@ export default function CurriculumManagement() {
   const [activeReviewTask, setActiveReviewTask] = useState<ReviewTask>(() => requestedReviewTask === "pattern" ? "pattern" : "source");
   const [activeAiTask, setActiveAiTask] = useState<AiTask>("routing");
   const [resumableTextbookUpload, setResumableTextbookUpload] = useState<ResumableTextbookUpload | null>(() => loadResumableTextbookUpload());
+  const [textbookUploadRecovery, setTextbookUploadRecovery] = useState<TextbookUploadRecovery | null>(null);
+  const recoveryFileRef = React.useRef<File | null>(null);
 
   const setsQuery = trpc.curriculum.listSets.useQuery(undefined, { enabled: isPortalAdmin });
   const programmesQuery = trpc.curriculum.listProgrammes.useQuery(undefined, { enabled: isPortalAdmin });
@@ -507,6 +543,16 @@ export default function CurriculumManagement() {
     }
   };
 
+  const continueFocusedIntake = (programme: { id: number; subject: string }, set: { id: number }) => {
+    setSetProgrammeId(programme.id);
+    setSelectedSetId(set.id);
+    setFocusedIntakeSetId(set.id);
+    setProgrammeSubject("");
+    setActivePortalPanel("curriculum");
+    setActiveCurriculumTask("edition");
+    toast.success(`${formatSubjectLabel(programme.subject)} intake already exists. Continue with its textbook upload.`);
+  };
+
   const handleCreateFocusedProgramme = async () => {
     if (!requestedGrade || !programmeSubject.trim()) return toast.error("Enter the subject name first.");
     const subjectName = programmeSubject.trim();
@@ -523,13 +569,7 @@ export default function CurriculumManagement() {
     )) : undefined;
 
     if (existingProgramme && existingSet) {
-      setSetProgrammeId(existingProgramme.id);
-      setSelectedSetId(existingSet.id);
-      setFocusedIntakeSetId(existingSet.id);
-      setProgrammeSubject("");
-      setActivePortalPanel("curriculum");
-      setActiveCurriculumTask("edition");
-      toast.success(`${formatSubjectLabel(existingProgramme.subject)} intake already exists. Continue with its textbook upload.`);
+      continueFocusedIntake(existingProgramme, existingSet);
       return;
     }
 
@@ -561,7 +601,12 @@ export default function CurriculumManagement() {
     }
   };
 
-  const uploadSourceFile = async (file?: File) => {
+  const clearResumableTextbookUpload = () => {
+    setResumableTextbookUpload(null);
+    saveResumableTextbookUpload(null);
+  };
+
+  const uploadSourceFile = async (file?: File, options: { forceFresh?: boolean } = {}) => {
     if (!file || !selectedSetId) return;
     if (!["application/pdf", "text/plain", "image/jpeg", "image/png", "image/webp"].includes(file.type)) {
       toast.error("Upload a PDF, TXT, JPG, PNG, or WEBP textbook source.");
@@ -572,22 +617,23 @@ export default function CurriculumManagement() {
       return;
     }
     setIsUploading(true);
+    setTextbookUploadRecovery(null);
     try {
       const source = file.type === "application/pdf" && file.size > DIRECT_PDF_UPLOAD_THRESHOLD_BYTES
         ? await (async () => {
           uploadPauseControllerRef.current = { pauseRequested: false };
           setChunkUploadProgress({ receivedBytes: 0, totalBytes: file.size, phase: "preparing" });
-          const canResume = resumableTextbookUpload
+          const canResume = !options.forceFresh && resumableTextbookUpload
             && resumableTextbookUpload.curriculumSetId === selectedSetId
             && resumableTextbookUpload.fileName === file.name
-            && resumableTextbookUpload.fileSize === file.size;
+            && resumableTextbookUpload.fileSize === file.size
+            && resumableTextbookUpload.fileLastModified === file.lastModified;
           let savedStatus: Awaited<ReturnType<typeof utils.curriculum.getLargePdfUploadStatus.fetch>> | null = null;
           if (canResume && resumableTextbookUpload) {
             try {
               savedStatus = await utils.curriculum.getLargePdfUploadStatus.fetch({ uploadToken: resumableTextbookUpload.uploadToken });
             } catch {
-              setResumableTextbookUpload(null);
-              saveResumableTextbookUpload(null);
+              clearResumableTextbookUpload();
             }
           }
           const prepared = savedStatus && resumableTextbookUpload
@@ -595,17 +641,36 @@ export default function CurriculumManagement() {
             : await retryTemporaryUploadRequest(() => prepareLargePdfUpload.mutateAsync({ curriculumSetId: selectedSetId, fileName: file.name, fileSize: file.size }));
           let activeUpload: ResumableTextbookUpload = savedStatus && resumableTextbookUpload
             ? { ...resumableTextbookUpload, receivedBytes: savedStatus.receivedBytes, nextChunkIndex: savedStatus.nextChunkIndex, expiresAt: savedStatus.expiresAt }
-            : { uploadToken: prepared.uploadToken, chunkBytes: prepared.chunkBytes, curriculumSetId: selectedSetId, fileName: file.name, fileSize: file.size, receivedBytes: 0, nextChunkIndex: 0, expiresAt: prepared.expiresAt };
+            : { uploadToken: prepared.uploadToken, chunkBytes: prepared.chunkBytes, curriculumSetId: selectedSetId, fileName: file.name, fileSize: file.size, fileLastModified: file.lastModified, receivedBytes: 0, nextChunkIndex: 0, expiresAt: prepared.expiresAt };
           setResumableTextbookUpload(activeUpload);
           saveResumableTextbookUpload(activeUpload);
           setChunkUploadProgress({ receivedBytes: activeUpload.receivedBytes, totalBytes: file.size, phase: "uploading" });
-          for (let offset = activeUpload.receivedBytes, chunkIndex = activeUpload.nextChunkIndex; offset < file.size; offset += prepared.chunkBytes, chunkIndex += 1) {
+          let reconciledOrderConflict = false;
+          while (activeUpload.receivedBytes < file.size) {
+            const offset = activeUpload.receivedBytes;
+            const chunkIndex = activeUpload.nextChunkIndex;
             const chunk = file.slice(offset, Math.min(offset + prepared.chunkBytes, file.size));
-            const acknowledgement = await retryTemporaryUploadRequest(async () => appendLargePdfChunk.mutateAsync({
-              uploadToken: prepared.uploadToken,
-              chunkIndex,
-              fileBuffer: await fileToBase64(chunk),
-            }));
+            let acknowledgement;
+            try {
+              acknowledgement = await retryTemporaryUploadRequest(async () => appendLargePdfChunk.mutateAsync({
+                uploadToken: activeUpload.uploadToken,
+                chunkIndex,
+                fileBuffer: await fileToBase64(chunk),
+              }));
+            } catch (error) {
+              if (!reconciledOrderConflict && isChunkOrderError(error)) {
+                const authoritativeStatus = await utils.curriculum.getLargePdfUploadStatus.fetch({ uploadToken: activeUpload.uploadToken });
+                if (authoritativeStatus.receivedBytes >= 0 && authoritativeStatus.receivedBytes <= file.size && (authoritativeStatus.receivedBytes !== offset || authoritativeStatus.nextChunkIndex !== chunkIndex)) {
+                  reconciledOrderConflict = true;
+                  activeUpload = { ...activeUpload, receivedBytes: authoritativeStatus.receivedBytes, nextChunkIndex: authoritativeStatus.nextChunkIndex, expiresAt: authoritativeStatus.expiresAt };
+                  setResumableTextbookUpload(activeUpload);
+                  saveResumableTextbookUpload(activeUpload);
+                  setChunkUploadProgress({ receivedBytes: activeUpload.receivedBytes, totalBytes: file.size, phase: activeUpload.receivedBytes === file.size ? "finalizing" : "uploading" });
+                  continue;
+                }
+              }
+              throw error;
+            }
             const acknowledgedAtMs = performance.now();
             setChunkUploadProgress((current) => {
               const elapsedMs = current?.lastAcknowledgedAtMs === undefined ? undefined : acknowledgedAtMs - current.lastAcknowledgedAtMs;
@@ -629,9 +694,8 @@ export default function CurriculumManagement() {
               });
             }
           }
-          const completedSource = await retryTemporaryUploadRequest(() => completeLargePdfUpload.mutateAsync({ uploadToken: prepared.uploadToken }));
-          setResumableTextbookUpload(null);
-          saveResumableTextbookUpload(null);
+          const completedSource = await retryTemporaryUploadRequest(() => completeLargePdfUpload.mutateAsync({ uploadToken: activeUpload.uploadToken }));
+          clearResumableTextbookUpload();
           return completedSource;
         })()
         : await (async () => {
@@ -645,9 +709,20 @@ export default function CurriculumManagement() {
         })();
       setChapterSourceId(source.id);
       setChapterText(source.extractedText ?? "");
+      recoveryFileRef.current = null;
       await utils.curriculum.getManagementDetails.invalidate({ curriculumSetId: selectedSetId });
       toast.success(source.extractionStatus === "pending" ? "Scanned source stored. OCR is queued in reviewable page batches and this screen will update as pages are processed." : "Source stored and extracted. Review it before saving a chapter.");
     } catch (error) {
+      if (file.type === "application/pdf" && file.size > DIRECT_PDF_UPLOAD_THRESHOLD_BYTES) {
+        recoveryFileRef.current = file;
+        setTextbookUploadRecovery({
+          kind: isChunkOrderError(error) ? "resume_conflict" : "session_unavailable",
+          fileName: file.name,
+          message: isChunkOrderError(error)
+            ? "The server kept the file-order safeguard active. Retry uses the server’s last acknowledged position; starting fresh clears only the unsafe transfer session."
+            : "The previous protected transfer session cannot be continued safely. Start a new protected session for this same draft.",
+        });
+      }
       toast.error(sourceUploadErrorMessage(error));
     } finally {
       uploadPauseControllerRef.current?.resume?.();
@@ -655,6 +730,20 @@ export default function CurriculumManagement() {
       setIsUploading(false);
       setChunkUploadProgress(null);
     }
+  };
+
+  const retryTextbookUploadRecovery = () => {
+    const file = recoveryFileRef.current;
+    if (!file) return toast.error("Select the same textbook again so the saved server position can be checked safely.");
+    void uploadSourceFile(file);
+  };
+
+  const startFreshTextbookUpload = () => {
+    const file = recoveryFileRef.current;
+    clearResumableTextbookUpload();
+    setTextbookUploadRecovery(null);
+    if (!file) return toast.error("Select the textbook again to begin a fresh protected upload for this existing draft.");
+    void uploadSourceFile(file, { forceFresh: true });
   };
 
   const handleSourceUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -995,6 +1084,11 @@ export default function CurriculumManagement() {
     }
   };
 
+  const focusedExistingIntakes = requestedGrade ? programmes.flatMap((programme) => {
+    if (programme.board !== "FBISE" || programme.grade !== requestedGrade) return [];
+    const set = workingCurriculumSets.find((candidate) => candidate.board === programme.board && candidate.grade === programme.grade && candidate.subject === programme.subject);
+    return set ? [{ programme, set }] : [];
+  }) : [];
   const focusedStep = !focusedIntakeSetId ? 1 : !details?.sources.length ? 2 : 3;
 
   if (!authLoading && user?.role !== "admin") {
@@ -1014,9 +1108,9 @@ export default function CurriculumManagement() {
               <div className="mt-6 grid grid-cols-3 gap-2" aria-label="Subject intake progress">{["Subject", "Textbook", "Review"].map((label, index) => <div key={label} className={`rounded-xl border px-3 py-2 text-center text-xs font-bold ${focusedStep === index + 1 ? "border-primary bg-primary/10 text-primary" : focusedStep > index + 1 ? "border-primary/20 bg-primary/[0.03] text-primary" : "border-border bg-muted/30 text-muted-foreground"}`}>{index + 1}. {label}</div>)}</div>
             </div>
 
-            {focusedStep === 1 && <Card className="border-primary/15"><CardHeader><CardTitle>What subject are you adding?</CardTitle><CardDescription>Enter one clear subject name. Grade and board are already set to Grade {requestedGrade} and FBISE.</CardDescription></CardHeader><CardContent className="space-y-4"><div><Label htmlFor="focused-subject-name">Subject name</Label><Input id="focused-subject-name" value={programmeSubject} onChange={(event) => setProgrammeSubject(event.target.value)} placeholder="e.g. Biology" autoFocus /></div><Button type="button" className="w-full" onClick={handleCreateFocusedProgramme} disabled={createProgramme.isPending || createSet.isPending}>{createProgramme.isPending || createSet.isPending ? "Creating subject…" : "Continue to textbook upload"}</Button></CardContent></Card>}
+            {focusedStep === 1 && <Card className="border-primary/15"><CardHeader><CardTitle>What subject are you adding?</CardTitle><CardDescription>Enter one clear subject name. Grade and board are already set to Grade {requestedGrade} and FBISE.</CardDescription></CardHeader><CardContent className="space-y-4">{focusedExistingIntakes.length > 0 && <div className="rounded-xl border border-primary/20 bg-primary/[0.03] p-3"><p className="text-sm font-semibold text-foreground">Continue an existing subject</p><div className="mt-2 grid gap-2">{focusedExistingIntakes.map(({ programme, set }) => <Button key={set.id} type="button" variant="outline" className="justify-between" onClick={() => continueFocusedIntake(programme, set)}><span>{formatSubjectLabel(programme.subject)}</span><span className="text-xs">Continue textbook intake</span></Button>)}</div></div>}<div><Label htmlFor="focused-subject-name">Subject name</Label><Input id="focused-subject-name" value={programmeSubject} onChange={(event) => setProgrammeSubject(event.target.value)} placeholder="e.g. Biology" autoFocus /></div><Button type="button" className="w-full" onClick={handleCreateFocusedProgramme} disabled={createProgramme.isPending || createSet.isPending}>{createProgramme.isPending || createSet.isPending ? "Creating subject…" : "Continue to textbook upload"}</Button></CardContent></Card>}
 
-            {focusedStep === 2 && <Card className="border-primary/15"><CardHeader><CardTitle className="flex items-center gap-2"><Upload className="h-5 w-5 text-primary" />Upload the textbook</CardTitle><CardDescription>Upload the official book as a PDF, TXT, JPG, PNG, or WEBP file. Scanned pages are queued for Urdu-and-English OCR before review.</CardDescription></CardHeader><CardContent className="space-y-4"><p className="text-sm text-muted-foreground">PDF textbooks up to 150MB are accepted. PDFs above 30MB transfer in protected small chunks that remain compatible with the published site.</p><TextbookUploadDropZone ariaLabel="Focused curriculum source upload" disabled={isUploading} isDragActive={isTextbookDropActive} onDragOver={handleTextbookDragOver} onDragLeave={() => setIsTextbookDropActive(false)} onDrop={handleTextbookDrop} onFileChange={handleSourceUpload} hasSavedUpload={Boolean(resumableTextbookUpload)} />{chunkUploadProgress ? <ChunkUploadProgressBar progress={chunkUploadProgress} onPause={requestUploadPause} onResume={resumeUpload} /> : isUploading && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Storing the textbook and preparing extraction…</p>}<p className="text-xs leading-5 text-muted-foreground">Scanned PDFs and photographed pages are read in small Urdu-and-English OCR batches. Weak pages remain blocked for Portal Admin review before activation.</p></CardContent></Card>}
+            {focusedStep === 2 && <Card className="border-primary/15"><CardHeader><CardTitle className="flex items-center gap-2"><Upload className="h-5 w-5 text-primary" />Upload the textbook</CardTitle><CardDescription>Upload the official book as a PDF, TXT, JPG, PNG, or WEBP file. Scanned pages are queued for Urdu-and-English OCR before review.</CardDescription></CardHeader><CardContent className="space-y-4"><p className="text-sm text-muted-foreground">PDF textbooks up to 150MB are accepted. PDFs above 30MB transfer in protected small chunks that remain compatible with the published site.</p><TextbookUploadDropZone ariaLabel="Focused curriculum source upload" disabled={isUploading} isDragActive={isTextbookDropActive} onDragOver={handleTextbookDragOver} onDragLeave={() => setIsTextbookDropActive(false)} onDrop={handleTextbookDrop} onFileChange={handleSourceUpload} hasSavedUpload={Boolean(resumableTextbookUpload)} />{textbookUploadRecovery && <TextbookUploadRecoveryCard recovery={textbookUploadRecovery} isUploading={isUploading} onRetry={retryTextbookUploadRecovery} onStartFresh={startFreshTextbookUpload} />}{chunkUploadProgress ? <ChunkUploadProgressBar progress={chunkUploadProgress} onPause={requestUploadPause} onResume={resumeUpload} /> : isUploading && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Storing the textbook and preparing extraction…</p>}<p className="text-xs leading-5 text-muted-foreground">Scanned PDFs and photographed pages are read in small Urdu-and-English OCR batches. Weak pages remain blocked for Portal Admin review before activation.</p></CardContent></Card>}
 
             {focusedStep === 3 && <Card className={hasPendingTextbookOcr ? "border-primary/30 bg-primary/[0.04]" : hasFailedTextbookOcr || !details?.readiness.ocrReviewComplete ? "border-amber-300/70 bg-amber-50/40" : "border-emerald-300/60 bg-emerald-50/40"}><CardHeader><CardTitle>{hasPendingTextbookOcr ? "Textbook OCR in progress" : hasFailedTextbookOcr ? "Textbook extraction needs attention" : details?.readiness.ocrReviewComplete ? "Textbook intake complete" : "Textbook quality review"}</CardTitle><CardDescription>{hasPendingTextbookOcr ? "The stored scan is being read in small batches. This page refreshes automatically; chapter review remains unavailable until extraction finishes." : hasFailedTextbookOcr ? "Extraction did not complete. Open the detailed review workspace to see the recorded failure before re-uploading or correcting the source." : details?.readiness.ocrReviewComplete ? "The source was stored and extraction checks completed. Continue to the controlled chapter-review workspace." : "Some pages need review before this book can be activated for teachers."}</CardDescription></CardHeader><CardContent className="space-y-4"><div className="rounded-xl border border-border/60 bg-background/70 p-3 text-sm text-foreground"><strong>{details?.sources.length ?? 0} textbook file</strong> stored for this subject.{hasPendingTextbookOcr && details?.ocrJobs?.length ? ` OCR progress: page ${details.ocrJobs[0].nextPage} of ${details.ocrJobs[0].totalPages}.` : details?.readiness.weakOcrPages ? ` ${details.readiness.weakOcrPages} page${details.readiness.weakOcrPages === 1 ? "" : "s"} still need review.` : ""}</div><Button type="button" className="w-full" onClick={() => navigate(`/curriculum?set=${focusedIntakeSetId}`)} disabled={hasPendingTextbookOcr}>{hasPendingTextbookOcr ? "OCR in progress" : "Continue to book review"}</Button></CardContent></Card>}
           </section>
@@ -1156,6 +1250,7 @@ export default function CurriculumManagement() {
                 <CardContent className="space-y-4">
                   <p className="text-sm text-muted-foreground">PDF textbooks up to 150MB are accepted. PDFs over 30MB are transferred in protected small chunks so they remain compatible with the published site; scanned pages continue through the existing reviewable OCR queue.</p>
                   <TextbookUploadDropZone ariaLabel="Curriculum source upload" disabled={isUploading} isDragActive={isTextbookDropActive} onDragOver={handleTextbookDragOver} onDragLeave={() => setIsTextbookDropActive(false)} onDrop={handleTextbookDrop} onFileChange={handleSourceUpload} hasSavedUpload={Boolean(resumableTextbookUpload)} />
+                  {textbookUploadRecovery && <TextbookUploadRecoveryCard recovery={textbookUploadRecovery} isUploading={isUploading} onRetry={retryTextbookUploadRecovery} onStartFresh={startFreshTextbookUpload} />}
                   {chunkUploadProgress ? <ChunkUploadProgressBar progress={chunkUploadProgress} onPause={requestUploadPause} onResume={resumeUpload} /> : isUploading && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Storing source and preparing extraction…</p>}
                   <div className="space-y-2">{details.sources.map((source) => { const ocrJob = details.ocrJobs?.find((job) => job.sourceId === source.id); return <button key={source.id} onClick={() => loadSourceForReview(source.id)} className="flex w-full items-center justify-between rounded-lg border border-border/60 p-3 text-left hover:border-accent/50"><span className="flex min-w-0 items-center gap-2"><FileText className="h-4 w-4 shrink-0 text-accent" /><span className="truncate text-sm">{source.originalFileName}</span></span><span className="text-right text-xs text-muted-foreground">{source.extractionStatus}{source.pageCount ? ` • ${source.pageCount} pages` : ""}{ocrJob && ocrJob.status !== "completed" ? ` • OCR page ${ocrJob.nextPage}/${ocrJob.totalPages}` : ""}</span></button>; })}</div>
                 </CardContent>

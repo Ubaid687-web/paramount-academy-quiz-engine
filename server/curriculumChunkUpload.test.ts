@@ -72,6 +72,19 @@ describe("chunked curriculum PDF intake", () => {
     await expect(appendCurriculumPdfChunk({ userId: 8, uploadToken: prepared.uploadToken, chunkIndex: 0, fileBuffer: Buffer.from("fail") })).rejects.toThrow("out of order");
   });
 
+  it("preserves authoritative durable progress after rejecting a mismatched retry so a client can rebase safely", async () => {
+    const prepared = await prepareCurriculumPdfChunkUpload({ userId: 8, curriculumSetId: 41, fileName: "grade-9-chemistry.pdf", fileSize: 8 });
+    await appendCurriculumPdfChunk({ userId: 8, uploadToken: prepared.uploadToken, chunkIndex: 0, fileBuffer: Buffer.from("%PDF") });
+
+    await expect(appendCurriculumPdfChunk({ userId: 8, uploadToken: prepared.uploadToken, chunkIndex: 0, fileBuffer: Buffer.from("DIFF") })).rejects.toThrow("out of order");
+    await expect(getCurriculumPdfChunkUploadStatus({ userId: 8, uploadToken: prepared.uploadToken })).resolves.toMatchObject({
+      receivedBytes: 4,
+      fileSize: 8,
+      nextChunkIndex: 1,
+      complete: false,
+    });
+  });
+
   it("retains an acknowledged upload status in durable storage for a later foreground resume", async () => {
     const prepared = await prepareCurriculumPdfChunkUpload({ userId: 8, curriculumSetId: 41, fileName: "grade-9-chemistry.pdf", fileSize: 8 });
     await appendCurriculumPdfChunk({ userId: 8, uploadToken: prepared.uploadToken, chunkIndex: 0, fileBuffer: Buffer.from("%PDF") });

@@ -770,3 +770,9 @@
 - [x] Write an evidence-based concepts-and-architecture guide, blameless engineering lessons register, and durable project journal.
 - [x] Document safe maintenance, documentation hygiene, validation, checkpoint, and private GitHub synchronization workflows.
 - [x] Validate internal links, command examples, current-state claims, sensitive-content exclusions, repository status, and private GitHub backup before publishing.
+
+## Phase 132: Grade 9 Chemistry Upload Recovery and Intake Integrity
+- [x] Inspect the existing Grade 9 Chemistry programme, draft set, source records, and stale-session recovery path without deleting or duplicating data.
+- [x] Retain strict server chunk integrity while exposing authoritative recovery state for safe client reconciliation.
+- [x] Add a focused recovery UI that continues the existing Chemistry draft, retries only when safe, and offers a clear fresh-session action when needed.
+- [x] Add stale-session, interrupted acknowledgement, duplicate-subject continuation, and mobile recovery regressions; validate, publish, and synchronize GitHub.
