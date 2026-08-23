@@ -833,3 +833,4 @@
 - [x] Preserve the 150 MB scanned-PDF requirement by storing an immutable chunk manifest and processing source data in bounded units rather than assembling whole documents in web-process memory.
 - [x] Add a server-side quiz-save claim and transaction so repeated teacher submissions cannot create duplicate quizzes or partial question records.
 - [x] Define and enforce bounded retention for transient generation results and expired exact-result cache records without affecting approved curriculum sources or reviewed papers.
+- [ ] Diagnose and repair the deployed Staff sign-in “Unsupported sign-in host” failure for the configured academy domain, with hostile-host regression coverage and real mobile redirect validation.

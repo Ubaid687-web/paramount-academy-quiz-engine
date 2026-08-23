@@ -4,5 +4,6 @@ export { COOKIE_NAME } from "@shared/const";
 export const getLoginUrl = () => {
   const url = new URL("/api/oauth/start", window.location.origin);
   url.searchParams.set("returnPath", `${window.location.pathname}${window.location.search}`);
+  url.searchParams.set("origin", window.location.origin);
   return url.toString();
 };

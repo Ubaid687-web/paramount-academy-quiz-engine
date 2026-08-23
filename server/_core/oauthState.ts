@@ -10,13 +10,28 @@ function isTrustedHost(host: string) {
   return normalized === "localhost" || normalized === "127.0.0.1" || normalized.endsWith(".manus.space") || normalized.endsWith(".manus.computer") || normalized.endsWith(".manus-asia.computer") || normalized.endsWith(".manuscomputer.ai");
 }
 
+export function normalizeTrustedOrigin(value: unknown) {
+  if (typeof value !== "string") return null;
+  try {
+    const parsed = new URL(value);
+    const isLocal = parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1";
+    if (!isTrustedHost(parsed.host) || (parsed.protocol !== "https:" && !(isLocal && parsed.protocol === "http:"))) return null;
+    return parsed.origin;
+  } catch {
+    return null;
+  }
+}
+
 export function getTrustedRequestOrigin(req: Request) {
   const host = req.get("host") ?? "";
-  if (!isTrustedHost(host)) return null;
   const forwardedProto = req.headers["x-forwarded-proto"];
   const protocol = (Array.isArray(forwardedProto) ? forwardedProto[0] : forwardedProto?.split(",")[0])?.trim().toLowerCase() || req.protocol;
-  if (protocol !== "https" && protocol !== "http") return null;
-  return `${protocol}://${host}`;
+  return normalizeTrustedOrigin(`${protocol}://${host}`);
+}
+
+/** Prefer the browser-provided, allow-listed frontend origin when a managed proxy does not preserve the public Host header. */
+export function getOAuthStartOrigin(req: Request, requestedOrigin: unknown) {
+  return normalizeTrustedOrigin(requestedOrigin) ?? getTrustedRequestOrigin(req);
 }
 
 export function normalizeReturnPath(value: unknown) {
@@ -24,9 +39,13 @@ export function normalizeReturnPath(value: unknown) {
   return value;
 }
 
-export function createOAuthStateRecord(returnPath: string) {
+export function createOAuthStateRecord(returnPath: string, origin: string) {
   const state = randomBytes(32).toString("base64url");
-  return { state, cookieValue: `${state}.${encodeURIComponent(normalizeReturnPath(returnPath))}` };
+  const cookiePayload = Buffer.from(JSON.stringify({
+    origin: normalizeTrustedOrigin(origin),
+    returnPath: normalizeReturnPath(returnPath),
+  })).toString("base64url");
+  return { state, cookieValue: `${state}.${cookiePayload}` };
 }
 
 export function verifyOAuthState(req: Request, receivedState: string) {
@@ -39,7 +58,10 @@ export function verifyOAuthState(req: Request, receivedState: string) {
   const received = Buffer.from(receivedState);
   if (expected.length !== received.length || !timingSafeEqual(expected, received)) return null;
   try {
-    return normalizeReturnPath(decodeURIComponent(cookieValue.slice(separator + 1)));
+    const payload = JSON.parse(Buffer.from(cookieValue.slice(separator + 1), "base64url").toString("utf8")) as { origin?: unknown; returnPath?: unknown };
+    const origin = normalizeTrustedOrigin(payload.origin);
+    if (!origin) return null;
+    return { origin, returnPath: normalizeReturnPath(payload.returnPath) };
   } catch {
     return null;
   }

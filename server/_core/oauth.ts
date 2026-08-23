@@ -3,7 +3,7 @@ import type { Express, Request, Response } from "express";
 import * as db from "../db";
 import { getOAuthStateCookieOptions, getSessionCookieOptions } from "./cookies";
 import { ENV } from "./env";
-import { createOAuthStateRecord, getTrustedRequestOrigin, normalizeReturnPath, OAUTH_STATE_TTL_MS, verifyOAuthState } from "./oauthState";
+import { createOAuthStateRecord, getOAuthStartOrigin, normalizeReturnPath, OAUTH_STATE_TTL_MS, verifyOAuthState } from "./oauthState";
 import { sdk } from "./sdk";
 
 function getQueryParam(req: Request, key: string): string | undefined {
@@ -13,12 +13,12 @@ function getQueryParam(req: Request, key: string): string | undefined {
 
 export function registerOAuthRoutes(app: Express) {
   app.get("/api/oauth/start", (req: Request, res: Response) => {
-    const origin = getTrustedRequestOrigin(req);
+    const origin = getOAuthStartOrigin(req, getQueryParam(req, "origin"));
     if (!origin) {
       res.status(400).json({ error: "Unsupported sign-in host" });
       return;
     }
-    const { state, cookieValue } = createOAuthStateRecord(normalizeReturnPath(getQueryParam(req, "returnPath")));
+    const { state, cookieValue } = createOAuthStateRecord(normalizeReturnPath(getQueryParam(req, "returnPath")), origin);
     res.cookie(OAUTH_STATE_COOKIE_NAME, cookieValue, { ...getOAuthStateCookieOptions(req), maxAge: OAUTH_STATE_TTL_MS });
     const portalUrl = new URL("/app-auth", ENV.oAuthPortalUrl);
     portalUrl.searchParams.set("appId", ENV.appId);
@@ -32,16 +32,15 @@ export function registerOAuthRoutes(app: Express) {
     const code = getQueryParam(req, "code");
     const state = getQueryParam(req, "state");
 
-    const origin = getTrustedRequestOrigin(req);
-    const returnPath = state ? verifyOAuthState(req, state) : null;
-    if (!code || !state || !origin || !returnPath) {
+    const stateRecord = state ? verifyOAuthState(req, state) : null;
+    if (!code || !state || !stateRecord) {
       res.clearCookie(OAUTH_STATE_COOKIE_NAME, { ...getOAuthStateCookieOptions(req), maxAge: -1 });
       res.status(400).json({ error: "Invalid or expired sign-in request" });
       return;
     }
 
     try {
-      const tokenResponse = await sdk.exchangeCodeForToken(code, `${origin}/api/oauth/callback`);
+      const tokenResponse = await sdk.exchangeCodeForToken(code, `${stateRecord.origin}/api/oauth/callback`);
       const userInfo = await sdk.getUserInfo(tokenResponse.accessToken);
 
       if (!userInfo.openId) {
@@ -63,7 +62,7 @@ export function registerOAuthRoutes(app: Express) {
       res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: 1000 * 60 * 60 * 12 });
       res.clearCookie(OAUTH_STATE_COOKIE_NAME, { ...getOAuthStateCookieOptions(req), maxAge: -1 });
 
-      res.redirect(302, returnPath);
+      res.redirect(302, stateRecord.returnPath);
     } catch (error) {
       console.error("[OAuth] Callback failed", error instanceof Error ? error.name : "unknown");
       res.clearCookie(OAUTH_STATE_COOKIE_NAME, { ...getOAuthStateCookieOptions(req), maxAge: -1 });
