@@ -781,3 +781,9 @@
 - [x] Audit current transient and resumable-conflict retry boundaries; retain manual recovery for unsafe/expired/mismatched sessions.
 - [x] Add bounded automatic retries with server-authoritative reconciliation before showing Portal Admin retry or fresh-session actions.
 - [x] Add automatic-retry, exhaustion, and manual-fallback regressions; validate, publish, and synchronize GitHub.
+
+## Phase 134: Portal Admin Incomplete Upload Drafts
+- [x] Audit browser-local incomplete-upload state, curriculum draft records, and safe removal boundaries.
+- [x] Add a focused Drafts section that lists incomplete uploads and routes Portal Admin to resume the correct existing subject intake.
+- [x] Add a non-destructive clear-session action that removes only the local unfinished-transfer record, never a stored source or curriculum record.
+- [x] Add visibility, resume, and safe-clear regressions; validate, publish, and synchronize GitHub.

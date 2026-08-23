@@ -364,6 +364,30 @@ describe("Curriculum Library Release 1", () => {
     expect(noOpMutation.mutateAsync).not.toHaveBeenCalledWith(expect.objectContaining({ curriculumSetId: grade9ChemistrySet.id, fileSize }));
   });
 
+  it("lists an incomplete textbook transfer in Drafts, resumes its existing Chemistry intake, and clears only the local session", async () => {
+    const fileSize = (30 * 1024 * 1024) + 1;
+    window.sessionStorage.setItem("paramount-resumable-textbook-upload", JSON.stringify({ uploadToken: "drafts-token", chunkBytes: 10 * 1024 * 1024, curriculumSetId: grade9ChemistrySet.id, fileName: "grade-9-chemistry.pdf", fileSize, fileLastModified: 1710000000000, receivedBytes: 10 * 1024 * 1024, nextChunkIndex: 1, expiresAt: 9999999999999 }));
+    window.history.pushState({}, "", "/curriculum?panel=drafts");
+    render(<CurriculumManagement />);
+
+    expect(await screen.findByTestId("incomplete-textbook-upload-draft")).toBeTruthy();
+    expect(screen.getByText("grade-9-chemistry.pdf")).toBeTruthy();
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
+    fireEvent.click(screen.getByRole("button", { name: "Clear unfinished session" }));
+    expect(window.sessionStorage.getItem("paramount-resumable-textbook-upload")).toBeNull();
+    expect(await screen.findByText("No unfinished textbook uploads on this browser.")).toBeTruthy();
+    expect(noOpMutation.mutateAsync).not.toHaveBeenCalled();
+    confirmSpy.mockRestore();
+
+    cleanup();
+    window.sessionStorage.setItem("paramount-resumable-textbook-upload", JSON.stringify({ uploadToken: "drafts-token", chunkBytes: 10 * 1024 * 1024, curriculumSetId: grade9ChemistrySet.id, fileName: "grade-9-chemistry.pdf", fileSize, fileLastModified: 1710000000000, receivedBytes: 10 * 1024 * 1024, nextChunkIndex: 1, expiresAt: 9999999999999 }));
+    window.history.pushState({}, "", "/curriculum?panel=drafts");
+    render(<CurriculumManagement />);
+    fireEvent.click(await screen.findByRole("button", { name: "Resume upload" }));
+    expect(await screen.findByText("Upload the textbook")).toBeTruthy();
+    expect(noOpMutation.mutateAsync).not.toHaveBeenCalled();
+  });
+
   it("offers a safe fresh-session recovery inside the existing Grade 9 Chemistry draft when a stale upload cannot be reconciled", async () => {
     window.history.pushState({}, "", "/curriculum?grade=9&intake=subject");
     const fileSize = (30 * 1024 * 1024) + 1;

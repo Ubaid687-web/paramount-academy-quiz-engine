@@ -18,7 +18,7 @@ type Subject = string;
 type ScopeKind = "half_syllabus" | "block";
 type PaperPatternKind = "model_paper" | "past_paper";
 type PatternReviewStatus = "draft" | "reviewed" | "needs_revision";
-type PortalAdminPanel = "home" | "curriculum" | "review" | "staff" | "ai";
+type PortalAdminPanel = "home" | "curriculum" | "review" | "staff" | "ai" | "drafts";
 type CurriculumTask = "edition" | "content" | "scopes";
 type ReviewTask = "source" | "pattern";
 type AiTask = "routing" | "style" | "history";
@@ -415,9 +415,11 @@ export default function CurriculumManagement() {
     const matchingSet = workingCurriculumSets.find((set) => set.id === resumableTextbookUpload.curriculumSetId);
     if (!matchingSet) return;
     if (selectedSetId !== resumableTextbookUpload.curriculumSetId) setSelectedSetId(resumableTextbookUpload.curriculumSetId);
-    setActivePortalPanel("curriculum");
-    setActiveCurriculumTask("edition");
-  }, [resumableTextbookUpload, selectedSetId, workingCurriculumSets]);
+    if (requestedPanel !== "drafts") {
+      setActivePortalPanel("curriculum");
+      setActiveCurriculumTask("edition");
+    }
+  }, [resumableTextbookUpload, requestedPanel, selectedSetId, workingCurriculumSets]);
 
   useEffect(() => {
     if (selectedSetId !== null || !workingCurriculumSets.length) return;
@@ -430,7 +432,7 @@ export default function CurriculumManagement() {
   }, [isFocusedSubjectIntake, requestedGrade]);
 
   useEffect(() => {
-    if (requestedPanel === "curriculum" || requestedPanel === "review") setActivePortalPanel(requestedPanel);
+    if (requestedPanel === "curriculum" || requestedPanel === "review" || requestedPanel === "drafts") setActivePortalPanel(requestedPanel);
     if (requestedReviewTask === "pattern") setActiveReviewTask("pattern");
     if (requestedPaperKind === "model" || requestedPaperKind === "past") setPaperPatternKind(requestedPaperKind === "model" ? "model_paper" : "past_paper");
   }, [requestedPanel, requestedPaperKind, requestedReviewTask]);
@@ -456,6 +458,7 @@ export default function CurriculumManagement() {
   const details = detailsQuery.data;
   const curriculumSets = workingCurriculumSets;
   const programmes = programmesQuery.data ?? [];
+  const incompleteTextbookUploadSet = resumableTextbookUpload ? workingCurriculumSets.find((set) => set.id === resumableTextbookUpload.curriculumSetId) : undefined;
   const statusCounts = {
     active: curriculumSets.filter((set) => set.status === "active").length,
     draft: curriculumSets.filter((set) => set.status === "draft").length,
@@ -604,6 +607,25 @@ export default function CurriculumManagement() {
   const clearResumableTextbookUpload = () => {
     setResumableTextbookUpload(null);
     saveResumableTextbookUpload(null);
+  };
+
+  const resumeIncompleteTextbookUpload = () => {
+    if (!resumableTextbookUpload || !incompleteTextbookUploadSet) {
+      clearResumableTextbookUpload();
+      return toast.error("This unfinished upload no longer matches a current curriculum draft. Its local session was cleared; no textbook source was removed.");
+    }
+    setSelectedSetId(incompleteTextbookUploadSet.id);
+    setFocusedIntakeSetId(incompleteTextbookUploadSet.id);
+    navigate(`/curriculum?grade=${incompleteTextbookUploadSet.grade}&intake=subject`);
+  };
+
+  const clearIncompleteTextbookUpload = () => {
+    if (!resumableTextbookUpload) return;
+    if (typeof window !== "undefined" && !window.confirm(`Remove the unfinished transfer for ${resumableTextbookUpload.fileName}? This does not delete a subject, stored textbook, OCR work, or chapters.`)) return;
+    clearResumableTextbookUpload();
+    setTextbookUploadRecovery(null);
+    recoveryFileRef.current = null;
+    toast.success("Unfinished upload session removed. The subject draft remains available in Curriculum.");
   };
 
   const uploadSourceFile = async (file?: File, options: { forceFresh?: boolean } = {}) => {
@@ -1141,11 +1163,12 @@ export default function CurriculumManagement() {
 
         {setsQuery.error && <Card className="mb-6 border-destructive/50"><CardContent className="py-4 text-sm text-destructive">Curriculum management is restricted to administrators. Sign in with the Paramount Academy administrator account, then return to this page.</CardContent></Card>}
 
-        <nav aria-label="Portal Admin tasks" role="tablist" className="mb-6 grid grid-cols-2 gap-2 rounded-2xl border border-border/80 bg-card p-2 shadow-sm sm:grid-cols-5">
+        <nav aria-label="Portal Admin tasks" role="tablist" className="mb-6 grid grid-cols-2 gap-2 rounded-2xl border border-border/80 bg-card p-2 shadow-sm sm:grid-cols-6">
           {([
             { id: "home", label: "Overview", hint: "Choose a task" },
             { id: "curriculum", label: "Curriculum", hint: "Books & chapters" },
             { id: "review", label: "Review", hint: "Quality & patterns" },
+            { id: "drafts", label: "Drafts", hint: "Unfinished uploads" },
             { id: "staff", label: "Staff", hint: "Teacher access" },
             { id: "ai", label: "AI", hint: "Fallback & style" },
           ] as const).map((item) => <button key={item.id} type="button" role="tab" aria-selected={activePortalPanel === item.id} onClick={() => setActivePortalPanel(item.id)} className={`rounded-xl px-3 py-2.5 text-left transition-colors ${activePortalPanel === item.id ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}><span className="block text-sm font-extrabold">{item.label}</span><span className={`mt-0.5 block text-[11px] ${activePortalPanel === item.id ? "text-primary-foreground/75" : "text-muted-foreground"}`}>{item.hint}</span></button>)}
@@ -1154,9 +1177,11 @@ export default function CurriculumManagement() {
         {activePortalPanel === "home" && <section aria-label="Portal Admin overview" className="mx-auto max-w-4xl space-y-4">
           <div className="rounded-2xl border border-primary/15 bg-primary/[0.025] p-5 sm:p-6"><p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-primary">Start here</p><h2 className="mt-2 text-2xl font-extrabold tracking-[-0.04em] text-foreground">What do you need to manage?</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">Open one focused workspace. Unrelated forms stay out of view.</p></div>
           <div className="grid gap-3 sm:grid-cols-2">
-            {[{ id: "curriculum", title: "Books and curriculum", body: "Create an edition, upload a book, review chapters, or create a reusable scope." }, { id: "review", title: "Quality review", body: "Resolve OCR pages, control chapter availability, and review paper patterns." }, { id: "staff", title: "Teacher access", body: "Approve teacher emails and manage the signed-in staff directory." }, { id: "ai", title: "AI generation", body: "Control Gemini fallback, style examples, and operational history." }].map((task) => <button key={task.id} type="button" onClick={() => setActivePortalPanel(task.id as PortalAdminPanel)} className="rounded-2xl border border-border/80 bg-card p-5 text-left shadow-sm transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-md active:scale-[0.98]"><p className="text-base font-extrabold text-foreground">{task.title}</p><p className="mt-2 text-sm leading-6 text-muted-foreground">{task.body}</p><p className="mt-4 text-sm font-extrabold text-primary">Open workspace →</p></button>)}
+            {[{ id: "curriculum", title: "Books and curriculum", body: "Create an edition, upload a book, review chapters, or create a reusable scope." }, { id: "drafts", title: "Incomplete uploads", body: "Resume or clear an unfinished textbook transfer without changing the subject draft." }, { id: "review", title: "Quality review", body: "Resolve OCR pages, control chapter availability, and review paper patterns." }, { id: "staff", title: "Teacher access", body: "Approve teacher emails and manage the signed-in staff directory." }, { id: "ai", title: "AI generation", body: "Control Gemini fallback, style examples, and operational history." }].map((task) => <button key={task.id} type="button" onClick={() => setActivePortalPanel(task.id as PortalAdminPanel)} className="rounded-2xl border border-border/80 bg-card p-5 text-left shadow-sm transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-md active:scale-[0.98]"><p className="text-base font-extrabold text-foreground">{task.title}</p><p className="mt-2 text-sm leading-6 text-muted-foreground">{task.body}</p><p className="mt-4 text-sm font-extrabold text-primary">Open workspace →</p></button>)}
           </div>
         </section>}
+
+        {activePortalPanel === "drafts" && <section className="mx-auto max-w-3xl" aria-label="Incomplete textbook upload drafts"><Card className="border-primary/15 bg-card"><CardHeader><CardTitle>Incomplete uploads</CardTitle><CardDescription>Only unfinished browser upload sessions appear here. Clearing a session never deletes a subject draft, stored textbook, OCR record, chapter, or paper.</CardDescription></CardHeader><CardContent>{!resumableTextbookUpload ? <div className="rounded-xl border border-dashed border-border p-5 text-sm text-muted-foreground">No unfinished textbook uploads on this browser.</div> : !incompleteTextbookUploadSet ? <div className="rounded-xl border border-amber-300/70 bg-amber-50/40 p-4"><p className="font-semibold text-foreground">Upload session needs clearing</p><p className="mt-1 text-sm text-muted-foreground">This local transfer no longer matches a current curriculum draft. No source was stored.</p><Button type="button" className="mt-3" onClick={clearIncompleteTextbookUpload}>Clear unfinished session</Button></div> : <div className="rounded-xl border border-primary/20 bg-primary/[0.03] p-4" data-testid="incomplete-textbook-upload-draft"><p className="text-xs font-bold uppercase tracking-[0.12em] text-primary">Grade {incompleteTextbookUploadSet.grade} · {formatSubjectLabel(incompleteTextbookUploadSet.subject)}</p><p className="mt-2 truncate font-semibold text-foreground">{resumableTextbookUpload.fileName}</p><p className="mt-1 text-sm text-muted-foreground">{Math.round((resumableTextbookUpload.receivedBytes / resumableTextbookUpload.fileSize) * 100)}% received · {resumableTextbookUpload.receivedBytes.toLocaleString()} of {resumableTextbookUpload.fileSize.toLocaleString()} bytes. Select the same file to continue safely.</p><div className="mt-4 grid gap-2 sm:grid-cols-2"><Button type="button" onClick={resumeIncompleteTextbookUpload}>Resume upload</Button><Button type="button" variant="outline" onClick={clearIncompleteTextbookUpload}>Clear unfinished session</Button></div></div>}</CardContent></Card></section>}
 
         {activePortalPanel === "curriculum" && <section id="programme-catalogue" className="mb-6 scroll-mt-24" aria-label="Grade-specific subject intake"><Card className="border-primary/20 bg-primary/[0.025]">
           <CardHeader><CardTitle className="flex items-center gap-2"><BookMarked className="h-5 w-5 text-primary" />Choose a grade, then one subject</CardTitle><CardDescription>Each grade keeps its own textbooks and paper references. Add a subject inside the correct grade; it stays intake-only until the textbook is reviewed and activated.</CardDescription></CardHeader>
