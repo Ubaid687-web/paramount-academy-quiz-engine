@@ -1,5 +1,5 @@
 import React from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import CurriculumManagement from "../client/src/pages/CurriculumManagement";
 
@@ -7,6 +7,7 @@ const noOpMutation = { mutateAsync: vi.fn(), isPending: false };
 const invalidate = vi.fn();
 const getLargePdfUploadStatus = vi.fn();
 const getPaperPatternSourceDownload = vi.fn();
+const getCurrentAuthUser = vi.fn();
 const setPaperSourceStudentLibraryStatus = { mutateAsync: vi.fn(), isPending: false };
 type ChunkAcknowledgement = { receivedBytes: number; fileSize: number; complete: boolean; nextChunkIndex: number; expiresAt: number };
 const authMock = vi.hoisted(() => ({ role: "admin" as "admin" | "teacher" }));
@@ -49,7 +50,7 @@ const grade9ChemistryDetails = {
 
 vi.mock("@/lib/trpc", () => ({
   trpc: {
-    useUtils: () => ({ curriculum: { listSets: { invalidate }, listProgrammes: { invalidate }, getManagementDetails: { invalidate }, getLargePdfUploadStatus: { fetch: getLargePdfUploadStatus }, getPaperPatternSourceDownload: { fetch: getPaperPatternSourceDownload } }, generation: { getProviderSettings: { invalidate }, listHistory: { invalidate }, getStyleAnchor: { invalidate } } }),
+    useUtils: () => ({ auth: { me: { fetch: getCurrentAuthUser } }, curriculum: { listSets: { invalidate }, listProgrammes: { invalidate }, getManagementDetails: { invalidate }, getLargePdfUploadStatus: { fetch: getLargePdfUploadStatus }, getPaperPatternSourceDownload: { fetch: getPaperPatternSourceDownload } }, generation: { getProviderSettings: { invalidate }, listHistory: { invalidate }, getStyleAnchor: { invalidate } } }),
     curriculum: {
       listSets: { useQuery: (_input?: unknown, options?: { enabled?: boolean }) => { queryOptions.listSets.push(Boolean(options?.enabled)); return { data: [managementDetails.curriculumSet, grade9ChemistrySet, archivedChemistrySet], isLoading: false, error: null }; } },
       listProgrammes: { useQuery: (_input?: unknown, options?: { enabled?: boolean }) => { queryOptions.listProgrammes.push(Boolean(options?.enabled)); return { data: [{ id: 11, board: "FBISE", grade: "10", subject: "physics", teacherLabel: "Physics", status: "ready" }, grade9ChemistryProgramme], isLoading: false, error: null }; } },
@@ -80,7 +81,11 @@ vi.mock("@/_core/hooks/useAuth", () => ({ useAuth: () => ({ user: { id: 1, role:
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 describe("Curriculum Library Release 1", () => {
-  afterEach(() => { cleanup(); invalidate.mockReset(); getLargePdfUploadStatus.mockReset(); getPaperPatternSourceDownload.mockReset(); noOpMutation.mutateAsync.mockReset(); setPaperSourceStudentLibraryStatus.mutateAsync.mockReset(); window.sessionStorage.clear(); Object.defineProperty(document, "hidden", { configurable: true, value: false }); Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" }); queryOptions.listSets.length = 0; queryOptions.listProgrammes.length = 0; queryOptions.staffDirectory.length = 0; authMock.role = "admin"; window.history.pushState({}, "", "/"); });
+  beforeEach(() => {
+    getCurrentAuthUser.mockResolvedValue({ id: 1, role: "admin" });
+  });
+
+  afterEach(() => { cleanup(); invalidate.mockReset(); getLargePdfUploadStatus.mockReset(); getPaperPatternSourceDownload.mockReset(); getCurrentAuthUser.mockReset(); noOpMutation.mutateAsync.mockReset(); setPaperSourceStudentLibraryStatus.mutateAsync.mockReset(); window.sessionStorage.clear(); Object.defineProperty(document, "hidden", { configurable: true, value: false }); Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" }); queryOptions.listSets.length = 0; queryOptions.listProgrammes.length = 0; queryOptions.staffDirectory.length = 0; authMock.role = "admin"; window.history.pushState({}, "", "/"); });
 
   it("shows one focused Portal Admin task at a time while preserving every administrative workflow", async () => {
     render(<CurriculumManagement />);
@@ -420,6 +425,38 @@ describe("Curriculum Library Release 1", () => {
     fireEvent.click(screen.getByRole("button", { name: "Start a fresh upload" }));
     await waitFor(() => expect(noOpMutation.mutateAsync).toHaveBeenCalledWith(expect.objectContaining({ curriculumSetId: grade9ChemistrySet.id, fileName: file.name, fileSize })));
     expect(noOpMutation.mutateAsync).not.toHaveBeenCalledWith(expect.objectContaining({ subject: "chemistry", teacherLabel: "Chemistry" }));
+  });
+
+  it("requires Staff sign-in before a protected Grade 9 fresh upload when the current session is no longer active", async () => {
+    window.history.pushState({}, "", "/curriculum?grade=9&intake=subject");
+    getCurrentAuthUser.mockResolvedValueOnce(null);
+    render(<CurriculumManagement />);
+
+    fireEvent.change(screen.getByLabelText("Subject name"), { target: { value: "Chemistry" } });
+    fireEvent.click(screen.getByRole("button", { name: "Continue to textbook upload" }));
+    const file = new File([new Uint8Array((30 * 1024 * 1024) + 1)], "grade-9-chemistry.pdf", { type: "application/pdf" });
+    fireEvent.change(await screen.findByLabelText("Focused curriculum source upload"), { target: { files: [file] } });
+
+    expect(await screen.findByTestId("textbook-upload-recovery")).toBeTruthy();
+    expect(screen.getByText(/current Portal Admin session is no longer active/i)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Staff sign in" })).toBeTruthy();
+    expect(noOpMutation.mutateAsync).not.toHaveBeenCalledWith(expect.objectContaining({ curriculumSetId: grade9ChemistrySet.id, fileName: file.name, fileSize: file.size }));
+  });
+
+  it("keeps the existing Grade 9 draft recoverable when the session preflight cannot be transformed", async () => {
+    window.history.pushState({}, "", "/curriculum?grade=9&intake=subject");
+    getCurrentAuthUser.mockRejectedValueOnce(new Error("Unable to transform response from server"));
+    render(<CurriculumManagement />);
+
+    fireEvent.change(screen.getByLabelText("Subject name"), { target: { value: "Chemistry" } });
+    fireEvent.click(screen.getByRole("button", { name: "Continue to textbook upload" }));
+    const file = new File([new Uint8Array((30 * 1024 * 1024) + 1)], "grade-9-chemistry.pdf", { type: "application/pdf" });
+    fireEvent.change(await screen.findByLabelText("Focused curriculum source upload"), { target: { files: [file] } });
+
+    expect(await screen.findByTestId("textbook-upload-recovery")).toBeTruthy();
+    expect(screen.getByText(/could not confirm your current Portal Admin session/i)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Staff sign in" })).toBeTruthy();
+    expect(noOpMutation.mutateAsync).not.toHaveBeenCalledWith(expect.objectContaining({ curriculumSetId: grade9ChemistrySet.id, fileName: file.name, fileSize: file.size }));
   });
 
   it("automatically retries one unchanged chunk-order conflict before showing manual upload recovery", async () => {

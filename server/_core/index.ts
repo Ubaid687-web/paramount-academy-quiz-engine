@@ -12,6 +12,7 @@ import { registerOcrReviewRoutes } from "../ocrReviewRoute";
 import { serveStatic, setupVite } from "./vite";
 import { ENV } from "./env";
 import { getTrustedRequestOrigin } from "./oauthState";
+import { attachRequestTrace, getRequestTraceId, isAuthTracePath } from "./requestTrace";
 
 function assertProductionConfiguration() {
   if (!ENV.isProduction) return;
@@ -78,6 +79,7 @@ async function startServer() {
   const server = createServer(app);
   app.disable("x-powered-by");
   app.use(applySecurityHeaders);
+  app.use(attachRequestTrace);
   // Avoid the extended qs parser for query strings; routes use typed tRPC inputs instead.
   app.set("query parser", "simple");
   // Large textbook transfers use the signed 512 KB resumable tRPC chunks. Keep parsers bounded so
@@ -93,6 +95,11 @@ async function startServer() {
     createExpressMiddleware({
       router: appRouter,
       createContext,
+      onError({ path, error, ctx }) {
+        if (!path || !isAuthTracePath(path)) return;
+        const requestId = ctx ? getRequestTraceId(ctx.res) : "untracked";
+        console.warn(`[ApiTrace] requestId=${requestId} path=${path} result=error code=${error.code}`);
+      },
     })
   );
   registerPdfExportRoutes(app);
