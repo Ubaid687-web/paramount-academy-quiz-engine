@@ -1,5 +1,5 @@
 import React from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import CurriculumManagement from "../client/src/pages/CurriculumManagement";
 
@@ -7,10 +7,15 @@ const noOpMutation = { mutateAsync: vi.fn(), isPending: false };
 const invalidate = vi.fn();
 const getLargePdfUploadStatus = vi.fn();
 const getPaperPatternSourceDownload = vi.fn();
-const getCurrentAuthUser = vi.fn();
-const getCurrentSessionStatus = vi.fn();
 const setPaperSourceStudentLibraryStatus = { mutateAsync: vi.fn(), isPending: false };
-type ChunkAcknowledgement = { receivedBytes: number; fileSize: number; complete: boolean; nextChunkIndex: number; expiresAt: number };
+type ChunkAcknowledgement = { receivedBytes: number; fileSize: number; complete: boolean; nextChunkIndex: number; revision?: number; expiresAt: number };
+
+function largePdfFixture(name: string, size: number, lastModified?: number) {
+  const file = new File(["x"], name, { type: "application/pdf", lastModified });
+  Object.defineProperty(file, "size", { configurable: true, value: size });
+  Object.defineProperty(file, "slice", { configurable: true, value: () => new Blob(["x"], { type: "application/pdf" }) });
+  return file;
+}
 const authMock = vi.hoisted(() => ({ role: "admin" as "admin" | "teacher" }));
 const queryOptions = vi.hoisted(() => ({ listSets: [] as boolean[], listProgrammes: [] as boolean[], staffDirectory: [] as boolean[] }));
 
@@ -51,7 +56,7 @@ const grade9ChemistryDetails = {
 
 vi.mock("@/lib/trpc", () => ({
   trpc: {
-    useUtils: () => ({ auth: { me: { fetch: getCurrentAuthUser }, sessionStatus: { fetch: getCurrentSessionStatus } }, curriculum: { listSets: { invalidate }, listProgrammes: { invalidate }, getManagementDetails: { invalidate }, getLargePdfUploadStatus: { fetch: getLargePdfUploadStatus }, getPaperPatternSourceDownload: { fetch: getPaperPatternSourceDownload } }, generation: { getProviderSettings: { invalidate }, listHistory: { invalidate }, getStyleAnchor: { invalidate } } }),
+    useUtils: () => ({ curriculum: { listSets: { invalidate }, listProgrammes: { invalidate }, getManagementDetails: { invalidate }, getLargePdfUploadStatus: { fetch: getLargePdfUploadStatus }, getPaperPatternSourceDownload: { fetch: getPaperPatternSourceDownload } }, generation: { getProviderSettings: { invalidate }, listHistory: { invalidate }, getStyleAnchor: { invalidate } } }),
     curriculum: {
       listSets: { useQuery: (_input?: unknown, options?: { enabled?: boolean }) => { queryOptions.listSets.push(Boolean(options?.enabled)); return { data: [managementDetails.curriculumSet, grade9ChemistrySet, archivedChemistrySet], isLoading: false, error: null }; } },
       listProgrammes: { useQuery: (_input?: unknown, options?: { enabled?: boolean }) => { queryOptions.listProgrammes.push(Boolean(options?.enabled)); return { data: [{ id: 11, board: "FBISE", grade: "10", subject: "physics", teacherLabel: "Physics", status: "ready" }, grade9ChemistryProgramme], isLoading: false, error: null }; } },
@@ -82,12 +87,7 @@ vi.mock("@/_core/hooks/useAuth", () => ({ useAuth: () => ({ user: { id: 1, role:
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 describe("Curriculum Library Release 1", () => {
-  beforeEach(() => {
-    getCurrentAuthUser.mockResolvedValue({ id: 1, role: "admin" });
-    getCurrentSessionStatus.mockResolvedValue({ authenticated: true, originBound: true });
-  });
-
-  afterEach(() => { cleanup(); invalidate.mockReset(); getLargePdfUploadStatus.mockReset(); getPaperPatternSourceDownload.mockReset(); getCurrentAuthUser.mockReset(); getCurrentSessionStatus.mockReset(); noOpMutation.mutateAsync.mockReset(); setPaperSourceStudentLibraryStatus.mutateAsync.mockReset(); window.sessionStorage.clear(); Object.defineProperty(document, "hidden", { configurable: true, value: false }); Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" }); queryOptions.listSets.length = 0; queryOptions.listProgrammes.length = 0; queryOptions.staffDirectory.length = 0; authMock.role = "admin"; window.history.pushState({}, "", "/"); });
+  afterEach(() => { cleanup(); invalidate.mockReset(); getLargePdfUploadStatus.mockReset(); getPaperPatternSourceDownload.mockReset(); noOpMutation.mutateAsync.mockReset(); setPaperSourceStudentLibraryStatus.mutateAsync.mockReset(); window.sessionStorage.clear(); Object.defineProperty(document, "hidden", { configurable: true, value: false }); Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" }); queryOptions.listSets.length = 0; queryOptions.listProgrammes.length = 0; queryOptions.staffDirectory.length = 0; authMock.role = "admin"; window.history.pushState({}, "", "/"); });
 
   it("shows one focused Portal Admin task at a time while preserving every administrative workflow", async () => {
     render(<CurriculumManagement />);
@@ -238,7 +238,7 @@ describe("Curriculum Library Release 1", () => {
 
   it("shows only server-acknowledged chunk percentage, speed, and time remaining while a large Grade 9 textbook is uploading", async () => {
     window.history.pushState({}, "", "/curriculum?grade=9&intake=subject");
-    const acknowledgements: Array<(value: { receivedBytes: number; fileSize: number; complete: boolean }) => void> = [];
+    const acknowledgements: Array<(value: ChunkAcknowledgement) => void> = [];
     let finishUpload!: (value: { id: number; extractedText: string; extractionStatus: "extracted" }) => void;
     const completion = new Promise<{ id: number; extractedText: string; extractionStatus: "extracted" }>((resolve) => { finishUpload = resolve; });
     noOpMutation.mutateAsync.mockImplementation((input: Record<string, unknown>) => {
@@ -252,7 +252,7 @@ describe("Curriculum Library Release 1", () => {
 
     fireEvent.change(screen.getByLabelText("Subject name"), { target: { value: "Chemistry" } });
     fireEvent.click(screen.getByRole("button", { name: "Continue to textbook upload" }));
-    const file = new File([new Uint8Array((30 * 1024 * 1024) + 1)], "grade-9-chemistry.pdf", { type: "application/pdf" });
+    const file = largePdfFixture("grade-9-chemistry.pdf", (30 * 1024 * 1024) + 1);
     fireEvent.change(await screen.findByLabelText("Focused curriculum source upload"), { target: { files: [file] } });
 
     expect(await screen.findByTestId("chunk-upload-progress")).toBeTruthy();
@@ -263,16 +263,16 @@ describe("Curriculum Library Release 1", () => {
 
     const chunkBytes = Math.ceil(file.size / 3);
     await waitFor(() => expect(acknowledgements).toHaveLength(1));
-    await act(async () => { acknowledgements[0]({ receivedBytes: chunkBytes, fileSize: file.size, complete: false }); });
+    await act(async () => { acknowledgements[0]({ receivedBytes: chunkBytes, fileSize: file.size, complete: false, nextChunkIndex: 1, revision: 1, expiresAt: 9999999999999 }); });
     expect(screen.getByTestId("chunk-upload-speed").textContent).toBe("Calculating…");
 
     await waitFor(() => expect(acknowledgements).toHaveLength(2));
-    await act(async () => { acknowledgements[1]({ receivedBytes: chunkBytes * 2, fileSize: file.size, complete: false }); });
+    await act(async () => { acknowledgements[1]({ receivedBytes: chunkBytes * 2, fileSize: file.size, complete: false, nextChunkIndex: 2, revision: 2, expiresAt: 9999999999999 }); });
     expect(screen.getByTestId("chunk-upload-speed").textContent).toMatch(/MB\/s/);
     expect(screen.getByTestId("chunk-upload-remaining").textContent).toMatch(/Less than 5 seconds|About/);
 
     await waitFor(() => expect(acknowledgements).toHaveLength(3));
-    await act(async () => { acknowledgements[2]({ receivedBytes: file.size, fileSize: file.size, complete: true }); });
+    await act(async () => { acknowledgements[2]({ receivedBytes: file.size, fileSize: file.size, complete: true, nextChunkIndex: 3, revision: 3, expiresAt: 9999999999999 }); });
     expect(await screen.findByText("Final file check")).toBeTruthy();
     expect(screen.getByRole("progressbar", { name: "Textbook upload progress" }).getAttribute("aria-valuenow")).toBe("100");
     expect(screen.getByTestId("chunk-upload-percent").textContent).toBe("100%");
@@ -283,7 +283,7 @@ describe("Curriculum Library Release 1", () => {
 
   it("pauses after the current acknowledged chunk and resumes the protected Grade 9 textbook upload", async () => {
     window.history.pushState({}, "", "/curriculum?grade=9&intake=subject");
-    const acknowledgements: Array<(value: { receivedBytes: number; fileSize: number; complete: boolean }) => void> = [];
+    const acknowledgements: Array<(value: ChunkAcknowledgement) => void> = [];
     let finishUpload!: (value: { id: number; extractedText: string; extractionStatus: "extracted" }) => void;
     const completion = new Promise<{ id: number; extractedText: string; extractionStatus: "extracted" }>((resolve) => { finishUpload = resolve; });
     noOpMutation.mutateAsync.mockImplementation((input: Record<string, unknown>) => {
@@ -296,7 +296,7 @@ describe("Curriculum Library Release 1", () => {
 
     fireEvent.change(screen.getByLabelText("Subject name"), { target: { value: "Chemistry" } });
     fireEvent.click(screen.getByRole("button", { name: "Continue to textbook upload" }));
-    const file = new File([new Uint8Array((30 * 1024 * 1024) + 1)], "grade-9-chemistry.pdf", { type: "application/pdf" });
+    const file = largePdfFixture("grade-9-chemistry.pdf", (30 * 1024 * 1024) + 1);
     fireEvent.change(await screen.findByLabelText("Focused curriculum source upload"), { target: { files: [file] } });
 
     await waitFor(() => expect(acknowledgements).toHaveLength(1));
@@ -304,14 +304,14 @@ describe("Curriculum Library Release 1", () => {
     expect(screen.getByText("Pause requested — finishing current chunk")).toBeTruthy();
 
     const chunkBytes = Math.ceil(file.size / 2);
-    await act(async () => { acknowledgements[0]({ receivedBytes: chunkBytes, fileSize: file.size, complete: false }); });
+    await act(async () => { acknowledgements[0]({ receivedBytes: chunkBytes, fileSize: file.size, complete: false, nextChunkIndex: 1, revision: 1, expiresAt: 9999999999999 }); });
     expect(await screen.findByText("Upload paused")).toBeTruthy();
     expect(acknowledgements).toHaveLength(1);
     expect(screen.getByRole("progressbar", { name: "Textbook upload progress" }).getAttribute("aria-valuenow")).toBe("50");
 
     fireEvent.click(screen.getByRole("button", { name: "Resume upload" }));
     await waitFor(() => expect(acknowledgements).toHaveLength(2));
-    await act(async () => { acknowledgements[1]({ receivedBytes: file.size, fileSize: file.size, complete: true }); });
+    await act(async () => { acknowledgements[1]({ receivedBytes: file.size, fileSize: file.size, complete: true, nextChunkIndex: 2, revision: 2, expiresAt: 9999999999999 }); });
     await act(async () => { finishUpload({ id: 21, extractedText: "Reviewed source text", extractionStatus: "extracted" }); });
   });
 
@@ -330,7 +330,7 @@ describe("Curriculum Library Release 1", () => {
 
     fireEvent.change(screen.getByLabelText("Subject name"), { target: { value: "Chemistry" } });
     fireEvent.click(screen.getByRole("button", { name: "Continue to textbook upload" }));
-    const file = new File([new Uint8Array((30 * 1024 * 1024) + 1)], "grade-9-chemistry.pdf", { type: "application/pdf" });
+    const file = largePdfFixture("grade-9-chemistry.pdf", (30 * 1024 * 1024) + 1);
     fireEvent.change(await screen.findByLabelText("Focused curriculum source upload"), { target: { files: [file] } });
     await waitFor(() => expect(acknowledgements).toHaveLength(1));
 
@@ -338,7 +338,7 @@ describe("Curriculum Library Release 1", () => {
     Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" });
     await act(async () => { document.dispatchEvent(new Event("visibilitychange")); });
     const chunkBytes = Math.ceil(file.size / 2);
-    await act(async () => { acknowledgements[0]({ receivedBytes: chunkBytes, fileSize: file.size, complete: false, nextChunkIndex: 1, expiresAt: 9999999999999 }); });
+    await act(async () => { acknowledgements[0]({ receivedBytes: chunkBytes, fileSize: file.size, complete: false, nextChunkIndex: 1, revision: 1, expiresAt: 9999999999999 }); });
     expect(await screen.findByText("Paused while Chrome is in the background")).toBeTruthy();
     expect(acknowledgements).toHaveLength(1);
 
@@ -346,7 +346,7 @@ describe("Curriculum Library Release 1", () => {
     Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" });
     await act(async () => { document.dispatchEvent(new Event("visibilitychange")); });
     await waitFor(() => expect(acknowledgements).toHaveLength(2));
-    await act(async () => { acknowledgements[1]({ receivedBytes: file.size, fileSize: file.size, complete: true, nextChunkIndex: 2, expiresAt: 9999999999999 }); });
+    await act(async () => { acknowledgements[1]({ receivedBytes: file.size, fileSize: file.size, complete: true, nextChunkIndex: 2, revision: 2, expiresAt: 9999999999999 }); });
     await act(async () => { finishUpload({ id: 23, extractedText: "Reviewed source text", extractionStatus: "extracted" }); });
   });
 
@@ -354,11 +354,11 @@ describe("Curriculum Library Release 1", () => {
     window.history.pushState({}, "", "/curriculum?grade=9&intake=subject");
     const fileSize = (30 * 1024 * 1024) + 1;
     const chunkBytes = 20 * 1024 * 1024;
-    const file = new File([new Uint8Array(fileSize)], "grade-9-chemistry.pdf", { type: "application/pdf", lastModified: 1710000000000 });
+    const file = largePdfFixture("grade-9-chemistry.pdf", fileSize, 1710000000000);
     window.sessionStorage.setItem("paramount-resumable-textbook-upload", JSON.stringify({ uploadToken: "saved-token", chunkBytes, curriculumSetId: grade9ChemistrySet.id, fileName: "grade-9-chemistry.pdf", fileSize, fileLastModified: file.lastModified, receivedBytes: chunkBytes, nextChunkIndex: 1, expiresAt: 9999999999999 }));
-    getLargePdfUploadStatus.mockResolvedValue({ fileSize, receivedBytes: chunkBytes, nextChunkIndex: 1, complete: false, expiresAt: 9999999999999 });
+    getLargePdfUploadStatus.mockResolvedValue({ fileSize, receivedBytes: chunkBytes, nextChunkIndex: 1, revision: 1, complete: false, expiresAt: 9999999999999 });
     noOpMutation.mutateAsync.mockImplementation((input: Record<string, unknown>) => {
-      if ("chunkIndex" in input) return Promise.resolve({ receivedBytes: fileSize, fileSize, complete: true, nextChunkIndex: 2, expiresAt: 9999999999999 });
+      if ("chunkIndex" in input) return Promise.resolve({ receivedBytes: fileSize, fileSize, complete: true, nextChunkIndex: 2, revision: 2, expiresAt: 9999999999999 });
       if ("uploadToken" in input) return Promise.resolve({ id: 24, extractedText: "Reviewed source text", extractionStatus: "extracted" });
       return Promise.resolve(undefined);
     });
@@ -406,7 +406,7 @@ describe("Curriculum Library Release 1", () => {
   it("offers a safe fresh-session recovery inside the existing Grade 9 Chemistry draft when a stale upload cannot be reconciled", async () => {
     window.history.pushState({}, "", "/curriculum?grade=9&intake=subject");
     const fileSize = (30 * 1024 * 1024) + 1;
-    const file = new File([new Uint8Array(fileSize)], "grade-9-chemistry.pdf", { type: "application/pdf", lastModified: 1710000000000 });
+    const file = largePdfFixture("grade-9-chemistry.pdf", fileSize, 1710000000000);
     window.sessionStorage.setItem("paramount-resumable-textbook-upload", JSON.stringify({ uploadToken: "stale-token", chunkBytes: fileSize, curriculumSetId: grade9ChemistrySet.id, fileName: file.name, fileSize, fileLastModified: file.lastModified, receivedBytes: 0, nextChunkIndex: 0, expiresAt: 9999999999999 }));
     getLargePdfUploadStatus.mockResolvedValue({ fileSize, receivedBytes: 0, nextChunkIndex: 0, complete: false, expiresAt: 9999999999999 });
     noOpMutation.mutateAsync.mockImplementation((input: Record<string, unknown>) => {
@@ -429,58 +429,10 @@ describe("Curriculum Library Release 1", () => {
     expect(noOpMutation.mutateAsync).not.toHaveBeenCalledWith(expect.objectContaining({ subject: "chemistry", teacherLabel: "Chemistry" }));
   });
 
-  it("requires Staff sign-in before a protected Grade 9 fresh upload when the current session is no longer active", async () => {
-    window.history.pushState({}, "", "/curriculum?grade=9&intake=subject");
-    getCurrentAuthUser.mockResolvedValueOnce(null);
-    render(<CurriculumManagement />);
-
-    fireEvent.change(screen.getByLabelText("Subject name"), { target: { value: "Chemistry" } });
-    fireEvent.click(screen.getByRole("button", { name: "Continue to textbook upload" }));
-    const file = new File([new Uint8Array((30 * 1024 * 1024) + 1)], "grade-9-chemistry.pdf", { type: "application/pdf" });
-    fireEvent.change(await screen.findByLabelText("Focused curriculum source upload"), { target: { files: [file] } });
-
-    expect(await screen.findByTestId("textbook-upload-recovery")).toBeTruthy();
-    expect(screen.getByText(/needs a fresh secure sign-in/i)).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Staff sign in" })).toBeTruthy();
-    expect(noOpMutation.mutateAsync).not.toHaveBeenCalledWith(expect.objectContaining({ curriculumSetId: grade9ChemistrySet.id, fileName: file.name, fileSize: file.size }));
-  });
-
-  it("requires a fresh sign-in before a protected Grade 9 upload when an older session lacks its origin binding", async () => {
-    window.history.pushState({}, "", "/curriculum?grade=9&intake=subject");
-    getCurrentSessionStatus.mockResolvedValueOnce({ authenticated: true, originBound: false });
-    render(<CurriculumManagement />);
-
-    fireEvent.change(screen.getByLabelText("Subject name"), { target: { value: "Chemistry" } });
-    fireEvent.click(screen.getByRole("button", { name: "Continue to textbook upload" }));
-    const file = new File([new Uint8Array((30 * 1024 * 1024) + 1)], "grade-9-chemistry.pdf", { type: "application/pdf" });
-    fireEvent.change(await screen.findByLabelText("Focused curriculum source upload"), { target: { files: [file] } });
-
-    expect(await screen.findByTestId("textbook-upload-recovery")).toBeTruthy();
-    expect(screen.getByText(/needs a fresh secure sign-in/i)).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Staff sign in" })).toBeTruthy();
-    expect(noOpMutation.mutateAsync).not.toHaveBeenCalledWith(expect.objectContaining({ curriculumSetId: grade9ChemistrySet.id, fileName: file.name, fileSize: file.size }));
-  });
-
-  it("keeps the existing Grade 9 draft recoverable when the session preflight cannot be transformed", async () => {
-    window.history.pushState({}, "", "/curriculum?grade=9&intake=subject");
-    getCurrentAuthUser.mockRejectedValueOnce(new Error("Unable to transform response from server"));
-    render(<CurriculumManagement />);
-
-    fireEvent.change(screen.getByLabelText("Subject name"), { target: { value: "Chemistry" } });
-    fireEvent.click(screen.getByRole("button", { name: "Continue to textbook upload" }));
-    const file = new File([new Uint8Array((30 * 1024 * 1024) + 1)], "grade-9-chemistry.pdf", { type: "application/pdf" });
-    fireEvent.change(await screen.findByLabelText("Focused curriculum source upload"), { target: { files: [file] } });
-
-    expect(await screen.findByTestId("textbook-upload-recovery")).toBeTruthy();
-    expect(screen.getByText(/could not confirm your current Portal Admin session/i)).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Staff sign in" })).toBeTruthy();
-    expect(noOpMutation.mutateAsync).not.toHaveBeenCalledWith(expect.objectContaining({ curriculumSetId: grade9ChemistrySet.id, fileName: file.name, fileSize: file.size }));
-  });
-
   it("automatically retries one unchanged chunk-order conflict before showing manual upload recovery", async () => {
     window.history.pushState({}, "", "/curriculum?grade=9&intake=subject");
     const fileSize = (30 * 1024 * 1024) + 1;
-    const file = new File([new Uint8Array(fileSize)], "grade-9-chemistry.pdf", { type: "application/pdf" });
+    const file = largePdfFixture("grade-9-chemistry.pdf", fileSize);
     let appendAttempts = 0;
     getLargePdfUploadStatus.mockResolvedValue({ fileSize, receivedBytes: 0, nextChunkIndex: 0, complete: false, expiresAt: 9999999999999 });
     noOpMutation.mutateAsync.mockImplementation((input: Record<string, unknown>) => {

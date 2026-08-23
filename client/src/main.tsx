@@ -6,7 +6,6 @@ import { createRoot } from "react-dom/client";
 import superjson from "superjson";
 import App from "./App";
 import { getLoginUrl } from "./const";
-import { recordProtectedMutationRequestId } from "./lib/requestTrace";
 import "./index.css";
 
 const queryClient = new QueryClient();
@@ -47,11 +46,6 @@ const trpcClient = trpc.createClient({
         return globalThis.fetch(input, {
           ...(init ?? {}),
           credentials: "include",
-        }).then((response) => {
-          if ((init?.method ?? "GET").toUpperCase() === "POST") {
-            recordProtectedMutationRequestId(response);
-          }
-          return response;
         });
       },
     }),

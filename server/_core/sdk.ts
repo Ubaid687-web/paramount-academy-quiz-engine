@@ -29,10 +29,6 @@ export type SessionPayload = {
 export type AuthenticatedUser = User & { taskUid?: string; isCron?: boolean };
 const CRON_OPEN_ID_PREFIX = "cron_";
 export const APP_SESSION_TTL_MS = 1000 * 60 * 60 * 12;
-// Session cookies issued before the domain-separated signing-key migration used
-// the opaque managed secret directly. Their maximum normal lifetime was 12h;
-// this fixed expiration horizon admits only that already-issued population.
-const LEGACY_RAW_SESSION_MAX_EXPIRY_SECONDS = Math.floor(Date.UTC(2026, 7, 24, 0, 45, 0) / 1000);
 
 const EXCHANGE_TOKEN_PATH = `/webdev.v1.WebDevAuthPublicService/ExchangeToken`;
 const GET_USER_INFO_PATH = `/webdev.v1.WebDevAuthPublicService/GetUserInfo`;
@@ -172,14 +168,6 @@ class SDKServer {
       .digest();
   }
 
-  private getLegacySessionSecret() {
-    const secret = ENV.cookieSecret;
-    if (!secret) {
-      throw new Error("Session signing configuration is unavailable");
-    }
-    return new TextEncoder().encode(secret);
-  }
-
   private hashSessionId(sessionId: string) {
     return createHash("sha256").update(sessionId).digest("hex");
   }
@@ -242,22 +230,9 @@ class SDKServer {
 
     try {
       const secretKey = this.getSessionSecret();
-      let payload: Record<string, unknown>;
-      try {
-        ({ payload } = await jwtVerify(cookieValue, secretKey, {
-          algorithms: ["HS256"],
-        }) as { payload: Record<string, unknown> });
-      } catch (primaryVerificationError) {
-        // This bridge is deliberately narrow: it only permits a legacy token
-        // whose claimed expiration could have been produced before migration.
-        const { payload: legacyPayload } = await jwtVerify(cookieValue, this.getLegacySessionSecret(), {
-          algorithms: ["HS256"],
-        });
-        if (typeof legacyPayload.exp !== "number" || legacyPayload.exp > LEGACY_RAW_SESSION_MAX_EXPIRY_SECONDS) {
-          throw primaryVerificationError;
-        }
-        payload = legacyPayload as Record<string, unknown>;
-      }
+      const { payload } = await jwtVerify(cookieValue, secretKey, {
+        algorithms: ["HS256"],
+      });
       const { openId, appId, name, sessionId } = payload as Record<string, unknown>;
 
       if (

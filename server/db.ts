@@ -47,6 +47,9 @@ import {
   generationStyleAnchorExamples,
   appSessions,
   curriculumUploadClaims,
+  curriculumUploadChunkReceipts,
+  curriculumUploadSessions,
+  type CurriculumUploadSession,
 } from "../drizzle/schema";
 import type { FbiseSubject, ProgrammeKey, ScopeCatalog } from "./curriculumScope";
 import { assertNoUnresolvedOcrPages } from "./ocrQuality";
@@ -265,6 +268,208 @@ export async function releaseCurriculumUploadClaim(input: { uploadId: string; us
       eq(curriculumUploadClaims.curriculumSetId, input.curriculumSetId),
       eq(curriculumUploadClaims.status, "processing"),
     ));
+}
+
+export type DurableCurriculumUploadStatus = {
+  uploadId: string;
+  receivedBytes: number;
+  fileSize: number;
+  nextChunkIndex: number;
+  revision: number;
+  complete: boolean;
+  expiresAt: Date;
+  status: CurriculumUploadSession["status"];
+  sourceId: number | null;
+};
+
+function toDurableUploadStatus(session: CurriculumUploadSession): DurableCurriculumUploadStatus {
+  return {
+    uploadId: session.uploadId,
+    receivedBytes: session.receivedBytes,
+    fileSize: session.fileSize,
+    nextChunkIndex: session.nextChunkIndex,
+    revision: session.revision,
+    complete: session.receivedBytes === session.fileSize,
+    expiresAt: session.expiresAt,
+    status: session.status,
+    sourceId: session.sourceId,
+  };
+}
+
+async function getOwnedCurriculumUploadSession(input: { uploadId: string; userId: number; curriculumSetId: number }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const rows = await db.select().from(curriculumUploadSessions).where(and(
+    eq(curriculumUploadSessions.uploadId, input.uploadId),
+    eq(curriculumUploadSessions.userId, input.userId),
+    eq(curriculumUploadSessions.curriculumSetId, input.curriculumSetId),
+  )).limit(1);
+  return rows[0] ?? null;
+}
+
+export async function createCurriculumUploadSession(input: {
+  uploadId: string;
+  userId: number;
+  curriculumSetId: number;
+  fileName: string;
+  fileSize: number;
+  expiresAt: Date;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(curriculumUploadSessions).values(input);
+  const session = await getOwnedCurriculumUploadSession(input);
+  if (!session) throw new Error("The protected upload session could not be created.");
+  return toDurableUploadStatus(session);
+}
+
+export async function getCurriculumUploadSessionStatus(input: { uploadId: string; userId: number; curriculumSetId: number }) {
+  const session = await getOwnedCurriculumUploadSession(input);
+  return session ? toDurableUploadStatus(session) : null;
+}
+
+export type CurriculumChunkClaimResult =
+  | { kind: "claimed"; status: DurableCurriculumUploadStatus }
+  | { kind: "already_committed"; status: DurableCurriculumUploadStatus }
+  | { kind: "pending"; status: DurableCurriculumUploadStatus; retryAfterMs: number }
+  | { kind: "reconcile"; status: DurableCurriculumUploadStatus }
+  | { kind: "rejected"; reason: "session_unavailable" | "session_expired" | "file_conflict" };
+
+export async function claimCurriculumUploadChunk(input: {
+  uploadId: string;
+  userId: number;
+  curriculumSetId: number;
+  chunkIndex: number;
+  expectedRevision: number;
+  sha256: string;
+  byteLength: number;
+  storageKey: string;
+  leaseMs: number;
+}): Promise<CurriculumChunkClaimResult> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const session = await getOwnedCurriculumUploadSession(input);
+  if (!session) return { kind: "rejected", reason: "session_unavailable" };
+  const status = toDurableUploadStatus(session);
+  const now = new Date();
+  if (session.expiresAt <= now || session.status === "retired") return { kind: "rejected", reason: "session_expired" };
+  const receipts = await db.select().from(curriculumUploadChunkReceipts).where(and(
+    eq(curriculumUploadChunkReceipts.uploadId, input.uploadId),
+    eq(curriculumUploadChunkReceipts.chunkIndex, input.chunkIndex),
+  )).limit(1);
+  const receipt = receipts[0];
+  if (receipt) {
+    if (receipt.sha256 !== input.sha256 || receipt.byteLength !== input.byteLength) return { kind: "rejected", reason: "file_conflict" };
+    if (receipt.status === "committed") return { kind: "already_committed", status };
+    if (receipt.leaseExpiresAt > now) return { kind: "pending", status, retryAfterMs: Math.max(250, receipt.leaseExpiresAt.getTime() - now.getTime()) };
+    await db.update(curriculumUploadChunkReceipts).set({ leaseExpiresAt: new Date(now.getTime() + input.leaseMs) }).where(and(
+      eq(curriculumUploadChunkReceipts.id, receipt.id),
+      eq(curriculumUploadChunkReceipts.status, "pending"),
+      lte(curriculumUploadChunkReceipts.leaseExpiresAt, now),
+    ));
+    return { kind: "claimed", status };
+  }
+  if (session.status !== "active" || session.nextChunkIndex !== input.chunkIndex || session.revision !== input.expectedRevision) return { kind: "reconcile", status };
+  try {
+    await db.insert(curriculumUploadChunkReceipts).values({
+      uploadId: input.uploadId,
+      chunkIndex: input.chunkIndex,
+      sha256: input.sha256,
+      byteLength: input.byteLength,
+      storageKey: input.storageKey,
+      leaseExpiresAt: new Date(now.getTime() + input.leaseMs),
+    });
+    return { kind: "claimed", status };
+  } catch {
+    const raced = (await db.select().from(curriculumUploadChunkReceipts).where(and(
+      eq(curriculumUploadChunkReceipts.uploadId, input.uploadId),
+      eq(curriculumUploadChunkReceipts.chunkIndex, input.chunkIndex),
+    )).limit(1))[0];
+    if (!raced || raced.sha256 !== input.sha256 || raced.byteLength !== input.byteLength) return { kind: "rejected", reason: "file_conflict" };
+    return raced.status === "committed"
+      ? { kind: "already_committed", status }
+      : { kind: "pending", status, retryAfterMs: Math.max(250, raced.leaseExpiresAt.getTime() - now.getTime()) };
+  }
+}
+
+export type CurriculumChunkCommitResult =
+  | { kind: "committed" | "already_committed" | "reconcile"; status: DurableCurriculumUploadStatus }
+  | { kind: "rejected"; reason: "session_unavailable" | "file_conflict" };
+
+export async function commitCurriculumUploadChunk(input: {
+  uploadId: string;
+  userId: number;
+  curriculumSetId: number;
+  chunkIndex: number;
+  expectedRevision: number;
+  sha256: string;
+  byteLength: number;
+}): Promise<CurriculumChunkCommitResult> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.transaction(async (tx) => {
+    const sessions = await tx.select().from(curriculumUploadSessions).where(and(
+      eq(curriculumUploadSessions.uploadId, input.uploadId),
+      eq(curriculumUploadSessions.userId, input.userId),
+      eq(curriculumUploadSessions.curriculumSetId, input.curriculumSetId),
+    )).limit(1);
+    const session = sessions[0];
+    if (!session) return { kind: "rejected", reason: "session_unavailable" } as const;
+    const status = toDurableUploadStatus(session);
+    const receipt = (await tx.select().from(curriculumUploadChunkReceipts).where(and(
+      eq(curriculumUploadChunkReceipts.uploadId, input.uploadId),
+      eq(curriculumUploadChunkReceipts.chunkIndex, input.chunkIndex),
+    )).limit(1))[0];
+    if (!receipt || receipt.sha256 !== input.sha256 || receipt.byteLength !== input.byteLength) return { kind: "rejected", reason: "file_conflict" } as const;
+    if (receipt.status === "committed") return { kind: "already_committed", status } as const;
+    const advanced = await tx.update(curriculumUploadSessions).set({
+      receivedBytes: session.receivedBytes + input.byteLength,
+      nextChunkIndex: session.nextChunkIndex + 1,
+      revision: session.revision + 1,
+    }).where(and(
+      eq(curriculumUploadSessions.id, session.id),
+      eq(curriculumUploadSessions.status, "active"),
+      eq(curriculumUploadSessions.nextChunkIndex, input.chunkIndex),
+      eq(curriculumUploadSessions.revision, input.expectedRevision),
+    ));
+    if (advanced[0].affectedRows === 0) return { kind: "reconcile", status } as const;
+    const committed = await tx.update(curriculumUploadChunkReceipts).set({ status: "committed", committedAt: new Date() }).where(and(
+      eq(curriculumUploadChunkReceipts.id, receipt.id),
+      eq(curriculumUploadChunkReceipts.status, "pending"),
+    ));
+    if (committed[0].affectedRows === 0) throw new Error("The protected upload receipt could not be committed.");
+    return {
+      kind: "committed",
+      status: {
+        ...status,
+        receivedBytes: session.receivedBytes + input.byteLength,
+        nextChunkIndex: session.nextChunkIndex + 1,
+        revision: session.revision + 1,
+        complete: session.receivedBytes + input.byteLength === session.fileSize,
+      },
+    } as const;
+  });
+}
+
+export async function listCommittedCurriculumUploadChunks(input: { uploadId: string; userId: number; curriculumSetId: number }) {
+  const session = await getOwnedCurriculumUploadSession(input);
+  if (!session) throw new Error("The upload session is unavailable. Start the textbook upload again.");
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.select().from(curriculumUploadChunkReceipts).where(and(
+    eq(curriculumUploadChunkReceipts.uploadId, input.uploadId),
+    eq(curriculumUploadChunkReceipts.status, "committed"),
+  )).orderBy(asc(curriculumUploadChunkReceipts.chunkIndex));
+}
+
+export async function markCurriculumUploadSessionCompleted(input: { uploadId: string; userId: number; curriculumSetId: number; sourceId: number }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(curriculumUploadSessions).set({ status: "completed", sourceId: input.sourceId }).where(and(
+    eq(curriculumUploadSessions.uploadId, input.uploadId),
+    eq(curriculumUploadSessions.userId, input.userId),
+    eq(curriculumUploadSessions.curriculumSetId, input.curriculumSetId),
+  ));
 }
 
 export async function promoteApprovedTeacherOnSignIn(openId: string, email: string | null | undefined) {

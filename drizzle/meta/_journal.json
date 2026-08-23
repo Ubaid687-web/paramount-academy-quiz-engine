@@ -204,6 +204,13 @@
       "when": 1787483087595,
       "tag": "0028_shiny_the_order",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "5",
+      "when": 1787513041091,
+      "tag": "0029_careful_yellow_claw",
+      "breakpoints": true
     }
   ]
 }

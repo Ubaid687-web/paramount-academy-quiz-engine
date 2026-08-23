@@ -403,6 +403,51 @@ export const curriculumUploadClaims = mysqlTable("curriculumUploadClaims", {
 
 export type CurriculumUploadClaim = typeof curriculumUploadClaims.$inferSelect;
 
+/**
+ * Server-authoritative cursor for a protected resumable textbook transfer. It stores transfer
+ * metadata only; the textbook bytes remain in managed storage under the receipt keys below.
+ */
+export const curriculumUploadSessions = mysqlTable("curriculumUploadSessions", {
+  id: int("id").autoincrement().primaryKey(),
+  uploadId: varchar("uploadId", { length: 36 }).notNull().unique(),
+  userId: int("userId").notNull(),
+  curriculumSetId: int("curriculumSetId").notNull(),
+  fileName: varchar("fileName", { length: 255 }).notNull(),
+  fileSize: int("fileSize").notNull(),
+  status: mysqlEnum("status", ["active", "finalizing", "completed", "retired"]).default("active").notNull(),
+  receivedBytes: int("receivedBytes").default(0).notNull(),
+  nextChunkIndex: int("nextChunkIndex").default(0).notNull(),
+  revision: int("revision").default(0).notNull(),
+  sourceId: int("sourceId"),
+  expiresAt: timestamp("expiresAt").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CurriculumUploadSession = typeof curriculumUploadSessions.$inferSelect;
+
+/**
+ * One immutable receipt per chunk index. A unique receipt makes duplicate delivery harmless and
+ * prevents conflicting bytes from being committed for the same position.
+ */
+export const curriculumUploadChunkReceipts = mysqlTable("curriculumUploadChunkReceipts", {
+  id: int("id").autoincrement().primaryKey(),
+  uploadId: varchar("uploadId", { length: 36 }).notNull(),
+  chunkIndex: int("chunkIndex").notNull(),
+  sha256: varchar("sha256", { length: 64 }).notNull(),
+  byteLength: int("byteLength").notNull(),
+  storageKey: varchar("storageKey", { length: 512 }).notNull(),
+  status: mysqlEnum("status", ["pending", "committed"]).default("pending").notNull(),
+  leaseExpiresAt: timestamp("leaseExpiresAt").notNull(),
+  committedAt: timestamp("committedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => [
+  uniqueIndex("curriculumUploadChunkReceipts_upload_chunk_unique").on(table.uploadId, table.chunkIndex),
+]);
+
+export type CurriculumUploadChunkReceipt = typeof curriculumUploadChunkReceipts.$inferSelect;
+
 // Each extracted PDF page receives a deterministic text-quality assessment. Pages that appear
 // weak remain visible to Portal Admin and must be explicitly reviewed before a draft edition
 // can be activated. The page text itself remains in the source transcript; this table stores

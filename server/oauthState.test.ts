@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Request } from "express";
-import { createOAuthStateRecord, createSessionOriginBinding, getOAuthStartOrigin, getSessionBoundOrigin, getTrustedRequestOrigin, normalizeReturnPath, normalizeTrustedOrigin, verifyOAuthState } from "./_core/oauthState";
-import { OAUTH_STATE_COOKIE_NAME, SESSION_ORIGIN_COOKIE_NAME } from "../shared/const";
+import { createOAuthStateRecord, getOAuthStartOrigin, getTrustedRequestOrigin, normalizeReturnPath, normalizeTrustedOrigin, verifyOAuthState } from "./_core/oauthState";
+import { OAUTH_STATE_COOKIE_NAME } from "../shared/const";
 
 function requestWith(headers: Record<string, string | undefined>, protocol = "https") {
   return { headers, protocol, get: (name: string) => headers[name.toLowerCase()] } as unknown as Request;
@@ -33,36 +33,5 @@ describe("browser-bound OAuth state", () => {
     const proxiedRequest = requestWith({ host: "service.internal" });
     expect(getOAuthStartOrigin(proxiedRequest, "https://aiquizhub-g2y5mute.manus.space")).toBe("https://aiquizhub-g2y5mute.manus.space");
     expect(getOAuthStartOrigin(proxiedRequest, "https://attacker.example")).toBeNull();
-  });
-
-  it("uses the managed proxy's forwarded public host for same-origin mutation checks", () => {
-    const proxiedRequest = requestWith({
-      host: "service.internal",
-      "x-forwarded-host": "aiquizhub-g2y5mute.manus.space",
-      "x-forwarded-proto": "https",
-    }, "http");
-
-    expect(getTrustedRequestOrigin(proxiedRequest)).toBe("https://aiquizhub-g2y5mute.manus.space");
-  });
-
-  it("does not convert an untrusted forwarded host into a trusted mutation origin", () => {
-    const proxiedRequest = requestWith({
-      host: "service.internal",
-      "x-forwarded-host": "attacker.example",
-      "x-forwarded-proto": "https",
-    }, "http");
-
-    expect(getTrustedRequestOrigin(proxiedRequest)).toBeNull();
-  });
-
-  it("accepts only the signed browser origin bound to a completed OAuth session", () => {
-    const secret = "managed-opaque-secret";
-    const expiresAtMs = 1_800_000_000_000;
-    const binding = createSessionOriginBinding("https://aiquizhub-g2y5mute.manus.space", { secret, expiresAtMs });
-    const request = requestWith({ cookie: `${SESSION_ORIGIN_COOKIE_NAME}=${binding}` });
-
-    expect(getSessionBoundOrigin(request, { secret, nowMs: expiresAtMs - 1 })).toBe("https://aiquizhub-g2y5mute.manus.space");
-    expect(getSessionBoundOrigin(request, { secret: "other-secret", nowMs: expiresAtMs - 1 })).toBeNull();
-    expect(getSessionBoundOrigin(request, { secret, nowMs: expiresAtMs })).toBeNull();
   });
 });

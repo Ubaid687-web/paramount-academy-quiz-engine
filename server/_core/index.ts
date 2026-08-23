@@ -11,8 +11,7 @@ import { runOcrExtractionWorker } from "../ocrWorkerRoute";
 import { registerOcrReviewRoutes } from "../ocrReviewRoute";
 import { serveStatic, setupVite } from "./vite";
 import { ENV } from "./env";
-import { getSessionBoundOrigin, getTrustedRequestOrigin } from "./oauthState";
-import { attachRequestTrace, getRequestTraceId, isAuthTracePath } from "./requestTrace";
+import { getTrustedRequestOrigin } from "./oauthState";
 
 function assertProductionConfiguration() {
   if (!ENV.isProduction) return;
@@ -47,8 +46,7 @@ function enforceSameOriginForCookieMutations(req: express.Request, res: express.
     res.status(403).json({ error: "A same-origin request is required." });
     return;
   }
-  const expectedOrigin = getSessionBoundOrigin(req) ?? getTrustedRequestOrigin(req);
-  if (origin && origin !== expectedOrigin) {
+  if (origin && origin !== getTrustedRequestOrigin(req)) {
     res.status(403).json({ error: "Cross-origin requests are not accepted." });
     return;
   }
@@ -80,7 +78,6 @@ async function startServer() {
   const server = createServer(app);
   app.disable("x-powered-by");
   app.use(applySecurityHeaders);
-  app.use(attachRequestTrace);
   // Avoid the extended qs parser for query strings; routes use typed tRPC inputs instead.
   app.set("query parser", "simple");
   // Large textbook transfers use the signed 512 KB resumable tRPC chunks. Keep parsers bounded so
@@ -96,11 +93,6 @@ async function startServer() {
     createExpressMiddleware({
       router: appRouter,
       createContext,
-      onError({ path, error, ctx }) {
-        if (!path || !isAuthTracePath(path)) return;
-        const requestId = ctx ? getRequestTraceId(ctx.res) : "untracked";
-        console.warn(`[ApiTrace] requestId=${requestId} path=${path} result=error code=${error.code}`);
-      },
     })
   );
   registerPdfExportRoutes(app);
