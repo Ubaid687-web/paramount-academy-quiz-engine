@@ -154,7 +154,7 @@ describe("printable paper history persistence", () => {
     await expect(caller.aiAgent.generatePrintablePaper({
       paperType: "short", title: "Kinematics revision", pairCount: 2, difficulty: "balanced",
       scope: { grade: "10", subject: "physics", scopeType: "single_chapter", chapterIds: [10] },
-    })).rejects.toThrow("429");
+    })).rejects.toThrow("temporarily busy");
 
     expect(mocks.updateGenerationJob).toHaveBeenCalledWith(700, expect.objectContaining({
       status: "failed",
@@ -301,12 +301,44 @@ describe("printable paper history persistence", () => {
       });
 
     const caller = appRouter.createCaller(createAdminContext());
-    await expect(caller.aiAgent.advancePrintableGeneration({ jobId: 701 })).rejects.toThrow("Temporary provider interruption");
+    await expect(caller.aiAgent.advancePrintableGeneration({ jobId: 701 })).rejects.toThrow("could not complete safely");
     expect(mocks.updateGenerationJob).toHaveBeenCalledWith(701, expect.objectContaining({ status: "failed", progress: 0 }));
     expect(JSON.parse(printableState).completedItems).toEqual([]);
 
     const resumed = await caller.aiAgent.advancePrintableGeneration({ jobId: 701 });
     expect(resumed).toMatchObject({ status: "completed", completedPairs: 1, totalPairs: 1 });
     expect(mocks.generatePrintablePaperBatch).toHaveBeenCalledTimes(2);
+  });
+
+  it("returns only a minimum-necessary owned generation status without source or provider diagnostic payloads", async () => {
+    mocks.getGenerationJob.mockResolvedValue({
+      id: 702,
+      userId: 7,
+      status: "failed",
+      progress: 55,
+      generationMode: "short",
+      generatedQuizId: null,
+      cacheHit: 0,
+      retryAttempts: 2,
+      createdAt: new Date("2026-08-01T00:00:00Z"),
+      completedAt: null,
+      contentText: "Private approved textbook text must never return here.",
+      resultPayload: "Private generated questions must never return here.",
+      printableState: "Private resumable generation state must never return here.",
+      providerFailure: "Private provider error diagnostics must never return here.",
+      errorMessage: "Raw provider response must never return here.",
+      sourceSnapshot: "Private scope snapshot must never return here.",
+    });
+
+    const result = await appRouter.createCaller(createAdminContext()).aiAgent.getGenerationStatus({ jobId: 702 });
+
+    expect(result).toMatchObject({ id: 702, status: "failed", progress: 55, generationMode: "short", retryAttempts: 2 });
+    expect(result).toHaveProperty("failure");
+    expect(result).not.toHaveProperty("contentText");
+    expect(result).not.toHaveProperty("resultPayload");
+    expect(result).not.toHaveProperty("printableState");
+    expect(result).not.toHaveProperty("providerFailure");
+    expect(result).not.toHaveProperty("errorMessage");
+    expect(result).not.toHaveProperty("sourceSnapshot");
   });
 });

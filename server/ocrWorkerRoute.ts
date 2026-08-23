@@ -10,7 +10,7 @@ import {
   updateOcrExtractionJob,
 } from "./db";
 import { assessExtractedSourceQuality } from "./ocrQuality";
-import { extractOcrBatch, mergeOcrTranscript, parseOcrTranscript } from "./ocrPipeline";
+import { extractOcrBatch, getStoredPdfPageCount, mergeOcrTranscript, parseOcrTranscript } from "./ocrPipeline";
 import type { SupportedCurriculumMimeType } from "./curriculumIngestion";
 import { notifyOwnerException } from "./ownerExceptionAlerts";
 
@@ -38,18 +38,26 @@ export async function runOcrExtractionWorker(req: Request, res: Response) {
     }
 
     try {
+      let totalPages = job.totalPages;
+      if (source.mimeType === "application/pdf" && !source.pageCount) {
+        totalPages = await getStoredPdfPageCount(source.storageKey);
+        await Promise.all([
+          updateCurriculumSourceExtraction(source.id, { extractionStatus: "pending", pageCount: totalPages }),
+          updateOcrExtractionJob(job.id, { totalPages }),
+        ]);
+      }
       const pages = await extractOcrBatch({
         storageKey: source.storageKey,
         mimeType: source.mimeType as SupportedCurriculumMimeType,
         startPage: job.nextPage,
-        totalPages: job.totalPages,
+        totalPages,
       });
       const transcript = mergeOcrTranscript(source.extractedText, pages);
       const allPages = parseOcrTranscript(transcript);
       await replaceCurriculumSourcePageReviews(source.id, assessExtractedSourceQuality(allPages));
       const nextPage = job.nextPage + pages.length;
 
-      if (nextPage > job.totalPages) {
+      if (nextPage > totalPages) {
         await updateCurriculumSourceExtraction(source.id, {
           extractionStatus: "extracted",
           extractedText: transcript,

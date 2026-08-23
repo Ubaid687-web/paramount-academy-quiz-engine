@@ -4,7 +4,7 @@ export type QuestionCoverageRecord = {
   conceptKey?: string;
   facetKey?: string;
   answerTarget?: string;
-  question: string;
+  question?: string;
   sourceReference?: string;
   learningObjective?: string;
 };
@@ -62,8 +62,8 @@ export function questionCoverageFingerprint(record: QuestionCoverageRecord) {
 }
 
 function isSemanticCollision(left: QuestionCoverageRecord, right: QuestionCoverageRecord) {
-  const leftQuestion = normalise(left.question);
-  const rightQuestion = normalise(right.question);
+  const leftQuestion = normalise(left.question ?? "");
+  const rightQuestion = normalise(right.question ?? "");
   if (leftQuestion && leftQuestion === rightQuestion) return true;
 
   const leftConcept = canonicalConceptKey(left);

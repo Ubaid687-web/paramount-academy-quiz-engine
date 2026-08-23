@@ -7,6 +7,7 @@ import { promisify } from "node:util";
 import { getCurriculumSource } from "./db";
 import { sdk } from "./_core/sdk";
 import { storageGet } from "./storage";
+import { writeStoredPdfToPath } from "./chunkedPdfManifest";
 
 const execFileAsync = promisify(execFile);
 
@@ -32,10 +33,9 @@ async function downloadStoredSource(storageKey: string) {
 }
 
 export async function renderOcrReviewPage(input: { storageKey: string; mimeType: string; pageNumber: number }) {
-  const sourceBytes = await downloadStoredSource(input.storageKey);
   if (input.mimeType !== "application/pdf") {
     if (input.pageNumber !== 1) throw new Error("A photographed source contains one reviewable page only.");
-    return { bytes: sourceBytes, contentType: input.mimeType };
+    return { bytes: await downloadStoredSource(input.storageKey), contentType: input.mimeType };
   }
 
   const workDir = await mkdtemp(path.join(os.tmpdir(), "paramount-ocr-review-"));
@@ -43,7 +43,7 @@ export async function renderOcrReviewPage(input: { storageKey: string; mimeType:
     const pdfPath = path.join(workDir, "source.pdf");
     const imageBasePath = path.join(workDir, "page");
     const imagePath = `${imageBasePath}.jpg`;
-    await writeFile(pdfPath, sourceBytes);
+    await writeStoredPdfToPath(input.storageKey, pdfPath);
     await execFileAsync("pdftoppm", ["-f", String(input.pageNumber), "-l", String(input.pageNumber), "-r", "170", "-singlefile", "-jpeg", pdfPath, imageBasePath], {
       maxBuffer: 1024 * 1024,
       timeout: 50_000,

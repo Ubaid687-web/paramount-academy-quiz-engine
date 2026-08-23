@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   ensureOcrScheduler: vi.fn(),
   notifyOwnerException: vi.fn(),
   storagePut: vi.fn(),
+  storeChunkedPdfManifest: vi.fn(),
 }));
 
 vi.mock("./db", () => ({
@@ -27,9 +28,11 @@ vi.mock("./ocrQuality", () => ({ assessExtractedSourceQuality: mocks.assessExtra
 vi.mock("./ocrScheduler", () => ({ ensureOcrScheduler: mocks.ensureOcrScheduler }));
 vi.mock("./ownerExceptionAlerts", () => ({ notifyOwnerException: mocks.notifyOwnerException }));
 vi.mock("./storage", () => ({ storagePut: mocks.storagePut }));
+vi.mock("./chunkedPdfManifest", () => ({ storeChunkedPdfManifest: mocks.storeChunkedPdfManifest }));
 
 import {
   assertPortalAdminSourceSize,
+  ingestChunkedPdfManifestSource,
   ingestPortalAdminCurriculumSource,
   MAX_PORTAL_ADMIN_SOURCE_BYTES,
 } from "./curriculumSourceIntake";
@@ -39,6 +42,7 @@ describe("Portal Admin large curriculum source intake", () => {
     vi.resetAllMocks();
     mocks.getCurriculumSet.mockResolvedValue({ id: 71 });
     mocks.storagePut.mockResolvedValue({ key: "curricula/71/source.pdf", url: "/manus-storage/curricula/71/source.pdf" });
+    mocks.storeChunkedPdfManifest.mockResolvedValue({ key: "curricula/manifests/source.json", url: "/manus-storage/curricula/manifests/source.json" });
     mocks.createCurriculumSource.mockResolvedValue({ id: 901, extractionStatus: "pending" });
     mocks.extractCurriculumSourceText.mockResolvedValue({ text: "", pageCount: 180, pages: [], mode: "ocr_required" });
     mocks.assessExtractedSourceQuality.mockReturnValue([]);
@@ -62,6 +66,34 @@ describe("Portal Admin large curriculum source intake", () => {
     expect(mocks.validateCurriculumSourceFileSignature).toHaveBeenCalledWith(expect.any(Buffer), "application/pdf");
     expect(mocks.storagePut).toHaveBeenCalledWith(expect.stringMatching(/^curricula\/71\/.+\.pdf$/), expect.any(Buffer), "application/pdf");
     expect(mocks.createOcrExtractionJob).toHaveBeenCalledWith({ sourceId: 901, totalPages: 180 });
+    expect(mocks.ensureOcrScheduler).toHaveBeenCalledWith("session=secure");
+    expect(source).toMatchObject({ id: 901, extractionStatus: "pending" });
+  });
+
+  it("stores a chunk manifest and defers scanned PDF processing without requiring a whole-file buffer", async () => {
+    const source = await ingestChunkedPdfManifestSource({
+      curriculumSetId: 71,
+      fileName: "grade-9-chemistry.pdf",
+      fileSize: MAX_PORTAL_ADMIN_SOURCE_BYTES,
+      contentHash: "a".repeat(64),
+      firstChunk: Buffer.from("%PDF-"),
+      chunks: [
+        { key: "curriculum-uploads/test/chunks/0", byteLength: 512 * 1024 },
+        { key: "curriculum-uploads/test/chunks/1", byteLength: MAX_PORTAL_ADMIN_SOURCE_BYTES - 512 * 1024 },
+      ],
+      uploadedBy: 22,
+      sessionCookie: "session=secure",
+    });
+
+    expect(mocks.validateCurriculumSourceFileSignature).toHaveBeenCalledWith(Buffer.from("%PDF-"), "application/pdf");
+    expect(mocks.storeChunkedPdfManifest).toHaveBeenCalledWith(expect.objectContaining({ byteLength: MAX_PORTAL_ADMIN_SOURCE_BYTES }));
+    expect(mocks.createCurriculumSource).toHaveBeenCalledWith(expect.objectContaining({
+      storageKey: "curricula/manifests/source.json",
+      extractionStatus: "pending",
+      extractedText: null,
+      pageCount: null,
+    }));
+    expect(mocks.createOcrExtractionJob).toHaveBeenCalledWith({ sourceId: 901, totalPages: 1 });
     expect(mocks.ensureOcrScheduler).toHaveBeenCalledWith("session=secure");
     expect(source).toMatchObject({ id: 901, extractionStatus: "pending" });
   });

@@ -5,6 +5,7 @@ import path from "node:path";
 import { promisify } from "node:util";
 import { storageGet } from "./storage";
 import type { SupportedCurriculumMimeType } from "./curriculumIngestion";
+import { writeStoredPdfToPath } from "./chunkedPdfManifest";
 
 const execFileAsync = promisify(execFile);
 export const OCR_PAGES_PER_RUN = 2;
@@ -51,13 +52,6 @@ export function replaceOcrTranscriptPage(existingText: string | null | undefined
   return buildOcrTranscript(pages.map((page) => page.pageNumber === pageNumber ? { ...page, text: normalized } : page));
 }
 
-async function downloadSource(storageKey: string) {
-  const { url } = await storageGet(storageKey);
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(`Could not retrieve the stored source for OCR (${response.status}).`);
-  return Buffer.from(await response.arrayBuffer());
-}
-
 async function runTesseract(imagePath: string) {
   const { stdout } = await execFileAsync("tesseract", [imagePath, "stdout", "-l", OCR_LANGUAGE, "--psm", "3"], {
     maxBuffer: 4 * 1024 * 1024,
@@ -78,7 +72,7 @@ export async function extractOcrBatch(input: {
   const workDir = await mkdtemp(path.join(os.tmpdir(), "paramount-ocr-"));
   try {
     const inputPath = path.join(workDir, `source.${extensionForMimeType(input.mimeType)}`);
-    await writeFile(inputPath, await downloadSource(input.storageKey));
+    await writeStoredPdfToPath(input.storageKey, inputPath);
     const pages: OcrTextPage[] = [];
 
     for (let pageNumber = input.startPage; pageNumber <= pageEnd; pageNumber += 1) {
@@ -94,6 +88,21 @@ export async function extractOcrBatch(input: {
       pages.push({ pageNumber, text: await runTesseract(imagePath) });
     }
     return pages;
+  } finally {
+    await rm(workDir, { recursive: true, force: true });
+  }
+}
+
+export async function getStoredPdfPageCount(storageKey: string) {
+  const workDir = await mkdtemp(path.join(os.tmpdir(), "paramount-pdf-pages-"));
+  try {
+    const inputPath = path.join(workDir, "source.pdf");
+    await writeStoredPdfToPath(storageKey, inputPath);
+    const { stdout } = await execFileAsync("pdfinfo", [inputPath], { maxBuffer: 256 * 1024, timeout: 50_000 });
+    const match = stdout.match(/^Pages:\s+(\d+)$/m);
+    const pageCount = match?.[1] ? Number.parseInt(match[1], 10) : NaN;
+    if (!Number.isSafeInteger(pageCount) || pageCount < 1 || pageCount > 2_000) throw new Error("The protected PDF page count is unavailable or exceeds the review limit.");
+    return pageCount;
   } finally {
     await rm(workDir, { recursive: true, force: true });
   }

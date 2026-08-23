@@ -42,7 +42,18 @@ export function getSessionCookieOptions(
   return {
     httpOnly: true,
     path: "/",
-    sameSite: "none",
+    sameSite: "lax",
+    secure: isSecureRequest(req),
+  };
+}
+
+export function getOAuthStateCookieOptions(
+  req: Request
+): Pick<CookieOptions, "httpOnly" | "path" | "sameSite" | "secure"> {
+  return {
+    httpOnly: true,
+    path: "/api/oauth",
+    sameSite: "lax",
     secure: isSecureRequest(req),
   };
 }

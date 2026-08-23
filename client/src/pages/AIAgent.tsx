@@ -133,7 +133,6 @@ export default function AIAgent() {
   const saveMutation = trpc.aiAgent.saveGeneratedQuiz.useMutation();
   const saveAssessmentDraftMutation = trpc.assessment.saveDraft.useMutation();
   const reviseAssessmentDraftMutation = trpc.assessment.reviseDraft.useMutation();
-  const pdfExtractMutation = trpc.pdfUpload.extractPdfText.useMutation();
   const scopeCatalogQuery = trpc.curriculum.getActiveScopeCatalog.useQuery(
     { board: "FBISE", grade: gradeLevel, subject },
     { enabled: activeStep >= 2 }
@@ -327,97 +326,6 @@ export default function AIAgent() {
         : currentIds.filter((id) => id !== chapterId);
     });
     if (!checked || selectedChapterIds[0] !== chapterId) setSelectedSegmentId(null);
-  };
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const maxSize = 30 * 1024 * 1024;
-    if (file.size > maxSize) {
-      toast.error("File size must be less than 30MB");
-      return;
-    }
-
-    const allowedTypes = ["text/plain", "application/pdf"];
-    if (!allowedTypes.includes(file.type)) {
-      toast.error("Please upload a PDF or TXT file");
-      return;
-    }
-
-    setUploadedFile(file);
-    setIsProcessingFile(true);
-
-    try {
-      if (file.type === "application/pdf") {
-        const reader = new FileReader();
-        reader.onload = async (event) => {
-          try {
-            const dataUrl = event.target?.result;
-            const base64 = typeof dataUrl === "string" ? dataUrl.split(",")[1] : undefined;
-            if (!base64) {
-              throw new Error("The PDF could not be prepared for extraction.");
-            }
-
-            const result = await pdfExtractMutation.mutateAsync({
-              fileBuffer: base64,
-              fileName: file.name,
-            });
-            const extractedText = result.text.trim();
-            if (extractedText.length < 100) {
-              throw new Error("Very little readable text was found in this PDF. Please use a text-based PDF or paste the content.");
-            }
-
-            setContentText(extractedText);
-            setQuizTitle(file.name.replace(/\.[^/.]+$/, ""));
-            toast.success(`Extracted ${result.pageCount} page${result.pageCount === 1 ? "" : "s"}. Your quiz settings are ready.`);
-          } catch (error) {
-            toast.error(error instanceof Error ? error.message : "Failed to process PDF");
-            setUploadedFile(null);
-          } finally {
-            setIsProcessingFile(false);
-          }
-        };
-        
-        reader.onerror = () => {
-          toast.error("Failed to read PDF file");
-          setUploadedFile(null);
-          setIsProcessingFile(false);
-        };
-        
-        reader.readAsDataURL(file);
-      } else {
-        const reader = new FileReader();
-        
-        reader.onload = (event) => {
-          try {
-            const content = event.target?.result as string;
-            if (content) {
-              setContentText(content);
-              setQuizTitle(file.name.replace(/\.[^/.]+$/, ""));
-              toast.success("Document loaded successfully!");
-            }
-          } catch (error) {
-            toast.error("Failed to read file");
-            setUploadedFile(null);
-          } finally {
-            setIsProcessingFile(false);
-          }
-        };
-
-        reader.onerror = () => {
-          toast.error("Failed to read file");
-          setUploadedFile(null);
-          setIsProcessingFile(false);
-        };
-
-        reader.readAsText(file);
-      }
-    } catch (error) {
-      toast.error("Failed to process file");
-      setUploadedFile(null);
-      setIsProcessingFile(false);
-    }
   };
 
   const determineComplexity = (text: string): "simple" | "moderate" | "complex" | "advanced" => {

@@ -25,6 +25,25 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
+/**
+ * Server-side session registry. The browser holds only a signed session token containing a random
+ * session identifier; this table stores its non-reversible SHA-256 digest so logout and expiry are
+ * enforceable without retaining a bearer token in the database.
+ */
+export const appSessions = mysqlTable("appSessions", {
+  id: int("id").autoincrement().primaryKey(),
+  sessionIdHash: varchar("sessionIdHash", { length: 64 }).notNull().unique(),
+  openId: varchar("openId", { length: 64 }).notNull(),
+  appId: varchar("appId", { length: 128 }).notNull(),
+  expiresAt: timestamp("expiresAt").notNull(),
+  revokedAt: timestamp("revokedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  lastSeenAt: timestamp("lastSeenAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type AppSession = typeof appSessions.$inferSelect;
+export type InsertAppSession = typeof appSessions.$inferInsert;
+
 /** Explicit Portal Admin-approved email addresses that receive Teacher access at first successful sign-in. */
 export const teacherProvisionRules = mysqlTable("teacherProvisionRules", {
   id: int("id").autoincrement().primaryKey(),
@@ -145,6 +164,8 @@ export const generationJobs = mysqlTable("generationJobs", {
   selectedSegmentIds: text("selectedSegmentIds"), // JSON array of selected chapter-segment IDs.
   sourceSnapshot: longtext("sourceSnapshot"), // Immutable JSON source snapshot created server-side.
   generatedQuizId: int("generatedQuizId"), // Reference to created quiz
+  quizSaveClaim: varchar("quizSaveClaim", { length: 64 }), // Short-lived server-side claim preventing duplicate quiz saves for one generation job.
+  quizSaveClaimedAt: timestamp("quizSaveClaimedAt"),
   errorMessage: text("errorMessage"),
   progress: int("progress").default(0).notNull(), // 0-100
   retryAttempts: int("retryAttempts").default(0).notNull(),
@@ -167,6 +188,7 @@ export const generationJobs = mysqlTable("generationJobs", {
   printableState: longtext("printableState"), // Private resumable printable-batch state. Never exposed as a completed paper.
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   completedAt: timestamp("completedAt"),
+  retentionExpiresAt: timestamp("retentionExpiresAt"), // Transient request artifacts are redacted after the documented retention window.
 });
 
 export type GenerationJob = typeof generationJobs.$inferSelect;
@@ -359,6 +381,27 @@ export const curriculumSources = mysqlTable("curriculumSources", {
 
 export type CurriculumSource = typeof curriculumSources.$inferSelect;
 export type InsertCurriculumSource = typeof curriculumSources.$inferInsert;
+
+/**
+ * Database-backed completion claim for a signed resumable textbook transfer. Chunk bytes and their
+ * browser-recovery state remain in managed storage; this compact record supplies the atomic state
+ * transition that object storage alone cannot guarantee across autoscaled application instances.
+ */
+export const curriculumUploadClaims = mysqlTable("curriculumUploadClaims", {
+  id: int("id").autoincrement().primaryKey(),
+  uploadId: varchar("uploadId", { length: 36 }).notNull().unique(),
+  userId: int("userId").notNull(),
+  curriculumSetId: int("curriculumSetId").notNull(),
+  status: mysqlEnum("status", ["open", "processing", "completed"]).default("open").notNull(),
+  sourceId: int("sourceId"),
+  expiresAt: timestamp("expiresAt").notNull(),
+  claimedAt: timestamp("claimedAt"),
+  completedAt: timestamp("completedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CurriculumUploadClaim = typeof curriculumUploadClaims.$inferSelect;
 
 // Each extracted PDF page receives a deterministic text-quality assessment. Pages that appear
 // weak remain visible to Portal Admin and must be explicitly reviewed before a draft edition

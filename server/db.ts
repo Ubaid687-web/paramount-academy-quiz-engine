@@ -1,4 +1,5 @@
-import { and, asc, desc, eq, gte, inArray, lt, lte, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, isNull, lt, lte, or, sql } from "drizzle-orm";
+import { randomUUID } from "node:crypto";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser,
@@ -44,6 +45,8 @@ import {
   teacherProvisionRules,
   generationProviderSettings,
   generationStyleAnchorExamples,
+  appSessions,
+  curriculumUploadClaims,
 } from "../drizzle/schema";
 import type { FbiseSubject, ProgrammeKey, ScopeCatalog } from "./curriculumScope";
 import { assertNoUnresolvedOcrPages } from "./ocrQuality";
@@ -52,7 +55,33 @@ import type { PriorQuestionHistory } from "./generationDiversity";
 import type { GenerationMode } from "./generationOptimization";
 import { normalizeProvisionEmail, selectAutomaticSignInRole } from "./staffProvisioning";
 
+function coverageHistoryFromStoredRecords(records: unknown, assessmentMode: "mcq" | "short" | "long"): PriorQuestionHistory[] {
+  if (!Array.isArray(records)) return [];
+  const readText = (value: unknown) => typeof value === "string" ? value.slice(0, 500) : undefined;
+  return records.slice(0, 128).flatMap((record) => {
+    if (!record || typeof record !== "object") return [];
+    const candidate = record as Record<string, unknown>;
+    const conceptKey = readText(candidate.conceptKey);
+    const facetKey = readText(candidate.facetKey);
+    const answerTarget = readText(candidate.answerTarget);
+    if (!conceptKey || !facetKey || !answerTarget) return [];
+    return [{
+      conceptKey,
+      facetKey,
+      answerTarget,
+      sourceReference: readText(candidate.sourceReference),
+      learningObjective: readText(candidate.learningObjective),
+      assessmentMode,
+    }];
+  });
+}
+
 let _db: ReturnType<typeof drizzle> | null = null;
+export const TRANSIENT_GENERATION_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
+
+export function transientGenerationRetentionDeadline(now = Date.now()) {
+  return new Date(now + TRANSIENT_GENERATION_RETENTION_MS);
+}
 
 // Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
@@ -148,6 +177,94 @@ export async function getUserByOpenId(openId: string) {
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
 
   return result.length > 0 ? result[0] : undefined;
+}
+
+export async function createAppSession(input: {
+  sessionIdHash: string;
+  openId: string;
+  appId: string;
+  expiresAt: Date;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(appSessions).values(input);
+}
+
+export async function getAppSessionByHash(sessionIdHash: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const rows = await db.select().from(appSessions).where(eq(appSessions.sessionIdHash, sessionIdHash)).limit(1);
+  return rows[0];
+}
+
+export async function touchAppSession(sessionIdHash: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(appSessions).set({ lastSeenAt: new Date() }).where(eq(appSessions.sessionIdHash, sessionIdHash));
+}
+
+export async function revokeAppSession(sessionIdHash: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(appSessions).set({ revokedAt: new Date() }).where(eq(appSessions.sessionIdHash, sessionIdHash));
+}
+
+export async function createCurriculumUploadClaim(input: {
+  uploadId: string;
+  userId: number;
+  curriculumSetId: number;
+  expiresAt: Date;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(curriculumUploadClaims).values(input);
+}
+
+export async function claimCurriculumUploadCompletion(input: { uploadId: string; userId: number; curriculumSetId: number }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const now = new Date();
+  const result = await db.update(curriculumUploadClaims)
+    .set({ status: "processing", claimedAt: now })
+    .where(and(
+      eq(curriculumUploadClaims.uploadId, input.uploadId),
+      eq(curriculumUploadClaims.userId, input.userId),
+      eq(curriculumUploadClaims.curriculumSetId, input.curriculumSetId),
+      eq(curriculumUploadClaims.status, "open"),
+      gte(curriculumUploadClaims.expiresAt, now),
+    ));
+  if (result[0].affectedRows > 0) return { state: "claimed" as const };
+  const rows = await db.select().from(curriculumUploadClaims).where(eq(curriculumUploadClaims.uploadId, input.uploadId)).limit(1);
+  const claim = rows[0];
+  if (!claim || claim.userId !== input.userId || claim.curriculumSetId !== input.curriculumSetId) throw new Error("The upload session is unavailable. Start the textbook upload again.");
+  return { state: claim.status, sourceId: claim.sourceId } as const;
+}
+
+export async function completeCurriculumUploadClaim(input: { uploadId: string; userId: number; curriculumSetId: number; sourceId: number }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.update(curriculumUploadClaims)
+    .set({ status: "completed", sourceId: input.sourceId, completedAt: new Date() })
+    .where(and(
+      eq(curriculumUploadClaims.uploadId, input.uploadId),
+      eq(curriculumUploadClaims.userId, input.userId),
+      eq(curriculumUploadClaims.curriculumSetId, input.curriculumSetId),
+      eq(curriculumUploadClaims.status, "processing"),
+    ));
+  if (result[0].affectedRows === 0) throw new Error("The upload completion claim was lost. Contact Portal Admin before retrying.");
+}
+
+export async function releaseCurriculumUploadClaim(input: { uploadId: string; userId: number; curriculumSetId: number }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(curriculumUploadClaims)
+    .set({ status: "open", claimedAt: null })
+    .where(and(
+      eq(curriculumUploadClaims.uploadId, input.uploadId),
+      eq(curriculumUploadClaims.userId, input.userId),
+      eq(curriculumUploadClaims.curriculumSetId, input.curriculumSetId),
+      eq(curriculumUploadClaims.status, "processing"),
+    ));
 }
 
 export async function promoteApprovedTeacherOnSignIn(openId: string, email: string | null | undefined) {
@@ -304,13 +421,11 @@ export async function listPriorGeneratedQuestionHistory(params: {
   const history: PriorQuestionHistory[] = [];
   for (const quiz of scopedQuizRows) {
     try {
-      const metadata = quiz.generationMetadata ? JSON.parse(quiz.generationMetadata) as { conceptHistory?: PriorQuestionHistory[] } : undefined;
-      if (Array.isArray(metadata?.conceptHistory)) history.push(...metadata.conceptHistory);
+      const metadata = quiz.generationMetadata ? JSON.parse(quiz.generationMetadata) as { conceptHistory?: unknown } : undefined;
+      history.push(...coverageHistoryFromStoredRecords(metadata?.conceptHistory, "mcq"));
     } catch {
-      // Older records may not contain valid JSON metadata. Their question text remains usable below.
+      // Older records may not contain valid coverage metadata and are not placed in another teacher's prompt.
     }
-    const questionRows = await getQuestionsByQuizId(quiz.id);
-    history.push(...questionRows.map((question) => ({ question: question.questionText, assessmentMode: "mcq" as const })));
   }
 
   const scopedDraftRows = params.curriculumSetId && exactScope
@@ -321,9 +436,9 @@ export async function listPriorGeneratedQuestionHistory(params: {
     : [];
   for (const draft of scopedDraftRows) {
     try {
-      const payload = JSON.parse(draft.draftPayload) as { mode?: "short" | "long"; items?: PriorQuestionHistory[] };
+      const payload = JSON.parse(draft.draftPayload) as { mode?: "short" | "long"; items?: unknown };
       if ((payload.mode === "short" || payload.mode === "long") && Array.isArray(payload.items)) {
-        history.push(...payload.items.map((item) => ({ ...item, assessmentMode: payload.mode! })));
+        history.push(...coverageHistoryFromStoredRecords(payload.items, payload.mode));
       }
     } catch {
       // A malformed historical draft must not block new source-grounded generation.
@@ -346,6 +461,21 @@ export async function saveUserAnswers(answers: InsertUserAnswer[]) {
   if (!db) throw new Error("Database not available");
   
   return db.insert(userAnswers).values(answers);
+}
+
+/** Persists a scored attempt and all submitted answers as one atomic learner record. */
+export async function saveQuizAttemptWithAnswers(input: {
+  attempt: InsertQuizAttempt;
+  answers: Array<Omit<InsertUserAnswer, "attemptId">>;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.transaction(async (tx) => {
+    const attemptResult = await tx.insert(quizAttempts).values(input.attempt);
+    const attemptId = attemptResult[0].insertId as number;
+    await tx.insert(userAnswers).values(input.answers.map((answer) => ({ ...answer, attemptId })));
+    return attemptId;
+  });
 }
 
 export async function getAttemptWithAnswers(attemptId: number) {
@@ -394,8 +524,11 @@ export async function getUserAttemptHistory(userId: number) {
 export async function createGenerationJob(job: InsertGenerationJob): Promise<GenerationJob> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  
-  const result = await db.insert(generationJobs).values(job);
+  await purgeExpiredTransientGenerationArtifacts();
+  const result = await db.insert(generationJobs).values({
+    ...job,
+    retentionExpiresAt: job.retentionExpiresAt ?? transientGenerationRetentionDeadline(),
+  });
   const inserted = await db.select().from(generationJobs).where(eq(generationJobs.id, result[0].insertId as number)).limit(1);
   return inserted[0];
 }
@@ -403,7 +536,7 @@ export async function createGenerationJob(job: InsertGenerationJob): Promise<Gen
 export async function getGenerationJob(jobId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  
+  await purgeExpiredTransientGenerationArtifacts();
   const result = await db.select().from(generationJobs).where(eq(generationJobs.id, jobId)).limit(1);
   return result.length > 0 ? result[0] : undefined;
 }
@@ -461,6 +594,7 @@ export async function setGeminiFallbackEnabled(enabled: boolean, updatedBy: numb
 export async function listAdminGenerationHistory(limit = 30) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+  await purgeExpiredTransientGenerationArtifacts();
   return db.select({
     id: generationJobs.id,
     status: generationJobs.status,
@@ -491,6 +625,7 @@ export async function listAdminGenerationHistory(limit = 30) {
 export async function getCachedGenerationResponse(userId: number, requestFingerprint: string) {
   const db = await getDb();
   if (!db) return undefined;
+  await purgeExpiredTransientGenerationArtifacts();
   const rows = await db.select().from(generationResponseCaches).where(and(
     eq(generationResponseCaches.userId, userId),
     eq(generationResponseCaches.requestFingerprint, requestFingerprint),
@@ -503,6 +638,20 @@ export async function getCachedGenerationResponse(userId: number, requestFingerp
   }
   await db.update(generationResponseCaches).set({ hitCount: cached.hitCount + 1 }).where(eq(generationResponseCaches.id, cached.id));
   return cached;
+}
+
+/** Retains non-content audit telemetry while redacting transient prompts, results, and provider diagnostics after 30 days. */
+export async function purgeExpiredTransientGenerationArtifacts(now = new Date()) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(generationResponseCaches).where(lte(generationResponseCaches.expiresAt, now));
+  await db.update(generationJobs).set({
+    contentText: "",
+    resultPayload: null,
+    printableState: null,
+    providerFailure: null,
+    errorMessage: null,
+  }).where(lte(generationJobs.retentionExpiresAt, now));
 }
 
 export async function putCachedGenerationResponse(values: {
@@ -747,7 +896,7 @@ export async function createCurriculumSource(values: InsertCurriculumSource) {
   return rows[0];
 }
 
-export async function updateCurriculumSourceExtraction(sourceId: number, values: Pick<InsertCurriculumSource, "extractionStatus"> & Partial<Pick<InsertCurriculumSource, "extractedText" | "extractionError" | "extractedAt">>) {
+export async function updateCurriculumSourceExtraction(sourceId: number, values: Pick<InsertCurriculumSource, "extractionStatus"> & Partial<Pick<InsertCurriculumSource, "extractedText" | "extractionError" | "extractedAt" | "pageCount">>) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.update(curriculumSources).set(values).where(eq(curriculumSources.id, sourceId));
@@ -811,7 +960,7 @@ export async function requeueStaleOcrExtractionJobs() {
   ));
 }
 
-export async function updateOcrExtractionJob(jobId: number, values: Partial<Pick<InsertOcrExtractionJob, "status" | "nextPage" | "errorMessage" | "completedAt">>) {
+export async function updateOcrExtractionJob(jobId: number, values: Partial<Pick<InsertOcrExtractionJob, "status" | "nextPage" | "totalPages" | "errorMessage" | "completedAt">>) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.update(ocrExtractionJobs).set(values).where(eq(ocrExtractionJobs.id, jobId));
@@ -1406,6 +1555,87 @@ export async function addQuestionsToQuiz(quizId: number, questionsList: any[]) {
   }));
   
   return db.insert(questions).values(questionsToInsert);
+}
+
+/** Creates at most one quiz for an owned completed generation job, including its question rows. */
+export async function saveAiGeneratedQuizOnce(input: { userId: number; jobId: number; quiz: InsertQuiz; questionsList: any[] }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const existingJob = await getGenerationJob(input.jobId);
+  if (!existingJob || existingJob.userId !== input.userId || existingJob.status !== "completed") {
+    throw new Error("A completed owned generation result is required before saving a quiz.");
+  }
+  if (existingJob.generatedQuizId) {
+    const quiz = await getQuizById(existingJob.generatedQuizId);
+    if (!quiz) throw new Error("The saved quiz receipt is unavailable. Ask Portal Admin to review the private operational record.");
+    return { quiz, reused: true };
+  }
+
+  const claimToken = randomUUID();
+  const claimExpiresBefore = new Date(Date.now() - 2 * 60_000);
+  const claimResult = await db.update(generationJobs).set({
+    quizSaveClaim: claimToken,
+    quizSaveClaimedAt: new Date(),
+  }).where(and(
+    eq(generationJobs.id, input.jobId),
+    eq(generationJobs.userId, input.userId),
+    eq(generationJobs.status, "completed"),
+    isNull(generationJobs.generatedQuizId),
+    or(isNull(generationJobs.quizSaveClaim), lt(generationJobs.quizSaveClaimedAt, claimExpiresBefore)),
+  ));
+
+  if (claimResult[0].affectedRows === 0) {
+    const current = await getGenerationJob(input.jobId);
+    if (current?.userId === input.userId && current.generatedQuizId) {
+      const quiz = await getQuizById(current.generatedQuizId);
+      if (quiz) return { quiz, reused: true };
+    }
+    throw new Error("This completed quiz is already being saved. Wait briefly, then retry from the same draft.");
+  }
+
+  try {
+    const saved = await db.transaction(async (tx) => {
+      const claimed = await tx.select().from(generationJobs).where(and(
+        eq(generationJobs.id, input.jobId),
+        eq(generationJobs.userId, input.userId),
+        eq(generationJobs.status, "completed"),
+        eq(generationJobs.quizSaveClaim, claimToken),
+        isNull(generationJobs.generatedQuizId),
+      )).limit(1);
+      if (!claimed[0]) throw new Error("The quiz save claim is no longer valid. Retry from the same completed draft.");
+
+      const quizResult = await tx.insert(quizzes).values(input.quiz);
+      const quizId = quizResult[0].insertId as number;
+      const questionsToInsert = input.questionsList.map((question, index) => ({
+        quizId,
+        questionNumber: index + 1,
+        questionText: question.question,
+        optionA: question.options.A,
+        optionB: question.options.B,
+        optionC: question.options.C,
+        optionD: question.options.D,
+        correctAnswer: question.answer,
+        sourceCitation: question.sourceCitation ? JSON.stringify(question.sourceCitation) : null,
+      }));
+      await tx.insert(questions).values(questionsToInsert);
+      await tx.update(generationJobs).set({
+        generatedQuizId: quizId,
+        quizSaveClaim: null,
+        quizSaveClaimedAt: null,
+      }).where(and(eq(generationJobs.id, input.jobId), eq(generationJobs.quizSaveClaim, claimToken)));
+      const inserted = await tx.select().from(quizzes).where(eq(quizzes.id, quizId)).limit(1);
+      if (!inserted[0]) throw new Error("The saved quiz receipt is unavailable.");
+      return inserted[0];
+    });
+    return { quiz: saved, reused: false };
+  } catch (error) {
+    await db.update(generationJobs).set({ quizSaveClaim: null, quizSaveClaimedAt: null }).where(and(
+      eq(generationJobs.id, input.jobId),
+      eq(generationJobs.quizSaveClaim, claimToken),
+      isNull(generationJobs.generatedQuizId),
+    ));
+    throw error;
+  }
 }
 
 export async function deleteQuizAndRelated(quizId: number, userId: number, isAdmin: boolean = false) {

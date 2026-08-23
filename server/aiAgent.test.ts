@@ -5,8 +5,7 @@ const mocks = vi.hoisted(() => ({
   invokeGenerationProvider: vi.fn(),
   createGenerationJob: vi.fn(),
   updateGenerationJob: vi.fn(),
-  createAiGeneratedQuiz: vi.fn(),
-  addQuestionsToQuiz: vi.fn(),
+  saveAiGeneratedQuizOnce: vi.fn(),
   getGenerationJob: vi.fn(),
   getCachedGenerationResponse: vi.fn(),
   putCachedGenerationResponse: vi.fn(),
@@ -19,8 +18,7 @@ vi.mock("./ownerExceptionAlerts", () => ({ notifyOwnerException: mocks.notifyOwn
 vi.mock("./db", () => ({
   createGenerationJob: mocks.createGenerationJob,
   updateGenerationJob: mocks.updateGenerationJob,
-  createAiGeneratedQuiz: mocks.createAiGeneratedQuiz,
-  addQuestionsToQuiz: mocks.addQuestionsToQuiz,
+  saveAiGeneratedQuizOnce: mocks.saveAiGeneratedQuizOnce,
   getGenerationJob: mocks.getGenerationJob,
   getCachedGenerationResponse: mocks.getCachedGenerationResponse,
   putCachedGenerationResponse: mocks.putCachedGenerationResponse,
@@ -56,8 +54,7 @@ describe("AI Agent - MCQ Generation", () => {
   beforeEach(() => {
     mocks.createGenerationJob.mockReset();
     mocks.updateGenerationJob.mockReset();
-    mocks.createAiGeneratedQuiz.mockReset();
-    mocks.addQuestionsToQuiz.mockReset();
+    mocks.saveAiGeneratedQuizOnce.mockReset();
     mocks.getGenerationJob.mockReset();
     mocks.getCachedGenerationResponse.mockReset();
     mocks.putCachedGenerationResponse.mockReset();
@@ -360,21 +357,26 @@ describe("AI Agent - MCQ Generation", () => {
       status: "completed",
       resultPayload: JSON.stringify({ mcqs }),
     });
-    mocks.createAiGeneratedQuiz.mockResolvedValue({ id: 900 });
+    mocks.saveAiGeneratedQuizOnce.mockResolvedValue({ quiz: { id: 900 }, reused: false });
     const quiz = await saveGeneratedQuizToDatabase(1, 501, "Kinematics Draft", "hard");
 
     expect(quiz).toEqual({ id: 900 });
-    expect(mocks.createAiGeneratedQuiz).toHaveBeenCalledWith(expect.objectContaining({
-      title: "Kinematics Draft",
-      sourceContent: validContent,
-      curriculumSetId: 77,
-      scopeSnapshot: JSON.stringify(snapshot),
-      difficultyProfile: "hard",
-      publicationStatus: "draft",
-      generationMetadata: expect.stringContaining("single_chapter"),
+    expect(mocks.saveAiGeneratedQuizOnce).toHaveBeenCalledWith(expect.objectContaining({
+      userId: 1,
+      jobId: 501,
+      questionsList: mcqs,
+      quiz: expect.objectContaining({
+        title: "Kinematics Draft",
+        sourceContent: validContent,
+        curriculumSetId: 77,
+        scopeSnapshot: JSON.stringify(snapshot),
+        difficultyProfile: "hard",
+        publicationStatus: "draft",
+        generationMetadata: expect.stringContaining("single_chapter"),
+      }),
     }));
-    expect(mocks.addQuestionsToQuiz).toHaveBeenCalledWith(900, mcqs);
-    expect(mocks.updateGenerationJob).toHaveBeenCalledWith(501, { generatedQuizId: 900 });
+    const savedMetadata = JSON.parse(mocks.saveAiGeneratedQuizOnce.mock.calls[0]![0].quiz.generationMetadata);
+    expect(savedMetadata.conceptHistory[0]).not.toHaveProperty("question");
   });
 });
 

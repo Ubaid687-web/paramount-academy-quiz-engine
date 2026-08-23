@@ -822,3 +822,14 @@
 - [x] Produce the sanitized architecture, dependency, environment, security-control, external-service, and reproducibility inventory.
 - [x] Assemble the single Markdown package with full in-scope source/configuration content, checksums, and sanitized diagnostics.
 - [x] Verify the completed package for secret/source-data leakage, scope completeness, and structural integrity, then deliver it with a checksum manifest.
+
+## Phase 139: External Security Report Remediation
+- [x] Independently reproduce and classify each reported P0/P1 finding against the current private project state; separate artifact-only observations from current code defects.
+- [x] Replace predictable OAuth state and long-lived unrevocable session behavior with browser-bound, expiring, revocable authentication controls and safe callback failures.
+- [x] Remove pre-auth large-body parsing and public full-source analysis; bound upload, extraction, OCR, and provider-resource use with safe cancellation behavior.
+- [x] Eliminate cross-teacher raw-paper disclosure, project generation status/error responses minimally, and make save/chunk-completion operations atomic and idempotent.
+- [x] Define retention/cleanup policy for transient records, add bounded lists/readiness/deployment hardening, and produce a reproducible auditor artifact with the lockfile.
+- [ ] Run independent regression, hostile-boundary, migration, frozen-install, and production-readiness validation; obtain owner Grade 9 Chemistry actual-PDF acceptance only after the hardening gates pass.
+- [x] Preserve the 150 MB scanned-PDF requirement by storing an immutable chunk manifest and processing source data in bounded units rather than assembling whole documents in web-process memory.
+- [x] Add a server-side quiz-save claim and transaction so repeated teacher submissions cannot create duplicate quizzes or partial question records.
+- [x] Define and enforce bounded retention for transient generation results and expired exact-result cache records without affecting approved curriculum sources or reviewed papers.

@@ -42,6 +42,9 @@ type ProviderFailureCarrier = Error & { providerFailure?: ProviderFailureEvidenc
 const MAX_TRANSIENT_RETRY_ATTEMPTS = 2;
 const GEMINI_MODEL = "gemini-3.6-flash";
 const MAX_PROVIDER_RETRY_DELAY_MS = 45_000;
+const PROVIDER_DEADLINE_MS = 90_000;
+const MAX_PROVIDER_RESPONSE_BYTES = 2 * 1024 * 1024;
+const MAX_PROVIDER_ERROR_CHARS = 512;
 
 function messageText(content: MessageContent | MessageContent[]) {
   const entries = Array.isArray(content) ? content : [content];
@@ -126,19 +129,31 @@ async function invokeGeminiFallback(params: InvokeParams): Promise<InvokeResult>
 
   for (let attempt = 0; attempt < MAX_TRANSIENT_RETRY_ATTEMPTS; attempt += 1) {
     let response: Response;
+    const controller = new AbortController();
+    const abortTimer = setTimeout(() => controller.abort(), PROVIDER_DEADLINE_MS);
     try {
       response = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
         method: "POST",
         headers: { "content-type": "application/json", "x-goog-api-key": ENV.geminiApiKey },
         body: JSON.stringify(body),
+        signal: controller.signal,
       });
     } catch (error) {
-      if (attempt === MAX_TRANSIENT_RETRY_ATTEMPTS - 1) throw new Error(`Gemini fallback invoke failed after ${MAX_TRANSIENT_RETRY_ATTEMPTS} transient attempts: ${error instanceof Error ? error.message : "Unknown network failure"}`);
+      clearTimeout(abortTimer);
+      if (attempt === MAX_TRANSIENT_RETRY_ATTEMPTS - 1) {
+        const reason = error instanceof Error && error.name === "AbortError" ? "Provider deadline exceeded" : "Transient provider network failure";
+        throw new Error(`Gemini fallback invoke failed after ${MAX_TRANSIENT_RETRY_ATTEMPTS} transient attempts: ${reason}`);
+      }
       await new Promise((resolve) => setTimeout(resolve, retryDelayMs(attempt, null)));
       continue;
     }
+    clearTimeout(abortTimer);
     if (response.ok) {
-      const payload = await response.json() as { id?: string; created?: string | number; model?: string; output_text?: string; steps?: Array<{ type?: string; content?: Array<{ type?: string; text?: string }> }>; usage?: { total_input_tokens?: number; total_output_tokens?: number; total_cached_tokens?: number; total_tokens?: number } };
+      const contentLength = Number.parseInt(response.headers.get("content-length") ?? "", 10);
+      if (Number.isFinite(contentLength) && contentLength > MAX_PROVIDER_RESPONSE_BYTES) throw new Error("Gemini fallback response exceeded the safe size limit.");
+      const rawPayload = await response.text();
+      if (Buffer.byteLength(rawPayload, "utf8") > MAX_PROVIDER_RESPONSE_BYTES) throw new Error("Gemini fallback response exceeded the safe size limit.");
+      const payload = JSON.parse(rawPayload) as { id?: string; created?: string | number; model?: string; output_text?: string; steps?: Array<{ type?: string; content?: Array<{ type?: string; text?: string }> }>; usage?: { total_input_tokens?: number; total_output_tokens?: number; total_cached_tokens?: number; total_tokens?: number } };
       const outputText = payload.output_text ?? payload.steps?.filter((step) => step.type === "model_output").flatMap((step) => step.content ?? []).filter((content) => content.type === "text").map((content) => content.text ?? "").join("");
       if (!outputText) throw new Error("Gemini fallback returned no structured content.");
       return {
@@ -150,7 +165,7 @@ async function invokeGeminiFallback(params: InvokeParams): Promise<InvokeResult>
         retryAttempts: attempt,
       };
     }
-    const text = await response.text();
+    const text = (await response.text()).replace(/[\r\n\t]+/g, " ").slice(0, MAX_PROVIDER_ERROR_CHARS);
     const message = `Gemini fallback invoke failed: ${response.status} ${response.statusText} – ${text}`;
     if (!isTransientStatus(response.status) || attempt === MAX_TRANSIENT_RETRY_ATTEMPTS - 1) {
       const policy = classifyCircuitOpen(message);

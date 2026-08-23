@@ -1,8 +1,9 @@
-import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import type { CurriculumSource } from "../drizzle/schema";
 import { ENV } from "./_core/env";
-import { ingestPortalAdminCurriculumSource, MAX_PORTAL_ADMIN_SOURCE_BYTES } from "./curriculumSourceIntake";
+import { ingestChunkedPdfManifestSource, MAX_PORTAL_ADMIN_SOURCE_BYTES } from "./curriculumSourceIntake";
 import { storageGet, storagePut } from "./storage";
+import { claimCurriculumUploadCompletion, completeCurriculumUploadClaim, createCurriculumUploadClaim, getCurriculumSource, releaseCurriculumUploadClaim } from "./db";
 
 export const CURRICULUM_UPLOAD_CHUNK_BYTES = 512 * 1024;
 const UPLOAD_TOKEN_TTL_MS = 12 * 60 * 60 * 1000;
@@ -122,6 +123,12 @@ export async function prepareCurriculumPdfChunkUpload(input: { userId: number; c
   };
   assertValidTicket(ticket);
   await saveState({ ...ticket, nextChunkIndex: 0, receivedBytes: 0 });
+  await createCurriculumUploadClaim({
+    uploadId: ticket.uploadId,
+    userId: ticket.userId,
+    curriculumSetId: ticket.curriculumSetId,
+    expiresAt: new Date(ticket.expiresAt),
+  });
   const encodedPayload = encodeBase64Url(JSON.stringify(ticket));
   return { uploadToken: `${encodedPayload}.${sign(encodedPayload)}`, chunkBytes: CURRICULUM_UPLOAD_CHUNK_BYTES, expiresAt: ticket.expiresAt };
 }
@@ -168,17 +175,51 @@ export async function completeCurriculumPdfChunkUpload(input: { userId: number; 
   if (state.receivedBytes !== ticket.fileSize) {
     throw new Error(`Upload is incomplete: received ${state.receivedBytes} of ${ticket.fileSize} bytes.`);
   }
-  const chunks = await Promise.all(Array.from({ length: state.nextChunkIndex }, (_, index) => readStoredBytes(chunkKey(ticket.uploadId, index))));
-  const fileBuffer = Buffer.concat(chunks);
-  if (fileBuffer.length !== ticket.fileSize) throw new Error("The assembled textbook file is incomplete. Restart the upload.");
-  const source = await ingestPortalAdminCurriculumSource({
+  const claim = await claimCurriculumUploadCompletion({
+    uploadId: ticket.uploadId,
+    userId: input.userId,
     curriculumSetId: ticket.curriculumSetId,
-    fileName: ticket.fileName,
-    mimeType: "application/pdf",
-    fileBuffer,
-    uploadedBy: input.userId,
-    sessionCookie: input.sessionCookie,
   });
-  await saveState({ ...state, completedSource: source });
-  return source;
+  if (claim.state === "completed" && claim.sourceId) {
+    const source = await getCurriculumSource(claim.sourceId);
+    if (!source || source.curriculumSetId !== ticket.curriculumSetId) throw new Error("The completed textbook receipt is unavailable. Contact Portal Admin before retrying this upload.");
+    await saveState({ ...state, completedSource: source });
+    return source;
+  }
+  if (claim.state === "processing") {
+    throw new Error("This textbook is already being finalised. Wait for the current completion request to finish, then refresh the intake status.");
+  }
+
+  try {
+    const contentHash = createHash("sha256");
+    const chunks: Array<{ key: string; byteLength: number }> = [];
+    let firstChunk: Buffer | null = null;
+    let totalBytes = 0;
+    for (let index = 0; index < state.nextChunkIndex; index += 1) {
+      const key = chunkKey(ticket.uploadId, index);
+      const bytes = await readStoredBytes(key);
+      if (!bytes.length || bytes.length > CURRICULUM_UPLOAD_CHUNK_BYTES) throw new Error("The assembled textbook has an invalid protected chunk.");
+      if (index === 0) firstChunk = bytes;
+      contentHash.update(bytes);
+      totalBytes += bytes.length;
+      chunks.push({ key, byteLength: bytes.length });
+    }
+    if (!firstChunk || totalBytes !== ticket.fileSize) throw new Error("The assembled textbook file is incomplete. Restart the upload.");
+    const source = await ingestChunkedPdfManifestSource({
+      curriculumSetId: ticket.curriculumSetId,
+      fileName: ticket.fileName,
+      fileSize: ticket.fileSize,
+      contentHash: contentHash.digest("hex"),
+      firstChunk,
+      chunks,
+      uploadedBy: input.userId,
+      sessionCookie: input.sessionCookie,
+    });
+    await completeCurriculumUploadClaim({ uploadId: ticket.uploadId, userId: input.userId, curriculumSetId: ticket.curriculumSetId, sourceId: source.id });
+    await saveState({ ...state, completedSource: source });
+    return source;
+  } catch (error) {
+    await releaseCurriculumUploadClaim({ uploadId: ticket.uploadId, userId: input.userId, curriculumSetId: ticket.curriculumSetId });
+    throw error;
+  }
 }

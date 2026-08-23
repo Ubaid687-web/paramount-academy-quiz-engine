@@ -356,8 +356,13 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     payload.response_format = normalizedResponseFormat;
   }
 
+  const requestDeadlineMs = 90_000;
+  const maxProviderErrorChars = 512;
+
   for (let attempt = 0; attempt < MAX_TRANSIENT_RETRY_ATTEMPTS; attempt += 1) {
     let response: Response;
+    const controller = new AbortController();
+    const abortTimer = setTimeout(() => controller.abort(), requestDeadlineMs);
     try {
       response = await fetch(resolveApiUrl(), {
         method: "POST",
@@ -366,16 +371,19 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
           authorization: `Bearer ${ENV.forgeApiKey}`,
         },
         body: JSON.stringify(payload),
+        signal: controller.signal,
       });
     } catch (error) {
+      clearTimeout(abortTimer);
       if (attempt === MAX_TRANSIENT_RETRY_ATTEMPTS - 1) {
-        const reason = error instanceof Error ? error.message : "Unknown network failure";
+        const reason = error instanceof Error && error.name === "AbortError" ? "Provider deadline exceeded" : "Transient provider network failure";
         throw new LlmInvokeError(`LLM invoke failed after ${MAX_TRANSIENT_RETRY_ATTEMPTS} transient attempts: ${reason}`, { retryAttempts: attempt });
       }
 
       await waitForRetry(retryDelayMs(attempt, null));
       continue;
     }
+    clearTimeout(abortTimer);
 
     if (response.ok) {
       const data = (await response.json()) as InvokeResult;
@@ -383,8 +391,8 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
       return data;
     }
 
-    const errorText = await response.text();
-    const errorMessage = `LLM invoke failed: ${response.status} ${response.statusText} – ${errorText}`;
+    const errorText = (await response.text()).replace(/[\r\n\t]+/g, " ").slice(0, maxProviderErrorChars);
+    const errorMessage = `LLM invoke failed: ${response.status} ${response.statusText}${errorText ? ` – ${errorText}` : ""}`;
     const canRetry = isTransientResponseStatus(response.status) && attempt < MAX_TRANSIENT_RETRY_ATTEMPTS - 1;
     if (!canRetry) {
       throw new LlmInvokeError(errorMessage, { httpStatus: response.status, retryAttempts: attempt, retryAfterSeconds: parseRetryAfterSeconds(response.headers.get("retry-after")) });

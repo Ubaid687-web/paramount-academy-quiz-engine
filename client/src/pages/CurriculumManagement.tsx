@@ -51,7 +51,7 @@ const subjectLabels: Record<string, string> = {
 };
 
 const MAX_PORTAL_ADMIN_SOURCE_BYTES = 150 * 1024 * 1024;
-const DIRECT_PDF_UPLOAD_THRESHOLD_BYTES = 30 * 1024 * 1024;
+const MAX_DIRECT_SOURCE_BYTES = 512 * 1024;
 const TRANSIENT_UPLOAD_RETRY_ATTEMPTS = 3;
 const RESUMABLE_TEXTBOOK_UPLOAD_STORAGE_KEY = "paramount-resumable-textbook-upload";
 
@@ -640,10 +640,14 @@ export default function CurriculumManagement() {
       toast.error("Textbook sources must be 150MB or smaller.");
       return;
     }
+    if (file.type !== "application/pdf" && file.size > MAX_DIRECT_SOURCE_BYTES) {
+      toast.error("TXT and image sources are limited to 512KB. Upload a textbook as a PDF to use the protected resumable flow.");
+      return;
+    }
     setIsUploading(true);
     setTextbookUploadRecovery(null);
     try {
-      const source = file.type === "application/pdf" && file.size > DIRECT_PDF_UPLOAD_THRESHOLD_BYTES
+      const source = file.type === "application/pdf"
         ? await (async () => {
           uploadPauseControllerRef.current = { pauseRequested: false };
           setChunkUploadProgress({ receivedBytes: 0, totalBytes: file.size, phase: "preparing" });
@@ -743,7 +747,7 @@ export default function CurriculumManagement() {
       await utils.curriculum.getManagementDetails.invalidate({ curriculumSetId: selectedSetId });
       toast.success(source.extractionStatus === "pending" ? "Scanned source stored. OCR is queued in reviewable page batches and this screen will update as pages are processed." : "Source stored and extracted. Review it before saving a chapter.");
     } catch (error) {
-      if (file.type === "application/pdf" && file.size > DIRECT_PDF_UPLOAD_THRESHOLD_BYTES) {
+      if (file.type === "application/pdf") {
         recoveryFileRef.current = file;
         setTextbookUploadRecovery({
           kind: isChunkOrderError(error) ? "resume_conflict" : "session_unavailable",
@@ -818,7 +822,7 @@ export default function CurriculumManagement() {
     if (!file || !details) return;
     if (!selectedSetProgramme) return toast.error("Create the matching Programme Catalogue entry before adding paper-pattern sources.");
     if (!["application/pdf", "text/plain"].includes(file.type)) return toast.error("Only text-based PDF and TXT paper sources are supported.");
-    if (file.size > 30 * 1024 * 1024) return toast.error("Keep each paper source under 30MB.");
+    if (file.size > MAX_DIRECT_SOURCE_BYTES) return toast.error("Paper-pattern sources are currently limited to 512KB so the protected upload boundary remains reliable.");
     const timelineOrder = paperPatternKind === "past_paper" ? Number(paperPatternTimelineOrder) : undefined;
     if (paperPatternKind === "past_paper" && (!Number.isInteger(timelineOrder) || timelineOrder! < 1)) {
       return toast.error("Give this past paper a timeline number. Use 1 for the oldest supplied paper.");

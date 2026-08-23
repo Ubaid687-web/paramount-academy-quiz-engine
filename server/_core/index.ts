@@ -10,7 +10,48 @@ import { registerPdfExportRoutes } from "../pdfExportRoute";
 import { runOcrExtractionWorker } from "../ocrWorkerRoute";
 import { registerOcrReviewRoutes } from "../ocrReviewRoute";
 import { serveStatic, setupVite } from "./vite";
-import { handleLargeCurriculumSourceUpload, LARGE_CURRICULUM_SOURCE_UPLOAD_PATH } from "../curriculumLargeUploadRoute";
+import { ENV } from "./env";
+import { getTrustedRequestOrigin } from "./oauthState";
+
+function assertProductionConfiguration() {
+  if (!ENV.isProduction) return;
+  const required = [
+    ["DATABASE_URL", ENV.databaseUrl],
+    ["JWT_SECRET", ENV.cookieSecret],
+    ["OAUTH_SERVER_URL", ENV.oAuthServerUrl],
+    ["VITE_OAUTH_PORTAL_URL", ENV.oAuthPortalUrl],
+    ["VITE_APP_ID", ENV.appId],
+  ] as const;
+  const missing = required.filter(([, value]) => !value).map(([name]) => name);
+  if (missing.length) throw new Error(`Production configuration is incomplete: ${missing.join(", ")}`);
+}
+
+function applySecurityHeaders(req: express.Request, res: express.Response, next: express.NextFunction) {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()");
+  if (req.secure || req.headers["x-forwarded-proto"]?.toString().split(",").some((value) => value.trim() === "https")) {
+    res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  }
+  next();
+}
+
+function enforceSameOriginForCookieMutations(req: express.Request, res: express.Response, next: express.NextFunction) {
+  const mutating = ["POST", "PUT", "PATCH", "DELETE"].includes(req.method);
+  if (!mutating || !req.path.startsWith("/api/") || req.path.startsWith("/api/scheduled/")) return next();
+  const origin = req.headers.origin;
+  const hasSessionCookie = typeof req.headers.cookie === "string" && req.headers.cookie.includes("app_session_id=");
+  if (!origin && hasSessionCookie) {
+    res.status(403).json({ error: "A same-origin request is required." });
+    return;
+  }
+  if (origin && origin !== getTrustedRequestOrigin(req)) {
+    res.status(403).json({ error: "Cross-origin requests are not accepted." });
+    return;
+  }
+  next();
+}
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -32,16 +73,18 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 }
 
 async function startServer() {
+  assertProductionConfiguration();
   const app = express();
   const server = createServer(app);
+  app.disable("x-powered-by");
+  app.use(applySecurityHeaders);
   // Avoid the extended qs parser for query strings; routes use typed tRPC inputs instead.
   app.set("query parser", "simple");
-  // Large scanned textbooks are sent as binary PDF data to avoid base64/JSON expansion. The handler
-  // remains Portal Admin-only and enforces its own 150 MB source limit before storage or extraction.
-  app.post(LARGE_CURRICULUM_SOURCE_UPLOAD_PATH, express.raw({ type: "application/pdf", limit: "150mb" }), handleLargeCurriculumSourceUpload);
-  // Configure body parser with larger size limit for file uploads
-  app.use(express.json({ limit: "50mb" }));
-  app.use(express.urlencoded({ limit: "50mb", extended: true }));
+  // Large textbook transfers use the signed 512 KB resumable tRPC chunks. Keep parsers bounded so
+  // untrusted callers cannot make the process buffer an entire source before authentication.
+  app.use(express.json({ limit: "1mb" }));
+  app.use(express.urlencoded({ limit: "64kb", extended: false }));
+  app.use(enforceSameOriginForCookieMutations);
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
   // tRPC API

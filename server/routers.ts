@@ -3,6 +3,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { ENV } from "./_core/env";
+import { sdk } from "./_core/sdk";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, publicProcedure, protectedProcedure, router, teacherProcedure } from "./_core/trpc";
 import { buildSharedStyleAnchor, type ReviewedPaperPatternGuidance } from "./styleAnchor";
@@ -13,6 +14,12 @@ import type { ModeDraftPayload } from "@shared/assessmentDraftContract";
 function toViewerSafeQuiz<T extends { sourceContent?: unknown; scopeSnapshot?: unknown; generationMetadata?: unknown }>(quiz: T) {
   const { sourceContent: _sourceContent, scopeSnapshot: _scopeSnapshot, generationMetadata: _generationMetadata, ...safeQuiz } = quiz;
   return safeQuiz;
+}
+
+function safeGenerationFailureMessage(classification?: "transient_rate_limit" | "quota_exhaustion" | "provider_error") {
+  if (classification === "transient_rate_limit") return "Generation is temporarily busy. Please wait briefly before trying again.";
+  if (classification === "quota_exhaustion") return "Generation is temporarily unavailable. Portal Admin can review provider availability before another attempt.";
+  return "Generation could not complete safely. Please retry, or ask Portal Admin to review the private operational record.";
 }
 
 const programmeKeySchema = z.object({
@@ -187,8 +194,17 @@ async function createProgressivePrintableAssessmentDraft(userId: number, state: 
 export const appRouter = router({
   system: systemRouter,
   auth: router({
-    me: publicProcedure.query(opts => opts.ctx.user),
-    logout: publicProcedure.mutation(({ ctx }) => {
+    me: publicProcedure.query(({ ctx }) => {
+      if (!ctx.user) return null;
+      return {
+        id: ctx.user.id,
+        name: ctx.user.name,
+        email: ctx.user.email,
+        role: ctx.user.role,
+      };
+    }),
+    logout: publicProcedure.mutation(async ({ ctx }) => {
+      await sdk.revokeSessionToken(ctx.req.headers.cookie);
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return {
@@ -364,7 +380,7 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ ctx, input }) => {
-        const { createQuizAttempt, getQuestionsByQuizId, getQuizVisibleToUser, saveUserAnswers } = await import("./db");
+        const { getQuestionsByQuizId, getQuizVisibleToUser, saveQuizAttemptWithAnswers } = await import("./db");
         const quiz = await getQuizVisibleToUser(input.quizId, ctx.user.id, ctx.user.role === "admin");
         if (!quiz) throw new Error("Quiz not found or unavailable.");
         const questions = await getQuestionsByQuizId(input.quizId);
@@ -385,24 +401,18 @@ export const appRouter = router({
         const totalQuestions = questions.length;
         const percentage = Math.round((score / totalQuestions) * 100);
 
-        const attemptId = await createQuizAttempt({
-          userId: ctx.user.id,
-          quizId: input.quizId,
-          score,
-          totalQuestions,
-          percentage,
-          startedAt: new Date(),
-          completedAt: new Date(),
+        const attemptId = await saveQuizAttemptWithAnswers({
+          attempt: {
+            userId: ctx.user.id,
+            quizId: input.quizId,
+            score,
+            totalQuestions,
+            percentage,
+            startedAt: new Date(),
+            completedAt: new Date(),
+          },
+          answers: scoredAnswers,
         });
-
-        const userAnswersData = scoredAnswers.map((answer) => ({
-          attemptId,
-          questionId: answer.questionId,
-          selectedAnswer: answer.selectedAnswer,
-          isCorrect: answer.isCorrect,
-        }));
-
-        await saveUserAnswers(userAnswersData);
 
         return { attemptId, score, percentage };
       }),
@@ -424,26 +434,6 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const { deleteQuizAndRelated } = await import("./db");
         return deleteQuizAndRelated(input.quizId, ctx.user.id, ctx.user.role === "admin");
-      }),
-  }),
-
-  pdfUpload: router({
-    extractPdfText: teacherProcedure
-      .input(z.object({
-        fileBuffer: z.string().min(4).max(40_000_000), // Base64 encoded PDF, capped before decoding.
-        fileName: z.string().min(1).max(255),
-      }))
-      .mutation(async ({ input }) => {
-        const { extractTextFromPdf } = await import("./pdfProcessor");
-        if (!input.fileName.toLowerCase().endsWith(".pdf")) {
-          throw new Error("Only PDF files can be extracted.");
-        }
-        const buffer = decodeStrictBase64(input.fileBuffer, "PDF");
-        if (!buffer.length || buffer.length > 30 * 1024 * 1024) throw new Error("PDF upload must be between 1 byte and 30MB.");
-        if (buffer.subarray(0, 5).toString("ascii") !== "%PDF-") {
-          throw new Error("Only valid PDF files can be extracted.");
-        }
-        return extractTextFromPdf(buffer, input.fileName);
       }),
   }),
 
@@ -566,12 +556,12 @@ export const appRouter = router({
         curriculumSetId: z.number().int().positive(),
         fileName: z.string().min(1).max(255),
         mimeType: z.enum(["application/pdf", "text/plain", "image/jpeg", "image/png", "image/webp"]),
-        fileBuffer: z.string().min(4).max(42_000_000),
+        fileBuffer: z.string().min(4).max(700_000),
       }))
       .mutation(async ({ ctx, input }) => {
         const fileBuffer = decodeStrictBase64(input.fileBuffer, "curriculum source");
-        if (!fileBuffer.length || fileBuffer.length > 30 * 1024 * 1024) {
-          throw new Error("Curriculum sources over 30MB must use the Portal Admin PDF upload flow.");
+        if (!fileBuffer.length || fileBuffer.length > 512 * 1024) {
+          throw new Error("Direct TXT and image sources are limited to 512KB. Upload a textbook as a PDF through the resumable Portal Admin flow.");
         }
         const { ingestPortalAdminCurriculumSource } = await import("./curriculumSourceIntake");
         return ingestPortalAdminCurriculumSource({
@@ -656,7 +646,7 @@ export const appRouter = router({
         timelineLabel: z.string().trim().min(1).max(255).optional(),
         fileName: z.string().min(1).max(255),
         mimeType: z.enum(["application/pdf", "text/plain"]),
-        fileBuffer: z.string().min(4).max(42_000_000),
+        fileBuffer: z.string().min(4).max(700_000),
       }))
       .mutation(async ({ ctx, input }) => {
         const { createAssessmentPatternSource, getProgrammeCatalogue } = await import("./db");
@@ -666,7 +656,7 @@ export const appRouter = router({
           throw new Error("Give each past paper a timeline number. Use 1 for the oldest supplied paper.");
         }
         const fileBuffer = decodeStrictBase64(input.fileBuffer, "paper-pattern source");
-        if (!fileBuffer.length || fileBuffer.length > 30 * 1024 * 1024) throw new Error("Paper-pattern source must be between 1 byte and 30MB.");
+        if (!fileBuffer.length || fileBuffer.length > 512 * 1024) throw new Error("Paper-pattern sources are currently limited to 512KB so the protected request boundary remains reliable.");
         validateCurriculumSourceFileSignature(fileBuffer, input.mimeType);
         const programme = await getProgrammeCatalogue(input.programmeId);
         if (!programme) throw new Error("Select a Programme Catalogue entry before uploading its paper-pattern source.");
@@ -951,20 +941,17 @@ export const appRouter = router({
         return updated;
       }),
 
-    getActiveScopeCatalog: publicProcedure
+    getActiveScopeCatalog: teacherProcedure
       .input(programmeKeySchema)
       .query(async ({ input }) => {
         const { getActiveCurriculumScopeCatalog } = await import("./db");
-        const { analyzeContent } = await import("./contentAnalyzer");
         const catalog = await getActiveCurriculumScopeCatalog(input);
         if (!catalog) return null;
 
-        // Keep this estimate deterministic and source-bound. It is a teacher-facing
-        // warning signal, not a generation quota: generation still validates the
-        // actual concept/facet/answer inventory on the server.
+        // This is a bounded teacher-facing warning signal, not a quota. The actual
+        // concept/facet/answer inventory remains validated during generation.
         const estimateTopicCount = (contentText: string) => {
-          const analysis = analyzeContent(contentText);
-          return Math.max(1, analysis.keyTopics.length, analysis.sections.length);
+          return Math.max(1, Math.min(100, Math.ceil(contentText.length / 1_800)));
         };
 
         return {
@@ -1197,9 +1184,9 @@ export const appRouter = router({
               expiresAt: new Date(Date.now() + 15 * 60_000),
             });
           } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
             const { getProviderFailureEvidence } = await import("./generationProvider");
             const providerFailure = getProviderFailureEvidence(error);
+            const message = error instanceof Error ? error.message : String(error);
             await updateGenerationJob(generationJob.id, {
               status: "failed",
               errorMessage: message,
@@ -1211,7 +1198,7 @@ export const appRouter = router({
               geminiRetryAttempts: providerFailure?.provider === "gemini_byok" ? providerFailure.retryAttempts : undefined,
               retryAttempts: providerFailure?.retryAttempts ?? undefined,
             });
-            throw error;
+            throw new Error(safeGenerationFailureMessage(providerFailure?.classification));
           }
         }
         let assessmentDraftId: number | undefined;
@@ -1516,7 +1503,7 @@ export const appRouter = router({
             geminiRetryAttempts: state.providerTelemetry.geminiRetryAttempts + (providerFailure?.provider === "gemini_byok" ? providerFailure.retryAttempts : 0),
             retryAttempts: state.providerTelemetry.managedRetryAttempts + state.providerTelemetry.geminiRetryAttempts + (providerFailure?.retryAttempts ?? 0),
           });
-          throw error;
+          throw new Error(safeGenerationFailureMessage(providerFailure?.classification));
         }
       }),
 
@@ -1557,7 +1544,18 @@ export const appRouter = router({
           throw new Error("Job not found or unauthorized");
         }
 
-        return job;
+        return {
+          id: job.id,
+          status: job.status,
+          progress: job.progress,
+          generationMode: job.generationMode,
+          generatedQuizId: job.generatedQuizId,
+          cacheHit: Boolean(job.cacheHit),
+          retryAttempts: job.retryAttempts,
+          createdAt: job.createdAt,
+          completedAt: job.completedAt,
+          failure: job.status === "failed" ? "Generation did not complete. Retry when ready, or ask Portal Admin to review the private operational record." : null,
+        };
       }),
   }),
 });

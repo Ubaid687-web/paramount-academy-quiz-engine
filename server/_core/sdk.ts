@@ -1,7 +1,8 @@
-import { AXIOS_TIMEOUT_MS, COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
+import { AXIOS_TIMEOUT_MS, COOKIE_NAME } from "@shared/const";
 import { ForbiddenError } from "@shared/_core/errors";
 import axios, { type AxiosInstance } from "axios";
 import { parse as parseCookieHeader } from "cookie";
+import { createHash, randomBytes } from "crypto";
 import type { Request } from "express";
 import { SignJWT, jwtVerify } from "jose";
 import type { User } from "../../drizzle/schema";
@@ -22,10 +23,12 @@ export type SessionPayload = {
   openId: string;
   appId: string;
   name: string;
+  sessionId: string;
 };
 
 export type AuthenticatedUser = User & { taskUid?: string; isCron?: boolean };
 const CRON_OPEN_ID_PREFIX = "cron_";
+export const APP_SESSION_TTL_MS = 1000 * 60 * 60 * 12;
 
 const EXCHANGE_TOKEN_PATH = `/webdev.v1.WebDevAuthPublicService/ExchangeToken`;
 const GET_USER_INFO_PATH = `/webdev.v1.WebDevAuthPublicService/GetUserInfo`;
@@ -41,20 +44,15 @@ class OAuthService {
     }
   }
 
-  private decodeState(state: string): string {
-    const redirectUri = atob(state);
-    return redirectUri;
-  }
-
   async getTokenByCode(
     code: string,
-    state: string
+    redirectUri: string
   ): Promise<ExchangeTokenResponse> {
     const payload: ExchangeTokenRequest = {
       clientId: ENV.appId,
       grantType: "authorization_code",
       code,
-      redirectUri: this.decodeState(state),
+      redirectUri,
     };
 
     const { data } = await this.client.post<ExchangeTokenResponse>(
@@ -123,9 +121,9 @@ class SDKServer {
    */
   async exchangeCodeForToken(
     code: string,
-    state: string
+    redirectUri: string
   ): Promise<ExchangeTokenResponse> {
-    return this.oauthService.getTokenByCode(code, state);
+    return this.oauthService.getTokenByCode(code, redirectUri);
   }
 
   /**
@@ -159,7 +157,14 @@ class SDKServer {
 
   private getSessionSecret() {
     const secret = ENV.cookieSecret;
+    if (!secret || secret.length < 32) {
+      throw new Error("Session signing configuration is unavailable");
+    }
     return new TextEncoder().encode(secret);
+  }
+
+  private hashSessionId(sessionId: string) {
+    return createHash("sha256").update(sessionId).digest("hex");
   }
 
   /**
@@ -171,13 +176,22 @@ class SDKServer {
     openId: string,
     options: { expiresInMs?: number; name?: string } = {}
   ): Promise<string> {
+    const expiresInMs = options.expiresInMs ?? APP_SESSION_TTL_MS;
+    const sessionId = randomBytes(32).toString("base64url");
+    await db.createAppSession({
+      sessionIdHash: this.hashSessionId(sessionId),
+      openId,
+      appId: ENV.appId,
+      expiresAt: new Date(Date.now() + expiresInMs),
+    });
     return this.signSession(
       {
         openId,
         appId: ENV.appId,
         name: options.name || "",
+        sessionId,
       },
-      options
+      { expiresInMs }
     );
   }
 
@@ -186,7 +200,7 @@ class SDKServer {
     options: { expiresInMs?: number } = {}
   ): Promise<string> {
     const issuedAt = Date.now();
-    const expiresInMs = options.expiresInMs ?? ONE_YEAR_MS;
+    const expiresInMs = options.expiresInMs ?? APP_SESSION_TTL_MS;
     const expirationSeconds = Math.floor((issuedAt + expiresInMs) / 1000);
     const secretKey = this.getSessionSecret();
 
@@ -194,6 +208,7 @@ class SDKServer {
       openId: payload.openId,
       appId: payload.appId,
       name: payload.name,
+      sessionId: payload.sessionId,
     })
       .setProtectedHeader({ alg: "HS256", typ: "JWT" })
       .setExpirationTime(expirationSeconds)
@@ -202,7 +217,7 @@ class SDKServer {
 
   async verifySession(
     cookieValue: string | undefined | null
-  ): Promise<{ openId: string; appId: string; name: string } | null> {
+  ): Promise<{ openId: string; appId: string; name: string; sessionId: string } | null> {
     if (!cookieValue) {
       console.warn("[Auth] Missing session cookie");
       return null;
@@ -213,21 +228,23 @@ class SDKServer {
       const { payload } = await jwtVerify(cookieValue, secretKey, {
         algorithms: ["HS256"],
       });
-      const { openId, appId, name } = payload as Record<string, unknown>;
+      const { openId, appId, name, sessionId } = payload as Record<string, unknown>;
 
       if (
         !isNonEmptyString(openId) ||
         !isNonEmptyString(appId) ||
-        !isNonEmptyString(name)
+        !isNonEmptyString(sessionId) ||
+        appId !== ENV.appId
       ) {
-        console.warn("[Auth] Session payload missing required fields");
+        console.warn("[Auth] Session payload is incomplete or for another application");
         return null;
       }
 
       return {
         openId,
         appId,
-        name,
+        name: typeof name === "string" ? name : "",
+        sessionId,
       };
     } catch (error) {
       console.warn("[Auth] Session verification failed", String(error));
@@ -288,6 +305,18 @@ class SDKServer {
       } as AuthenticatedUser;
     }
 
+    const sessionRecord = await db.getAppSessionByHash(this.hashSessionId(session.sessionId));
+    if (
+      !sessionRecord ||
+      sessionRecord.openId !== session.openId ||
+      sessionRecord.appId !== ENV.appId ||
+      sessionRecord.revokedAt ||
+      sessionRecord.expiresAt.getTime() <= Date.now()
+    ) {
+      throw ForbiddenError("Session has expired or been revoked");
+    }
+    await db.touchAppSession(sessionRecord.sessionIdHash);
+
     const sessionUserId = session.openId;
     const signedInAt = new Date();
     let user = await db.getUserByOpenId(sessionUserId);
@@ -328,6 +357,12 @@ class SDKServer {
     }
 
     return user;
+  }
+
+  async revokeSessionToken(cookieValue: string | undefined | null) {
+    const session = await this.verifySession(cookieValue);
+    if (!session || session.openId.startsWith(CRON_OPEN_ID_PREFIX)) return;
+    await db.revokeAppSession(this.hashSessionId(session.sessionId));
   }
 }
 

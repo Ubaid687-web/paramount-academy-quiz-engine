@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createGenerationJob, updateGenerationJob, createAiGeneratedQuiz, addQuestionsToQuiz, getGenerationJob, getCachedGenerationResponse, putCachedGenerationResponse } from "./db";
+import { createGenerationJob, updateGenerationJob, getGenerationJob, getCachedGenerationResponse, putCachedGenerationResponse, saveAiGeneratedQuizOnce } from "./db";
 import { analyzeContent } from "./contentAnalyzer";
 import { buildDraftQualityChecks, hasTextbookAnchorEvidence, validateGeneratedMcqs, type GeneratedMcq } from "./quizDraftValidator";
 import type { InsertGenerationJob } from "../drizzle/schema";
@@ -538,8 +538,10 @@ export async function saveGeneratedQuizToDatabase(
     const validation = validateGeneratedMcqs(mcqs, job.numQuestions, [], citationCandidates, job.contentText);
     if (!validation.valid) throw new Error(`The completed MCQ result is no longer source-valid and cannot be saved. ${validation.issues.join(" ")}`);
 
-    // Create the quiz
-    const quiz = await createAiGeneratedQuiz({
+    const saved = await saveAiGeneratedQuizOnce({
+      userId,
+      jobId,
+      quiz: {
       title: quizTitle,
       description: `AI-generated quiz with ${mcqs.length} questions`,
       totalQuestions: mcqs.length,
@@ -573,26 +575,16 @@ export async function saveGeneratedQuizToDatabase(
           conceptKey: mcq.conceptKey,
           facetKey: mcq.facetKey,
           answerTarget: mcq.answerTarget,
-          question: mcq.question,
           sourceReference: mcq.sourceReference,
           learningObjective: mcq.learningObjective,
           assessmentMode: "mcq",
         })),
       }),
+      },
+      questionsList: mcqs,
     });
-
-    // Add questions to the quiz
-    await addQuestionsToQuiz(quiz.id, mcqs);
-
-    // Update the generation job with the quiz ID
-    await updateGenerationJob(jobId, { generatedQuizId: quiz.id });
-
-    return quiz;
+    return saved.quiz;
   } catch (error) {
-    await updateGenerationJob(jobId, {
-      status: "failed",
-      errorMessage: error instanceof Error ? error.message : "Failed to save quiz",
-    });
     throw error;
   }
 }
