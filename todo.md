@@ -834,3 +834,5 @@
 - [x] Add a server-side quiz-save claim and transaction so repeated teacher submissions cannot create duplicate quizzes or partial question records.
 - [x] Define and enforce bounded retention for transient generation results and expired exact-result cache records without affecting approved curriculum sources or reviewed papers.
 - [ ] Diagnose and repair the deployed Staff sign-in “Unsupported sign-in host” failure for the configured academy domain, with hostile-host regression coverage and real mobile redirect validation.
+- [ ] Resolve the confirmed publication block: checkpoint 7c7c3fe0 is marked Not published and the academy domain remains on an older OAuth handler; do not alter domain settings or rollback while platform support restores publication.
+- [ ] Diagnose and repair the confirmed mobile OAuth callback failure: account selection reaches the academy callback, which returns the safe `Sign-in could not be completed` response. Preserve browser-bound state, trusted-origin, cookie, and session safeguards while tracing the exact callback failure.

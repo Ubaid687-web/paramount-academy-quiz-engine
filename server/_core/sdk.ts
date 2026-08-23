@@ -157,10 +157,15 @@ class SDKServer {
 
   private getSessionSecret() {
     const secret = ENV.cookieSecret;
-    if (!secret || secret.length < 32) {
+    if (!secret) {
       throw new Error("Session signing configuration is unavailable");
     }
-    return new TextEncoder().encode(secret);
+    // The deployment secret is opaque platform configuration. Derive a fixed-size
+    // domain-separated HMAC key instead of treating its character count as entropy.
+    return createHash("sha256")
+      .update("paramount-academy/session-signing/v1\0", "utf8")
+      .update(secret, "utf8")
+      .digest();
   }
 
   private hashSessionId(sessionId: string) {

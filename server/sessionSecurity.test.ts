@@ -8,7 +8,7 @@ const { createAppSession, revokeAppSession } = vi.hoisted(() => ({
 vi.mock("./_core/env", () => ({
   ENV: {
     appId: "test-app",
-    cookieSecret: "test-session-signing-secret-with-32-bytes",
+    cookieSecret: "opaque-platform-key",
     oAuthServerUrl: "https://oauth.example.test",
   },
 }));
@@ -37,6 +37,15 @@ describe("server-backed application sessions", () => {
       sessionIdHash: expect.stringMatching(/^[a-f0-9]{64}$/),
       expiresAt: expect.any(Date),
     }));
+  });
+
+  it("signs and verifies sessions with an opaque non-empty managed secret", async () => {
+    const token = await sdk.createSessionToken("teacher-open-id", { name: "Teacher" });
+
+    await expect(sdk.verifySession(token)).resolves.toMatchObject({
+      openId: "teacher-open-id",
+      appId: "test-app",
+    });
   });
 
   it("revokes the stored session record instead of relying only on cookie deletion", async () => {

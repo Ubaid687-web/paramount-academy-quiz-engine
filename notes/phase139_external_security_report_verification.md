@@ -65,3 +65,22 @@ Transient generation jobs now receive a 30-day retention deadline. On normal gen
 The full test suite completed with 49 passing test files, 239 passing tests, and one credential-gated suite containing three skipped tests. TypeScript validation, production build, frozen-lockfile installation, production dependency audit, standard Drizzle migration execution, focused upload/OCR/auth/provider/generation regressions, and signed-out visual route checks completed successfully. The custom OCR runtime image retains its required system binaries and now installs with `pnpm install --frozen-lockfile`.
 
 This remediation evidence does not grant production approval. The remaining real-data release gate is the owner-run Grade 9 Chemistry actual-PDF intake, resume/recovery, OCR review, source activation, and selected-scope generation acceptance flow. No source will be fabricated or substituted for that gate.
+
+## Post-checkpoint OAuth publication evidence — 2026-08-23
+
+- Checkpoint `7c7c3fe0` contains the proxy-safe OAuth origin repair and passed the full local suite (240 tests passing, three credential-gated skips) plus the production build.
+- The public academy home route at `https://aiquizhub-g2y5mute.manus.space/` was rechecked after deployment propagation and rendered the Grade 9/10 selection screen with its Staff sign-in entry.
+- A public OAuth-start probe carrying the allow-listed browser origin redirected to the official Manus sign-in route rather than returning the previous `Unsupported sign-in host` response. Real-device sign-in and callback completion remain an owner verification step.
+- A subsequent public availability check also rendered the academy home screen with its Staff sign-in entry; the protected callback completion remains untested until the owner signs in on their own device.
+- The published academy home route was rechecked again after sharing the link with the owner and completed loading with the Staff sign-in entry visible.
+- A further public navigation check confirmed the academy home screen again completes loading with the Staff sign-in entry; only the owner-controlled sign-in callback remains to be confirmed.
+- The academy link was subsequently rechecked and again loaded the Grade 9/10 home screen with the Staff sign-in entry; no unsupported-host response was observed in the public start path.
+- The academy home screen was rechecked once more and completed loading with the Staff sign-in entry visible; real-device callback completion remains the only pending OAuth validation.
+
+## Owner-reproduced callback failure and targeted repair — 2026-08-23
+
+The owner completed the public account-selection step with the Portal Admin-linked Manus account. The official Manus account chooser returned to the academy callback, which then returned the safe response `{"error":"Sign-in could not be completed"}`. This excludes the previous public-host rejection and provides direct evidence that the failure occurs after browser-bound state verification.
+
+Production logs identified the exact failure: `Session signing configuration is unavailable`. The Phase 139 session implementation had added a character-count requirement to the platform-provided opaque `JWT_SECRET`; production startup checked only that the configuration existed, so the application could load and begin OAuth but the callback failed while issuing its server-backed session. This was an application regression, not an owner-account error.
+
+The targeted repair keeps the required non-empty secret, browser-bound OAuth state, host-only state cookie, twelve-hour server-backed session, revocation record, trusted-origin validation, and safe generic callback errors. It derives a fixed 256-bit domain-separated HMAC signing key from the opaque managed secret rather than assuming that the secret's displayed character length represents entropy. The focused session regression now exercises a short opaque managed-secret value; the full local suite passes with 49 test files, 241 tests, and three credential-gated skips. TypeScript and the production build also pass. Deployment and a second owner real-device sign-in remain required before this can be marked complete.
