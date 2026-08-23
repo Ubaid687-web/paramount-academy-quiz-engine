@@ -1,8 +1,9 @@
 import { z } from "zod";
 import { createHash, randomUUID } from "node:crypto";
-import { COOKIE_NAME } from "@shared/const";
+import { COOKIE_NAME, SESSION_ORIGIN_COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { ENV } from "./_core/env";
+import { getSessionBoundOrigin } from "./_core/oauthState";
 import { sdk } from "./_core/sdk";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, publicProcedure, protectedProcedure, router, teacherProcedure } from "./_core/trpc";
@@ -203,10 +204,15 @@ export const appRouter = router({
         role: ctx.user.role,
       };
     }),
+    sessionStatus: publicProcedure.query(({ ctx }) => ({
+      authenticated: Boolean(ctx.user),
+      originBound: Boolean(getSessionBoundOrigin(ctx.req)),
+    })),
     logout: publicProcedure.mutation(async ({ ctx }) => {
       await sdk.revokeSessionToken(ctx.req.headers.cookie);
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
+      ctx.res.clearCookie(SESSION_ORIGIN_COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return {
         success: true,
       } as const;

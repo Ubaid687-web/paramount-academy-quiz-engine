@@ -8,6 +8,7 @@ const invalidate = vi.fn();
 const getLargePdfUploadStatus = vi.fn();
 const getPaperPatternSourceDownload = vi.fn();
 const getCurrentAuthUser = vi.fn();
+const getCurrentSessionStatus = vi.fn();
 const setPaperSourceStudentLibraryStatus = { mutateAsync: vi.fn(), isPending: false };
 type ChunkAcknowledgement = { receivedBytes: number; fileSize: number; complete: boolean; nextChunkIndex: number; expiresAt: number };
 const authMock = vi.hoisted(() => ({ role: "admin" as "admin" | "teacher" }));
@@ -50,7 +51,7 @@ const grade9ChemistryDetails = {
 
 vi.mock("@/lib/trpc", () => ({
   trpc: {
-    useUtils: () => ({ auth: { me: { fetch: getCurrentAuthUser } }, curriculum: { listSets: { invalidate }, listProgrammes: { invalidate }, getManagementDetails: { invalidate }, getLargePdfUploadStatus: { fetch: getLargePdfUploadStatus }, getPaperPatternSourceDownload: { fetch: getPaperPatternSourceDownload } }, generation: { getProviderSettings: { invalidate }, listHistory: { invalidate }, getStyleAnchor: { invalidate } } }),
+    useUtils: () => ({ auth: { me: { fetch: getCurrentAuthUser }, sessionStatus: { fetch: getCurrentSessionStatus } }, curriculum: { listSets: { invalidate }, listProgrammes: { invalidate }, getManagementDetails: { invalidate }, getLargePdfUploadStatus: { fetch: getLargePdfUploadStatus }, getPaperPatternSourceDownload: { fetch: getPaperPatternSourceDownload } }, generation: { getProviderSettings: { invalidate }, listHistory: { invalidate }, getStyleAnchor: { invalidate } } }),
     curriculum: {
       listSets: { useQuery: (_input?: unknown, options?: { enabled?: boolean }) => { queryOptions.listSets.push(Boolean(options?.enabled)); return { data: [managementDetails.curriculumSet, grade9ChemistrySet, archivedChemistrySet], isLoading: false, error: null }; } },
       listProgrammes: { useQuery: (_input?: unknown, options?: { enabled?: boolean }) => { queryOptions.listProgrammes.push(Boolean(options?.enabled)); return { data: [{ id: 11, board: "FBISE", grade: "10", subject: "physics", teacherLabel: "Physics", status: "ready" }, grade9ChemistryProgramme], isLoading: false, error: null }; } },
@@ -83,9 +84,10 @@ vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 describe("Curriculum Library Release 1", () => {
   beforeEach(() => {
     getCurrentAuthUser.mockResolvedValue({ id: 1, role: "admin" });
+    getCurrentSessionStatus.mockResolvedValue({ authenticated: true, originBound: true });
   });
 
-  afterEach(() => { cleanup(); invalidate.mockReset(); getLargePdfUploadStatus.mockReset(); getPaperPatternSourceDownload.mockReset(); getCurrentAuthUser.mockReset(); noOpMutation.mutateAsync.mockReset(); setPaperSourceStudentLibraryStatus.mutateAsync.mockReset(); window.sessionStorage.clear(); Object.defineProperty(document, "hidden", { configurable: true, value: false }); Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" }); queryOptions.listSets.length = 0; queryOptions.listProgrammes.length = 0; queryOptions.staffDirectory.length = 0; authMock.role = "admin"; window.history.pushState({}, "", "/"); });
+  afterEach(() => { cleanup(); invalidate.mockReset(); getLargePdfUploadStatus.mockReset(); getPaperPatternSourceDownload.mockReset(); getCurrentAuthUser.mockReset(); getCurrentSessionStatus.mockReset(); noOpMutation.mutateAsync.mockReset(); setPaperSourceStudentLibraryStatus.mutateAsync.mockReset(); window.sessionStorage.clear(); Object.defineProperty(document, "hidden", { configurable: true, value: false }); Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" }); queryOptions.listSets.length = 0; queryOptions.listProgrammes.length = 0; queryOptions.staffDirectory.length = 0; authMock.role = "admin"; window.history.pushState({}, "", "/"); });
 
   it("shows one focused Portal Admin task at a time while preserving every administrative workflow", async () => {
     render(<CurriculumManagement />);
@@ -438,7 +440,23 @@ describe("Curriculum Library Release 1", () => {
     fireEvent.change(await screen.findByLabelText("Focused curriculum source upload"), { target: { files: [file] } });
 
     expect(await screen.findByTestId("textbook-upload-recovery")).toBeTruthy();
-    expect(screen.getByText(/current Portal Admin session is no longer active/i)).toBeTruthy();
+    expect(screen.getByText(/needs a fresh secure sign-in/i)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Staff sign in" })).toBeTruthy();
+    expect(noOpMutation.mutateAsync).not.toHaveBeenCalledWith(expect.objectContaining({ curriculumSetId: grade9ChemistrySet.id, fileName: file.name, fileSize: file.size }));
+  });
+
+  it("requires a fresh sign-in before a protected Grade 9 upload when an older session lacks its origin binding", async () => {
+    window.history.pushState({}, "", "/curriculum?grade=9&intake=subject");
+    getCurrentSessionStatus.mockResolvedValueOnce({ authenticated: true, originBound: false });
+    render(<CurriculumManagement />);
+
+    fireEvent.change(screen.getByLabelText("Subject name"), { target: { value: "Chemistry" } });
+    fireEvent.click(screen.getByRole("button", { name: "Continue to textbook upload" }));
+    const file = new File([new Uint8Array((30 * 1024 * 1024) + 1)], "grade-9-chemistry.pdf", { type: "application/pdf" });
+    fireEvent.change(await screen.findByLabelText("Focused curriculum source upload"), { target: { files: [file] } });
+
+    expect(await screen.findByTestId("textbook-upload-recovery")).toBeTruthy();
+    expect(screen.getByText(/needs a fresh secure sign-in/i)).toBeTruthy();
     expect(screen.getByRole("button", { name: "Staff sign in" })).toBeTruthy();
     expect(noOpMutation.mutateAsync).not.toHaveBeenCalledWith(expect.objectContaining({ curriculumSetId: grade9ChemistrySet.id, fileName: file.name, fileSize: file.size }));
   });

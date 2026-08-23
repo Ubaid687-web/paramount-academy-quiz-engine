@@ -666,8 +666,10 @@ export default function CurriculumManagement() {
       return;
     }
     let freshUser: { role?: string } | null | undefined;
+    let sessionStatus: { authenticated: boolean; originBound: boolean } | undefined;
     try {
       freshUser = await utils.auth.me.fetch();
+      sessionStatus = await utils.auth.sessionStatus.fetch();
     } catch (error) {
       recoveryFileRef.current = file;
       setTextbookUploadRecovery({
@@ -678,14 +680,14 @@ export default function CurriculumManagement() {
       toast.error("Your staff session could not be confirmed. Sign in again before uploading this same textbook.");
       return;
     }
-    if (freshUser?.role !== "admin") {
+    if (freshUser?.role !== "admin" || !sessionStatus?.authenticated || !sessionStatus.originBound) {
       recoveryFileRef.current = file;
       setTextbookUploadRecovery({
         kind: "session_ended",
         fileName: file.name,
-        message: "Your current Portal Admin session is no longer active. Sign in again before starting a protected upload session.",
+        message: "Your current Portal Admin session needs a fresh secure sign-in before starting a protected upload session. Sign in again, then continue this same draft.",
       });
-      toast.error("Your secure staff session ended. Sign in again before uploading this same textbook.");
+      toast.error("A fresh secure staff sign-in is required before uploading this same textbook.");
       return;
     }
     setIsUploading(true);

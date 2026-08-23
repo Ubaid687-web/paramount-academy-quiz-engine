@@ -11,7 +11,7 @@ import { runOcrExtractionWorker } from "../ocrWorkerRoute";
 import { registerOcrReviewRoutes } from "../ocrReviewRoute";
 import { serveStatic, setupVite } from "./vite";
 import { ENV } from "./env";
-import { getTrustedRequestOrigin } from "./oauthState";
+import { getSessionBoundOrigin, getTrustedRequestOrigin } from "./oauthState";
 import { attachRequestTrace, getRequestTraceId, isAuthTracePath } from "./requestTrace";
 
 function assertProductionConfiguration() {
@@ -47,7 +47,8 @@ function enforceSameOriginForCookieMutations(req: express.Request, res: express.
     res.status(403).json({ error: "A same-origin request is required." });
     return;
   }
-  if (origin && origin !== getTrustedRequestOrigin(req)) {
+  const expectedOrigin = getSessionBoundOrigin(req) ?? getTrustedRequestOrigin(req);
+  if (origin && origin !== expectedOrigin) {
     res.status(403).json({ error: "Cross-origin requests are not accepted." });
     return;
   }

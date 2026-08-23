@@ -1,9 +1,9 @@
-import { COOKIE_NAME, OAUTH_STATE_COOKIE_NAME } from "@shared/const";
+import { COOKIE_NAME, OAUTH_STATE_COOKIE_NAME, SESSION_ORIGIN_COOKIE_NAME } from "@shared/const";
 import type { Express, Request, Response } from "express";
 import * as db from "../db";
 import { getOAuthStateCookieOptions, getSessionCookieOptions } from "./cookies";
 import { ENV } from "./env";
-import { createOAuthStateRecord, getOAuthStartOrigin, normalizeReturnPath, OAUTH_STATE_TTL_MS, verifyOAuthState } from "./oauthState";
+import { createOAuthStateRecord, createSessionOriginBinding, getOAuthStartOrigin, normalizeReturnPath, OAUTH_STATE_TTL_MS, SESSION_ORIGIN_TTL_MS, verifyOAuthState } from "./oauthState";
 import { sdk } from "./sdk";
 import { getRequestTraceId } from "./requestTrace";
 
@@ -63,9 +63,12 @@ export function registerOAuthRoutes(app: Express) {
       });
 
       const sessionToken = await sdk.createSessionToken(userInfo.openId, { name: userInfo.name || "" });
+      const originBinding = createSessionOriginBinding(stateRecord.origin);
+      if (!originBinding) throw new Error("Session origin binding could not be created");
 
       const cookieOptions = getSessionCookieOptions(req);
       res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: 1000 * 60 * 60 * 12 });
+      res.cookie(SESSION_ORIGIN_COOKIE_NAME, originBinding, { ...cookieOptions, maxAge: SESSION_ORIGIN_TTL_MS });
       res.clearCookie(OAUTH_STATE_COOKIE_NAME, { ...getOAuthStateCookieOptions(req), maxAge: -1 });
 
       console.info(`[AuthTrace] requestId=${requestId} path=oauth.callback state=session_cookie_set`);
