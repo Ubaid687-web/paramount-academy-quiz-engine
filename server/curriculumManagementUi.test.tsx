@@ -372,12 +372,17 @@ describe("Curriculum Library Release 1", () => {
 
     expect(await screen.findByTestId("incomplete-textbook-upload-draft")).toBeTruthy();
     expect(screen.getByText("grade-9-chemistry.pdf")).toBeTruthy();
-    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
     fireEvent.click(screen.getByRole("button", { name: "Clear unfinished session" }));
+    expect(await screen.findByRole("alertdialog")).toBeTruthy();
+    expect(screen.getByText("Remove this unfinished upload?")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Keep upload" }));
+    expect(window.sessionStorage.getItem("paramount-resumable-textbook-upload")).not.toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Clear unfinished session" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Remove unfinished upload" }));
     expect(window.sessionStorage.getItem("paramount-resumable-textbook-upload")).toBeNull();
     expect(await screen.findByText("No unfinished textbook uploads on this browser.")).toBeTruthy();
     expect(noOpMutation.mutateAsync).not.toHaveBeenCalled();
-    confirmSpy.mockRestore();
 
     cleanup();
     window.sessionStorage.setItem("paramount-resumable-textbook-upload", JSON.stringify({ uploadToken: "drafts-token", chunkBytes: 10 * 1024 * 1024, curriculumSetId: grade9ChemistrySet.id, fileName: "grade-9-chemistry.pdf", fileSize, fileLastModified: 1710000000000, receivedBytes: 10 * 1024 * 1024, nextChunkIndex: 1, expiresAt: 9999999999999 }));

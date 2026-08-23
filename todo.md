@@ -787,3 +787,7 @@
 - [x] Add a focused Drafts section that lists incomplete uploads and routes Portal Admin to resume the correct existing subject intake.
 - [x] Add a non-destructive clear-session action that removes only the local unfinished-transfer record, never a stored source or curriculum record.
 - [x] Add visibility, resume, and safe-clear regressions; validate, publish, and synchronize GitHub.
+
+## Phase 135: In-App Incomplete Upload Deletion Confirmation
+- [x] Replace the browser deletion prompt with an accessible in-app modal that states the exact safe removal boundary.
+- [x] Add confirmation and cancellation regressions; validate, publish, and synchronize GitHub.
