@@ -52,6 +52,9 @@ export async function runOcrExtractionWorker(req: Request, res: Response) {
         startPage: job.nextPage,
         totalPages,
       });
+      // A batch that yields no pages would leave nextPage unchanged and loop forever.
+      // Treat it as a failure so the retry/terminal accounting can recover or escalate.
+      if (!pages.length) throw new Error("OCR produced no pages for this batch.");
       const transcript = mergeOcrTranscript(source.extractedText, pages);
       const allPages = parseOcrTranscript(transcript);
       await replaceCurriculumSourcePageReviews(source.id, assessExtractedSourceQuality(allPages));
@@ -64,12 +67,16 @@ export async function runOcrExtractionWorker(req: Request, res: Response) {
           extractionError: null,
           extractedAt: new Date(),
         });
-        await updateOcrExtractionJob(job.id, { status: "completed", nextPage, errorMessage: null, completedAt: new Date() });
+        // Progress was made, so clear the retry counter: it must track consecutive
+        // failures at the current page, not the total number of batches processed.
+        await updateOcrExtractionJob(job.id, { status: "completed", nextPage, errorMessage: null, completedAt: new Date(), attemptCount: 0 });
         return res.json({ ok: true, completedJobId: job.id, pagesProcessed: pages.length });
       }
 
       await updateCurriculumSourceExtraction(source.id, { extractionStatus: "pending", extractedText: transcript, extractionError: null });
-      await updateOcrExtractionJob(job.id, { status: "pending", nextPage, errorMessage: null });
+      // Advancing the cursor means this batch succeeded; reset the retry counter so a
+      // long (many-batch) document is never marked terminal just for being large.
+      await updateOcrExtractionJob(job.id, { status: "pending", nextPage, errorMessage: null, attemptCount: 0 });
       return res.json({ ok: true, jobId: job.id, nextPage, pagesProcessed: pages.length });
     } catch (error) {
       const message = error instanceof Error ? error.message : "OCR processing failed.";
