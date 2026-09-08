@@ -12,7 +12,8 @@ import { registerCurriculumChunkRoute } from "../curriculumChunkRoute";
 import { registerOcrReviewRoutes } from "../ocrReviewRoute";
 import { serveStatic, setupVite } from "./vite";
 import { ENV } from "./env";
-import { getTrustedRequestOrigin } from "./oauthState";
+import { parse as parseCookieHeader } from "cookie";
+import { getTrustedRequestOrigin, ORIGIN_BINDING_COOKIE_NAME, verifyOriginBinding } from "./oauthState";
 
 function assertProductionConfiguration() {
   if (!ENV.isProduction) return;
@@ -47,9 +48,15 @@ function enforceSameOriginForCookieMutations(req: express.Request, res: express.
     res.status(403).json({ error: "A same-origin request is required." });
     return;
   }
-  if (origin && origin !== getTrustedRequestOrigin(req)) {
-    res.status(403).json({ error: "Cross-origin requests are not accepted." });
-    return;
+  if (origin) {
+    const binding = parseCookieHeader(req.headers.cookie ?? "")[ORIGIN_BINDING_COOKIE_NAME];
+    const hasVerifiedBinding = Boolean(binding) && verifyOriginBinding(req, origin);
+    const trustedRequestOrigin = getTrustedRequestOrigin(req);
+    const isLocalDevelopment = trustedRequestOrigin !== null && trustedRequestOrigin === origin;
+    if (!hasVerifiedBinding && !isLocalDevelopment) {
+      res.status(403).json({ error: "This session must be refreshed before a protected action can continue." });
+      return;
+    }
   }
   next();
 }

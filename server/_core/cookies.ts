@@ -57,3 +57,14 @@ export function getOAuthStateCookieOptions(
     secure: isSecureRequest(req),
   };
 }
+
+export function getOriginBindingCookieOptions(
+  req: Request
+): Pick<CookieOptions, "httpOnly" | "path" | "sameSite" | "secure"> {
+  return {
+    httpOnly: true,
+    path: "/",
+    sameSite: "lax",
+    secure: isSecureRequest(req),
+  };
+}

@@ -1,9 +1,9 @@
 import { COOKIE_NAME, OAUTH_STATE_COOKIE_NAME } from "@shared/const";
 import type { Express, Request, Response } from "express";
 import * as db from "../db";
-import { getOAuthStateCookieOptions, getSessionCookieOptions } from "./cookies";
+import { getOAuthStateCookieOptions, getOriginBindingCookieOptions, getSessionCookieOptions } from "./cookies";
 import { ENV } from "./env";
-import { createOAuthStateRecord, getOAuthStartOrigin, normalizeReturnPath, OAUTH_STATE_TTL_MS, verifyOAuthState } from "./oauthState";
+import { createOAuthStateRecord, createOriginBinding, getOAuthStartOrigin, normalizeReturnPath, OAUTH_STATE_TTL_MS, ORIGIN_BINDING_COOKIE_NAME, ORIGIN_BINDING_TTL_MS, verifyOAuthState } from "./oauthState";
 import { sdk } from "./sdk";
 
 function getQueryParam(req: Request, key: string): string | undefined {
@@ -60,6 +60,7 @@ export function registerOAuthRoutes(app: Express) {
 
       const cookieOptions = getSessionCookieOptions(req);
       res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: 1000 * 60 * 60 * 12 });
+      res.cookie(ORIGIN_BINDING_COOKIE_NAME, createOriginBinding(stateRecord.origin), { ...getOriginBindingCookieOptions(req), maxAge: ORIGIN_BINDING_TTL_MS });
       res.clearCookie(OAUTH_STATE_COOKIE_NAME, { ...getOAuthStateCookieOptions(req), maxAge: -1 });
 
       res.redirect(302, stateRecord.returnPath);

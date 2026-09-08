@@ -1,7 +1,11 @@
-import { randomBytes, timingSafeEqual } from "crypto";
+import { createHmac, randomBytes, timingSafeEqual } from "crypto";
 import type { Request } from "express";
 import { parse as parseCookieHeader } from "cookie";
 import { OAUTH_STATE_COOKIE_NAME } from "@shared/const";
+import { ENV } from "./env";
+
+export const ORIGIN_BINDING_COOKIE_NAME = "__Host-academy-origin";
+export const ORIGIN_BINDING_TTL_MS = 1000 * 60 * 60 * 12;
 
 export const OAUTH_STATE_TTL_MS = 1000 * 60 * 10;
 
@@ -32,6 +36,38 @@ export function getTrustedRequestOrigin(req: Request) {
 /** Prefer the browser-provided, allow-listed frontend origin when a managed proxy does not preserve the public Host header. */
 export function getOAuthStartOrigin(req: Request, requestedOrigin: unknown) {
   return normalizeTrustedOrigin(requestedOrigin) ?? getTrustedRequestOrigin(req);
+}
+
+function originBindingSignature(payload: string) {
+  return createHmac("sha256", ENV.cookieSecret || "development-origin-binding-secret").update(payload).digest("base64url");
+}
+
+export function createOriginBinding(origin: string, now = Date.now()) {
+  const normalized = normalizeTrustedOrigin(origin);
+  if (!normalized) throw new Error("Cannot bind an untrusted origin.");
+  const payload = Buffer.from(`${normalized}|${now + ORIGIN_BINDING_TTL_MS}`).toString("base64url");
+  return `${payload}.${originBindingSignature(payload)}`;
+}
+
+export function verifyOriginBinding(req: Request, expectedOrigin: string, now = Date.now()) {
+  const cookieValue = parseCookieHeader(req.headers.cookie ?? "")[ORIGIN_BINDING_COOKIE_NAME];
+  const separator = cookieValue?.lastIndexOf(".") ?? -1;
+  if (!cookieValue || separator <= 0) return false;
+  const payload = cookieValue.slice(0, separator);
+  const signature = cookieValue.slice(separator + 1);
+  const expectedSignature = originBindingSignature(payload);
+  const actualBytes = Buffer.from(signature);
+  const expectedBytes = Buffer.from(expectedSignature);
+  if (actualBytes.length !== expectedBytes.length || !timingSafeEqual(actualBytes, expectedBytes)) return false;
+  try {
+    const decoded = Buffer.from(payload, "base64url").toString("utf8");
+    const divider = decoded.lastIndexOf("|");
+    const origin = normalizeTrustedOrigin(decoded.slice(0, divider));
+    const expiresAt = Number(decoded.slice(divider + 1));
+    return origin === normalizeTrustedOrigin(expectedOrigin) && Number.isSafeInteger(expiresAt) && now <= expiresAt;
+  } catch {
+    return false;
+  }
 }
 
 export function normalizeReturnPath(value: unknown) {

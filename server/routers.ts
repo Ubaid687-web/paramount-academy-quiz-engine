@@ -1,8 +1,9 @@
 import { z } from "zod";
 import { createHash, randomUUID } from "node:crypto";
 import { COOKIE_NAME } from "@shared/const";
-import { getSessionCookieOptions } from "./_core/cookies";
+import { getOriginBindingCookieOptions, getSessionCookieOptions } from "./_core/cookies";
 import { ENV } from "./_core/env";
+import { ORIGIN_BINDING_COOKIE_NAME } from "./_core/oauthState";
 import { sdk } from "./_core/sdk";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, publicProcedure, protectedProcedure, router, teacherProcedure } from "./_core/trpc";
@@ -207,6 +208,7 @@ export const appRouter = router({
       await sdk.revokeSessionToken(ctx.req.headers.cookie);
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
+      ctx.res.clearCookie(ORIGIN_BINDING_COOKIE_NAME, { ...getOriginBindingCookieOptions(ctx.req), maxAge: -1 });
       return {
         success: true,
       } as const;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Request } from "express";
-import { createOAuthStateRecord, getOAuthStartOrigin, getTrustedRequestOrigin, normalizeReturnPath, normalizeTrustedOrigin, verifyOAuthState } from "./_core/oauthState";
+import { createOAuthStateRecord, createOriginBinding, getOAuthStartOrigin, getTrustedRequestOrigin, normalizeReturnPath, normalizeTrustedOrigin, ORIGIN_BINDING_COOKIE_NAME, ORIGIN_BINDING_TTL_MS, verifyOAuthState, verifyOriginBinding } from "./_core/oauthState";
 import { OAUTH_STATE_COOKIE_NAME } from "../shared/const";
 
 function requestWith(headers: Record<string, string | undefined>, protocol = "https") {
@@ -27,6 +27,18 @@ describe("browser-bound OAuth state", () => {
     expect(getTrustedRequestOrigin(requestWith({ host: "attacker.example" }))).toBeNull();
     expect(normalizeTrustedOrigin("https://aiquizhub-g2y5mute.manus.space")).toBe("https://aiquizhub-g2y5mute.manus.space");
     expect(normalizeTrustedOrigin("https://attacker.example")).toBeNull();
+  });
+
+  it("accepts only a valid, unexpired OAuth origin binding for the browser origin", () => {
+    const now = 1_800_000_000_000;
+    const origin = "https://aiquizhub-g2y5mute.manus.space";
+    const binding = createOriginBinding(origin, now);
+    const request = requestWith({ cookie: `${ORIGIN_BINDING_COOKIE_NAME}=${binding}` });
+    expect(verifyOriginBinding(request, origin, now)).toBe(true);
+    expect(verifyOriginBinding(request, "https://other.manus.space", now)).toBe(false);
+    expect(verifyOriginBinding(request, origin, now + ORIGIN_BINDING_TTL_MS + 1)).toBe(false);
+    const tampered = `${binding.slice(0, -1)}${binding.endsWith("a") ? "b" : "a"}`;
+    expect(verifyOriginBinding(requestWith({ cookie: `${ORIGIN_BINDING_COOKIE_NAME}=${tampered}` }), origin, now)).toBe(false);
   });
 
   it("uses the browser's allow-listed academy origin when a managed proxy supplies an internal host", () => {

@@ -843,3 +843,5 @@
 - [x] Reconcile the binary chunk-upload UI test fixtures with the durable acknowledgement response and replace the obsolete generic retry expectation with safe conflict recovery coverage.
 - [x] Complete the final full-suite validation and production build for the 150MB textbook intake release. Full suite passes: 49 files, 237 tests, 3 credential-gated skips; production build passes with only the existing large-client-chunk warning.
 - [ ] Save and synchronize the validated release checkpoint for owner acceptance.
+
+- [x] Repair the confirmed public production regression: the same-origin mutation guard now accepts only a valid expiring OAuth-verified origin binding for public protected mutations, while preserving CSRF protection, hostile-origin rejection, local development behavior, and Portal Admin authorization. Full validation passes: 49 files, 238 tests, 3 credential-gated skips; production build passes with only the existing large-client-chunk warning.
