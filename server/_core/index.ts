@@ -8,6 +8,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { registerPdfExportRoutes } from "../pdfExportRoute";
 import { runOcrExtractionWorker } from "../ocrWorkerRoute";
+import { registerCurriculumChunkRoute } from "../curriculumChunkRoute";
 import { registerOcrReviewRoutes } from "../ocrReviewRoute";
 import { serveStatic, setupVite } from "./vite";
 import { ENV } from "./env";
@@ -87,6 +88,8 @@ async function startServer() {
   app.use(enforceSameOriginForCookieMutations);
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
+  // Protected textbook chunks use bounded raw binary bodies; metadata remains in tRPC.
+  registerCurriculumChunkRoute(app);
   // tRPC API
   app.use(
     "/api/trpc",

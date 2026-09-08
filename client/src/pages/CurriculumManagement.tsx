@@ -120,6 +120,49 @@ function fileToBase64(file: Blob): Promise<string> {
   });
 }
 
+type BinaryChunkAcknowledgement = {
+  receivedBytes: number;
+  fileSize: number;
+  nextChunkIndex: number;
+  revision: number;
+  complete: boolean;
+  expiresAt: number;
+  sourceId: number | null;
+  acknowledgement: "committed" | "already_committed" | "pending" | "reconcile";
+  retryAfterMs?: number;
+};
+
+async function uploadBinaryChunk(input: { uploadToken: string; chunkIndex: number; expectedRevision: number; chunk: Blob }): Promise<BinaryChunkAcknowledgement> {
+  const response = await fetch("/api/curriculum/upload-chunk", {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "content-type": "application/octet-stream",
+      "x-upload-token": input.uploadToken,
+      "x-chunk-index": String(input.chunkIndex),
+      "x-expected-revision": String(input.expectedRevision),
+    },
+    body: input.chunk,
+  });
+  const raw = await response.text();
+  let payload: unknown = null;
+  try {
+    payload = raw ? JSON.parse(raw) : null;
+  } catch {
+    throw new Error(`The upload server returned an invalid response (${response.status}).`);
+  }
+  if (!response.ok) {
+    const message = payload && typeof payload === "object" && "error" in payload && typeof payload.error === "string"
+      ? payload.error
+      : `The upload server rejected this chunk (${response.status}).`;
+    throw new Error(message);
+  }
+  if (!payload || typeof payload !== "object" || !("acknowledgement" in payload)) {
+    throw new Error("The upload server returned an incomplete chunk acknowledgement.");
+  }
+  return payload as BinaryChunkAcknowledgement;
+}
+
 function isTemporaryUploadServiceError(error: unknown) {
   const message = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
   return message.includes("service unavailable") || message.includes("unexpected token") || message.includes("failed to fetch") || message.includes("networkerror") || message.includes("fetch failed");
@@ -343,7 +386,6 @@ export default function CurriculumManagement() {
   const replaceActiveSet = trpc.curriculum.replaceActiveSet.useMutation();
   const ingestSource = trpc.curriculum.ingestSource.useMutation();
   const prepareLargePdfUpload = trpc.curriculum.prepareLargePdfUpload.useMutation();
-  const appendLargePdfChunk = trpc.curriculum.appendLargePdfChunk.useMutation();
   const completeLargePdfUpload = trpc.curriculum.completeLargePdfUpload.useMutation();
   const ingestPaperPatternSource = trpc.curriculum.ingestPaperPatternSource.useMutation();
   const activatePaperPatternSource = trpc.curriculum.activatePaperPatternSource.useMutation();
@@ -686,11 +728,11 @@ export default function CurriculumManagement() {
             const chunk = file.slice(offset, Math.min(offset + prepared.chunkBytes, file.size));
             let acknowledgement;
             try {
-              acknowledgement = await retryTemporaryUploadRequest(async () => appendLargePdfChunk.mutateAsync({
+              acknowledgement = await retryTemporaryUploadRequest(() => uploadBinaryChunk({
                 uploadToken: activeUpload.uploadToken,
                 chunkIndex,
                 expectedRevision: activeUpload.revision ?? 0,
-                fileBuffer: await fileToBase64(chunk),
+                chunk,
               }));
             } catch (error) {
               throw error;

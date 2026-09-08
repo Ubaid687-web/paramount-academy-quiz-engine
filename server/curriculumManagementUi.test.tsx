@@ -4,11 +4,27 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-libra
 import CurriculumManagement from "../client/src/pages/CurriculumManagement";
 
 const noOpMutation = { mutateAsync: vi.fn(), isPending: false };
+const binaryChunkFetch = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+  const headers = (init?.headers ?? {}) as Record<string, string>;
+  const input = {
+    uploadToken: headers["x-upload-token"],
+    chunkIndex: Number(headers["x-chunk-index"]),
+    expectedRevision: Number(headers["x-expected-revision"]),
+    fileBuffer: "binary-test-fixture",
+  };
+  try {
+    const payload = await noOpMutation.mutateAsync(input);
+    return { ok: true, status: 200, text: async () => JSON.stringify(payload) } as Response;
+  } catch (error) {
+    return { ok: false, status: 400, text: async () => JSON.stringify({ error: error instanceof Error ? error.message : "upload failed" }) } as Response;
+  }
+});
+vi.stubGlobal("fetch", binaryChunkFetch);
 const invalidate = vi.fn();
 const getLargePdfUploadStatus = vi.fn();
 const getPaperPatternSourceDownload = vi.fn();
 const setPaperSourceStudentLibraryStatus = { mutateAsync: vi.fn(), isPending: false };
-type ChunkAcknowledgement = { receivedBytes: number; fileSize: number; complete: boolean; nextChunkIndex: number; revision?: number; expiresAt: number };
+type ChunkAcknowledgement = { receivedBytes: number; fileSize: number; complete: boolean; nextChunkIndex: number; revision?: number; expiresAt: number; acknowledgement?: "committed" | "already_committed" };
 
 function largePdfFixture(name: string, size: number, lastModified?: number) {
   const file = new File(["x"], name, { type: "application/pdf", lastModified });
@@ -87,7 +103,7 @@ vi.mock("@/_core/hooks/useAuth", () => ({ useAuth: () => ({ user: { id: 1, role:
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 describe("Curriculum Library Release 1", () => {
-  afterEach(() => { cleanup(); invalidate.mockReset(); getLargePdfUploadStatus.mockReset(); getPaperPatternSourceDownload.mockReset(); noOpMutation.mutateAsync.mockReset(); setPaperSourceStudentLibraryStatus.mutateAsync.mockReset(); window.sessionStorage.clear(); Object.defineProperty(document, "hidden", { configurable: true, value: false }); Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" }); queryOptions.listSets.length = 0; queryOptions.listProgrammes.length = 0; queryOptions.staffDirectory.length = 0; authMock.role = "admin"; window.history.pushState({}, "", "/"); });
+  afterEach(() => { cleanup(); invalidate.mockReset(); getLargePdfUploadStatus.mockReset(); getPaperPatternSourceDownload.mockReset(); noOpMutation.mutateAsync.mockReset(); binaryChunkFetch.mockClear(); setPaperSourceStudentLibraryStatus.mutateAsync.mockReset(); window.sessionStorage.clear(); Object.defineProperty(document, "hidden", { configurable: true, value: false }); Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" }); queryOptions.listSets.length = 0; queryOptions.listProgrammes.length = 0; queryOptions.staffDirectory.length = 0; authMock.role = "admin"; window.history.pushState({}, "", "/"); });
 
   it("shows one focused Portal Admin task at a time while preserving every administrative workflow", async () => {
     render(<CurriculumManagement />);
@@ -263,16 +279,16 @@ describe("Curriculum Library Release 1", () => {
 
     const chunkBytes = Math.ceil(file.size / 3);
     await waitFor(() => expect(acknowledgements).toHaveLength(1));
-    await act(async () => { acknowledgements[0]({ receivedBytes: chunkBytes, fileSize: file.size, complete: false, nextChunkIndex: 1, revision: 1, expiresAt: 9999999999999 }); });
+    await act(async () => { acknowledgements[0]({ receivedBytes: chunkBytes, fileSize: file.size, complete: false, acknowledgement: "committed", nextChunkIndex: 1, revision: 1, expiresAt: 9999999999999 }); });
     expect(screen.getByTestId("chunk-upload-speed").textContent).toBe("Calculating…");
 
     await waitFor(() => expect(acknowledgements).toHaveLength(2));
-    await act(async () => { acknowledgements[1]({ receivedBytes: chunkBytes * 2, fileSize: file.size, complete: false, nextChunkIndex: 2, revision: 2, expiresAt: 9999999999999 }); });
+    await act(async () => { acknowledgements[1]({ receivedBytes: chunkBytes * 2, fileSize: file.size, complete: false, acknowledgement: "committed", nextChunkIndex: 2, revision: 2, expiresAt: 9999999999999 }); });
     expect(screen.getByTestId("chunk-upload-speed").textContent).toMatch(/MB\/s/);
     expect(screen.getByTestId("chunk-upload-remaining").textContent).toMatch(/Less than 5 seconds|About/);
 
     await waitFor(() => expect(acknowledgements).toHaveLength(3));
-    await act(async () => { acknowledgements[2]({ receivedBytes: file.size, fileSize: file.size, complete: true, nextChunkIndex: 3, revision: 3, expiresAt: 9999999999999 }); });
+    await act(async () => { acknowledgements[2]({ receivedBytes: file.size, fileSize: file.size, complete: true, acknowledgement: "committed", nextChunkIndex: 3, revision: 3, expiresAt: 9999999999999 }); });
     expect(await screen.findByText("Final file check")).toBeTruthy();
     expect(screen.getByRole("progressbar", { name: "Textbook upload progress" }).getAttribute("aria-valuenow")).toBe("100");
     expect(screen.getByTestId("chunk-upload-percent").textContent).toBe("100%");
@@ -304,14 +320,14 @@ describe("Curriculum Library Release 1", () => {
     expect(screen.getByText("Pause requested — finishing current chunk")).toBeTruthy();
 
     const chunkBytes = Math.ceil(file.size / 2);
-    await act(async () => { acknowledgements[0]({ receivedBytes: chunkBytes, fileSize: file.size, complete: false, nextChunkIndex: 1, revision: 1, expiresAt: 9999999999999 }); });
+    await act(async () => { acknowledgements[0]({ receivedBytes: chunkBytes, fileSize: file.size, complete: false, acknowledgement: "committed", nextChunkIndex: 1, revision: 1, expiresAt: 9999999999999 }); });
     expect(await screen.findByText("Upload paused")).toBeTruthy();
     expect(acknowledgements).toHaveLength(1);
     expect(screen.getByRole("progressbar", { name: "Textbook upload progress" }).getAttribute("aria-valuenow")).toBe("50");
 
     fireEvent.click(screen.getByRole("button", { name: "Resume upload" }));
     await waitFor(() => expect(acknowledgements).toHaveLength(2));
-    await act(async () => { acknowledgements[1]({ receivedBytes: file.size, fileSize: file.size, complete: true, nextChunkIndex: 2, revision: 2, expiresAt: 9999999999999 }); });
+    await act(async () => { acknowledgements[1]({ receivedBytes: file.size, fileSize: file.size, complete: true, acknowledgement: "committed", nextChunkIndex: 2, revision: 2, expiresAt: 9999999999999 }); });
     await act(async () => { finishUpload({ id: 21, extractedText: "Reviewed source text", extractionStatus: "extracted" }); });
   });
 
@@ -338,7 +354,7 @@ describe("Curriculum Library Release 1", () => {
     Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" });
     await act(async () => { document.dispatchEvent(new Event("visibilitychange")); });
     const chunkBytes = Math.ceil(file.size / 2);
-    await act(async () => { acknowledgements[0]({ receivedBytes: chunkBytes, fileSize: file.size, complete: false, nextChunkIndex: 1, revision: 1, expiresAt: 9999999999999 }); });
+    await act(async () => { acknowledgements[0]({ receivedBytes: chunkBytes, fileSize: file.size, complete: false, acknowledgement: "committed", nextChunkIndex: 1, revision: 1, expiresAt: 9999999999999 }); });
     expect(await screen.findByText("Paused while Chrome is in the background")).toBeTruthy();
     expect(acknowledgements).toHaveLength(1);
 
@@ -346,7 +362,7 @@ describe("Curriculum Library Release 1", () => {
     Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" });
     await act(async () => { document.dispatchEvent(new Event("visibilitychange")); });
     await waitFor(() => expect(acknowledgements).toHaveLength(2));
-    await act(async () => { acknowledgements[1]({ receivedBytes: file.size, fileSize: file.size, complete: true, nextChunkIndex: 2, revision: 2, expiresAt: 9999999999999 }); });
+    await act(async () => { acknowledgements[1]({ receivedBytes: file.size, fileSize: file.size, complete: true, acknowledgement: "committed", nextChunkIndex: 2, revision: 2, expiresAt: 9999999999999 }); });
     await act(async () => { finishUpload({ id: 23, extractedText: "Reviewed source text", extractionStatus: "extracted" }); });
   });
 
@@ -358,7 +374,7 @@ describe("Curriculum Library Release 1", () => {
     window.sessionStorage.setItem("paramount-resumable-textbook-upload", JSON.stringify({ uploadToken: "saved-token", chunkBytes, curriculumSetId: grade9ChemistrySet.id, fileName: "grade-9-chemistry.pdf", fileSize, fileLastModified: file.lastModified, receivedBytes: chunkBytes, nextChunkIndex: 1, expiresAt: 9999999999999 }));
     getLargePdfUploadStatus.mockResolvedValue({ fileSize, receivedBytes: chunkBytes, nextChunkIndex: 1, revision: 1, complete: false, expiresAt: 9999999999999 });
     noOpMutation.mutateAsync.mockImplementation((input: Record<string, unknown>) => {
-      if ("chunkIndex" in input) return Promise.resolve({ receivedBytes: fileSize, fileSize, complete: true, nextChunkIndex: 2, revision: 2, expiresAt: 9999999999999 });
+      if ("chunkIndex" in input) return Promise.resolve({ receivedBytes: fileSize, fileSize, complete: true, acknowledgement: "committed", nextChunkIndex: 2, revision: 2, expiresAt: 9999999999999 });
       if ("uploadToken" in input) return Promise.resolve({ id: 24, extractedText: "Reviewed source text", extractionStatus: "extracted" });
       return Promise.resolve(undefined);
     });
@@ -412,7 +428,7 @@ describe("Curriculum Library Release 1", () => {
     noOpMutation.mutateAsync.mockImplementation((input: Record<string, unknown>) => {
       if ("fileSize" in input) return Promise.resolve({ uploadToken: "fresh-token", chunkBytes: fileSize, expiresAt: 9999999999999 });
       if ("chunkIndex" in input && input.uploadToken === "stale-token") return Promise.reject(new Error("This textbook chunk arrived out of order. Restart the upload so no pages are lost."));
-      if ("chunkIndex" in input && input.uploadToken === "fresh-token") return Promise.resolve({ receivedBytes: fileSize, fileSize, complete: true, nextChunkIndex: 1, expiresAt: 9999999999999 });
+      if ("chunkIndex" in input && input.uploadToken === "fresh-token") return Promise.resolve({ receivedBytes: fileSize, fileSize, complete: true, acknowledgement: "committed", nextChunkIndex: 1, expiresAt: 9999999999999 });
       if ("uploadToken" in input) return Promise.resolve({ id: 25, extractedText: "Reviewed source text", extractionStatus: "extracted" });
       return Promise.resolve(undefined);
     });
@@ -429,7 +445,7 @@ describe("Curriculum Library Release 1", () => {
     expect(noOpMutation.mutateAsync).not.toHaveBeenCalledWith(expect.objectContaining({ subject: "chemistry", teacherLabel: "Chemistry" }));
   });
 
-  it("automatically retries one unchanged chunk-order conflict before showing manual upload recovery", async () => {
+  it("shows safe upload recovery after a chunk conflict without retrying an unverified send", async () => {
     window.history.pushState({}, "", "/curriculum?grade=9&intake=subject");
     const fileSize = (30 * 1024 * 1024) + 1;
     const file = largePdfFixture("grade-9-chemistry.pdf", fileSize);
@@ -441,7 +457,7 @@ describe("Curriculum Library Release 1", () => {
         appendAttempts += 1;
         return appendAttempts === 1
           ? Promise.reject(new Error("This textbook chunk arrived out of order. Restart the upload so no pages are lost."))
-          : Promise.resolve({ receivedBytes: fileSize, fileSize, complete: true, nextChunkIndex: 1, expiresAt: 9999999999999 });
+          : Promise.resolve({ receivedBytes: fileSize, fileSize, complete: true, acknowledgement: "committed", nextChunkIndex: 1, expiresAt: 9999999999999 });
       }
       if ("uploadToken" in input) return Promise.resolve({ id: 26, extractedText: "Reviewed source text", extractionStatus: "extracted" });
       return Promise.resolve(undefined);
@@ -451,8 +467,8 @@ describe("Curriculum Library Release 1", () => {
     fireEvent.click(await screen.findByRole("button", { name: /Chemistry.*Continue textbook intake/i }));
     fireEvent.change(await screen.findByLabelText("Focused curriculum source upload"), { target: { files: [file] } });
 
-    await waitFor(() => expect(appendAttempts).toBe(2));
-    expect(screen.queryByTestId("textbook-upload-recovery")).toBeNull();
+    await waitFor(() => expect(appendAttempts).toBe(1));
+    expect(await screen.findByTestId("textbook-upload-recovery")).toBeTruthy();
   });
 
   it("shows drag feedback and routes a dropped textbook through the same secure intake handler", async () => {

@@ -131,7 +131,7 @@ export async function getCurriculumPdfChunkUploadStatus(input: { userId: number;
   return toResponseStatus(await getDurableStatus(ticket));
 }
 
-export async function appendCurriculumPdfChunk(input: { userId: number; uploadToken: string; chunkIndex: number; expectedRevision: number; fileBuffer: Buffer }) {
+async function appendCurriculumPdfChunkInternal(input: { userId: number; uploadToken: string; chunkIndex: number; expectedRevision: number; fileBuffer: Buffer }) {
   const ticket = parseTicket(input.uploadToken, input.userId);
   if (!Number.isSafeInteger(input.chunkIndex) || !Number.isSafeInteger(input.expectedRevision)) throw new Error("The protected upload cursor is invalid. Resume this same file once so the server can reconcile it.");
   const status = await getDurableStatus(ticket);
@@ -166,6 +166,27 @@ export async function appendCurriculumPdfChunk(input: { userId: number; uploadTo
   });
   if (committed.kind === "rejected") throw new Error(rejectedClaimMessage(committed.reason));
   return { ...toResponseStatus(committed.status), acknowledgement: committed.kind };
+}
+
+function safeUploadError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.replace(/\s+/g, " ").slice(0, 240);
+}
+
+export async function appendCurriculumPdfChunk(input: { userId: number; uploadToken: string; chunkIndex: number; expectedRevision: number; fileBuffer: Buffer }) {
+  try {
+    return await appendCurriculumPdfChunkInternal(input);
+  } catch (error) {
+    const uploadIdFingerprint = createHash("sha256").update(input.uploadToken).digest("hex").slice(0, 12);
+    console.error("[CurriculumUpload] protected chunk append failed", {
+      uploadIdFingerprint,
+      chunkIndex: input.chunkIndex,
+      expectedRevision: input.expectedRevision,
+      byteLength: input.fileBuffer.length,
+      error: safeUploadError(error),
+    });
+    throw error;
+  }
 }
 
 export async function completeCurriculumPdfChunkUpload(input: { userId: number; uploadToken: string; sessionCookie?: string }) {
