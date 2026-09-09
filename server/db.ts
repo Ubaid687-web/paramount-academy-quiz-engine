@@ -1,6 +1,7 @@
 import { and, asc, desc, eq, gte, inArray, isNull, lt, lte, or, sql } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
-import { drizzle } from "drizzle-orm/mysql2";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { Pool } from "pg";
 import {
   InsertUser,
   users,
@@ -80,6 +81,7 @@ function coverageHistoryFromStoredRecords(records: unknown, assessmentMode: "mcq
 }
 
 let _db: ReturnType<typeof drizzle> | null = null;
+let _pool: Pool | null = null;
 export const TRANSIENT_GENERATION_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
 
 export function transientGenerationRetentionDeadline(now = Date.now()) {
@@ -90,9 +92,17 @@ export function transientGenerationRetentionDeadline(now = Date.now()) {
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-      _db = drizzle(process.env.DATABASE_URL);
+      _pool = new Pool({
+        connectionString: process.env.DATABASE_URL,
+        max: 10,
+        idleTimeoutMillis: 30_000,
+        connectionTimeoutMillis: 10_000,
+        ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : undefined,
+      });
+      _db = drizzle(_pool);
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
+      _pool = null;
       _db = null;
     }
   }
@@ -161,7 +171,8 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       updateSet.lastSignedIn = new Date();
     }
 
-    await db.insert(users).values(values).onDuplicateKeyUpdate({
+    await db.insert(users).values(values).onConflictDoUpdate({
+      target: users.openId,
       set: updateSet,
     });
   } catch (error) {
@@ -236,7 +247,7 @@ export async function claimCurriculumUploadCompletion(input: { uploadId: string;
       eq(curriculumUploadClaims.status, "open"),
       gte(curriculumUploadClaims.expiresAt, now),
     ));
-  if (result[0].affectedRows > 0) return { state: "claimed" as const };
+  if ((result.rowCount ?? 0) > 0) return { state: "claimed" as const };
   const rows = await db.select().from(curriculumUploadClaims).where(eq(curriculumUploadClaims.uploadId, input.uploadId)).limit(1);
   const claim = rows[0];
   if (!claim || claim.userId !== input.userId || claim.curriculumSetId !== input.curriculumSetId) throw new Error("The upload session is unavailable. Start the textbook upload again.");
@@ -254,7 +265,7 @@ export async function completeCurriculumUploadClaim(input: { uploadId: string; u
       eq(curriculumUploadClaims.curriculumSetId, input.curriculumSetId),
       eq(curriculumUploadClaims.status, "processing"),
     ));
-  if (result[0].affectedRows === 0) throw new Error("The upload completion claim was lost. Contact Portal Admin before retrying.");
+  if ((result.rowCount ?? 0) === 0) throw new Error("The upload completion claim was lost. Contact Portal Admin before retrying.");
 }
 
 export async function releaseCurriculumUploadClaim(input: { uploadId: string; userId: number; curriculumSetId: number }) {
@@ -432,12 +443,12 @@ export async function commitCurriculumUploadChunk(input: {
       eq(curriculumUploadSessions.nextChunkIndex, input.chunkIndex),
       eq(curriculumUploadSessions.revision, input.expectedRevision),
     ));
-    if (advanced[0].affectedRows === 0) return { kind: "reconcile", status } as const;
+    if ((advanced.rowCount ?? 0) === 0) return { kind: "reconcile", status } as const;
     const committed = await tx.update(curriculumUploadChunkReceipts).set({ status: "committed", committedAt: new Date() }).where(and(
       eq(curriculumUploadChunkReceipts.id, receipt.id),
       eq(curriculumUploadChunkReceipts.status, "pending"),
     ));
-    if (committed[0].affectedRows === 0) throw new Error("The protected upload receipt could not be committed.");
+    if ((committed.rowCount ?? 0) === 0) throw new Error("The protected upload receipt could not be committed.");
     return {
       kind: "committed",
       status: {
@@ -481,7 +492,7 @@ export async function promoteApprovedTeacherOnSignIn(openId: string, email: stri
   const approvedRule = await db.select({ id: teacherProvisionRules.id }).from(teacherProvisionRules).where(eq(teacherProvisionRules.email, normalizedEmail)).limit(1);
   if (approvedRule.length === 0) return false;
   const result = await db.update(users).set({ role: "teacher" }).where(and(eq(users.openId, openId), eq(users.role, "user")));
-  return result[0].affectedRows > 0;
+  return (result.rowCount ?? 0) > 0;
 }
 
 export type StaffRole = "teacher" | "admin";
@@ -522,7 +533,7 @@ export async function createTeacherProvisionRule(email: string, addedBy: number)
   if (!db) throw new Error("Database not available");
   const normalizedEmail = normalizeProvisionEmail(email);
   if (!normalizedEmail) throw new Error("A teacher email is required.");
-  await db.insert(teacherProvisionRules).values({ email: normalizedEmail, addedBy }).onDuplicateKeyUpdate({ set: { email: normalizedEmail } });
+  await db.insert(teacherProvisionRules).values({ email: normalizedEmail, addedBy }).onConflictDoUpdate({ target: teacherProvisionRules.email, set: { email: normalizedEmail } });
   const rules = await db.select().from(teacherProvisionRules).where(eq(teacherProvisionRules.email, normalizedEmail)).limit(1);
   return rules[0];
 }
@@ -537,7 +548,7 @@ export async function createQuiz(quiz: InsertQuiz): Promise<number> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  const result = await db.insert(quizzes).values(quiz);
+  const result = await db.insert(quizzes).values(quiz).returning({ insertId: quizzes.id });
   return result[0].insertId;
 }
 
@@ -657,7 +668,7 @@ export async function createQuizAttempt(attempt: InsertQuizAttempt): Promise<num
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  const result = await db.insert(quizAttempts).values(attempt);
+  const result = await db.insert(quizAttempts).values(attempt).returning({ insertId: quizAttempts.id });
   return result[0].insertId;
 }
 
@@ -676,7 +687,7 @@ export async function saveQuizAttemptWithAnswers(input: {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   return db.transaction(async (tx) => {
-    const attemptResult = await tx.insert(quizAttempts).values(input.attempt);
+    const attemptResult = await tx.insert(quizAttempts).values(input.attempt).returning({ insertId: quizAttempts.id });
     const attemptId = attemptResult[0].insertId as number;
     await tx.insert(userAnswers).values(input.answers.map((answer) => ({ ...answer, attemptId })));
     return attemptId;
@@ -733,7 +744,7 @@ export async function createGenerationJob(job: InsertGenerationJob): Promise<Gen
   const result = await db.insert(generationJobs).values({
     ...job,
     retentionExpiresAt: job.retentionExpiresAt ?? transientGenerationRetentionDeadline(),
-  });
+  }).returning({ insertId: generationJobs.id });
   const inserted = await db.select().from(generationJobs).where(eq(generationJobs.id, result[0].insertId as number)).limit(1);
   return inserted[0];
 }
@@ -767,7 +778,7 @@ export async function claimPrintableGenerationJob(jobId: number, userId: number,
     eq(generationJobs.userId, userId),
     inArray(generationJobs.status, ["pending", "failed"]),
   ));
-  return result[0].affectedRows > 0;
+  return (result.rowCount ?? 0) > 0;
 }
 
 export async function getUserGenerationJobs(userId: number) {
@@ -790,7 +801,8 @@ export async function getGenerationProviderSettings() {
 export async function setGeminiFallbackEnabled(enabled: boolean, updatedBy: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  await db.insert(generationProviderSettings).values({ id: 1, geminiFallbackEnabled: enabled ? 1 : 0, updatedBy }).onDuplicateKeyUpdate({
+  await db.insert(generationProviderSettings).values({ id: 1, geminiFallbackEnabled: enabled ? 1 : 0, updatedBy }).onConflictDoUpdate({
+    target: generationProviderSettings.id,
     set: { geminiFallbackEnabled: enabled ? 1 : 0, updatedBy },
   });
   return getGenerationProviderSettings();
@@ -881,7 +893,7 @@ export async function putCachedGenerationResponse(values: {
     }).where(eq(generationResponseCaches.id, existing[0].id));
     return existing[0];
   }
-  const result = await db.insert(generationResponseCaches).values(values);
+  const result = await db.insert(generationResponseCaches).values(values).returning({ insertId: generationResponseCaches.id });
   const created = await db.select().from(generationResponseCaches).where(eq(generationResponseCaches.id, result[0].insertId as number)).limit(1);
   return created[0];
 }
@@ -963,7 +975,7 @@ export async function createProgrammeCatalogue(values: Pick<InsertProgrammeCatal
   if (existing) return existing;
 
   try {
-    const result = await db.insert(programmeCatalogues).values({ ...values, status: "intake_only" });
+    const result = await db.insert(programmeCatalogues).values({ ...values, status: "intake_only" }).returning({ insertId: programmeCatalogues.id });
     return getProgrammeCatalogue(result[0].insertId as number);
   } catch (error) {
     // The unique board/grade/subject index remains the concurrency guard. If another Portal Admin
@@ -1068,7 +1080,7 @@ export async function listCurriculumSets() {
 export async function createCurriculumSet(values: InsertCurriculumSet) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result = await db.insert(curriculumSets).values(values);
+  const result = await db.insert(curriculumSets).values(values).returning({ insertId: curriculumSets.id });
   const rows = await db.select().from(curriculumSets).where(eq(curriculumSets.id, result[0].insertId as number)).limit(1);
   return rows[0];
 }
@@ -1096,7 +1108,7 @@ export async function getCurriculumSource(sourceId: number) {
 export async function createCurriculumSource(values: InsertCurriculumSource) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result = await db.insert(curriculumSources).values(values);
+  const result = await db.insert(curriculumSources).values(values).returning({ insertId: curriculumSources.id });
   const rows = await db.select().from(curriculumSources).where(eq(curriculumSources.id, result[0].insertId as number)).limit(1);
   return rows[0];
 }
@@ -1111,7 +1123,7 @@ export async function updateCurriculumSourceExtraction(sourceId: number, values:
 export async function createOcrExtractionJob(values: InsertOcrExtractionJob) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result = await db.insert(ocrExtractionJobs).values(values);
+  const result = await db.insert(ocrExtractionJobs).values(values).returning({ insertId: ocrExtractionJobs.id });
   const rows = await db.select().from(ocrExtractionJobs).where(eq(ocrExtractionJobs.id, result[0].insertId as number)).limit(1);
   return rows[0];
 }
@@ -1147,7 +1159,7 @@ export async function claimNextOcrExtractionJob() {
       eq(ocrExtractionJobs.id, candidate.id),
       eq(ocrExtractionJobs.status, "pending"),
     ));
-    if (result[0].affectedRows) {
+    if (result.rowCount) {
       const rows = await db.select().from(ocrExtractionJobs).where(eq(ocrExtractionJobs.id, candidate.id)).limit(1);
       return rows[0];
     }
@@ -1183,7 +1195,7 @@ export async function getOcrSchedulerState() {
 export async function saveOcrSchedulerState(taskUid: string) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  await db.insert(ocrSchedulerStates).values({ id: 1, taskUid }).onDuplicateKeyUpdate({ set: { taskUid } });
+  await db.insert(ocrSchedulerStates).values({ id: 1, taskUid }).onConflictDoUpdate({ target: ocrSchedulerStates.id, set: { taskUid } });
   return getOcrSchedulerState();
 }
 
@@ -1324,7 +1336,7 @@ export async function setCurriculumChapterGenerationAvailability(input: { curric
 export async function createCurriculumChapter(values: InsertCurriculumChapter) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result = await db.insert(curriculumChapters).values(values);
+  const result = await db.insert(curriculumChapters).values(values).returning({ insertId: curriculumChapters.id });
   const rows = await db.select().from(curriculumChapters).where(eq(curriculumChapters.id, result[0].insertId as number)).limit(1);
   return rows[0];
 }
@@ -1362,7 +1374,7 @@ export async function createScopeTemplateWithChapters(
 ) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result = await db.insert(curriculumScopeTemplates).values(values);
+  const result = await db.insert(curriculumScopeTemplates).values(values).returning({ insertId: curriculumScopeTemplates.id });
   const templateId = result[0].insertId as number;
   await db.insert(curriculumScopeTemplateChapters).values(chapterIds.map((chapterId, index) => ({
     scopeTemplateId: templateId,
@@ -1440,7 +1452,7 @@ export async function listAssessmentPatternSources(programme: ProgrammeKey) {
 export async function createAssessmentPatternSource(values: InsertAssessmentPatternSource) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result = await db.insert(assessmentPatternSources).values(values);
+  const result = await db.insert(assessmentPatternSources).values(values).returning({ insertId: assessmentPatternSources.id });
   const rows = await db.select().from(assessmentPatternSources).where(eq(assessmentPatternSources.id, result[0].insertId as number)).limit(1);
   return rows[0];
 }
@@ -1537,7 +1549,7 @@ export async function saveAssessmentPatternProfile(values: Omit<InsertAssessment
     const updated = await db.select().from(assessmentPatternProfiles).where(eq(assessmentPatternProfiles.patternSourceId, values.patternSourceId)).limit(1);
     return updated[0];
   }
-  const result = await db.insert(assessmentPatternProfiles).values(values);
+  const result = await db.insert(assessmentPatternProfiles).values(values).returning({ insertId: assessmentPatternProfiles.id });
   const created = await db.select().from(assessmentPatternProfiles).where(eq(assessmentPatternProfiles.id, result[0].insertId as number)).limit(1);
   return created[0];
 }
@@ -1715,7 +1727,7 @@ export async function listAssessmentPatternSourcesByIds(programme: ProgrammeKey,
 export async function createAssessmentDraft(values: InsertAssessmentDraft) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result = await db.insert(assessmentDrafts).values(values);
+  const result = await db.insert(assessmentDrafts).values(values).returning({ insertId: assessmentDrafts.id });
   const rows = await db.select().from(assessmentDrafts).where(eq(assessmentDrafts.id, result[0].insertId as number)).limit(1);
   return rows[0];
 }
@@ -1738,7 +1750,7 @@ export async function createAiGeneratedQuiz(quiz: InsertQuiz) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  const result = await db.insert(quizzes).values(quiz);
+  const result = await db.insert(quizzes).values(quiz).returning({ insertId: quizzes.id });
   const inserted = await db.select().from(quizzes).where(eq(quizzes.id, result[0].insertId as number)).limit(1);
   return inserted[0];
 }
@@ -1789,7 +1801,7 @@ export async function saveAiGeneratedQuizOnce(input: { userId: number; jobId: nu
     or(isNull(generationJobs.quizSaveClaim), lt(generationJobs.quizSaveClaimedAt, claimExpiresBefore)),
   ));
 
-  if (claimResult[0].affectedRows === 0) {
+  if ((claimResult.rowCount ?? 0) === 0) {
     const current = await getGenerationJob(input.jobId);
     if (current?.userId === input.userId && current.generatedQuizId) {
       const quiz = await getQuizById(current.generatedQuizId);
@@ -1809,7 +1821,7 @@ export async function saveAiGeneratedQuizOnce(input: { userId: number; jobId: nu
       )).limit(1);
       if (!claimed[0]) throw new Error("The quiz save claim is no longer valid. Retry from the same completed draft.");
 
-      const quizResult = await tx.insert(quizzes).values(input.quiz);
+      const quizResult = await tx.insert(quizzes).values(input.quiz).returning({ insertId: quizzes.id });
       const quizId = quizResult[0].insertId as number;
       const questionsToInsert = input.questionsList.map((question, index) => ({
         quizId,
