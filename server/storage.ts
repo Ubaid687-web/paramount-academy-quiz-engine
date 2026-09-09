@@ -1,102 +1,60 @@
-// Preconfigured storage helpers for Manus WebDev templates
-// Uses the Biz-provided storage proxy (Authorization: Bearer <token>)
+import { get, put, del } from "@vercel/blob";
 
-import { ENV } from './_core/env';
+export type StoredObject = { key: string; url: string };
 
-type StorageConfig = { baseUrl: string; apiKey: string };
-
-function getStorageConfig(): StorageConfig {
-  const baseUrl = ENV.forgeApiUrl;
-  const apiKey = ENV.forgeApiKey;
-
-  if (!baseUrl || !apiKey) {
-    throw new Error(
-      "Storage proxy credentials missing: set BUILT_IN_FORGE_API_URL and BUILT_IN_FORGE_API_KEY"
-    );
+function normalizeKey(relKey: string) {
+  const key = relKey.replace(/^\/+/, "");
+  if (!key || key.includes("..") || /[\u0000-\u001f]/.test(key)) {
+    throw new Error("Invalid storage key.");
   }
-
-  return { baseUrl: baseUrl.replace(/\/+$/, ""), apiKey };
+  return key;
 }
 
-function buildUploadUrl(baseUrl: string, relKey: string): URL {
-  const url = new URL("v1/storage/upload", ensureTrailingSlash(baseUrl));
-  url.searchParams.set("path", normalizeKey(relKey));
-  return url;
-}
-
-async function buildDownloadUrl(
-  baseUrl: string,
-  relKey: string,
-  apiKey: string
-): Promise<string> {
-  const downloadApiUrl = new URL(
-    "v1/storage/downloadUrl",
-    ensureTrailingSlash(baseUrl)
-  );
-  downloadApiUrl.searchParams.set("path", normalizeKey(relKey));
-  const response = await fetch(downloadApiUrl, {
-    method: "GET",
-    headers: buildAuthHeaders(apiKey),
-  });
-  return (await response.json()).url;
-}
-
-function ensureTrailingSlash(value: string): string {
-  return value.endsWith("/") ? value : `${value}/`;
-}
-
-function normalizeKey(relKey: string): string {
-  return relKey.replace(/^\/+/, "");
-}
-
-function toFormData(
-  data: Buffer | Uint8Array | string,
-  contentType: string,
-  fileName: string
-): FormData {
-  const blob =
-    typeof data === "string"
-      ? new Blob([data], { type: contentType })
-      : new Blob([data as any], { type: contentType });
-  const form = new FormData();
-  form.append("file", blob, fileName || "file");
-  return form;
-}
-
-function buildAuthHeaders(apiKey: string): HeadersInit {
-  return { Authorization: `Bearer ${apiKey}` };
+function storageRouteUrl(key: string) {
+  return `/api/storage?key=${encodeURIComponent(key)}`;
 }
 
 export async function storagePut(
   relKey: string,
   data: Buffer | Uint8Array | string,
-  contentType = "application/octet-stream"
-): Promise<{ key: string; url: string }> {
-  const { baseUrl, apiKey } = getStorageConfig();
+  contentType = "application/octet-stream",
+): Promise<StoredObject> {
   const key = normalizeKey(relKey);
-  const uploadUrl = buildUploadUrl(baseUrl, key);
-  const formData = toFormData(data, contentType, key.split("/").pop() ?? key);
-  const response = await fetch(uploadUrl, {
-    method: "POST",
-    headers: buildAuthHeaders(apiKey),
-    body: formData,
+  const body = typeof data === "string" || Buffer.isBuffer(data) ? data : Buffer.from(data);
+  const blob = await put(key, body, {
+    access: "private",
+    contentType,
+    addRandomSuffix: false,
+    allowOverwrite: true,
   });
-
-  if (!response.ok) {
-    const message = await response.text().catch(() => response.statusText);
-    throw new Error(
-      `Storage upload failed (${response.status} ${response.statusText}): ${message}`
-    );
-  }
-  const url = (await response.json()).url;
-  return { key, url };
+  return { key, url: storageRouteUrl(blob.pathname) };
 }
 
-export async function storageGet(relKey: string): Promise<{ key: string; url: string; }> {
-  const { baseUrl, apiKey } = getStorageConfig();
+export async function storageRead(relKey: string): Promise<{ key: string; contentType: string; bytes: Buffer }> {
   const key = normalizeKey(relKey);
+  const result = await get(key, { access: "private" });
+  if (!result || result.statusCode !== 200) throw new Error("Stored object is unavailable.");
   return {
     key,
-    url: await buildDownloadUrl(baseUrl, key, apiKey),
+    contentType: result.blob.contentType || "application/octet-stream",
+    bytes: Buffer.from(await new Response(result.stream).arrayBuffer()),
   };
+}
+
+export async function storageGet(relKey: string): Promise<StoredObject> {
+  const key = normalizeKey(relKey);
+  return { key, url: storageRouteUrl(key) };
+}
+
+export async function storageDelete(relKey: string) {
+  await del(normalizeKey(relKey));
+}
+
+export function storageKeyFromRequest(value: string | undefined) {
+  return value ? normalizeKey(value) : null;
+}
+
+export async function storageStream(relKey: string, ifNoneMatch?: string | null) {
+  const key = normalizeKey(relKey);
+  return get(key, { access: "private", ifNoneMatch: ifNoneMatch ?? undefined });
 }

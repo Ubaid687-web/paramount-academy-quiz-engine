@@ -6,7 +6,7 @@ import path from "node:path";
 import { promisify } from "node:util";
 import { getCurriculumSource } from "./db";
 import { sdk } from "./_core/sdk";
-import { storageGet } from "./storage";
+import { storageRead } from "./storage";
 import { writeStoredPdfToPath } from "./chunkedPdfManifest";
 
 const execFileAsync = promisify(execFile);
@@ -26,10 +26,11 @@ async function requirePortalAdmin(req: Request, res: Response) {
 }
 
 async function downloadStoredSource(storageKey: string) {
-  const { url } = await storageGet(storageKey);
-  const response = await fetch(url);
-  if (!response.ok) throw new Error("The stored source file is unavailable for page review.");
-  return Buffer.from(await response.arrayBuffer());
+  try {
+    return (await storageRead(storageKey)).bytes;
+  } catch {
+    throw new Error("The stored source file is unavailable for page review.");
+  }
 }
 
 export async function renderOcrReviewPage(input: { storageKey: string; mimeType: string; pageNumber: number }) {

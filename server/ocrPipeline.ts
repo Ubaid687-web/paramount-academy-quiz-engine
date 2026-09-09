@@ -4,7 +4,6 @@ import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
 import { PDFDocument } from "pdf-lib";
-import { storageGet } from "./storage";
 import type { SupportedCurriculumMimeType } from "./curriculumIngestion";
 import { writeStoredPdfToPath } from "./chunkedPdfManifest";
 import { isVisionOcrConfigured, runVisionOcr } from "./visionOcr";

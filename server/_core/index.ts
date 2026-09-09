@@ -9,6 +9,7 @@ import { createContext } from "./context";
 import { registerPdfExportRoutes } from "../pdfExportRoute";
 import { runOcrExtractionWorker } from "../ocrWorkerRoute";
 import { registerOcrReviewRoutes } from "../ocrReviewRoute";
+import { registerStorageRoute } from "../storageRoute";
 import { serveStatic, setupVite } from "./vite";
 import { ENV } from "./env";
 import { getTrustedRequestOrigin } from "./oauthState";
@@ -97,6 +98,7 @@ async function startServer() {
   );
   registerPdfExportRoutes(app);
   registerOcrReviewRoutes(app);
+  registerStorageRoute(app);
   app.post("/api/scheduled/ocr-extraction", runOcrExtractionWorker);
   // development mode uses Vite, production mode uses static files
   if (process.env.NODE_ENV === "development") {
