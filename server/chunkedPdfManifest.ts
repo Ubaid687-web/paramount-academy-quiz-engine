@@ -2,7 +2,7 @@ import { createWriteStream } from "node:fs";
 import { open } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { once } from "node:events";
-import { storageGet, storagePut } from "./storage";
+import { storageRead, storagePut } from "./storage";
 
 const MANIFEST_KIND = "paramount_chunked_pdf_v1";
 const MAX_MANIFEST_BYTES = 1_000_000;
@@ -16,12 +16,7 @@ export type ChunkedPdfManifest = {
 };
 
 async function fetchStoredBytes(key: string, maximumBytes: number) {
-  const { url } = await storageGet(key);
-  const response = await fetch(url);
-  if (!response.ok) throw new Error("A protected textbook object is unavailable.");
-  const contentLength = Number.parseInt(response.headers.get("content-length") ?? "", 10);
-  if (Number.isFinite(contentLength) && contentLength > maximumBytes) throw new Error("A protected textbook object exceeded its safe size limit.");
-  const bytes = Buffer.from(await response.arrayBuffer());
+  const bytes = (await storageRead(key)).bytes;
   if (bytes.length > maximumBytes) throw new Error("A protected textbook object exceeded its safe size limit.");
   return bytes;
 }

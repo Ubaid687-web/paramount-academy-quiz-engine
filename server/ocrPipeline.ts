@@ -3,9 +3,10 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
-import { storageGet } from "./storage";
+import { PDFDocument } from "pdf-lib";
 import type { SupportedCurriculumMimeType } from "./curriculumIngestion";
 import { writeStoredPdfToPath } from "./chunkedPdfManifest";
+import { isVisionOcrConfigured, runVisionOcr } from "./visionOcr";
 
 const execFileAsync = promisify(execFile);
 export const OCR_PAGES_PER_RUN = 2;
@@ -60,6 +61,37 @@ async function runTesseract(imagePath: string) {
   return stdout.replace(/\u0000/g, "").trim();
 }
 
+async function extractOcrBatchWithVision(input: {
+  bytes: Buffer;
+  mimeType: SupportedCurriculumMimeType;
+  startPage: number;
+  pageEnd: number;
+}): Promise<OcrTextPage[]> {
+  if (input.mimeType !== "application/pdf") {
+    // Non-PDF sources are a single image, which the pipeline treats as one page.
+    const text = await runVisionOcr({ data: input.bytes, mediaType: input.mimeType });
+    return [{ pageNumber: input.startPage, text }];
+  }
+
+  const source = await PDFDocument.load(input.bytes, { ignoreEncryption: true });
+  const total = source.getPageCount();
+  const pages: OcrTextPage[] = [];
+
+  for (let pageNumber = input.startPage; pageNumber <= input.pageEnd; pageNumber += 1) {
+    if (pageNumber > total) break;
+    // Send exactly one page per request so the transcript maps cleanly to page
+    // numbers and the model never has to disambiguate multiple pages.
+    const single = await PDFDocument.create();
+    const [copied] = await single.copyPages(source, [pageNumber - 1]);
+    single.addPage(copied);
+    const singleBytes = await single.save();
+    const text = await runVisionOcr({ data: singleBytes, mediaType: "application/pdf" });
+    pages.push({ pageNumber, text });
+  }
+
+  return pages;
+}
+
 export async function extractOcrBatch(input: {
   storageKey: string;
   mimeType: SupportedCurriculumMimeType;
@@ -73,8 +105,16 @@ export async function extractOcrBatch(input: {
   try {
     const inputPath = path.join(workDir, `source.${extensionForMimeType(input.mimeType)}`);
     await writeStoredPdfToPath(input.storageKey, inputPath);
-    const pages: OcrTextPage[] = [];
 
+    // Preferred, self-owned path: a vision model reads the page directly (no
+    // native binaries, higher accuracy for Urdu + English scans).
+    if (isVisionOcrConfigured()) {
+      const bytes = await readFile(inputPath);
+      return await extractOcrBatchWithVision({ bytes, mimeType: input.mimeType, startPage: input.startPage, pageEnd });
+    }
+
+    // Fallback path for container deployments without an AI Gateway: tesseract.
+    const pages: OcrTextPage[] = [];
     for (let pageNumber = input.startPage; pageNumber <= pageEnd; pageNumber += 1) {
       const imagePath = input.mimeType === "application/pdf"
         ? path.join(workDir, `page-${pageNumber}.jpg`)
@@ -98,9 +138,11 @@ export async function getStoredPdfPageCount(storageKey: string) {
   try {
     const inputPath = path.join(workDir, "source.pdf");
     await writeStoredPdfToPath(storageKey, inputPath);
-    const { stdout } = await execFileAsync("pdfinfo", [inputPath], { maxBuffer: 256 * 1024, timeout: 50_000 });
-    const match = stdout.match(/^Pages:\s+(\d+)$/m);
-    const pageCount = match?.[1] ? Number.parseInt(match[1], 10) : NaN;
+    // Pure-JS page count (pdf-lib) so this works on serverless hosts without the
+    // poppler `pdfinfo` binary.
+    const bytes = await readFile(inputPath);
+    const doc = await PDFDocument.load(bytes, { ignoreEncryption: true });
+    const pageCount = doc.getPageCount();
     if (!Number.isSafeInteger(pageCount) || pageCount < 1 || pageCount > 2_000) throw new Error("The protected PDF page count is unavailable or exceeds the review limit.");
     return pageCount;
   } finally {

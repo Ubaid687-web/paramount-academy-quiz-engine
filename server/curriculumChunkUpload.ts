@@ -2,7 +2,7 @@ import { createHash, createHmac, randomUUID, timingSafeEqual } from "node:crypto
 import type { CurriculumSource } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 import { ingestChunkedPdfManifestSource, MAX_PORTAL_ADMIN_SOURCE_BYTES } from "./curriculumSourceIntake";
-import { storageGet, storagePut } from "./storage";
+import { storagePut, storageRead } from "./storage";
 import {
   claimCurriculumUploadChunk,
   claimCurriculumUploadCompletion,
@@ -79,12 +79,13 @@ function parseTicket(token: string, userId: number): UploadTicket {
   return ticket;
 }
 
-async function readStoredBytes(key: string) {
-  const { url } = await storageGet(key);
-  const response = await fetch(url);
-  if (!response.ok) throw new Error("The upload session is unavailable. Start the textbook upload again.");
-  return Buffer.from(await response.arrayBuffer());
-}
+  async function readStoredBytes(key: string) {
+    try {
+      return (await storageRead(key)).bytes;
+    } catch {
+      throw new Error("The upload session is unavailable. Start the textbook upload again.");
+    }
+  }
 
 function toResponseStatus(status: NonNullable<Awaited<ReturnType<typeof getCurriculumUploadSessionStatus>>>) {
   return {
