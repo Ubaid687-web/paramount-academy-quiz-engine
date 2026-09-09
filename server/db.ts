@@ -1165,7 +1165,7 @@ export async function requeueStaleOcrExtractionJobs() {
   ));
 }
 
-export async function updateOcrExtractionJob(jobId: number, values: Partial<Pick<InsertOcrExtractionJob, "status" | "nextPage" | "totalPages" | "errorMessage" | "completedAt">>) {
+export async function updateOcrExtractionJob(jobId: number, values: Partial<Pick<InsertOcrExtractionJob, "status" | "nextPage" | "totalPages" | "errorMessage" | "completedAt" | "attemptCount">>) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.update(ocrExtractionJobs).set(values).where(eq(ocrExtractionJobs.id, jobId));
