@@ -81,7 +81,7 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
   throw new Error(`No available port found starting from ${startPort}`);
 }
 
-async function startServer() {
+export async function createApp() {
   assertProductionConfiguration();
   const app = express();
   const server = createServer(app);
@@ -117,6 +117,12 @@ async function startServer() {
     serveStatic(app);
   }
 
+  return app;
+}
+
+async function startServer() {
+  const app = await createApp();
+  const server = createServer(app);
   const preferredPort = parseInt(process.env.PORT || "3000");
   const port = await findAvailablePort(preferredPort);
 
@@ -129,4 +135,6 @@ async function startServer() {
   });
 }
 
-startServer().catch(console.error);
+if (!process.env.VERCEL) {
+  startServer().catch(console.error);
+}
