@@ -9,9 +9,11 @@ export const ORIGIN_BINDING_TTL_MS = 1000 * 60 * 60 * 12;
 
 export const OAUTH_STATE_TTL_MS = 1000 * 60 * 10;
 
+const TRUSTED_VERCEL_HOST = "paramount-academy-quiz-engine.vercel.app";
+
 function isTrustedHost(host: string) {
   const normalized = host.toLowerCase().split(":")[0] ?? "";
-  return normalized === "localhost" || normalized === "127.0.0.1" || normalized.endsWith(".manus.space") || normalized.endsWith(".manus.computer") || normalized.endsWith(".manus-asia.computer") || normalized.endsWith(".manuscomputer.ai");
+  return normalized === "localhost" || normalized === "127.0.0.1" || normalized === TRUSTED_VERCEL_HOST || normalized.endsWith(".manus.space") || normalized.endsWith(".manus.computer") || normalized.endsWith(".manus-asia.computer") || normalized.endsWith(".manuscomputer.ai");
 }
 
 export function normalizeTrustedOrigin(value: unknown) {
